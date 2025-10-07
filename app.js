@@ -309,15 +309,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 // If there's a response from the webhook, display it
                 if (data && data.response) {
                     // Check if this is a newsletter HTML response
+                    // Look for specific patterns that indicate this is a newsletter
                     const isNewsletter = 
                         data.response.includes('[IMG_HERE]') || 
                         (data.response.includes('<html') && data.response.includes('<body')) ||
                         (data.Status === 'Ready' && data.response.includes('<div')) ||
                         data.response.includes('newsletter') ||
-                        data.response.includes('<h1>');
+                        data.response.includes('<h1>') ||
+                        // Additional checks for newsletter-like content
+                        (data.response.includes('<div') && data.response.includes('Peritus')) ||
+                        (data.response.match(/<h\d>[^<]+<\/h\d>/i) !== null);
+                    
+                    console.log('Checking if response is a newsletter:', data.response.substring(0, 200) + '...');
+                    console.log('Newsletter detection result:', isNewsletter);
                     
                     if (isNewsletter) {
                         console.log('Newsletter HTML detected');
+                        console.log('Contains [IMG_HERE]:', data.response.includes('[IMG_HERE]'));
                         
                         // Remove any existing newsletter containers
                         const existingNewsletters = messageContainer.querySelectorAll('.newsletter-container');
@@ -746,109 +754,99 @@ document.addEventListener('DOMContentLoaded', () => {
         const newsletterWrapper = document.createElement('div');
         newsletterWrapper.className = 'newsletter-wrapper';
         
-        // Set the newsletter HTML content
-        newsletterWrapper.innerHTML = newsletterHtml;
+        console.log('Original newsletter HTML:', newsletterHtml);
         
-        // First, process any [IMG_HERE] text nodes and convert them to upload buttons directly
-        const textNodes = [];
-        const walker = document.createTreeWalker(
-            newsletterWrapper,
-            NodeFilter.SHOW_TEXT,
-            null,
-            false
-        );
+        // First, let's do a direct string replacement in the HTML content
+        // This ensures we catch all instances of [IMG_HERE] even if they're not in proper text nodes
+        const processedHtml = newsletterHtml.replace(/\[IMG_HERE\]/g, '<div class="image-upload-placeholder" data-placeholder="true">[IMG_HERE]</div>');
         
-        let node;
-        while (node = walker.nextNode()) {
-            if (node.nodeValue.includes('[IMG_HERE]')) {
-                textNodes.push(node);
-            }
-        }
+        console.log('Processed HTML with placeholders:', processedHtml);
         
-        // Replace text placeholders with upload buttons
-        textNodes.forEach(textNode => {
-            const text = textNode.nodeValue;
-            if (text.includes('[IMG_HERE]')) {
-                // Create a placeholder container
-                const placeholderContainer = document.createElement('div');
-                placeholderContainer.className = 'image-placeholder-container';
-                
-                // Create the image element
-                const imgElement = document.createElement('img');
-                imgElement.src = '[IMG_HERE]';
-                imgElement.alt = 'Image placeholder';
-                imgElement.style.maxWidth = '100%';
-                imgElement.style.height = 'auto';
-                const placeholderId = `img-placeholder-${Date.now()}-text-${Math.random().toString(36).substring(2, 10)}`;
-                imgElement.id = placeholderId;
-                
-                // Create upload button
-                const uploadButton = document.createElement('button');
-                uploadButton.className = 'image-upload-btn';
-                uploadButton.innerHTML = '<i class="fas fa-upload"></i> Upload Image';
-                uploadButton.dataset.target = placeholderId;
-                
-                // Create file input
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.accept = 'image/*';
-                fileInput.className = 'hidden';
-                fileInput.id = `file-${placeholderId}`;
-                
-                // Add event listeners
-                uploadButton.addEventListener('click', () => {
-                    fileInput.click();
-                });
-                
-                fileInput.addEventListener('change', (event) => {
-                    if (event.target.files && event.target.files[0]) {
-                        const file = event.target.files[0];
-                        const reader = new FileReader();
-                        
-                        reader.onload = (e) => {
-                            const targetImg = document.getElementById(placeholderId);
-                            if (targetImg) {
-                                targetImg.src = e.target.result;
-                                targetImg.classList.add('uploaded-image');
-                                
-                                // Hide the upload button after successful upload
-                                uploadButton.classList.add('hidden');
-                                
-                                // Add a change button
-                                const changeButton = document.createElement('button');
-                                changeButton.className = 'image-change-btn';
-                                changeButton.innerHTML = '<i class="fas fa-exchange-alt"></i> Change Image';
-                                changeButton.dataset.target = placeholderId;
-                                
-                                changeButton.addEventListener('click', () => {
-                                    fileInput.click();
-                                });
-                                
-                                // Replace upload button with change button
-                                uploadButton.parentNode.replaceChild(changeButton, uploadButton);
-                            }
-                        };
-                        
-                        reader.readAsDataURL(file);
-                    }
-                });
-                
-                // Add elements to the container
-                placeholderContainer.appendChild(imgElement);
-                placeholderContainer.appendChild(uploadButton);
-                placeholderContainer.appendChild(fileInput);
-                
-                // Replace the text node with our upload container
-                const newTextNode = document.createTextNode(text.replace('[IMG_HERE]', ''));
-                textNode.parentNode.replaceChild(newTextNode, textNode);
-                newTextNode.parentNode.insertBefore(placeholderContainer, newTextNode.nextSibling);
-                
-                // Increment placeholder count
-                placeholderCount++;
-            }
+        // Set the newsletter HTML content with our processed HTML
+        newsletterWrapper.innerHTML = processedHtml;
+        
+        // Find all our placeholder divs and replace them with upload buttons
+        const placeholderDivs = newsletterWrapper.querySelectorAll('.image-upload-placeholder[data-placeholder="true"]');
+        console.log('Found placeholder divs:', placeholderDivs.length);
+        
+        placeholderDivs.forEach(placeholderDiv => {
+            // Create a placeholder container
+            const placeholderContainer = document.createElement('div');
+            placeholderContainer.className = 'image-placeholder-container';
+            
+            // Create the image element
+            const imgElement = document.createElement('img');
+            imgElement.src = '[IMG_HERE]';
+            imgElement.alt = 'Image placeholder';
+            imgElement.style.maxWidth = '100%';
+            imgElement.style.height = 'auto';
+            const placeholderId = `img-placeholder-${Date.now()}-${placeholderCount}`;
+            imgElement.id = placeholderId;
+            
+            // Create upload button
+            const uploadButton = document.createElement('button');
+            uploadButton.className = 'image-upload-btn';
+            uploadButton.innerHTML = '<i class="fas fa-upload"></i> Upload Image';
+            uploadButton.dataset.target = placeholderId;
+            
+            // Create file input
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.className = 'hidden';
+            fileInput.id = `file-${placeholderId}`;
+            
+            // Add event listeners
+            uploadButton.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', (event) => {
+                if (event.target.files && event.target.files[0]) {
+                    const file = event.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = (e) => {
+                        const targetImg = document.getElementById(placeholderId);
+                        if (targetImg) {
+                            targetImg.src = e.target.result;
+                            targetImg.classList.add('uploaded-image');
+                            
+                            // Hide the upload button after successful upload
+                            uploadButton.classList.add('hidden');
+                            
+                            // Add a change button
+                            const changeButton = document.createElement('button');
+                            changeButton.className = 'image-change-btn';
+                            changeButton.innerHTML = '<i class="fas fa-exchange-alt"></i> Change Image';
+                            changeButton.dataset.target = placeholderId;
+                            
+                            changeButton.addEventListener('click', () => {
+                                fileInput.click();
+                            });
+                            
+                            // Replace upload button with change button
+                            uploadButton.parentNode.replaceChild(changeButton, uploadButton);
+                        }
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Add elements to the container
+            placeholderContainer.appendChild(imgElement);
+            placeholderContainer.appendChild(uploadButton);
+            placeholderContainer.appendChild(fileInput);
+            
+            // Replace the placeholder div with our upload container
+            placeholderDiv.parentNode.replaceChild(placeholderContainer, placeholderDiv);
+            
+            // Increment placeholder count
+            placeholderCount++;
         });
         
-        // Now find all image placeholders after text replacements
+        // Also find any image placeholders that might be in the HTML
         const imagePlaceholders = newsletterWrapper.querySelectorAll('img[src="[IMG_HERE]"], img[src=""]');
         
         imagePlaceholders.forEach(placeholder => {

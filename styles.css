@@ -285,6 +285,18 @@ header h1 {
     border: 2px dashed #ccc;
 }
 
+.image-upload-placeholder {
+    display: block;
+    padding: 20px;
+    margin: 15px 0;
+    background-color: #e9f5ff;
+    border: 2px dashed #4a6fa5;
+    border-radius: 8px;
+    text-align: center;
+    color: #4a6fa5;
+    font-weight: bold;
+}
+
 .image-placeholder-container img {
     max-width: 100%;
     height: auto;
