@@ -137,31 +137,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     console.log('Deactivating tab content:', content.id);
                     content.classList.remove('active');
-                    content.style.display = 'none';
-                }
-            });
-        });
-    });
-    
-    // Initialize tabs - make sure the active tab is visible
-    const initializeTabs = () => {
-        console.log('Initializing tabs');
-        const activeTabBtn = document.querySelector('.tab-btn.active');
-        if (activeTabBtn) {
-            console.log('Found active tab button:', activeTabBtn.getAttribute('data-tab'));
-            activeTabBtn.click();
-        } else {
-            console.log('No active tab button found, defaulting to chat');
             const chatTabBtn = document.querySelector('.tab-btn[data-tab="chat"]');
-            if (chatTabBtn) chatTabBtn.click();
-        }
-    };
-    
+            if (chatTabBtn) {
+                chatTabBtn.click();
+            }
+        });
+    }
     // Initialize tabs after DOM is loaded
     setTimeout(initializeTabs, 100);
     
     // Send message function
     function sendMessage(customMessage = null) {
+{{ ... }}
         const message = customMessage || userInput.value.trim();
         if (message === '') return;
         
@@ -662,6 +649,38 @@ document.addEventListener('DOMContentLoaded', () => {
             sendMessage();
         }
     });
+    
+    // Reset session button
+    const resetSessionBtn = document.getElementById('reset-session-btn');
+    if (resetSessionBtn) {
+        resetSessionBtn.addEventListener('click', () => {
+            // Confirm before resetting
+            if (confirm('Are you sure you want to start a new session? This will clear the current conversation.')) {
+                resetSession();
+            }
+        });
+    }
+    
+    // Settings form handling
+    if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', () => {
+            // Update settings object
+            settings.templateId = templateIdSelect.value;
+            settings.imageCount = parseInt(imageCountInput.value, 10);
+            
+            // Save to local storage
+            localStorage.setItem('peritus_newsletter_settings', JSON.stringify(settings));
+            
+            // Show confirmation
+            alert('Settings saved successfully!');
+            
+            // Switch to chat tab
+            const chatTabBtn = document.querySelector('.tab-btn[data-tab="chat"]');
+            if (chatTabBtn) {
+                chatTabBtn.click();
+            }
+        });
+    }
     
     // Text mode voice input
     if (voiceInputBtn) voiceInputBtn.addEventListener('click', startVoiceInput);
