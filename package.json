@@ -28,6 +28,8 @@
   },
   "homepage": "https://github.com/TheAITeamCR/peritus-newsletter#readme",
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "path": "^0.12.7",
+    "fs": "^0.0.1-security"
   }
 }
