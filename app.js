@@ -309,13 +309,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 // If there's a response from the webhook, display it
                 if (data && data.response) {
                     // Check if this is a newsletter HTML response
-                    if (data.response.includes('[IMG_HERE]') || data.response.includes('<html') || data.response.includes('<body')) {
+                    const isNewsletter = 
+                        data.response.includes('[IMG_HERE]') || 
+                        (data.response.includes('<html') && data.response.includes('<body')) ||
+                        (data.Status === 'Ready' && data.response.includes('<div')) ||
+                        data.response.includes('newsletter') ||
+                        data.response.includes('<h1>');
+                    
+                    if (isNewsletter) {
                         console.log('Newsletter HTML detected');
+                        
+                        // Remove any existing newsletter containers
+                        const existingNewsletters = messageContainer.querySelectorAll('.newsletter-container');
+                        existingNewsletters.forEach(newsletter => newsletter.remove());
+                        
                         // Handle newsletter HTML display
                         displayNewsletter(data.response, messageContainer);
                         
                         // Add a system message about the newsletter
-                        addMessageToChat('system', 'The newsletter has been generated! You can now review it and upload images.', messageContainer);
+                        addMessageToChat('system', 'The newsletter has been generated! You can now upload images where you see [IMG_HERE] placeholders.', messageContainer);
+                        
+                        // Add instructions for image upload
+                        addMessageToChat('system', 'Click the "Upload Image" buttons to add your images. When finished, you can download the complete newsletter using the button at the bottom.', messageContainer);
                     } else {
                         // Regular response - format and display
                         const formattedResponse = formatResponseText(data.response);
@@ -731,7 +746,39 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set the newsletter HTML content
         newsletterWrapper.innerHTML = newsletterHtml;
         
-        // Find all image placeholders and replace with upload buttons
+        // First, process any [IMG_HERE] text nodes and convert them to image elements
+        const textNodes = [];
+        const walker = document.createTreeWalker(
+            newsletterWrapper,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+        
+        let node;
+        while (node = walker.nextNode()) {
+            if (node.nodeValue.includes('[IMG_HERE]')) {
+                textNodes.push(node);
+            }
+        }
+        
+        // Replace text placeholders with image elements
+        textNodes.forEach(textNode => {
+            const text = textNode.nodeValue;
+            if (text.trim() === '[IMG_HERE]') {
+                // Create an image element
+                const imgElement = document.createElement('img');
+                imgElement.src = '[IMG_HERE]';
+                imgElement.alt = 'Image placeholder';
+                imgElement.style.maxWidth = '100%';
+                imgElement.style.height = 'auto';
+                
+                // Replace the text node with the image
+                textNode.parentNode.replaceChild(imgElement, textNode);
+            }
+        });
+        
+        // Now find all image placeholders after text replacements
         const imagePlaceholders = newsletterWrapper.querySelectorAll('img[src="[IMG_HERE]"], img[src=""]');
         let placeholderCount = 0;
         
@@ -840,6 +887,32 @@ document.addEventListener('DOMContentLoaded', () => {
         // Remove any buttons and inputs from the clone
         const buttons = newsletterClone.querySelectorAll('button, input, .newsletter-actions');
         buttons.forEach(button => button.remove());
+        
+        // Clean up any remaining image placeholders
+        const remainingPlaceholders = newsletterClone.querySelectorAll('img[src="[IMG_HERE]"], img[src=""]');
+        remainingPlaceholders.forEach(placeholder => {
+            // Replace with a note about missing image
+            const missingNote = document.createElement('div');
+            missingNote.style.padding = '15px';
+            missingNote.style.backgroundColor = '#f8f9fa';
+            missingNote.style.border = '1px dashed #ccc';
+            missingNote.style.borderRadius = '4px';
+            missingNote.style.textAlign = 'center';
+            missingNote.style.margin = '10px 0';
+            missingNote.innerHTML = '<em>Image placeholder - no image was uploaded</em>';
+            placeholder.parentNode.replaceChild(missingNote, placeholder);
+        });
+        
+        // Clean up any placeholder containers
+        const placeholderContainers = newsletterClone.querySelectorAll('.image-placeholder-container');
+        placeholderContainers.forEach(container => {
+            // Get the image if it exists
+            const image = container.querySelector('img.uploaded-image');
+            if (image) {
+                // Replace the container with just the image
+                container.parentNode.replaceChild(image, container);
+            }
+        });
         
         // Get the HTML content
         const htmlContent = newsletterClone.innerHTML;

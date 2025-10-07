@@ -292,12 +292,30 @@ header h1 {
     align-items: center;
     justify-content: center;
     margin-bottom: 10px;
+    position: relative;
+}
+
+.image-placeholder-container img[src="[IMG_HERE]"]::before {
+    content: "Image Placeholder";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #666;
+    font-style: italic;
+    font-size: 0.9rem;
 }
 
 .image-placeholder-container img.uploaded-image {
     border: none;
     background-color: transparent;
     min-height: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.image-placeholder-container img.uploaded-image:hover {
+    transform: scale(1.02);
 }
 
 .image-upload-btn, .image-change-btn {
