@@ -325,29 +325,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // If there's a response from the webhook, display it
                 if (data && data.response) {
-                    // Check if this is a newsletter with Status: Ready
+                    // Check if this is a newsletter
                     console.log('Response status:', data.Status);
                     console.log('Full response data:', JSON.stringify(data, null, 2));
                     
-                    // Always show the edit button if Status is Ready
-                    const isReadyStatus = data.Status === 'Ready';
-                    
-                    // Also check if it looks like a newsletter
+                    // Check if it contains [IMG_HERE] - this is the most reliable indicator
                     const containsImgHere = data.response.includes('[IMG_HERE]');
-                    const looksLikeNewsletter = 
-                        containsImgHere || 
-                        (data.response.includes('<html') && data.response.includes('<body')) ||
-                        data.response.includes('newsletter') ||
-                        data.response.includes('<h1>') ||
-                        (data.response.includes('<div') && data.response.includes('Peritus')) ||
-                        (data.response.match(/<h\d>[^<]+<\/h\d>/i) !== null);
+                    
+                    // Log this specifically - we'll use this as a trigger
+                    if (containsImgHere) {
+                        console.log('Newsletter HTML detected');
+                    }
+                    
+                    // Always show the edit button if Status is Ready or if it contains [IMG_HERE]
+                    const isReadyStatus = data.Status === 'Ready';
+                    const isNewsletter = isReadyStatus || containsImgHere;
                     
                     console.log('Status is Ready:', isReadyStatus);
-                    console.log('Looks like newsletter:', looksLikeNewsletter);
                     console.log('Contains [IMG_HERE]:', containsImgHere);
+                    console.log('Is newsletter:', isNewsletter);
                     
-                    // Show the edit button if Status is Ready OR it looks like a newsletter
-                    if (isReadyStatus || looksLikeNewsletter) {
+                    // Show the edit button if Status is Ready OR it contains [IMG_HERE]
+                    if (isNewsletter) {
                         console.log('Newsletter detected - showing edit button');
                         
                         // Store the newsletter HTML in localStorage
