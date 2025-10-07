@@ -121,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const tabName = button.getAttribute('data-tab');
+            console.log('Switching to tab:', tabName);
             
             // Update active tab button
             tabButtons.forEach(btn => btn.classList.remove('active'));
@@ -128,14 +129,36 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Show selected tab content
             tabContents.forEach(content => {
+                console.log('Checking tab content:', content.id);
                 if (content.id === tabName) {
+                    console.log('Activating tab content:', content.id);
                     content.classList.add('active');
+                    content.style.display = 'block';
                 } else {
+                    console.log('Deactivating tab content:', content.id);
                     content.classList.remove('active');
+                    content.style.display = 'none';
                 }
             });
         });
     });
+    
+    // Initialize tabs - make sure the active tab is visible
+    const initializeTabs = () => {
+        console.log('Initializing tabs');
+        const activeTabBtn = document.querySelector('.tab-btn.active');
+        if (activeTabBtn) {
+            console.log('Found active tab button:', activeTabBtn.getAttribute('data-tab'));
+            activeTabBtn.click();
+        } else {
+            console.log('No active tab button found, defaulting to chat');
+            const chatTabBtn = document.querySelector('.tab-btn[data-tab="chat"]');
+            if (chatTabBtn) chatTabBtn.click();
+        }
+    };
+    
+    // Initialize tabs after DOM is loaded
+    setTimeout(initializeTabs, 100);
     
     // Send message function
     function sendMessage(customMessage = null) {

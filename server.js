@@ -21,6 +21,26 @@ const MIME_TYPES = {
 const handleRequest = (req, res) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   
+  // Handle OPTIONS requests for CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400' // 24 hours
+    });
+    res.end();
+    return;
+  }
+  
+  // Limit URL length to avoid ENAMETOOLONG errors
+  if (req.url.length > 1000) {
+    console.error('URL too long:', req.url.substring(0, 100) + '...');
+    res.writeHead(414, { 'Content-Type': 'text/plain' });
+    res.end('URL too long');
+    return;
+  }
+  
   // Special handling for app.js
   if (req.url === '/app.js') {
     console.log('Serving app.js with application/javascript MIME type');
