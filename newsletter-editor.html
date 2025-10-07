@@ -258,19 +258,38 @@
             
             // Get newsletter HTML from localStorage or URL parameter
             function loadNewsletterHtml() {
+                console.log('Loading newsletter HTML...');
                 const urlParams = new URLSearchParams(window.location.search);
                 const encodedHtml = urlParams.get('html');
+                const useLocalStorage = urlParams.get('useLocalStorage');
                 
                 if (encodedHtml) {
+                    console.log('Found HTML in URL parameter, length:', encodedHtml.length);
                     try {
                         newsletterHtml = decodeURIComponent(encodedHtml);
+                        console.log('Decoded HTML length:', newsletterHtml.length);
                         renderNewsletter();
                     } catch (error) {
                         console.error('Error decoding HTML:', error);
-                        newsletterPreview.innerHTML = '<p>Error loading newsletter content.</p>';
+                        newsletterPreview.innerHTML = '<p>Error loading newsletter content: ' + error.message + '</p>';
+                    }
+                } else if (useLocalStorage === 'true') {
+                    console.log('Using localStorage to get HTML');
+                    // Try to get the HTML from localStorage
+                    const storedHtml = localStorage.getItem('newsletter_html_for_editor');
+                    if (storedHtml) {
+                        console.log('Found HTML in localStorage, length:', storedHtml.length);
+                        newsletterHtml = storedHtml;
+                        renderNewsletter();
+                        // Clear the localStorage to avoid using stale data in the future
+                        localStorage.removeItem('newsletter_html_for_editor');
+                    } else {
+                        console.error('No HTML found in localStorage');
+                        newsletterPreview.innerHTML = '<p>No newsletter content found in localStorage.</p>';
                     }
                 } else {
-                    newsletterPreview.innerHTML = '<p>No newsletter content provided.</p>';
+                    console.error('No HTML parameter or localStorage flag provided');
+                    newsletterPreview.innerHTML = '<p>No newsletter content provided. Make sure to open this page from the main application.</p>';
                 }
             }
             

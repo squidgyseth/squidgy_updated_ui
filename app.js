@@ -320,9 +320,27 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.setItem('newsletter_html', data.response);
                         
                         // Add a system message about the newsletter
-                        addMessageToChat('system', 'The newsletter is ready! Opening editor...', messageContainer);
+                        addMessageToChat('system', 'The newsletter is ready!', messageContainer);
+                        
+                        // Add a button to manually open the editor (in case automatic opening doesn't work)
+                        const editorBtn = document.createElement('button');
+                        editorBtn.className = 'open-editor-btn';
+                        editorBtn.innerHTML = '<i class="fas fa-edit"></i> Open Newsletter Editor';
+                        editorBtn.addEventListener('click', () => openNewsletterEditor(data.response));
+                        
+                        // Create a message div for the button
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = 'message system';
+                        
+                        const contentDiv = document.createElement('div');
+                        contentDiv.className = 'message-content';
+                        contentDiv.appendChild(editorBtn);
+                        
+                        messageDiv.appendChild(contentDiv);
+                        messageContainer.appendChild(messageDiv);
                         
                         // Automatically open the newsletter editor
+                        console.log('Attempting to automatically open newsletter editor...');
                         setTimeout(() => {
                             openNewsletterEditor(data.response);
                         }, 1000); // Small delay to ensure the message is displayed first
@@ -702,48 +720,83 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Function to open the newsletter editor in a popup window
     function openNewsletterEditor(newsletterHtml) {
-        // Encode the newsletter HTML to pass as a URL parameter
-        const encodedHtml = encodeURIComponent(newsletterHtml);
+        console.log('Opening newsletter editor with HTML length:', newsletterHtml.length);
         
-        // Open the editor in a new window
-        const editorWindow = window.open(
-            `newsletter-editor.html?html=${encodedHtml}`,
-            'NewsletterEditor',
-            'width=1200,height=800,resizable=yes,scrollbars=yes'
-        );
-        
-        // Check if the popup was blocked
-        if (!editorWindow || editorWindow.closed || typeof editorWindow.closed === 'undefined') {
-            alert('Popup blocked! Please allow popups for this site to use the newsletter editor.');
-        }
-        
-        // Listen for changes from the editor
-        window.addEventListener('storage', (event) => {
-            if (event.key === 'edited_newsletter_html' && event.newValue) {
-                // Get the edited newsletter HTML
-                const editedHtml = event.newValue;
+        try {
+            // Encode the newsletter HTML to pass as a URL parameter
+            const encodedHtml = encodeURIComponent(newsletterHtml);
+            console.log('Encoded HTML length:', encodedHtml.length);
+            
+            // Check if the encoded HTML is too large for a URL parameter
+            if (encodedHtml.length > 100000) {
+                console.warn('Encoded HTML is very large, using localStorage instead of URL parameter');
+                // Store in localStorage instead
+                localStorage.setItem('newsletter_html_for_editor', newsletterHtml);
                 
-                // Display a message about the saved newsletter
-                addMessageToChat('system', 'Newsletter has been edited and saved!', chatMessages);
+                // Open the editor without the HTML parameter
+                const editorWindow = window.open(
+                    'newsletter-editor.html?useLocalStorage=true',
+                    'NewsletterEditor',
+                    'width=1200,height=800,resizable=yes,scrollbars=yes'
+                );
                 
-                // Add a download button
-                const downloadBtn = document.createElement('button');
-                downloadBtn.className = 'download-newsletter-btn';
-                downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download Newsletter';
-                downloadBtn.addEventListener('click', () => downloadNewsletter(editedHtml));
+                // Check if the popup was blocked
+                if (!editorWindow || editorWindow.closed || typeof editorWindow.closed === 'undefined') {
+                    console.error('Popup was blocked!');
+                    alert('Popup blocked! Please allow popups for this site to use the newsletter editor.');
+                } else {
+                    console.log('Editor window opened successfully using localStorage');
+                }
+            } else {
+                // Open the editor with the HTML as a URL parameter
+                const editorWindow = window.open(
+                    `newsletter-editor.html?html=${encodedHtml}`,
+                    'NewsletterEditor',
+                    'width=1200,height=800,resizable=yes,scrollbars=yes'
+                );
                 
-                // Create a message div for the button
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message system';
-                
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'message-content';
-                contentDiv.appendChild(downloadBtn);
-                
-                messageDiv.appendChild(contentDiv);
-                chatMessages.appendChild(messageDiv);
+                // Check if the popup was blocked
+                if (!editorWindow || editorWindow.closed || typeof editorWindow.closed === 'undefined') {
+                    console.error('Popup was blocked!');
+                    alert('Popup blocked! Please allow popups for this site to use the newsletter editor.');
+                } else {
+                    console.log('Editor window opened successfully using URL parameter');
+                }
             }
-        });
+            
+            // Listen for changes from the editor
+            window.addEventListener('storage', (event) => {
+                if (event.key === 'edited_newsletter_html' && event.newValue) {
+                    console.log('Received edited newsletter from editor');
+                    
+                    // Get the edited newsletter HTML
+                    const editedHtml = event.newValue;
+                    
+                    // Display a message about the saved newsletter
+                    addMessageToChat('system', 'Newsletter has been edited and saved!', chatMessages);
+                    
+                    // Add a download button
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'download-newsletter-btn';
+                    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download Newsletter';
+                    downloadBtn.addEventListener('click', () => downloadNewsletter(editedHtml));
+                    
+                    // Create a message div for the button
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message system';
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'message-content';
+                    contentDiv.appendChild(downloadBtn);
+                    
+                    messageDiv.appendChild(contentDiv);
+                    chatMessages.appendChild(messageDiv);
+                }
+            });
+        } catch (error) {
+            console.error('Error opening newsletter editor:', error);
+            alert('Error opening newsletter editor: ' + error.message);
+        }
     }
     
     // Function to download the newsletter as HTML
