@@ -308,19 +308,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // If there's a response from the webhook, display it
                 if (data && data.response) {
-                    // Check if this response has Status: Ready, which means it's a newsletter
+                    // Check if this is a newsletter with Status: Ready
                     console.log('Response status:', data.Status);
+                    console.log('Full response data:', JSON.stringify(data, null, 2));
                     
-                    // Only treat as a newsletter when Status is Ready
-                    if (data.Status === 'Ready') {
-                        console.log('Newsletter received - Status is Ready');
-                        console.log('Contains [IMG_HERE]:', data.response.includes('[IMG_HERE]'));
+                    // Always show the edit button if Status is Ready
+                    const isReadyStatus = data.Status === 'Ready';
+                    
+                    // Also check if it looks like a newsletter
+                    const containsImgHere = data.response.includes('[IMG_HERE]');
+                    const looksLikeNewsletter = 
+                        containsImgHere || 
+                        (data.response.includes('<html') && data.response.includes('<body')) ||
+                        data.response.includes('newsletter') ||
+                        data.response.includes('<h1>') ||
+                        (data.response.includes('<div') && data.response.includes('Peritus')) ||
+                        (data.response.match(/<h\d>[^<]+<\/h\d>/i) !== null);
+                    
+                    console.log('Status is Ready:', isReadyStatus);
+                    console.log('Looks like newsletter:', looksLikeNewsletter);
+                    console.log('Contains [IMG_HERE]:', containsImgHere);
+                    
+                    // Show the edit button if Status is Ready OR it looks like a newsletter
+                    if (isReadyStatus || looksLikeNewsletter) {
+                        console.log('Newsletter detected - showing edit button');
                         
                         // Store the newsletter HTML in localStorage
                         localStorage.setItem('newsletter_html', data.response);
-                        
-                        // Add a system message about the newsletter
-                        addMessageToChat('system', 'The newsletter is ready! Click the button below to edit it.', messageContainer);
                         
                         // Create a prominent button container
                         const buttonContainer = document.createElement('div');
@@ -341,7 +355,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         const contentDiv = document.createElement('div');
                         contentDiv.className = 'message-content';
-                        contentDiv.innerHTML = '<h3>Newsletter Ready!</h3><p>Your newsletter has been generated and is ready to edit.</p>';
+                        
+                        // Different message based on Status
+                        if (isReadyStatus) {
+                            // Special handling for Status: Ready
+                            addMessageToChat('system', 'The newsletter is ready! Click the button below to edit it.', messageContainer);
+                            contentDiv.innerHTML = '<h3>Newsletter Ready!</h3><p>Your final newsletter has been generated and is ready to edit.</p>';
+                        } else {
+                            // For other newsletter-like content
+                            addMessageToChat('system', 'Newsletter content detected! Click the button below to edit it.', messageContainer);
+                            contentDiv.innerHTML = '<h3>Newsletter Content Detected!</h3><p>Click the button below to open the newsletter editor.</p>';
+                        }
+                        
                         contentDiv.appendChild(buttonContainer);
                         
                         messageDiv.appendChild(contentDiv);

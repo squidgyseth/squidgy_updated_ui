@@ -311,10 +311,21 @@
                 // First, do a direct string replacement in the HTML
                 // This ensures we catch all instances regardless of DOM structure
                 const html = newsletterPreview.innerHTML;
-                const processedHtml = html.replace(/\[IMG_HERE\]/g, (match) => {
-                    const placeholderId = `placeholder-${index++}`;
-                    return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
-                });
+                
+                // Try different formats of [IMG_HERE] that might appear
+                const processedHtml = html
+                    .replace(/\[IMG_HERE\]/g, (match) => {
+                        const placeholderId = `placeholder-${index++}`;
+                        return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
+                    })
+                    .replace(/\[img_here\]/gi, (match) => {
+                        const placeholderId = `placeholder-${index++}`;
+                        return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
+                    })
+                    .replace(/\[image\]/gi, (match) => {
+                        const placeholderId = `placeholder-${index++}`;
+                        return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
+                    });
                 
                 // Update the HTML with our processed version
                 newsletterPreview.innerHTML = processedHtml;
@@ -324,6 +335,22 @@
                 // Now find all the placeholder divs we created
                 const placeholderElements = newsletterPreview.querySelectorAll('.image-placeholder[data-placeholder="true"]');
                 console.log('Found placeholder elements:', placeholderElements.length);
+                
+                // If no placeholders were found, try to find img tags without src
+                if (placeholderElements.length === 0) {
+                    console.log('No placeholders found, looking for empty img tags');
+                    const emptyImgTags = newsletterPreview.querySelectorAll('img:not([src]), img[src=""]');
+                    
+                    emptyImgTags.forEach((img) => {
+                        const placeholderId = `placeholder-${index++}`;
+                        img.id = placeholderId;
+                        img.dataset.placeholder = true;
+                        img.classList.add('image-placeholder');
+                        placeholderElements.push(img);
+                    });
+                    
+                    console.log('Found empty img tags:', emptyImgTags.length);
+                }
                 
                 // Add them to our placeholders array
                 placeholderElements.forEach((element, i) => {
