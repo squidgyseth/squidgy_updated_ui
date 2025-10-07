@@ -372,7 +372,7 @@ header h1 {
     border-top: 1px solid #eee;
 }
 
-.download-newsletter-btn {
+.open-editor-btn, .download-newsletter-btn {
     background-color: #4a6fa5;
     color: white;
     border: none;
@@ -386,8 +386,33 @@ header h1 {
     transition: background-color 0.2s;
 }
 
-.download-newsletter-btn:hover {
+.open-editor-btn:hover, .download-newsletter-btn:hover {
     background-color: #3a5a84;
+}
+
+.newsletter-preview {
+    margin-top: 15px;
+}
+
+.newsletter-thumbnail {
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 10px 0;
+    max-height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+.newsletter-thumbnail::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(transparent, #f9f9f9);
 }
 
 .chat-input-container {

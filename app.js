@@ -327,18 +327,41 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log('Newsletter HTML detected');
                         console.log('Contains [IMG_HERE]:', data.response.includes('[IMG_HERE]'));
                         
-                        // Remove any existing newsletter containers
-                        const existingNewsletters = messageContainer.querySelectorAll('.newsletter-container');
-                        existingNewsletters.forEach(newsletter => newsletter.remove());
-                        
-                        // Handle newsletter HTML display
-                        displayNewsletter(data.response, messageContainer);
+                        // Store the newsletter HTML in localStorage
+                        localStorage.setItem('newsletter_html', data.response);
                         
                         // Add a system message about the newsletter
-                        addMessageToChat('system', 'The newsletter has been generated! You can now upload images where you see [IMG_HERE] placeholders.', messageContainer);
+                        addMessageToChat('system', 'The newsletter has been generated!', messageContainer);
                         
-                        // Add instructions for image upload
-                        addMessageToChat('system', 'Click the "Upload Image" buttons to add your images. When finished, you can download the complete newsletter using the button at the bottom.', messageContainer);
+                        // Add a button to open the newsletter editor
+                        const editorBtn = document.createElement('button');
+                        editorBtn.className = 'open-editor-btn';
+                        editorBtn.innerHTML = '<i class="fas fa-edit"></i> Open Newsletter Editor';
+                        editorBtn.addEventListener('click', () => openNewsletterEditor(data.response));
+                        
+                        // Create a message div for the button
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = 'message system';
+                        
+                        const contentDiv = document.createElement('div');
+                        contentDiv.className = 'message-content';
+                        contentDiv.appendChild(editorBtn);
+                        
+                        messageDiv.appendChild(contentDiv);
+                        messageContainer.appendChild(messageDiv);
+                        
+                        // Also show a preview of the newsletter
+                        const previewDiv = document.createElement('div');
+                        previewDiv.className = 'message assistant newsletter-preview';
+                        
+                        const previewContent = document.createElement('div');
+                        previewContent.className = 'message-content';
+                        previewContent.innerHTML = `<h3>Newsletter Preview</h3>
+                        <div class="newsletter-thumbnail">${data.response.substring(0, 300)}...</div>
+                        <p>Click the button above to edit the newsletter and add images.</p>`;
+                        
+                        previewDiv.appendChild(previewContent);
+                        messageContainer.appendChild(previewDiv);
                     } else {
                         // Regular response - format and display
                         const formattedResponse = formatResponseText(data.response);
@@ -713,6 +736,100 @@ document.addEventListener('DOMContentLoaded', () => {
             speechSynthesis.cancel();
         }
     });
+    
+    // Function to open the newsletter editor in a popup window
+    function openNewsletterEditor(newsletterHtml) {
+        // Encode the newsletter HTML to pass as a URL parameter
+        const encodedHtml = encodeURIComponent(newsletterHtml);
+        
+        // Open the editor in a new window
+        const editorWindow = window.open(
+            `newsletter-editor.html?html=${encodedHtml}`,
+            'NewsletterEditor',
+            'width=1200,height=800,resizable=yes,scrollbars=yes'
+        );
+        
+        // Check if the popup was blocked
+        if (!editorWindow || editorWindow.closed || typeof editorWindow.closed === 'undefined') {
+            alert('Popup blocked! Please allow popups for this site to use the newsletter editor.');
+        }
+        
+        // Listen for changes from the editor
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'edited_newsletter_html' && event.newValue) {
+                // Get the edited newsletter HTML
+                const editedHtml = event.newValue;
+                
+                // Display a message about the saved newsletter
+                addMessageToChat('system', 'Newsletter has been edited and saved!', chatMessages);
+                
+                // Add a download button
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'download-newsletter-btn';
+                downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download Newsletter';
+                downloadBtn.addEventListener('click', () => downloadNewsletter(editedHtml));
+                
+                // Create a message div for the button
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message system';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.appendChild(downloadBtn);
+                
+                messageDiv.appendChild(contentDiv);
+                chatMessages.appendChild(messageDiv);
+            }
+        });
+    }
+    
+    // Function to download the newsletter as HTML
+    function downloadNewsletter(newsletterHtml) {
+        // Create a full HTML document
+        const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peritus Newsletter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        h1, h2, h3 {
+            color: #166088;
+        }
+    </style>
+</head>
+<body>
+    ${newsletterHtml}
+</body>
+</html>`;
+        
+        // Create a blob and download link
+        const blob = new Blob([fullHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `peritus-newsletter-${new Date().toISOString().slice(0, 10)}.html`;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Clean up
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+    }
     
     // Function to generate a unique session ID
     function generateSessionId() {

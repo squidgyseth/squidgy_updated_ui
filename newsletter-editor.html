@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peritus Newsletter Editor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #166088;
+            --accent-color: #4fc3f7;
+            --background-color: #f5f7fa;
+            --text-color: #333;
+            --light-text: #666;
+            --border-color: #ddd;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        
+        header h1 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+        
+        .editor-container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 150px);
+        }
+        
+        .newsletter-preview {
+            flex: 1;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .editor-controls {
+            width: 300px;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+        }
+        
+        .image-placeholder {
+            background-color: #e9f5ff;
+            border: 2px dashed #4a6fa5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .image-placeholder-label {
+            display: block;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+        
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.2s;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .btn-success {
+            background-color: #4CAF50;
+        }
+        
+        .btn-success:hover {
+            background-color: #388e3c;
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .placeholder-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .placeholder-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+        
+        .placeholder-item:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .placeholder-item.active {
+            background-color: #e3f2fd;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Peritus Newsletter Editor</h1>
+            <div class="action-buttons">
+                <button id="download-btn" class="btn">
+                    <i class="fas fa-download"></i> Download Newsletter
+                </button>
+                <button id="close-btn" class="btn">
+                    <i class="fas fa-times"></i> Close Editor
+                </button>
+            </div>
+        </header>
+        
+        <div class="editor-container">
+            <div class="newsletter-preview" id="newsletter-preview">
+                <!-- Newsletter content will be loaded here -->
+                <div class="loading">Loading newsletter content...</div>
+            </div>
+            
+            <div class="editor-controls">
+                <div class="control-group">
+                    <h3>Image Placeholders</h3>
+                    <div id="placeholder-list" class="placeholder-list">
+                        <!-- Placeholder items will be generated here -->
+                        <div class="placeholder-item">No placeholders found</div>
+                    </div>
+                </div>
+                
+                <div class="control-group" id="upload-controls">
+                    <h3>Upload Image</h3>
+                    <div id="selected-placeholder" class="image-placeholder hidden">
+                        <span class="image-placeholder-label">Selected: <span id="placeholder-name">None</span></span>
+                        <input type="file" id="image-upload" accept="image/*" class="hidden">
+                        <button id="select-image-btn" class="btn btn-block">
+                            <i class="fas fa-upload"></i> Select Image
+                        </button>
+                        <div id="image-preview-container" class="hidden">
+                            <img id="image-preview" class="image-preview" src="" alt="Preview">
+                            <button id="change-image-btn" class="btn btn-block">
+                                <i class="fas fa-exchange-alt"></i> Change Image
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <button id="save-newsletter-btn" class="btn btn-success btn-block">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const newsletterPreview = document.getElementById('newsletter-preview');
+            const placeholderList = document.getElementById('placeholder-list');
+            const selectedPlaceholder = document.getElementById('selected-placeholder');
+            const placeholderName = document.getElementById('placeholder-name');
+            const imageUpload = document.getElementById('image-upload');
+            const selectImageBtn = document.getElementById('select-image-btn');
+            const imagePreviewContainer = document.getElementById('image-preview-container');
+            const imagePreview = document.getElementById('image-preview');
+            const changeImageBtn = document.getElementById('change-image-btn');
+            const saveNewsletterBtn = document.getElementById('save-newsletter-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const closeBtn = document.getElementById('close-btn');
+            
+            // State
+            let newsletterHtml = '';
+            let selectedPlaceholderId = null;
+            let placeholders = [];
+            let uploadedImages = {};
+            
+            // Get newsletter HTML from localStorage or URL parameter
+            function loadNewsletterHtml() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const encodedHtml = urlParams.get('html');
+                
+                if (encodedHtml) {
+                    try {
+                        newsletterHtml = decodeURIComponent(encodedHtml);
+                        renderNewsletter();
+                    } catch (error) {
+                        console.error('Error decoding HTML:', error);
+                        newsletterPreview.innerHTML = '<p>Error loading newsletter content.</p>';
+                    }
+                } else {
+                    newsletterPreview.innerHTML = '<p>No newsletter content provided.</p>';
+                }
+            }
+            
+            // Render the newsletter content
+            function renderNewsletter() {
+                // Set the HTML content
+                newsletterPreview.innerHTML = newsletterHtml;
+                
+                // Find all [IMG_HERE] placeholders
+                findPlaceholders();
+            }
+            
+            // Find all [IMG_HERE] placeholders in the newsletter
+            function findPlaceholders() {
+                placeholders = [];
+                
+                // First check for text nodes containing [IMG_HERE]
+                const textNodes = [];
+                const walker = document.createTreeWalker(
+                    newsletterPreview,
+                    NodeFilter.SHOW_TEXT,
+                    null,
+                    false
+                );
+                
+                let node;
+                let index = 0;
+                while (node = walker.nextNode()) {
+                    if (node.nodeValue.includes('[IMG_HERE]')) {
+                        const placeholderId = `placeholder-${index++}`;
+                        
+                        // Create a span to replace the text node
+                        const span = document.createElement('span');
+                        span.className = 'image-placeholder';
+                        span.id = placeholderId;
+                        span.dataset.placeholder = true;
+                        span.innerHTML = '[IMG_HERE]';
+                        
+                        // Replace the text node with our span
+                        node.parentNode.replaceChild(span, node);
+                        
+                        // Add to placeholders array
+                        placeholders.push({
+                            id: placeholderId,
+                            element: span,
+                            name: `Placeholder ${index}`
+                        });
+                    }
+                }
+                
+                // Update the placeholder list
+                updatePlaceholderList();
+            }
+            
+            // Update the placeholder list in the sidebar
+            function updatePlaceholderList() {
+                placeholderList.innerHTML = '';
+                
+                if (placeholders.length === 0) {
+                    placeholderList.innerHTML = '<div class="placeholder-item">No placeholders found</div>';
+                    return;
+                }
+                
+                placeholders.forEach(placeholder => {
+                    const item = document.createElement('div');
+                    item.className = 'placeholder-item';
+                    item.dataset.id = placeholder.id;
+                    item.textContent = placeholder.name;
+                    
+                    item.addEventListener('click', () => {
+                        selectPlaceholder(placeholder.id);
+                    });
+                    
+                    placeholderList.appendChild(item);
+                });
+            }
+            
+            // Select a placeholder for image upload
+            function selectPlaceholder(id) {
+                selectedPlaceholderId = id;
+                
+                // Update UI
+                document.querySelectorAll('.placeholder-item').forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.id === id) {
+                        item.classList.add('active');
+                    }
+                });
+                
+                const placeholder = placeholders.find(p => p.id === id);
+                if (placeholder) {
+                    placeholderName.textContent = placeholder.name;
+                    selectedPlaceholder.classList.remove('hidden');
+                    
+                    // Check if we already have an image for this placeholder
+                    if (uploadedImages[id]) {
+                        imagePreview.src = uploadedImages[id];
+                        imagePreviewContainer.classList.remove('hidden');
+                        selectImageBtn.classList.add('hidden');
+                    } else {
+                        imagePreviewContainer.classList.add('hidden');
+                        selectImageBtn.classList.remove('hidden');
+                    }
+                }
+            }
+            
+            // Event Listeners
+            selectImageBtn.addEventListener('click', () => {
+                imageUpload.click();
+            });
+            
+            changeImageBtn.addEventListener('click', () => {
+                imageUpload.click();
+            });
+            
+            imageUpload.addEventListener('change', (event) => {
+                if (event.target.files && event.target.files[0]) {
+                    const file = event.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = (e) => {
+                        const imageData = e.target.result;
+                        
+                        // Store the image
+                        uploadedImages[selectedPlaceholderId] = imageData;
+                        
+                        // Update preview
+                        imagePreview.src = imageData;
+                        imagePreviewContainer.classList.remove('hidden');
+                        selectImageBtn.classList.add('hidden');
+                        
+                        // Update the placeholder in the newsletter
+                        updatePlaceholderImage(selectedPlaceholderId, imageData);
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Update a placeholder with an image
+            function updatePlaceholderImage(id, imageData) {
+                const placeholder = document.getElementById(id);
+                if (placeholder) {
+                    // Create an image element
+                    const img = document.createElement('img');
+                    img.src = imageData;
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    
+                    // Replace the placeholder with the image
+                    placeholder.innerHTML = '';
+                    placeholder.appendChild(img);
+                    placeholder.style.background = 'none';
+                    placeholder.style.border = 'none';
+                    placeholder.style.padding = '0';
+                }
+            }
+            
+            // Save the newsletter with all images
+            saveNewsletterBtn.addEventListener('click', () => {
+                // Get the current HTML with all images
+                const updatedHtml = newsletterPreview.innerHTML;
+                
+                // Store in localStorage for the main app to retrieve
+                localStorage.setItem('edited_newsletter_html', updatedHtml);
+                
+                // Notify the user
+                alert('Newsletter saved! You can now close this editor.');
+            });
+            
+            // Download the newsletter as HTML
+            downloadBtn.addEventListener('click', () => {
+                // Get the current HTML
+                const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peritus Newsletter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        h1, h2, h3 {
+            color: #166088;
+        }
+    </style>
+</head>
+<body>
+    ${newsletterPreview.innerHTML}
+</body>
+</html>`;
+                
+                // Create a blob and download
+                const blob = new Blob([html], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `peritus-newsletter-${new Date().toISOString().slice(0, 10)}.html`;
+                document.body.appendChild(a);
+                a.click();
+                
+                // Clean up
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+            });
+            
+            // Close the editor
+            closeBtn.addEventListener('click', () => {
+                // Check if there are unsaved changes
+                if (Object.keys(uploadedImages).length > 0) {
+                    const confirm = window.confirm('Do you want to save your changes before closing?');
+                    if (confirm) {
+                        // Save changes first
+                        saveNewsletterBtn.click();
+                    }
+                }
+                
+                // Close the window or redirect back
+                if (window.opener) {
+                    window.close();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
+            
+            // Initialize
+            loadNewsletterHtml();
+        });
+    </script>
+</body>
+</html>
