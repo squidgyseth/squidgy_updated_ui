@@ -334,7 +334,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log('Newsletter detected - showing edit button');
                         
                         // Store the newsletter HTML in localStorage
-                        localStorage.setItem('newsletter_html', data.response);
+                        console.log('Storing newsletter HTML in localStorage, length:', data.response.length);
+                        try {
+                            localStorage.setItem('newsletter_html', data.response);
+                            console.log('Successfully stored newsletter HTML in localStorage');
+                            
+                            // Verify storage
+                            const storedHtml = localStorage.getItem('newsletter_html');
+                            if (storedHtml) {
+                                console.log('Verified storage: HTML retrieved from localStorage, length:', storedHtml.length);
+                            } else {
+                                console.error('Failed to verify storage: Could not retrieve HTML from localStorage');
+                            }
+                        } catch (error) {
+                            console.error('Error storing newsletter HTML in localStorage:', error);
+                        }
+                        
+                        // Also store in a global variable for direct access
+                        window.latestNewsletterHtml = data.response;
+                        console.log('Also stored newsletter HTML in global variable window.latestNewsletterHtml');
                         
                         // Create a prominent button container
                         const buttonContainer = document.createElement('div');
@@ -346,8 +364,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         editorBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Newsletter';
                         editorBtn.addEventListener('click', () => openNewsletterEditor(data.response));
                         
-                        // Add the button to the container
+                        // Create a backup button that uses stored HTML
+                        const backupBtn = document.createElement('button');
+                        backupBtn.className = 'open-editor-btn';
+                        backupBtn.innerHTML = '<i class="fas fa-file-alt"></i> Open Editor (Backup)';
+                        backupBtn.addEventListener('click', () => openNewsletterEditor());
+                        
+                        // Add the buttons to the container
                         buttonContainer.appendChild(editorBtn);
+                        buttonContainer.appendChild(document.createTextNode(' '));
+                        buttonContainer.appendChild(backupBtn);
                         
                         // Create a message div for the button
                         const messageDiv = document.createElement('div');
@@ -752,6 +778,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Function to open the newsletter editor in a popup window
     function openNewsletterEditor(newsletterHtml) {
+        console.log('Opening newsletter editor...');
+        
+        // Use the provided HTML, or fallback to stored HTML if available
+        if (!newsletterHtml || newsletterHtml.length === 0) {
+            console.log('No HTML provided to openNewsletterEditor, checking localStorage...');
+            newsletterHtml = localStorage.getItem('newsletter_html');
+            
+            if (!newsletterHtml && window.latestNewsletterHtml) {
+                console.log('Using HTML from global variable');
+                newsletterHtml = window.latestNewsletterHtml;
+            }
+            
+            if (!newsletterHtml) {
+                console.error('No newsletter HTML found in localStorage or global variable');
+                alert('No newsletter HTML found. Please try again.');
+                return;
+            }
+        }
+        
         console.log('Opening newsletter editor with HTML length:', newsletterHtml.length);
         
         try {
