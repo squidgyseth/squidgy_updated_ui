@@ -308,10 +308,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // If there's a response from the webhook, display it
                 if (data && data.response) {
+                    // Always treat the response as a newsletter if it contains [IMG_HERE]
+                    const containsImgHere = data.response.includes('[IMG_HERE]');
+                    
                     // Check if this is a newsletter HTML response
                     // Look for specific patterns that indicate this is a newsletter
                     const isNewsletter = 
-                        data.response.includes('[IMG_HERE]') || 
+                        containsImgHere || 
                         (data.response.includes('<html') && data.response.includes('<body')) ||
                         (data.Status === 'Ready' && data.response.includes('<div')) ||
                         data.response.includes('newsletter') ||
@@ -319,6 +322,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Additional checks for newsletter-like content
                         (data.response.includes('<div') && data.response.includes('Peritus')) ||
                         (data.response.match(/<h\d>[^<]+<\/h\d>/i) !== null);
+                        
+                    console.log('Contains [IMG_HERE]:', containsImgHere);
                     
                     console.log('Checking if response is a newsletter:', data.response.substring(0, 200) + '...');
                     console.log('Newsletter detection result:', isNewsletter);

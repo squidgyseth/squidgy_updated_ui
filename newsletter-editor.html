@@ -89,6 +89,12 @@
             border-radius: 4px;
             text-align: center;
             position: relative;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #4a6fa5;
         }
         
         .image-placeholder-label {
@@ -279,41 +285,37 @@
             
             // Find all [IMG_HERE] placeholders in the newsletter
             function findPlaceholders() {
+                console.log('Finding placeholders in:', newsletterPreview.innerHTML);
                 placeholders = [];
-                
-                // First check for text nodes containing [IMG_HERE]
-                const textNodes = [];
-                const walker = document.createTreeWalker(
-                    newsletterPreview,
-                    NodeFilter.SHOW_TEXT,
-                    null,
-                    false
-                );
-                
-                let node;
                 let index = 0;
-                while (node = walker.nextNode()) {
-                    if (node.nodeValue.includes('[IMG_HERE]')) {
-                        const placeholderId = `placeholder-${index++}`;
-                        
-                        // Create a span to replace the text node
-                        const span = document.createElement('span');
-                        span.className = 'image-placeholder';
-                        span.id = placeholderId;
-                        span.dataset.placeholder = true;
-                        span.innerHTML = '[IMG_HERE]';
-                        
-                        // Replace the text node with our span
-                        node.parentNode.replaceChild(span, node);
-                        
-                        // Add to placeholders array
-                        placeholders.push({
-                            id: placeholderId,
-                            element: span,
-                            name: `Placeholder ${index}`
-                        });
-                    }
-                }
+                
+                // First, do a direct string replacement in the HTML
+                // This ensures we catch all instances regardless of DOM structure
+                const html = newsletterPreview.innerHTML;
+                const processedHtml = html.replace(/\[IMG_HERE\]/g, (match) => {
+                    const placeholderId = `placeholder-${index++}`;
+                    return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
+                });
+                
+                // Update the HTML with our processed version
+                newsletterPreview.innerHTML = processedHtml;
+                
+                console.log('Processed HTML:', newsletterPreview.innerHTML);
+                
+                // Now find all the placeholder divs we created
+                const placeholderElements = newsletterPreview.querySelectorAll('.image-placeholder[data-placeholder="true"]');
+                console.log('Found placeholder elements:', placeholderElements.length);
+                
+                // Add them to our placeholders array
+                placeholderElements.forEach((element, i) => {
+                    placeholders.push({
+                        id: element.id,
+                        element: element,
+                        name: `Placeholder ${i + 1}`
+                    });
+                });
+                
+                console.log('Placeholders array:', placeholders);
                 
                 // Update the placeholder list
                 updatePlaceholderList();
@@ -406,13 +408,18 @@
             
             // Update a placeholder with an image
             function updatePlaceholderImage(id, imageData) {
+                console.log('Updating placeholder image for ID:', id);
                 const placeholder = document.getElementById(id);
                 if (placeholder) {
+                    console.log('Found placeholder element:', placeholder);
+                    
                     // Create an image element
                     const img = document.createElement('img');
                     img.src = imageData;
                     img.style.maxWidth = '100%';
                     img.style.height = 'auto';
+                    img.style.display = 'block';
+                    img.style.margin = '0 auto';
                     
                     // Replace the placeholder with the image
                     placeholder.innerHTML = '';
@@ -420,6 +427,10 @@
                     placeholder.style.background = 'none';
                     placeholder.style.border = 'none';
                     placeholder.style.padding = '0';
+                    
+                    console.log('Placeholder updated with image');
+                } else {
+                    console.error('Placeholder element not found for ID:', id);
                 }
             }
             
