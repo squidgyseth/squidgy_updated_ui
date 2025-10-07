@@ -256,40 +256,27 @@
             let placeholders = [];
             let uploadedImages = {};
             
-            // Get newsletter HTML from localStorage or URL parameter
+            // Get newsletter HTML from localStorage
             function loadNewsletterHtml() {
-                console.log('Loading newsletter HTML...');
-                const urlParams = new URLSearchParams(window.location.search);
-                const encodedHtml = urlParams.get('html');
-                const useLocalStorage = urlParams.get('useLocalStorage');
+                console.log('Loading newsletter HTML from localStorage...');
                 
-                if (encodedHtml) {
-                    console.log('Found HTML in URL parameter, length:', encodedHtml.length);
-                    try {
-                        newsletterHtml = decodeURIComponent(encodedHtml);
-                        console.log('Decoded HTML length:', newsletterHtml.length);
-                        renderNewsletter();
-                    } catch (error) {
-                        console.error('Error decoding HTML:', error);
-                        newsletterPreview.innerHTML = '<p>Error loading newsletter content: ' + error.message + '</p>';
-                    }
-                } else if (useLocalStorage === 'true') {
-                    console.log('Using localStorage to get HTML');
-                    // Try to get the HTML from localStorage
-                    const storedHtml = localStorage.getItem('newsletter_html_for_editor');
-                    if (storedHtml) {
-                        console.log('Found HTML in localStorage, length:', storedHtml.length);
-                        newsletterHtml = storedHtml;
-                        renderNewsletter();
-                        // Clear the localStorage to avoid using stale data in the future
-                        localStorage.removeItem('newsletter_html_for_editor');
-                    } else {
-                        console.error('No HTML found in localStorage');
-                        newsletterPreview.innerHTML = '<p>No newsletter content found in localStorage.</p>';
-                    }
+                // Always use localStorage for HTML content
+                const storedHtml = localStorage.getItem('newsletter_html_for_editor') || localStorage.getItem('newsletter_html');
+                
+                if (storedHtml) {
+                    console.log('Found HTML in localStorage, length:', storedHtml.length);
+                    newsletterHtml = storedHtml;
+                    renderNewsletter();
                 } else {
-                    console.error('No HTML parameter or localStorage flag provided');
-                    newsletterPreview.innerHTML = '<p>No newsletter content provided. Make sure to open this page from the main application.</p>';
+                    console.error('No HTML found in localStorage');
+                    newsletterPreview.innerHTML = `
+                        <div style="padding: 20px; text-align: center;">
+                            <h2>No Newsletter Content Found</h2>
+                            <p>Please return to the main application and try again.</p>
+                            <p>If you're seeing this message, it means no newsletter HTML was found in localStorage.</p>
+                            <button onclick="window.close()" style="padding: 10px 20px; background-color: #4a6fa5; color: white; border: none; border-radius: 4px; cursor: pointer;">Close Editor</button>
+                        </div>
+                    `;
                 }
             }
             
