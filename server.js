@@ -32,7 +32,59 @@ const handleRequest = (req, res) => {
         res.end('Error loading app.js');
         return;
       }
-      res.writeHead(200, { 'Content-Type': 'application/javascript' });
+      res.writeHead(200, { 
+        'Content-Type': 'application/javascript',
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      });
+      res.end(content, 'utf-8');
+    });
+    return;
+  }
+  
+  // Special handling for styles.css
+  if (req.url === '/styles.css') {
+    console.log('Serving styles.css with text/css MIME type');
+    const cssPath = path.join(__dirname, 'styles.css');
+    fs.readFile(cssPath, (err, content) => {
+      if (err) {
+        console.error('Error reading styles.css:', err);
+        res.writeHead(500);
+        res.end('Error loading styles.css');
+        return;
+      }
+      res.writeHead(200, { 
+        'Content-Type': 'text/css',
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      });
+      res.end(content, 'utf-8');
+    });
+    return;
+  }
+  
+  // Special handling for newsletter-editor.html
+  if (req.url === '/newsletter-editor.html') {
+    console.log('Serving newsletter-editor.html');
+    const htmlPath = path.join(__dirname, 'newsletter-editor.html');
+    fs.readFile(htmlPath, (err, content) => {
+      if (err) {
+        console.error('Error reading newsletter-editor.html:', err);
+        res.writeHead(500);
+        res.end('Error loading newsletter-editor.html');
+        return;
+      }
+      res.writeHead(200, { 
+        'Content-Type': 'text/html',
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      });
       res.end(content, 'utf-8');
     });
     return;
@@ -68,6 +120,7 @@ const handleRequest = (req, res) => {
       // Success
       res.writeHead(200, { 
         'Content-Type': contentType,
+        'Cache-Control': 'no-cache',
         // Add CORS headers for Vercel deployment
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
