@@ -64,6 +64,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     
+    // Direct Newsletter Editor Button
+    const openEditorBtn = document.getElementById('open-editor-btn');
+    if (openEditorBtn) {
+        openEditorBtn.addEventListener('click', () => {
+            console.log('Open Newsletter Editor button clicked');
+            // Try to get the newsletter HTML from localStorage or global variable
+            const newsletterHtml = localStorage.getItem('newsletter_html') || window.latestNewsletterHtml;
+            if (newsletterHtml) {
+                openNewsletterEditor(newsletterHtml);
+            } else {
+                // If no newsletter HTML is found, open the editor anyway
+                // It will show an empty editor or error message
+                openNewsletterEditor();
+            }
+        });
+    }
+    
     // OpenRouter API configuration
     const WEBHOOK_URL = 'https://n8n.theaiteam.uk/webhook/50a96b33-becb-4fa1-bd57-535251afdeeb';
     
