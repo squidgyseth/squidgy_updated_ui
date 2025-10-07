@@ -654,4 +654,69 @@ document.addEventListener('DOMContentLoaded', () => {
         // Combine all parts into a unique ID
         return `peritus-${timestamp}-${randomPart1}-${extraRandom}-${randomPart2}`;
     }
+    
+    // Add event listeners for UI elements
+    
+    // Text mode - send button
+    sendBtn.addEventListener('click', sendMessage);
+    
+    // Text mode - enter key
+    userInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
+    // Reset session button
+    const resetSessionBtn = document.getElementById('reset-session-btn');
+    if (resetSessionBtn) {
+        resetSessionBtn.addEventListener('click', () => {
+            // Confirm before resetting
+            if (confirm('Are you sure you want to start a new session? This will clear the current conversation.')) {
+                resetSession();
+            }
+        });
+    }
+    
+    // Settings form handling
+    if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', () => {
+            // Update settings object
+            settings.templateId = templateIdSelect.value;
+            settings.imageCount = parseInt(imageCountInput.value, 10);
+            
+            // Save to local storage
+            localStorage.setItem('peritus_newsletter_settings', JSON.stringify(settings));
+            
+            // Show confirmation
+            alert('Settings saved successfully!');
+            
+            // Switch to chat tab
+            const chatTabBtn = document.querySelector('.tab-btn[data-tab="chat"]');
+            if (chatTabBtn) {
+                chatTabBtn.click();
+            }
+        });
+    }
+    
+    // Text mode voice input
+    if (voiceInputBtn) voiceInputBtn.addEventListener('click', startVoiceInput);
+    if (stopRecordingBtn) stopRecordingBtn.addEventListener('click', stopVoiceInput);
+    
+    // Voice conversation mode
+    if (startVoiceBtn) startVoiceBtn.addEventListener('click', startVoiceConversation);
+    if (stopVoiceBtn) stopVoiceBtn.addEventListener('click', () => stopVoiceConversation(true));
+    if (sendTranscriptBtn) sendTranscriptBtn.addEventListener('click', sendVoiceTranscript);
+    if (cancelTranscriptBtn) cancelTranscriptBtn.addEventListener('click', cancelVoiceTranscript);
+    
+    // Handle page unload to stop recording and speech
+    window.addEventListener('beforeunload', () => {
+        if (isRecording && recognition) {
+            recognition.stop();
+        }
+        if (speechSynthesis.speaking) {
+            speechSynthesis.cancel();
+        }
+    });
 });
