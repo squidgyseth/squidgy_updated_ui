@@ -64,21 +64,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     
-    // Direct Newsletter Editor Button
+    // Direct Newsletter Editor Buttons
     const openEditorBtn = document.getElementById('open-editor-btn');
+    const mainEditorBtn = document.getElementById('main-editor-btn');
+    
+    // Function to handle editor button clicks
+    const handleEditorButtonClick = () => {
+        console.log('Newsletter Editor button clicked');
+        // Try to get the newsletter HTML from localStorage or global variable
+        const newsletterHtml = localStorage.getItem('newsletter_html') || window.latestNewsletterHtml;
+        if (newsletterHtml) {
+            openNewsletterEditor(newsletterHtml);
+        } else {
+            // If no newsletter HTML is found, open the editor anyway
+            // It will show an empty editor or error message
+            openNewsletterEditor();
+        }
+    };
+    
+    // Add event listeners to both buttons
     if (openEditorBtn) {
-        openEditorBtn.addEventListener('click', () => {
-            console.log('Open Newsletter Editor button clicked');
-            // Try to get the newsletter HTML from localStorage or global variable
-            const newsletterHtml = localStorage.getItem('newsletter_html') || window.latestNewsletterHtml;
-            if (newsletterHtml) {
-                openNewsletterEditor(newsletterHtml);
-            } else {
-                // If no newsletter HTML is found, open the editor anyway
-                // It will show an empty editor or error message
-                openNewsletterEditor();
-            }
-        });
+        openEditorBtn.addEventListener('click', handleEditorButtonClick);
+    }
+    
+    if (mainEditorBtn) {
+        mainEditorBtn.addEventListener('click', handleEditorButtonClick);
     }
     
     // OpenRouter API configuration
