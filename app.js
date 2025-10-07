@@ -308,29 +308,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // If there's a response from the webhook, display it
                 if (data && data.response) {
-                    // Always treat the response as a newsletter if it contains [IMG_HERE]
-                    const containsImgHere = data.response.includes('[IMG_HERE]');
-                    
-                    // Check if this is a newsletter HTML response
-                    // Look for specific patterns that indicate this is a newsletter
-                    const isNewsletter = 
-                        containsImgHere || 
-                        (data.response.includes('<html') && data.response.includes('<body')) ||
-                        (data.Status === 'Ready' && data.response.includes('<div')) ||
-                        data.response.includes('newsletter') ||
-                        data.response.includes('<h1>') ||
-                        // Additional checks for newsletter-like content
-                        (data.response.includes('<div') && data.response.includes('Peritus')) ||
-                        (data.response.match(/<h\d>[^<]+<\/h\d>/i) !== null);
-                        
-                    console.log('Contains [IMG_HERE]:', containsImgHere);
-                    console.log('Checking if response is a newsletter:', data.response.substring(0, 200) + '...');
-                    console.log('Newsletter detection result:', isNewsletter);
+                    // Check if this response has Status: Ready, which means it's a newsletter
                     console.log('Response status:', data.Status);
                     
-                    // Check if this is the final newsletter (Status is Ready)
+                    // Only treat as a newsletter when Status is Ready
                     if (data.Status === 'Ready') {
-                        console.log('Final newsletter received - Status is Ready');
+                        console.log('Newsletter received - Status is Ready');
+                        console.log('Contains [IMG_HERE]:', data.response.includes('[IMG_HERE]'));
                         
                         // Store the newsletter HTML in localStorage
                         localStorage.setItem('newsletter_html', data.response);
@@ -343,47 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             openNewsletterEditor(data.response);
                         }, 1000); // Small delay to ensure the message is displayed first
                     } 
-                    // If it's a newsletter but not final
-                    else if (isNewsletter) {
-                        console.log('Newsletter HTML detected but not final');
-                        
-                        // Store the newsletter HTML in localStorage
-                        localStorage.setItem('newsletter_html', data.response);
-                        
-                        // Add a system message about the newsletter
-                        addMessageToChat('system', 'The newsletter is being generated...', messageContainer);
-                        
-                        // Add a button to open the newsletter editor
-                        const editorBtn = document.createElement('button');
-                        editorBtn.className = 'open-editor-btn';
-                        editorBtn.innerHTML = '<i class="fas fa-edit"></i> Open Newsletter Editor';
-                        editorBtn.addEventListener('click', () => openNewsletterEditor(data.response));
-                        
-                        // Create a message div for the button
-                        const messageDiv = document.createElement('div');
-                        messageDiv.className = 'message system';
-                        
-                        const contentDiv = document.createElement('div');
-                        contentDiv.className = 'message-content';
-                        contentDiv.appendChild(editorBtn);
-                        
-                        messageDiv.appendChild(contentDiv);
-                        messageContainer.appendChild(messageDiv);
-                        
-                        // Also show a preview of the newsletter
-                        const previewDiv = document.createElement('div');
-                        previewDiv.className = 'message assistant newsletter-preview';
-                        
-                        const previewContent = document.createElement('div');
-                        previewContent.className = 'message-content';
-                        previewContent.innerHTML = `<h3>Newsletter Preview</h3>
-                        <div class="newsletter-thumbnail">${data.response.substring(0, 300)}...</div>
-                        <p>Click the button above to edit the newsletter and add images.</p>`;
-                        
-                        previewDiv.appendChild(previewContent);
-                        messageContainer.appendChild(previewDiv);
-                    }
-                    // Regular response
+                    // Regular response (not a newsletter)
                     else {
                         // Format and display
                         const formattedResponse = formatResponseText(data.response);
