@@ -11,13 +11,15 @@
     <div class="container">
         <header>
             <h1>Peritus Newsletter</h1>
+            <div class="header-actions">
+                <button id="main-editor-btn" class="main-editor-btn">OPEN NEWSLETTER EDITOR</button>
+            </div>
         </header>
         
         <div class="tabs">
             <button class="tab-btn active" data-tab="chat">Chat</button>
             <button class="tab-btn" data-tab="settings">Settings</button>
-            <button class="tab-btn" data-tab="instructions">Instructions</button>
-            <button class="tab-btn" data-tab="knowledge">Knowledge Base</button>
+            <button id="open-editor-btn" class="special-tab-btn">OPEN EDITOR</button>
         </div>
         
         <div class="tab-content active" id="chat">
@@ -134,76 +136,7 @@
             </div>
         </div>
         
-        <div class="tab-content" id="instructions">
-            <div class="instructions-container">
-                <h2>Instructions</h2>
-                <div class="instructions-content">
-                    <p>The Peritus Newsletter is generated based on weekly guidelines provided by the Peritus team.</p>
-                    <h3>Newsletter Structure</h3>
-                    <p>The newsletter consists of 5 content sections:</p>
-                        <li><strong>Hero Article</strong> - Main Feature (300-400 words)</li>
-                        <li><strong>Quick Insight #1</strong> (100-150 words)</li>
-                        <li><strong>Quick Insight #2</strong> (100-150 words)</li>
-                        <li><strong>Quick Insight #3</strong> (100-150 words)</li>
-                        <li><strong>Call to Action</strong> (50-75 words)</li>
-                    </ol>
-                    
-                    <h3>Content Pillars</h3>
-                    <p>Each section is based on one of these content pillars:</p>
-                    <ul>
-                        <li>Cost Savings & ROI Spotlight</li>
-                        <li>L&D Quick Wins & Best Practices</li>
-                        <li>Product & Feature Spotlight</li>
-                        <li>Industry Insights & Thought Leadership</li>
-                        <li>Events & Community</li>
-                    </ul>
-                    
-                    <h3>How to Use</h3>
-                    <ol>
-                        <li>Start by choosing whether you need image suggestions or text-only output</li>
-                        <li>Provide guidance for each section, selecting which pillar to use for each</li>
-                        <li>The system will guide you through the process with a questionnaire</li>
-                        <li>Once all information is collected, the newsletter will be generated</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-        
-        <div class="tab-content" id="knowledge">
-            <div class="content-container">
-                <h2>Knowledge Base</h2>
-                <div class="knowledge-content">
-                    <h3>About Peritus Learning</h3>
-                    <p>Peritus Learning is a UK-based e-learning company revolutionizing corporate training through unlimited-user pricing.</p>
-                    
-                    <h3>Target Audience</h3>
-                    <p>The newsletter targets:</p>
-                    <ul>
-                        <li>L&D Managers</li>
-                        <li>HR Professionals</li>
-                        <li>Finance Directors</li>
-                    </ul>
-                    
-                    <h3>Newsletter Format</h3>
-                    <p>The newsletter follows a B2B email marketing format with professional tone and structure:</p>
-                    <ul>
-                        <li><strong>Hero Article:</strong> Main feature (300-400 words)</li>
-                        <li><strong>Quick Insights:</strong> Three shorter sections (100-150 words each)</li>
-                        <li><strong>Call to Action:</strong> Closing section (50-75 words)</li>
-                    </ul>
-                    
-                    <h3>Content Pillars</h3>
-                    <p>Each newsletter section is built around one of these five content pillars:</p>
-                    <ol>
-                        <li><strong>Cost Savings & ROI Spotlight:</strong> Focuses on financial benefits and return on investment</li>
-                        <li><strong>L&D Quick Wins & Best Practices:</strong> Practical tips and strategies for learning and development</li>
-                        <li><strong>Product & Feature Spotlight:</strong> Highlights Peritus Learning's offerings and capabilities</li>
-                        <li><strong>Industry Insights & Thought Leadership:</strong> Trends, research, and forward-thinking perspectives</li>
-                        <li><strong>Events & Community:</strong> Information about upcoming events, webinars, and community engagement</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
+        <!-- Instructions and Knowledge Base tabs removed -->
     </div>
     
     <script src="app.js"></script>

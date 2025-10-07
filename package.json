@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node index.js"
+    "dev": "node index.js",
+    "build": "cp -r *.html *.js *.css public/"
   },
   "engines": {
     "node": ">=14.x"

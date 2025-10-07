@@ -64,6 +64,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     
+    // Direct Newsletter Editor Buttons
+    const openEditorBtn = document.getElementById('open-editor-btn');
+    const mainEditorBtn = document.getElementById('main-editor-btn');
+    
+    // Function to handle editor button clicks
+    const handleEditorButtonClick = () => {
+        console.log('Newsletter Editor button clicked');
+        // Try to get the newsletter HTML from localStorage or global variable
+        const newsletterHtml = localStorage.getItem('newsletter_html') || window.latestNewsletterHtml;
+        if (newsletterHtml) {
+            openNewsletterEditor(newsletterHtml);
+        } else {
+            // If no newsletter HTML is found, open the editor anyway
+            // It will show an empty editor or error message
+            openNewsletterEditor();
+        }
+    };
+    
+    // Add event listeners to both buttons
+    if (openEditorBtn) {
+        openEditorBtn.addEventListener('click', handleEditorButtonClick);
+    }
+    
+    if (mainEditorBtn) {
+        mainEditorBtn.addEventListener('click', handleEditorButtonClick);
+    }
+    
     // OpenRouter API configuration
     const WEBHOOK_URL = 'https://n8n.theaiteam.uk/webhook/50a96b33-becb-4fa1-bd57-535251afdeeb';
     
@@ -308,31 +335,115 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // If there's a response from the webhook, display it
                 if (data && data.response) {
-                    // Check if this is a newsletter HTML response
-                    if (data.response.includes('[IMG_HERE]') || data.response.includes('<html') || data.response.includes('<body')) {
+                    // Check if this is a newsletter
+                    console.log('Response status:', data.Status);
+                    console.log('Full response data:', JSON.stringify(data, null, 2));
+                    
+                    // Check if it contains [IMG_HERE] - this is the most reliable indicator
+                    const containsImgHere = data.response.includes('[IMG_HERE]');
+                    
+                    // Log this specifically - we'll use this as a trigger
+                    if (containsImgHere) {
                         console.log('Newsletter HTML detected');
-                        // Handle newsletter HTML display
-                        displayNewsletter(data.response, messageContainer);
+                    }
+                    
+                    // Always show the edit button if Status is Ready or if it contains [IMG_HERE]
+                    const isReadyStatus = data.Status === 'Ready';
+                    const isNewsletter = isReadyStatus || containsImgHere;
+                    
+                    console.log('Status is Ready:', isReadyStatus);
+                    console.log('Contains [IMG_HERE]:', containsImgHere);
+                    console.log('Is newsletter:', isNewsletter);
+                    
+                    // Show the edit button if Status is Ready OR it contains [IMG_HERE]
+                    if (isNewsletter) {
+                        console.log('Newsletter detected - showing edit button');
                         
-                        // Add a system message about the newsletter
-                        addMessageToChat('system', 'The newsletter has been generated! You can now review it and upload images.', messageContainer);
-                    } else {
-                        // Regular response - format and display
+                        // Store the newsletter HTML in localStorage
+                        console.log('Storing newsletter HTML in localStorage, length:', data.response.length);
+                        try {
+                            localStorage.setItem('newsletter_html', data.response);
+                            console.log('Successfully stored newsletter HTML in localStorage');
+                            
+                            // Verify storage
+                            const storedHtml = localStorage.getItem('newsletter_html');
+                            if (storedHtml) {
+                                console.log('Verified storage: HTML retrieved from localStorage, length:', storedHtml.length);
+                            } else {
+                                console.error('Failed to verify storage: Could not retrieve HTML from localStorage');
+                            }
+                        } catch (error) {
+                            console.error('Error storing newsletter HTML in localStorage:', error);
+                        }
+                        
+                        // Also store in a global variable for direct access
+                        window.latestNewsletterHtml = data.response;
+                        console.log('Also stored newsletter HTML in global variable window.latestNewsletterHtml');
+                        
+                        // Create a prominent button container
+                        const buttonContainer = document.createElement('div');
+                        buttonContainer.className = 'newsletter-button-container';
+                        
+                        // Create a large, prominent edit button
+                        const editorBtn = document.createElement('button');
+                        editorBtn.className = 'open-editor-btn large';
+                        editorBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Newsletter';
+                        editorBtn.addEventListener('click', () => openNewsletterEditor(data.response));
+                        
+                        // Create a backup button that uses stored HTML
+                        const backupBtn = document.createElement('button');
+                        backupBtn.className = 'open-editor-btn';
+                        backupBtn.innerHTML = '<i class="fas fa-file-alt"></i> Open Editor (Backup)';
+                        backupBtn.addEventListener('click', () => openNewsletterEditor());
+                        
+                        // Add the buttons to the container
+                        buttonContainer.appendChild(editorBtn);
+                        buttonContainer.appendChild(document.createTextNode(' '));
+                        buttonContainer.appendChild(backupBtn);
+                        
+                        // Create a message div for the button
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = 'message system highlight';
+                        
+                        const contentDiv = document.createElement('div');
+                        contentDiv.className = 'message-content';
+                        
+                        // Different message based on Status
+                        if (isReadyStatus) {
+                            // Special handling for Status: Ready
+                            addMessageToChat('system', 'The newsletter is ready! Click the button below to edit it.', messageContainer);
+                            contentDiv.innerHTML = '<h3>Newsletter Ready!</h3><p>Your final newsletter has been generated and is ready to edit.</p>';
+                        } else {
+                            // For other newsletter-like content
+                            addMessageToChat('system', 'Newsletter content detected! Click the button below to edit it.', messageContainer);
+                            contentDiv.innerHTML = '<h3>Newsletter Content Detected!</h3><p>Click the button below to open the newsletter editor.</p>';
+                        }
+                        
+                        contentDiv.appendChild(buttonContainer);
+                        
+                        messageDiv.appendChild(contentDiv);
+                        messageContainer.appendChild(messageDiv);
+                        
+                        // Scroll to the button to make sure it's visible
+                        setTimeout(() => {
+                            messageContainer.scrollTop = messageContainer.scrollHeight;
+                        }, 100);
+                    } 
+                    // Regular response (not a newsletter)
+                    else {
+                        // Format and display
                         const formattedResponse = formatResponseText(data.response);
                         
                         // Add the formatted message to the appropriate container
                         // If in voice mode, also trigger text-to-speech
                         addFormattedMessageToChat('assistant', formattedResponse, messageContainer, isVoiceMode);
-                        
-                        // Check if we need to update the status
-                        if (data.Status === 'Ready') {
-                            addMessageToChat('system', 'The newsletter is ready! You can now review it above.', messageContainer);
-                        }
                     }
                 } else {
+                    // No response data
                     addMessageToChat('assistant', 'Your input has been received. The newsletter will be generated shortly.', messageContainer);
                 }
             } else {
+                // Response not OK
                 addMessageToChat('system', 'There was an error processing your request. Please try again later.', messageContainer);
             }
         } catch (error) {
@@ -691,6 +802,154 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // Function to open the newsletter editor in a popup window
+    function openNewsletterEditor(newsletterHtml) {
+        console.log('Opening newsletter editor...');
+        
+        // Use the provided HTML, or fallback to stored HTML if available
+        if (!newsletterHtml || newsletterHtml.length === 0) {
+            console.log('No HTML provided to openNewsletterEditor, checking localStorage...');
+            newsletterHtml = localStorage.getItem('newsletter_html');
+            
+            if (!newsletterHtml && window.latestNewsletterHtml) {
+                console.log('Using HTML from global variable');
+                newsletterHtml = window.latestNewsletterHtml;
+            }
+            
+            if (!newsletterHtml) {
+                console.error('No newsletter HTML found in localStorage or global variable');
+                alert('No newsletter HTML found. Please try again.');
+                return;
+            }
+        }
+        
+        console.log('Opening newsletter editor with HTML length:', newsletterHtml.length);
+        
+        try {
+            // Encode the newsletter HTML to pass as a URL parameter
+            const encodedHtml = encodeURIComponent(newsletterHtml);
+            console.log('Encoded HTML length:', encodedHtml.length);
+            
+            // Check if the encoded HTML is too large for a URL parameter
+            if (encodedHtml.length > 100000) {
+                console.warn('Encoded HTML is very large, using localStorage instead of URL parameter');
+                // Store in localStorage instead
+                localStorage.setItem('newsletter_html_for_editor', newsletterHtml);
+                
+                // Open the editor without the HTML parameter
+                const editorWindow = window.open(
+                    'newsletter-editor.html?useLocalStorage=true',
+                    'NewsletterEditor',
+                    'width=1200,height=800,resizable=yes,scrollbars=yes'
+                );
+                
+                // Check if the popup was blocked
+                if (!editorWindow || editorWindow.closed || typeof editorWindow.closed === 'undefined') {
+                    console.error('Popup was blocked!');
+                    alert('Popup blocked! Please allow popups for this site to use the newsletter editor.');
+                } else {
+                    console.log('Editor window opened successfully using localStorage');
+                }
+            } else {
+                // Open the editor with the HTML as a URL parameter
+                const editorWindow = window.open(
+                    `newsletter-editor.html?html=${encodedHtml}`,
+                    'NewsletterEditor',
+                    'width=1200,height=800,resizable=yes,scrollbars=yes'
+                );
+                
+                // Check if the popup was blocked
+                if (!editorWindow || editorWindow.closed || typeof editorWindow.closed === 'undefined') {
+                    console.error('Popup was blocked!');
+                    alert('Popup blocked! Please allow popups for this site to use the newsletter editor.');
+                } else {
+                    console.log('Editor window opened successfully using URL parameter');
+                }
+            }
+            
+            // Listen for changes from the editor
+            window.addEventListener('storage', (event) => {
+                if (event.key === 'edited_newsletter_html' && event.newValue) {
+                    console.log('Received edited newsletter from editor');
+                    
+                    // Get the edited newsletter HTML
+                    const editedHtml = event.newValue;
+                    
+                    // Display a message about the saved newsletter
+                    addMessageToChat('system', 'Newsletter has been edited and saved!', chatMessages);
+                    
+                    // Add a download button
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'download-newsletter-btn';
+                    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download Newsletter';
+                    downloadBtn.addEventListener('click', () => downloadNewsletter(editedHtml));
+                    
+                    // Create a message div for the button
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message system';
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'message-content';
+                    contentDiv.appendChild(downloadBtn);
+                    
+                    messageDiv.appendChild(contentDiv);
+                    chatMessages.appendChild(messageDiv);
+                }
+            });
+        } catch (error) {
+            console.error('Error opening newsletter editor:', error);
+            alert('Error opening newsletter editor: ' + error.message);
+        }
+    }
+    
+    // Function to download the newsletter as HTML
+    function downloadNewsletter(newsletterHtml) {
+        // Create a full HTML document
+        const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peritus Newsletter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        h1, h2, h3 {
+            color: #166088;
+        }
+    </style>
+</head>
+<body>
+    ${newsletterHtml}
+</body>
+</html>`;
+        
+        // Create a blob and download link
+        const blob = new Blob([fullHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `peritus-newsletter-${new Date().toISOString().slice(0, 10)}.html`;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Clean up
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+    }
+    
     // Function to generate a unique session ID
     function generateSessionId() {
         // Generate a random string
@@ -720,6 +979,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message assistant newsletter-container';
         
+        // Initialize placeholder counter
+        let placeholderCount = 0;
+        
         // Create the newsletter content div
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content newsletter';
@@ -728,12 +990,100 @@ document.addEventListener('DOMContentLoaded', () => {
         const newsletterWrapper = document.createElement('div');
         newsletterWrapper.className = 'newsletter-wrapper';
         
-        // Set the newsletter HTML content
-        newsletterWrapper.innerHTML = newsletterHtml;
+        console.log('Original newsletter HTML:', newsletterHtml);
         
-        // Find all image placeholders and replace with upload buttons
+        // First, let's do a direct string replacement in the HTML content
+        // This ensures we catch all instances of [IMG_HERE] even if they're not in proper text nodes
+        const processedHtml = newsletterHtml.replace(/\[IMG_HERE\]/g, '<div class="image-upload-placeholder" data-placeholder="true">[IMG_HERE]</div>');
+        
+        console.log('Processed HTML with placeholders:', processedHtml);
+        
+        // Set the newsletter HTML content with our processed HTML
+        newsletterWrapper.innerHTML = processedHtml;
+        
+        // Find all our placeholder divs and replace them with upload buttons
+        const placeholderDivs = newsletterWrapper.querySelectorAll('.image-upload-placeholder[data-placeholder="true"]');
+        console.log('Found placeholder divs:', placeholderDivs.length);
+        
+        placeholderDivs.forEach(placeholderDiv => {
+            // Create a placeholder container
+            const placeholderContainer = document.createElement('div');
+            placeholderContainer.className = 'image-placeholder-container';
+            
+            // Create the image element
+            const imgElement = document.createElement('img');
+            imgElement.src = '[IMG_HERE]';
+            imgElement.alt = 'Image placeholder';
+            imgElement.style.maxWidth = '100%';
+            imgElement.style.height = 'auto';
+            const placeholderId = `img-placeholder-${Date.now()}-${placeholderCount}`;
+            imgElement.id = placeholderId;
+            
+            // Create upload button
+            const uploadButton = document.createElement('button');
+            uploadButton.className = 'image-upload-btn';
+            uploadButton.innerHTML = '<i class="fas fa-upload"></i> Upload Image';
+            uploadButton.dataset.target = placeholderId;
+            
+            // Create file input
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.className = 'hidden';
+            fileInput.id = `file-${placeholderId}`;
+            
+            // Add event listeners
+            uploadButton.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', (event) => {
+                if (event.target.files && event.target.files[0]) {
+                    const file = event.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = (e) => {
+                        const targetImg = document.getElementById(placeholderId);
+                        if (targetImg) {
+                            targetImg.src = e.target.result;
+                            targetImg.classList.add('uploaded-image');
+                            
+                            // Hide the upload button after successful upload
+                            uploadButton.classList.add('hidden');
+                            
+                            // Add a change button
+                            const changeButton = document.createElement('button');
+                            changeButton.className = 'image-change-btn';
+                            changeButton.innerHTML = '<i class="fas fa-exchange-alt"></i> Change Image';
+                            changeButton.dataset.target = placeholderId;
+                            
+                            changeButton.addEventListener('click', () => {
+                                fileInput.click();
+                            });
+                            
+                            // Replace upload button with change button
+                            uploadButton.parentNode.replaceChild(changeButton, uploadButton);
+                        }
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Add elements to the container
+            placeholderContainer.appendChild(imgElement);
+            placeholderContainer.appendChild(uploadButton);
+            placeholderContainer.appendChild(fileInput);
+            
+            // Replace the placeholder div with our upload container
+            placeholderDiv.parentNode.replaceChild(placeholderContainer, placeholderDiv);
+            
+            // Increment placeholder count
+            placeholderCount++;
+        });
+        
+        // Also find any image placeholders that might be in the HTML
         const imagePlaceholders = newsletterWrapper.querySelectorAll('img[src="[IMG_HERE]"], img[src=""]');
-        let placeholderCount = 0;
         
         imagePlaceholders.forEach(placeholder => {
             placeholderCount++;
@@ -840,6 +1190,32 @@ document.addEventListener('DOMContentLoaded', () => {
         // Remove any buttons and inputs from the clone
         const buttons = newsletterClone.querySelectorAll('button, input, .newsletter-actions');
         buttons.forEach(button => button.remove());
+        
+        // Clean up any remaining image placeholders
+        const remainingPlaceholders = newsletterClone.querySelectorAll('img[src="[IMG_HERE]"], img[src=""]');
+        remainingPlaceholders.forEach(placeholder => {
+            // Replace with a note about missing image
+            const missingNote = document.createElement('div');
+            missingNote.style.padding = '15px';
+            missingNote.style.backgroundColor = '#f8f9fa';
+            missingNote.style.border = '1px dashed #ccc';
+            missingNote.style.borderRadius = '4px';
+            missingNote.style.textAlign = 'center';
+            missingNote.style.margin = '10px 0';
+            missingNote.innerHTML = '<em>Image placeholder - no image was uploaded</em>';
+            placeholder.parentNode.replaceChild(missingNote, placeholder);
+        });
+        
+        // Clean up any placeholder containers
+        const placeholderContainers = newsletterClone.querySelectorAll('.image-placeholder-container');
+        placeholderContainers.forEach(container => {
+            // Get the image if it exists
+            const image = container.querySelector('img.uploaded-image');
+            if (image) {
+                // Replace the container with just the image
+                container.parentNode.replaceChild(image, container);
+            }
+        });
         
         // Get the HTML content
         const htmlContent = newsletterClone.innerHTML;

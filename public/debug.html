@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletter Detection Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            padding: 0;
+        }
+        h1 {
+            color: #333;
+        }
+        .debug-panel {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .debug-panel h2 {
+            margin-top: 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            overflow: auto;
+            font-family: monospace;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+        #newsletter-preview {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Newsletter Detection Debug</h1>
+    
+    <div class="debug-panel">
+        <h2>Test Newsletter Detection</h2>
+        <p>This page allows you to test the newsletter detection and editor functionality.</p>
+        <button id="test-detection">Run Detection Test</button>
+        <button id="open-editor">Open Editor with Stored HTML</button>
+        <button id="clear-storage">Clear localStorage</button>
+    </div>
+    
+    <div class="debug-panel">
+        <h2>Manual Newsletter HTML Test</h2>
+        <p>Enter newsletter HTML below to test:</p>
+        <textarea id="test-html" rows="10" style="width: 100%;">[IMG_HERE]</textarea>
+        <button id="test-manual">Test Manual HTML</button>
+    </div>
+    
+    <div class="result" id="result">
+        <h3>Results will appear here</h3>
+    </div>
+    
+    <div id="newsletter-preview">
+        <h3>Newsletter Preview</h3>
+        <p>Newsletter content will appear here</p>
+    </div>
+    
+    <script src="app.js"></script>
+    <script src="debug.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const testDetectionBtn = document.getElementById('test-detection');
+            const openEditorBtn = document.getElementById('open-editor');
+            const clearStorageBtn = document.getElementById('clear-storage');
+            const testManualBtn = document.getElementById('test-manual');
+            const testHtmlInput = document.getElementById('test-html');
+            const resultDiv = document.getElementById('result');
+            const previewDiv = document.getElementById('newsletter-preview');
+            
+            // Test detection button
+            testDetectionBtn.addEventListener('click', () => {
+                resultDiv.innerHTML = '<h3>Running detection test...</h3>';
+                try {
+                    const result = testNewsletterDetection();
+                    resultDiv.innerHTML = `<h3>Test Result</h3><p>${result}</p>`;
+                } catch (error) {
+                    resultDiv.innerHTML = `<h3>Error</h3><p>${error.message}</p><pre>${error.stack}</pre>`;
+                }
+            });
+            
+            // Open editor button
+            openEditorBtn.addEventListener('click', () => {
+                resultDiv.innerHTML = '<h3>Opening editor...</h3>';
+                try {
+                    const html = localStorage.getItem('newsletter_html');
+                    if (html) {
+                        const editorWindow = window.open(
+                            'newsletter-editor.html?useLocalStorage=true',
+                            'NewsletterEditor',
+                            'width=1200,height=800,resizable=yes,scrollbars=yes'
+                        );
+                        
+                        if (!editorWindow) {
+                            resultDiv.innerHTML = '<h3>Error</h3><p>Popup blocked! Please allow popups for this site.</p>';
+                        } else {
+                            resultDiv.innerHTML = '<h3>Success</h3><p>Editor opened in a new window.</p>';
+                        }
+                    } else {
+                        resultDiv.innerHTML = '<h3>Error</h3><p>No newsletter HTML found in localStorage.</p>';
+                    }
+                } catch (error) {
+                    resultDiv.innerHTML = `<h3>Error</h3><p>${error.message}</p><pre>${error.stack}</pre>`;
+                }
+            });
+            
+            // Clear storage button
+            clearStorageBtn.addEventListener('click', () => {
+                try {
+                    localStorage.removeItem('newsletter_html');
+                    localStorage.removeItem('edited_newsletter_html');
+                    resultDiv.innerHTML = '<h3>Success</h3><p>localStorage cleared.</p>';
+                } catch (error) {
+                    resultDiv.innerHTML = `<h3>Error</h3><p>${error.message}</p><pre>${error.stack}</pre>`;
+                }
+            });
+            
+            // Test manual HTML button
+            testManualBtn.addEventListener('click', () => {
+                try {
+                    const html = testHtmlInput.value;
+                    if (html) {
+                        // Store the HTML
+                        localStorage.setItem('newsletter_html', html);
+                        
+                        // Show preview
+                        previewDiv.innerHTML = html;
+                        
+                        // Show result
+                        resultDiv.innerHTML = '<h3>Success</h3><p>HTML stored in localStorage and previewed below.</p>';
+                    } else {
+                        resultDiv.innerHTML = '<h3>Error</h3><p>Please enter some HTML to test.</p>';
+                    }
+                } catch (error) {
+                    resultDiv.innerHTML = `<h3>Error</h3><p>${error.message}</p><pre>${error.stack}</pre>`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
