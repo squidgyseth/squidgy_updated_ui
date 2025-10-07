@@ -651,4 +651,35 @@ document.addEventListener('DOMContentLoaded', () => {
         // Combine with a prefix
         return `peritus-${timestamp}-${randomPart}`;
     }
+    
+    // Event listeners for UI elements
+    // Text mode
+    sendBtn.addEventListener('click', sendMessage);
+    
+    userInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
+    // Text mode voice input
+    if (voiceInputBtn) voiceInputBtn.addEventListener('click', startVoiceInput);
+    if (stopRecordingBtn) stopRecordingBtn.addEventListener('click', stopVoiceInput);
+    
+    // Voice conversation mode
+    if (startVoiceBtn) startVoiceBtn.addEventListener('click', startVoiceConversation);
+    if (stopVoiceBtn) stopVoiceBtn.addEventListener('click', () => stopVoiceConversation(true));
+    if (sendTranscriptBtn) sendTranscriptBtn.addEventListener('click', sendVoiceTranscript);
+    if (cancelTranscriptBtn) cancelTranscriptBtn.addEventListener('click', cancelVoiceTranscript);
+    
+    // Handle page unload to stop recording and speech
+    window.addEventListener('beforeunload', () => {
+        if (isRecording && recognition) {
+            recognition.stop();
+        }
+        if (speechSynthesis.speaking) {
+            speechSynthesis.cancel();
+        }
+    });
 });
