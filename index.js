@@ -1,25 +1,26 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve static files from the root directory and public directory
+// Serve static files
 app.use(express.static(__dirname));
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Handle all routes by serving index.html
+// Handle API routes here if needed
+
+// For all other routes, serve the index.html file
 app.get('*', (req, res) => {
-  // Try to serve from public first, then fall back to root
-  const publicPath = path.join(__dirname, 'public', 'index.html');
-  const rootPath = path.join(__dirname, 'index.html');
+  // Check if the requested file exists
+  const filePath = path.join(__dirname, req.path);
   
-  // Check if the file exists in public
-  if (require('fs').existsSync(publicPath)) {
-    res.sendFile(publicPath);
-  } else {
-    res.sendFile(rootPath);
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    return res.sendFile(filePath);
   }
+  
+  // Default to index.html
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Start the server if this file is run directly
