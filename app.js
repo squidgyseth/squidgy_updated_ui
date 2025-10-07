@@ -159,6 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Send message function
     function sendMessage(customMessage = null) {
+        // If customMessage is an event object (from direct click handler), ignore it
+        if (customMessage && typeof customMessage === 'object' && customMessage.type) {
+            customMessage = null;
+        }
+        
         const message = customMessage || userInput.value.trim();
         if (message === '') return;
         
@@ -658,7 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add event listeners for UI elements
     
     // Text mode - send button
-    sendBtn.addEventListener('click', sendMessage);
+    sendBtn.addEventListener('click', () => sendMessage());
     
     // Text mode - enter key
     userInput.addEventListener('keydown', (e) => {
