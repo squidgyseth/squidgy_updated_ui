@@ -4,8 +4,8 @@
   "description": "Peritus Newsletter Interface using Claude AI",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node index.js",
+    "dev": "node index.js"
   },
   "engines": {
     "node": ">=14.x"
@@ -26,5 +26,7 @@
     "url": "https://github.com/TheAITeamCR/peritus-newsletter/issues"
   },
   "homepage": "https://github.com/TheAITeamCR/peritus-newsletter#readme",
-  "dependencies": {}
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }
