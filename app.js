@@ -320,30 +320,37 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.setItem('newsletter_html', data.response);
                         
                         // Add a system message about the newsletter
-                        addMessageToChat('system', 'The newsletter is ready!', messageContainer);
+                        addMessageToChat('system', 'The newsletter is ready! Click the button below to edit it.', messageContainer);
                         
-                        // Add a button to manually open the editor (in case automatic opening doesn't work)
+                        // Create a prominent button container
+                        const buttonContainer = document.createElement('div');
+                        buttonContainer.className = 'newsletter-button-container';
+                        
+                        // Create a large, prominent edit button
                         const editorBtn = document.createElement('button');
-                        editorBtn.className = 'open-editor-btn';
-                        editorBtn.innerHTML = '<i class="fas fa-edit"></i> Open Newsletter Editor';
+                        editorBtn.className = 'open-editor-btn large';
+                        editorBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Newsletter';
                         editorBtn.addEventListener('click', () => openNewsletterEditor(data.response));
+                        
+                        // Add the button to the container
+                        buttonContainer.appendChild(editorBtn);
                         
                         // Create a message div for the button
                         const messageDiv = document.createElement('div');
-                        messageDiv.className = 'message system';
+                        messageDiv.className = 'message system highlight';
                         
                         const contentDiv = document.createElement('div');
                         contentDiv.className = 'message-content';
-                        contentDiv.appendChild(editorBtn);
+                        contentDiv.innerHTML = '<h3>Newsletter Ready!</h3><p>Your newsletter has been generated and is ready to edit.</p>';
+                        contentDiv.appendChild(buttonContainer);
                         
                         messageDiv.appendChild(contentDiv);
                         messageContainer.appendChild(messageDiv);
                         
-                        // Automatically open the newsletter editor
-                        console.log('Attempting to automatically open newsletter editor...');
+                        // Scroll to the button to make sure it's visible
                         setTimeout(() => {
-                            openNewsletterEditor(data.response);
-                        }, 1000); // Small delay to ensure the message is displayed first
+                            messageContainer.scrollTop = messageContainer.scrollHeight;
+                        }, 100);
                     } 
                     // Regular response (not a newsletter)
                     else {
