@@ -5,52 +5,34 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// MIME type middleware
+// Simple logger for debugging
 app.use((req, res, next) => {
-  const ext = path.extname(req.path).toLowerCase();
-  if (ext === '.js') {
-    res.type('application/javascript');
-  } else if (ext === '.css') {
-    res.type('text/css');
-  } else if (ext === '.html') {
-    res.type('text/html');
-  }
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
 
-// Serve static files
-app.use(express.static(__dirname, {
-  setHeaders: (res, path) => {
-    if (path.endsWith('.js')) {
-      res.set('Content-Type', 'application/javascript');
-    } else if (path.endsWith('.css')) {
-      res.set('Content-Type', 'text/css');
-    }
-  }
-}));
-
-// Handle API routes here if needed
-
-// Explicitly handle JavaScript files to ensure correct MIME type
-app.get('*.js', (req, res) => {
-  const filePath = path.join(__dirname, req.path);
-  if (fs.existsSync(filePath)) {
-    res.set('Content-Type', 'application/javascript');
-    return res.sendFile(filePath);
-  }
-  res.status(404).send('File not found');
+// Serve JavaScript files with correct MIME type
+app.get('/app.js', (req, res) => {
+  res.set('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, 'app.js'));
 });
+
+// Serve CSS files with correct MIME type
+app.get('/styles.css', (req, res) => {
+  res.set('Content-Type', 'text/css');
+  res.sendFile(path.join(__dirname, 'styles.css'));
+});
+
+// Serve HTML files
+app.get('/newsletter-editor.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'newsletter-editor.html'));
+});
+
+// Serve static files
+app.use(express.static(__dirname));
 
 // For all other routes, serve the index.html file
 app.get('*', (req, res) => {
-  // Check if the requested file exists
-  const filePath = path.join(__dirname, req.path);
-  
-  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-    return res.sendFile(filePath);
-  }
-  
-  // Default to index.html
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 

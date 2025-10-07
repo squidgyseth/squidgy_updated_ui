@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const MIME_TYPES = {
   '.html': 'text/html',
   '.css': 'text/css',
-  '.js': 'text/javascript',
+  '.js': 'application/javascript', // Changed to application/javascript
   '.json': 'application/json',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -21,6 +21,23 @@ const MIME_TYPES = {
 const handleRequest = (req, res) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   
+  // Special handling for app.js
+  if (req.url === '/app.js') {
+    console.log('Serving app.js with application/javascript MIME type');
+    const appJsPath = path.join(__dirname, 'app.js');
+    fs.readFile(appJsPath, (err, content) => {
+      if (err) {
+        console.error('Error reading app.js:', err);
+        res.writeHead(500);
+        res.end('Error loading app.js');
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/javascript' });
+      res.end(content, 'utf-8');
+    });
+    return;
+  }
+  
   // Handle root URL
   let filePath = req.url === '/' 
     ? path.join(__dirname, 'index.html')
@@ -29,6 +46,9 @@ const handleRequest = (req, res) => {
   // Get the file extension
   const extname = path.extname(filePath);
   let contentType = MIME_TYPES[extname] || 'application/octet-stream';
+  
+  // Debug
+  console.log(`Serving ${filePath} with content type ${contentType}`);
   
   // Read the file
   fs.readFile(filePath, (err, content) => {

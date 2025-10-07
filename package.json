@@ -4,9 +4,9 @@
   "description": "Peritus Newsletter Interface using Claude AI",
   "main": "server.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js",
-    "build": "cp -r *.html *.js *.css public/"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo 'No build step needed'"
   },
   "engines": {
     "node": ">=14.x"
