@@ -324,19 +324,34 @@ document.addEventListener('DOMContentLoaded', () => {
                         (data.response.match(/<h\d>[^<]+<\/h\d>/i) !== null);
                         
                     console.log('Contains [IMG_HERE]:', containsImgHere);
-                    
                     console.log('Checking if response is a newsletter:', data.response.substring(0, 200) + '...');
                     console.log('Newsletter detection result:', isNewsletter);
+                    console.log('Response status:', data.Status);
                     
-                    if (isNewsletter) {
-                        console.log('Newsletter HTML detected');
-                        console.log('Contains [IMG_HERE]:', data.response.includes('[IMG_HERE]'));
+                    // Check if this is the final newsletter (Status is Ready)
+                    if (data.Status === 'Ready') {
+                        console.log('Final newsletter received - Status is Ready');
                         
                         // Store the newsletter HTML in localStorage
                         localStorage.setItem('newsletter_html', data.response);
                         
                         // Add a system message about the newsletter
-                        addMessageToChat('system', 'The newsletter has been generated!', messageContainer);
+                        addMessageToChat('system', 'The newsletter is ready! Opening editor...', messageContainer);
+                        
+                        // Automatically open the newsletter editor
+                        setTimeout(() => {
+                            openNewsletterEditor(data.response);
+                        }, 1000); // Small delay to ensure the message is displayed first
+                    } 
+                    // If it's a newsletter but not final
+                    else if (isNewsletter) {
+                        console.log('Newsletter HTML detected but not final');
+                        
+                        // Store the newsletter HTML in localStorage
+                        localStorage.setItem('newsletter_html', data.response);
+                        
+                        // Add a system message about the newsletter
+                        addMessageToChat('system', 'The newsletter is being generated...', messageContainer);
                         
                         // Add a button to open the newsletter editor
                         const editorBtn = document.createElement('button');
@@ -367,23 +382,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         previewDiv.appendChild(previewContent);
                         messageContainer.appendChild(previewDiv);
-                    } else {
-                        // Regular response - format and display
+                    }
+                    // Regular response
+                    else {
+                        // Format and display
                         const formattedResponse = formatResponseText(data.response);
                         
                         // Add the formatted message to the appropriate container
                         // If in voice mode, also trigger text-to-speech
                         addFormattedMessageToChat('assistant', formattedResponse, messageContainer, isVoiceMode);
-                        
-                        // Check if we need to update the status
-                        if (data.Status === 'Ready') {
-                            addMessageToChat('system', 'The newsletter is ready! You can now review it above.', messageContainer);
-                        }
                     }
                 } else {
+                    // No response data
                     addMessageToChat('assistant', 'Your input has been received. The newsletter will be generated shortly.', messageContainer);
                 }
             } else {
+                // Response not OK
                 addMessageToChat('system', 'There was an error processing your request. Please try again later.', messageContainer);
             }
         } catch (error) {
