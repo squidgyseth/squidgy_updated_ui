@@ -27,13 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Session Management
     const sessionIdDisplay = document.getElementById('session-id');
-    let sessionId = localStorage.getItem('peritus_session_id');
     
-    // Generate a new session ID if one doesn't exist
-    if (!sessionId) {
-        sessionId = generateSessionId();
-        localStorage.setItem('peritus_session_id', sessionId);
-    }
+    // Always generate a new session ID on page load
+    let sessionId = generateSessionId();
+    localStorage.setItem('peritus_session_id', sessionId);
     
     // Display the session ID if the element exists
     if (sessionIdDisplay) {
@@ -644,11 +641,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Function to generate a unique session ID
     function generateSessionId() {
-        // Generate a random string
-        const randomPart = Math.random().toString(36).substring(2, 15);
-        // Add timestamp for uniqueness
-        const timestamp = new Date().getTime().toString(36);
-        // Combine with a prefix
-        return `peritus-${timestamp}-${randomPart}`;
+        // Generate multiple random parts for increased entropy
+        const randomPart1 = Math.random().toString(36).substring(2, 10);
+        const randomPart2 = Math.random().toString(36).substring(2, 10);
+        
+        // Add precise timestamp with milliseconds for uniqueness
+        const timestamp = new Date().getTime();
+        
+        // Add a random number between 1-1000 for extra uniqueness
+        const extraRandom = Math.floor(Math.random() * 1000) + 1;
+        
+        // Combine all parts into a unique ID
+        return `peritus-${timestamp}-${randomPart1}-${extraRandom}-${randomPart2}`;
     }
 });
