@@ -129,7 +129,6 @@ export default function UniversalChatLayout({
           {/* Action Buttons - matching screenshot colors */}
           <div className="flex space-x-3">
             <button 
-              onClick={handleSettingsClick}
               className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-purple-600 text-white rounded-lg hover:from-red-600 hover:to-purple-700 transition font-medium text-sm"
             >
               <Settings size={16} />
@@ -152,17 +151,13 @@ export default function UniversalChatLayout({
             <h3 className="text-lg font-semibold text-gray-900">Configure</h3>
           </div>
           <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition cursor-pointer">
+            <button 
+              onClick={handleSettingsClick}
+              className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+            >
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-squidgy-primary rounded-full"></div>
-                <span className="text-sm text-gray-700">Agent Settings</span>
-              </div>
-              <ChevronRight className="text-gray-400" size={14} />
-            </button>
-            <button className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition cursor-pointer">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-squidgy-primary rounded-full"></div>
-                <span className="text-sm text-gray-700">Customization Options</span>
+                <span className="text-sm text-gray-700">Configurable Data</span>
               </div>
               <ChevronRight className="text-gray-400" size={14} />
             </button>

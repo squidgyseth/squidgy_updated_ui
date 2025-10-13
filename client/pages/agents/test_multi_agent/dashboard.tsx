@@ -42,14 +42,7 @@ export default function TestMultiAgentDashboard() {
     introMessage: `Hi! I'm your ${agentConfig.agent.name}. ${agentConfig.agent.tagline} I'm here to help with testing multi-agent code generation systems, advanced AI workflows, and system integration testing.`
   };
 
-  const suggestions = [
-    'Generate test cases',
-    'Run system diagnostics',
-    'Optimize performance',
-    'Create integration tests',
-    'Validate workflows',
-    'Analyze metrics'
-  ];
+  const suggestions = agentConfig?.suggestions || [];
 
   const handleSendMessage = (message: string) => {
     console.log('Test Multi-Agent - Message sent:', message);
@@ -61,8 +54,28 @@ export default function TestMultiAgentDashboard() {
     handleSendMessage(suggestion);
   };
 
+  const handlePinToggle = (agentId: string, pinned: boolean) => {
+    console.log(`Agent ${agentId} pin toggled to: ${pinned}`);
+  };
+
+  const handleSettingsClick = (agentId: string) => {
+    console.log(`Settings clicked for agent: ${agentId}`);
+    const url = `/agent-settings/${agentId}`;
+    
+    // Try to open in new tab, fallback to same tab if popup blocked
+    const newWindow = window.open(url, '_blank');
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      console.warn('Popup blocked, opening in same tab');
+      window.location.href = url;
+    }
+  };
+
   return (
-    <UniversalChatLayout agent={agentConfig.agent}>
+    <UniversalChatLayout 
+      agent={agentConfig.agent}
+      onPinToggle={handlePinToggle}
+      onSettingsClick={handleSettingsClick}
+    >
       <CleanChatInterface
         agent={agentInfo}
         onSendMessage={handleSendMessage}

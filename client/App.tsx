@@ -28,6 +28,7 @@ import AccountSettings from "./pages/AccountSettings";
 import TestEmailCheck from "./pages/TestEmailCheck";
 import NotFound from "./pages/NotFound";
 import ChatPage from "./pages/ChatPage";
+import AgentSettings from "./pages/AgentSettings";
 
 const queryClient = new QueryClient();
 
@@ -171,6 +172,11 @@ const App = () => (
           <Route path="/chat/*" element={
             <ProtectedRoute>
               <ChatPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/agent-settings/:agentId" element={
+            <ProtectedRoute>
+              <AgentSettings />
             </ProtectedRoute>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

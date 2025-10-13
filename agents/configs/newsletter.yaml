@@ -21,6 +21,15 @@ agent:
     - "Generated newsletter for Q4 product launch"
     - "Processed PDF content from marketing materials"
     - "Analyzed competitor newsletter performance"
+
+suggestions:
+  - "Create newsletter content"
+  - "Process PDF document"
+  - "Generate email templates"
+  - "Analyze newsletter performance"
+  - "Design email layout"
+  - "Optimize subject lines"
+
 n8n:
   webhook_url: https://n8n.theaiteam.uk/webhook/newsletter
 ui:
@@ -41,5 +50,5 @@ ui_use:
     - name: Newsletter Liquid-Blanch-17032840 Page1
       path: /agents/newsletter/newsletter_liquid-blanch-17032840_page1
       order: 1
-      generatedComponent: /Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/newsletter_liquid_blanch_17032840_page1.tsx
+      generatedComponent: /Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx
   default_page: /agents/newsletter/newsletter_liquid-blanch-17032840_page1

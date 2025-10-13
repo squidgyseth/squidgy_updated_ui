@@ -4,7 +4,7 @@ import { MessageCircle, Layers, ArrowLeft, Settings } from 'lucide-react';
 import AgentPageCarousel from '../AgentPageCarousel';
 import { AgentConfigService } from '../../services/agentConfigService';
 import type { AgentCarouselConfig } from '../../types/carouselTypes';
-import NewsletterComponent from '../../pages/agents/newsletter/newsletter_liquid_blanch_17032840_page1';
+import NewsletterComponent from '../../pages/agents/newsletter/dashboard';
 import PersonalAssistantComponent from '../../pages/agents/personal_assistant/personal_dashboard';
 import SMMAssistantComponent from '../../pages/agents/smm_assistant/dashboard';
 import TestMultiAgentComponent from '../../pages/agents/test_multi_agent/dashboard';

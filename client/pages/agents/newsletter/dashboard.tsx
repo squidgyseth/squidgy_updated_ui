@@ -5,7 +5,7 @@ import UniversalChatLayout from '../../../components/layout/UniversalChatLayout'
 import CleanChatInterface from '../../../components/chat/CleanChatInterface';
 import { AgentConfigService } from '../../../services/agentConfigService';
 
-export default function NewsletterNewsletterLiquidBlanch17032840Page1() {
+export default function NewsletterDashboard() {
   const { userId, sessionId } = useUser();
   
   // Get agent configuration
@@ -62,6 +62,14 @@ export default function NewsletterNewsletterLiquidBlanch17032840Page1() {
 
   const handleSettingsClick = (agentId: string) => {
     console.log(`Settings clicked for agent: ${agentId}`);
+    const url = `/agent-settings/${agentId}`;
+    
+    // Try to open in new tab, fallback to same tab if popup blocked
+    const newWindow = window.open(url, '_blank');
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      console.warn('Popup blocked, opening in same tab');
+      window.location.href = url;
+    }
   };
 
   // If agent config is not loaded yet, show loading
@@ -83,11 +91,7 @@ export default function NewsletterNewsletterLiquidBlanch17032840Page1() {
     avatar: agentConfig.agent.avatar,
     tagline: agentConfig.agent.tagline,
     introMessage: `Hi! I'm your ${agentConfig.agent.name}. ${agentConfig.agent.tagline} I'm here to help you create engaging newsletters, process content, and optimize your email marketing. What newsletter project can I help you with today?`,
-    suggestionButtons: [
-      'Create newsletter content',
-      'Process PDF document',
-      'Generate email templates'
-    ]
+    suggestionButtons: agentConfig?.suggestions || []
   };
 
   return (

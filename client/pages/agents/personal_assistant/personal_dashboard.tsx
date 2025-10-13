@@ -42,14 +42,7 @@ export default function PersonalDashboard() {
     introMessage: `Hi! I'm your ${agentConfig.agent.name}. ${agentConfig.agent.tagline} I'm here to help you with any task, from scheduling and organization to research and general support. How can I assist you today?`
   };
 
-  const suggestions = [
-    'Help me organize my schedule for this week',
-    'Draft a professional email for me',
-    'Research latest industry trends',
-    'Create a task list for my project',
-    'Schedule a meeting with my team',
-    'Help me plan my upcoming trip'
-  ];
+  const suggestions = agentConfig?.suggestions || [];
 
   const handleSendMessage = (message: string) => {
     console.log('Personal Assistant - Message sent:', message);
@@ -61,8 +54,28 @@ export default function PersonalDashboard() {
     handleSendMessage(suggestion);
   };
 
+  const handlePinToggle = (agentId: string, pinned: boolean) => {
+    console.log(`Agent ${agentId} pin toggled to: ${pinned}`);
+  };
+
+  const handleSettingsClick = (agentId: string) => {
+    console.log(`Settings clicked for agent: ${agentId}`);
+    const url = `/agent-settings/${agentId}`;
+    
+    // Try to open in new tab, fallback to same tab if popup blocked
+    const newWindow = window.open(url, '_blank');
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      console.warn('Popup blocked, opening in same tab');
+      window.location.href = url;
+    }
+  };
+
   return (
-    <UniversalChatLayout agent={agentConfig.agent}>
+    <UniversalChatLayout 
+      agent={agentConfig.agent}
+      onPinToggle={handlePinToggle}
+      onSettingsClick={handleSettingsClick}
+    >
       <CleanChatInterface
         agent={agentInfo}
         onSendMessage={handleSendMessage}
