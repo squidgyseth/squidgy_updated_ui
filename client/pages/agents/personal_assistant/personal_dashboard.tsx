@@ -6,32 +6,22 @@ import { AgentConfigService } from '../../../services/agentConfigService';
 export default function PersonalDashboard() {
   const configService = AgentConfigService.getInstance();
 
-  // Get Personal Assistant configuration
-  const agentConfig = configService.getMockAgentConfig('personal_assistant', {
-    agent: {
-      id: 'personal_assistant',
-      name: 'Personal Assistant',
-      category: 'GENERAL',
-      description: 'Your versatile personal assistant ready to help with any task, from scheduling and organization to research and general support.',
-      specialization: 'Always Ready to Help',
-      tagline: 'Organize. Schedule. Support.',
-      avatar: 'https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64',
-      capabilities: [
-        'Task management and scheduling coordination',
-        'Research and information gathering', 
-        'Email drafting and communication support',
-        'Document organization and file management',
-        'Calendar management and appointment scheduling',
-        'Travel planning and logistics coordination'
-      ],
-      recent_actions: [
-        'Organized calendar for next week\'s meetings',
-        'Researched market trends for quarterly report',
-        'Drafted follow-up emails for client meetings', 
-        'Scheduled team meetings for project kickoff'
-      ]
-    }
-  });
+  // Get Personal Assistant configuration from YAML
+  const [agentConfig, setAgentConfig] = React.useState(null);
+
+  React.useEffect(() => {
+    const loadAgentConfig = async () => {
+      const config = await configService.loadAgentConfig('personal_assistant');
+      if (config) {
+        setAgentConfig(config);
+        console.log('Personal Assistant config loaded from YAML:', config.agent.name);
+      } else {
+        console.error('Failed to load Personal Assistant config from YAML');
+      }
+    };
+    
+    loadAgentConfig();
+  }, [configService]);
 
   // Handle case where config is null
   if (!agentConfig) {

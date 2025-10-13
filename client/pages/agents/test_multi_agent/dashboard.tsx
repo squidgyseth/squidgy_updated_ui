@@ -6,30 +6,22 @@ import { AgentConfigService } from '../../../services/agentConfigService';
 export default function TestMultiAgentDashboard() {
   const configService = AgentConfigService.getInstance();
 
-  // Get Test Multi-Agent configuration
-  const agentConfig = configService.getMockAgentConfig('test_multi_agent', {
-    agent: {
-      id: 'test_multi_agent',
-      name: 'Test Multi-Agent',
-      category: 'TESTING',
-      description: 'Testing multi-agent code generation system with advanced AI capabilities and collaborative workflows.',
-      specialization: 'Advanced Testing',
-      tagline: 'Test. Generate. Collaborate.',
-      avatar: 'https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64',
-      capabilities: [
-        'Multi-agent code generation and testing',
-        'Advanced AI workflow collaboration',
-        'System integration testing',
-        'Performance optimization and analysis'
-      ],
-      recent_actions: [
-        'Generated test suites for new features',
-        'Coordinated multi-agent workflows',
-        'Optimized system performance metrics',
-        'Validated integration pipelines'
-      ]
-    }
-  });
+  // Get Test Multi-Agent configuration from YAML
+  const [agentConfig, setAgentConfig] = React.useState(null);
+
+  React.useEffect(() => {
+    const loadAgentConfig = async () => {
+      const config = await configService.loadAgentConfig('test_multi_agent');
+      if (config) {
+        setAgentConfig(config);
+        console.log('Test Multi-Agent config loaded from YAML:', config.agent.name);
+      } else {
+        console.error('Failed to load Test Multi-Agent config from YAML');
+      }
+    };
+    
+    loadAgentConfig();
+  }, [configService]);
 
   // Handle case where config is null
   if (!agentConfig) {

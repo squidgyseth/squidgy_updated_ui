@@ -7,29 +7,21 @@ export default function SMMAssistantDashboard() {
   const configService = AgentConfigService.getInstance();
 
   // Get SMM Assistant configuration from YAML
-  const agentConfig = configService.getMockAgentConfig('smm_assistant', {
-    agent: {
-      id: 'smm_assistant',
-      name: 'SMM Assistant',
-      category: 'MARKETING',
-      description: 'Specializes in social media marketing, content creation, and trend analysis to help grow your online presence across all platforms.',
-      specialization: 'Creative & Trendy',
-      tagline: 'Trend. Post. Analyze.',
-      avatar: 'https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64',
-      capabilities: [
-        'Content creation and optimization for all major social platforms',
-        'Trend analysis and hashtag research',
-        'Social media strategy development and planning',
-        'Engagement optimization and community management'
-      ],
-      recent_actions: [
-        'Created 15 Instagram post ideas for fashion brand',
-        'Analysed competitor performance',
-        'Generated trending hashtags for Q4 campaign',
-        'Developed content calendar for December'
-      ]
-    }
-  });
+  const [agentConfig, setAgentConfig] = React.useState(null);
+
+  React.useEffect(() => {
+    const loadAgentConfig = async () => {
+      const config = await configService.loadAgentConfig('smm_assistant');
+      if (config) {
+        setAgentConfig(config);
+        console.log('SMM Assistant config loaded from YAML:', config.agent.name);
+      } else {
+        console.error('Failed to load SMM Assistant config from YAML');
+      }
+    };
+    
+    loadAgentConfig();
+  }, [configService]);
 
   // Handle case where config is null
   if (!agentConfig) {

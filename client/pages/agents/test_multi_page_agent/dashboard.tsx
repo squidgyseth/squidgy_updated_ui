@@ -6,30 +6,22 @@ import { AgentConfigService } from '../../../services/agentConfigService';
 export default function TestMultiPageAgentDashboard() {
   const configService = AgentConfigService.getInstance();
 
-  // Get Test Multi-Page Agent configuration
-  const agentConfig = configService.getMockAgentConfig('test_multi_page_agent', {
-    agent: {
-      id: 'test_multi_page_agent',
-      name: 'Test Multi-Page Agent',
-      category: 'TESTING',
-      description: 'Testing multi-page functionality with advanced navigation and complex user interface components.',
-      specialization: 'Multi-Page Testing',
-      tagline: 'Navigate. Test. Validate.',
-      avatar: 'https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64',
-      capabilities: [
-        'Multi-page navigation testing',
-        'Complex UI component validation',
-        'User journey optimization',
-        'Interface responsiveness testing'
-      ],
-      recent_actions: [
-        'Tested multi-page navigation flows',
-        'Validated complex UI components',
-        'Optimized user experience paths',
-        'Analyzed interface responsiveness'
-      ]
-    }
-  });
+  // Get Test Multi-Page Agent configuration from YAML
+  const [agentConfig, setAgentConfig] = React.useState(null);
+
+  React.useEffect(() => {
+    const loadAgentConfig = async () => {
+      const config = await configService.loadAgentConfig('test_multi_page_agent');
+      if (config) {
+        setAgentConfig(config);
+        console.log('Test Multi-Page Agent config loaded from YAML:', config.agent.name);
+      } else {
+        console.error('Failed to load Test Multi-Page Agent config from YAML');
+      }
+    };
+    
+    loadAgentConfig();
+  }, [configService]);
 
   // Handle case where config is null
   if (!agentConfig) {

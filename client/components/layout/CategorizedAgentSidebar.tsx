@@ -43,12 +43,8 @@ export default function CategorizedAgentSidebar() {
       const response = await fetch('/api/agents/list');
       
       if (!response.ok) {
-        console.warn('Failed to load agents from API, using fallback');
-        // Process fallback data through the same grouping logic
-        const fallbackCategories = getDefaultCategories();
-        const allAssistants = fallbackCategories.flatMap(cat => cat.assistants);
-        const processedCategories = groupAssistantsByCategory(allAssistants);
-        setCategories(processedCategories);
+        console.error('Failed to load agents from API:', response.status, response.statusText);
+        setCategories([]);
         return;
       }
       
@@ -71,11 +67,7 @@ export default function CategorizedAgentSidebar() {
       
     } catch (error) {
       console.error('Failed to load agents from YAML:', error);
-      // Process fallback data through the same grouping logic
-      const fallbackCategories = getDefaultCategories();
-      const allAssistants = fallbackCategories.flatMap(cat => cat.assistants);
-      const processedCategories = groupAssistantsByCategory(allAssistants);
-      setCategories(processedCategories);
+      setCategories([]);
     }
   };
 
@@ -96,103 +88,26 @@ export default function CategorizedAgentSidebar() {
       }
     });
     
-    // Add PINNED category first if there are pinned assistants
-    if (pinnedAssistants.length > 0) {
-      grouped['PINNED'] = pinnedAssistants;
-    }
-
     // Convert to category format with proper counts
-    return Object.entries(grouped).map(([categoryName, categoryAssistants]) => ({
+    const categories = Object.entries(grouped).map(([categoryName, categoryAssistants]) => ({
       name: categoryName,
       count: categoryName === 'PINNED' ? 0 : categoryAssistants.length, 
       assistants: categoryAssistants
     }));
+
+    // Add PINNED category first if there are pinned assistants
+    if (pinnedAssistants.length > 0) {
+      const pinnedCategory = {
+        name: 'PINNED',
+        count: 0,
+        assistants: pinnedAssistants
+      };
+      return [pinnedCategory, ...categories];
+    }
+
+    return categories;
   };
 
-  const getDefaultCategories = (): AssistantCategory[] => [
-    {
-      name: "GENERAL", 
-      count: 1,
-      assistants: [
-        {
-          name: "Personal Assistant",
-          description: "Your versatile personal assistant ready to help with any task.",
-          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-          isOnline: true,
-          id: "personal_assistant",
-          pinned: true,
-        }
-      ]
-    },
-    {
-      name: "MARKETING", 
-      count: 2,
-      assistants: [
-        {
-          name: "Newsletter Agent",
-          description: "Content. Create. Distribute.",
-          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
-          isOnline: true,
-          id: "newsletter",
-          pinned: true,
-        },
-        {
-          name: "SMM Assistant",
-          description: "Trend. Post. Analyze.",
-          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
-          isOnline: true,
-          id: "smm_assistant",
-        },
-        {
-          name: "Content Strategist",
-          description: "Plan. Write. Repurpose.",
-          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/fae0953bfe5842c25b1a321c667188d167c18abb?width=64",
-          isOnline: true,
-          id: "content_strategist",
-        }
-      ]
-    },
-    {
-      name: "SALES",
-      count: 2, 
-      assistants: [
-        {
-          name: "Lead Generator",
-          description: "Find leads fast.",
-          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/1c1a9e476685a48c996662d5e993f34fffc24ec0?width=64",
-          isOnline: true,
-          id: "lead_generator",
-        },
-        {
-          name: "CRM Updater", 
-          description: "Keep data clean.",
-          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/aba5f5c2e7b9e818f550225ff47becc0bcd708e2?width=64",
-          isOnline: true,
-          id: "crm_updater",
-        }
-      ]
-    },
-    {
-      name: "HR",
-      count: 2,
-      assistants: [
-        {
-          name: "Recruiter Assistant",
-          description: "Hire with ease.",
-          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/ffe6304047504c08d7faccb66297228d39227080?width=64",
-          isOnline: true,
-          id: "recruiter_assistant",
-        },
-        {
-          name: "Onboarding Coach",
-          description: "Smooth onboarding all the way.",
-          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/46c75834fbbcdebb1b62ffbf7635f3f0a5191324?width=64",
-          isOnline: true,
-          id: "onboarding_coach",
-        }
-      ]
-    }
-  ];
 
   const handleCreateGroup = (groupName: string, selectedAssistants: string[]) => {
     console.log('Creating group:', groupName, 'with assistants:', selectedAssistants);

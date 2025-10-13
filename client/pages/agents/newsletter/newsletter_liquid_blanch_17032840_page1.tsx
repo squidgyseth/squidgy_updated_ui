@@ -14,17 +14,20 @@ export default function NewsletterNewsletterLiquidBlanch17032840Page1() {
   const [isGenerating, setIsGenerating] = useState(false);
   
   React.useEffect(() => {
-    // Load newsletter agent config
-    const agentId = 'newsletter';
-    const config = agentService.getMockAgentConfig(agentId);
+    const loadAgentConfig = async () => {
+      const agentId = 'newsletter';
+      const config = await agentService.loadAgentConfig(agentId);
+      
+      if (config) {
+        setAgentConfig(config);
+        console.log('Newsletter agent config loaded from YAML:', config.agent.name);
+      } else {
+        console.error('Failed to load newsletter agent config from YAML');
+      }
+    };
     
-    if (config) {
-      setAgentConfig(config);
-      console.log('Newsletter agent config loaded:', config.agent.name);
-    } else {
-      console.error('Failed to load newsletter agent config');
-    }
-  }, []);
+    loadAgentConfig();
+  }, [agentService]);
   
   // Chat handlers
   const handleSendMessage = async (message: string) => {
