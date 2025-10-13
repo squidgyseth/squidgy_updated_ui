@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, ChevronDown, ChevronUp, Menu } from 'lucide-react';
+import { useSidebar } from '../../contexts/SidebarContext';
 
 interface AgentConfig {
   id: string;
@@ -29,6 +30,7 @@ export default function UniversalChatLayout({
 }: UniversalChatLayoutProps) {
   const [isPinned, setIsPinned] = useState(agent.pinned || false);
   const [isProfileExpanded, setIsProfileExpanded] = useState(true);
+  const { isSidebarOpen, toggleSidebar } = useSidebar();
 
   const handlePinToggle = () => {
     const newPinnedState = !isPinned;
@@ -47,8 +49,16 @@ export default function UniversalChatLayout({
         {/* Simple Chat Header - matches screenshots exactly */}
         <div className="border-b border-gray-200 px-6 py-4 bg-white">
           <div className="flex items-center justify-between">
-            {/* Left: Agent info */}
+            {/* Left: Hamburger menu + Agent info */}
             <div className="flex items-center space-x-3">
+              {/* Hamburger Menu Button */}
+              <button 
+                onClick={toggleSidebar}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-all duration-200"
+                title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+              >
+                <Menu size={20} />
+              </button>
               <div className="relative">
                 {agent.avatar && (
                   <img 
@@ -61,14 +71,15 @@ export default function UniversalChatLayout({
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">{agent.name}</h1>
-                <p className="text-sm text-gray-600">active • {agent.tagline}</p>
+                <h1 className="text-base font-medium text-gray-900">{agent.name}</h1>
+                <p className="text-sm font-normal text-gray-500">active • {agent.tagline}</p>
               </div>
               <button 
                 onClick={() => setIsProfileExpanded(!isProfileExpanded)}
-                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition ml-2"
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200 ml-2"
+                title={isProfileExpanded ? "Collapse details" : "Expand details"}
               >
-                {isProfileExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                {isProfileExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
               </button>
             </div>
             
@@ -112,7 +123,7 @@ export default function UniversalChatLayout({
               />
             )}
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-squidgy-primary">{agent.name}</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{agent.name}</h2>
               {agent.specialization && (
                 <p className="text-sm font-medium text-squidgy-primary mb-1">{agent.specialization}</p>
               )}
@@ -125,7 +136,7 @@ export default function UniversalChatLayout({
           <div className="flex space-x-3">
             <button 
               onClick={handleSettingsClick}
-              className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 bg-squidgy-red text-white rounded-lg hover:bg-squidgy-red/90 transition font-medium text-sm"
+              className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-purple-600 text-white rounded-lg hover:from-red-600 hover:to-purple-700 transition font-medium text-sm"
             >
               <Settings size={16} />
               <span>Settings</span>

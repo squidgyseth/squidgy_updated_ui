@@ -78,6 +78,7 @@ export default function CategorizedAgentSidebar() {
       description: "Always here to help.",
       avatar: "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
       isOnline: true,
+      id: "personal_assistant",
     }];
     
     // Group other assistants by category
@@ -107,13 +108,21 @@ export default function CategorizedAgentSidebar() {
           description: "Always here to help.",
           avatar: "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
           isOnline: true,
+          id: "personal_assistant",
         }
       ]
     },
     {
       name: "MARKETING", 
-      count: 2,
+      count: 3,
       assistants: [
+        {
+          name: "Newsletter Agent",
+          description: "Content. Create. Distribute.",
+          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+          isOnline: true,
+          id: "newsletter",
+        },
         {
           name: "SMM Assistant",
           description: "Trend. Post. Analyze.",
