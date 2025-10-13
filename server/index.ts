@@ -4,6 +4,7 @@ import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { analyzeWebsite, captureScreenshot, getFavicon } from "./routes/website";
 import { createSubaccountAndUser } from "./routes/ghl";
+import agentsRouter from "./routes/agents";
 
 export function createServer() {
   const app = express();
@@ -14,20 +15,23 @@ export function createServer() {
   app.use(express.urlencoded({ extended: true }));
 
   // Example API routes
-  app.get("/api/ping", (_req, res) => {
+  app.get("/ping", (_req, res) => {
     const ping = process.env.PING_MESSAGE ?? "ping";
     res.json({ message: ping });
   });
 
-  app.get("/api/demo", handleDemo);
+  app.get("/demo", handleDemo);
 
   // Website analysis routes
-  app.post("/api/website/full-analysis", analyzeWebsite);
-  app.post("/api/website/screenshot", captureScreenshot);
-  app.post("/api/website/favicon", getFavicon);
+  app.post("/website/full-analysis", analyzeWebsite);
+  app.post("/website/screenshot", captureScreenshot);
+  app.post("/website/favicon", getFavicon);
 
   // GHL integration routes
-  app.post("/api/ghl/create-subaccount-and-user", createSubaccountAndUser);
+  app.post("/ghl/create-subaccount-and-user", createSubaccountAndUser);
+
+  // Agent management routes
+  app.use("/agents", agentsRouter);
 
   return app;
 }

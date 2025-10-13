@@ -32,16 +32,15 @@ function expressPlugin(): Plugin {
     configureServer(server) {
       const app = createServer();
 
-      // Add Express app as middleware to Vite dev server
-      server.middlewares.use('/api', app);
-      
-      // Handle client-side routing - serve index.html for non-API routes
-      server.middlewares.use('*', (req, res, next) => {
-        if (req.originalUrl?.startsWith('/api')) {
-          return next();
+      // Add Express app as middleware to Vite dev server - BEFORE Vite's own middleware
+      server.middlewares.use((req, res, next) => {
+        if (req.url?.startsWith('/api')) {
+          // Remove /api prefix for Express app
+          req.url = req.url.slice(4);
+          app(req, res, next);
+        } else {
+          next();
         }
-        // Let Vite handle serving the index.html for client-side routing
-        next();
       });
     },
   };

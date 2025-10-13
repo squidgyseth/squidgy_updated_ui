@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CreateGroupChatModal from "../modals/CreateGroupChatModal";
 
 interface AssistantSidebarProps {
@@ -12,6 +12,9 @@ interface Assistant {
   avatar: string;
   isOnline: boolean;
   isSelected?: boolean;
+  agentId?: string;
+  pageType?: string;
+  componentPath?: string;
 }
 
 interface AssistantCategory {
@@ -22,13 +25,54 @@ interface AssistantCategory {
 
 export default function AssistantSidebar({ selectedAssistant, onSelectAssistant }: AssistantSidebarProps) {
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+  const [categories, setCategories] = useState<AssistantCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAgents();
+  }, []);
+
+  const fetchAgents = async () => {
+    try {
+      const response = await fetch('/api/agents/list');
+      if (response.ok) {
+        const groupedAgents = await response.json();
+        
+        // Transform grouped agents into categories format
+        const transformedCategories: AssistantCategory[] = Object.entries(groupedAgents).map(([category, agents]: [string, any]) => ({
+          name: category,
+          count: agents.length,
+          assistants: agents.map((agent: any) => ({
+            name: agent.name,
+            description: agent.description,
+            avatar: agent.avatar_url || "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+            isOnline: true,
+            agentId: agent.agent_id,
+            pageType: agent.page_type,
+            componentPath: agent.generated_component_path
+          }))
+        }));
+
+        setCategories(transformedCategories);
+      } else {
+        // Fallback to default categories if API fails
+        setCategories(getDefaultCategories());
+      }
+    } catch (error) {
+      console.error('Failed to fetch agents:', error);
+      // Use default categories as fallback
+      setCategories(getDefaultCategories());
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCreateGroup = (groupName: string, selectedAssistants: string[]) => {
     console.log('Creating group:', groupName, 'with assistants:', selectedAssistants);
     // Here you would typically handle the group creation logic
   };
 
-  const categories: AssistantCategory[] = [
+  const getDefaultCategories = (): AssistantCategory[] => [
     {
       name: "PINNED",
       count: 0,

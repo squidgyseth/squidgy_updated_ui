@@ -1,0 +1,29 @@
+agent:
+  id: newsletter
+  name: Newsletter Agent
+  category: MARKETING
+  description: Create and manage newsletters
+  avatar: https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter
+  pinned: true
+n8n:
+  webhook_url: https://n8n.theaiteam.uk/webhook/newsletter
+ui:
+  page_type: standard
+  figma_url: ''
+  figma_deployed_url: |
+    https://liquid-blanch-17032840.figma.site/
+  figma_token: figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd
+  pages:
+    - name: newsletter_liquid-blanch-17032840_page1
+      path: /agents/newsletter/newsletter_liquid-blanch-17032840_page1
+      order: 1
+      source:
+        type: figma_deployed
+        url: https://liquid-blanch-17032840.figma.site/
+ui_use:
+  pages:
+    - name: Newsletter Liquid-Blanch-17032840 Page1
+      path: /agents/newsletter/newsletter_liquid-blanch-17032840_page1
+      order: 1
+      generatedComponent: /Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/newsletter_liquid_blanch_17032840_page1.tsx
+  default_page: /agents/newsletter/newsletter_liquid-blanch-17032840_page1

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import LeftNavigation from "./LeftNavigation";
-import AssistantSidebar from "./AssistantSidebar";
-import ChatArea from "./ChatArea";
+import CategorizedAgentSidebar from "./CategorizedAgentSidebar";
+import EnhancedChatArea from "./EnhancedChatArea";
 import AssistantDetails from "./AssistantDetails";
 
 export default function MainLayout() {
@@ -18,23 +18,16 @@ export default function MainLayout() {
 
       {/* Main content area with left margin to account for fixed nav */}
       <div className="ml-[60px] h-screen flex">
-        {/* Assistant Sidebar - Fixed width */}
+        {/* Enhanced Categorized Agent Sidebar */}
         {isSidebarOpen && (
           <div className="hidden lg:block transition-all duration-300 ease-in-out">
-            <AssistantSidebar
-              selectedAssistant={selectedAssistant}
-              onSelectAssistant={setSelectedAssistant}
-            />
+            <CategorizedAgentSidebar />
           </div>
         )}
 
-        {/* Main Chat Area - Flexible width */}
+        {/* Enhanced Chat Area with Carousel Support */}
         <div className="flex-1 flex flex-col">
-          <ChatArea
-            selectedAssistant={selectedAssistant}
-            onToggleDetails={() => setIsDetailsPanelOpen(!isDetailsPanelOpen)}
-            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-          />
+          <EnhancedChatArea />
         </div>
 
         {/* Assistant Details Panel - Fixed width, collapsible */}

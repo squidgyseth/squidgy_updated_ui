@@ -1,0 +1,67 @@
+# Multi-Page SMM Assistant Agent Configuration
+# This agent has multiple pages from different Figma sources
+
+agent:
+  # Unique identifier (no spaces, lowercase)
+  id: "smm_assistant"
+  
+  # Display name shown in the sidebar
+  name: "SMM Assistant"
+  
+  # Category for grouping (MARKETING, SALES, HR, SUPPORT, OPERATIONS)
+  category: "MARKETING"
+  
+  # Short description for the sidebar
+  description: "Social media marketing specialist"
+  
+  # Avatar URL (optional)
+  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=smm"
+  
+  # Pin to top of sidebar
+  pinned: true
+
+# N8N Webhook Configuration
+n8n:
+  webhook_url: "https://n8n.theaiteam.uk/webhook/smm-assistant"
+
+# UI Configuration with Multiple Pages
+ui:
+  # Page type for multi-page agents
+  page_type: "multi_page"
+  
+  # Multiple Figma API URLs (comma-separated)
+  # Each URL will generate a separate page component
+  figma_url: >
+    https://www.figma.com/file/abc123/SMM-Dashboard,
+    https://www.figma.com/file/def456/Analytics-View,
+    https://www.figma.com/file/ghi789/Content-Creator
+  
+  # Multiple deployed Figma URLs (comma-separated)
+  # These will be processed after the API URLs
+  figma_deployed_url: >
+    https://liquid-blanch-17032840.figma.site/,
+    https://analytics-demo.figma.site/
+  
+  # Figma access token (uses environment variable)
+  figma_token: "${FIGMA_ACCESS_TOKEN}"
+
+# This section will be auto-generated after pages are created
+# ui_use:
+#   pages:
+#     - name: "Dashboard"
+#       path: "/agents/smm_assistant/dashboard"
+#       order: 1
+#     - name: "Analytics" 
+#       path: "/agents/smm_assistant/analytics"
+#       order: 2
+#     - name: "Content Creator"
+#       path: "/agents/smm_assistant/content"
+#       order: 3
+#     - name: "Reports"
+#       path: "/agents/smm_assistant/reports"
+#       order: 4
+#     - name: "Settings"
+#       path: "/agents/smm_assistant/settings"
+#       order: 5
+#   default_page: "/agents/smm_assistant/dashboard"
+#   navigation_type: "tabs"

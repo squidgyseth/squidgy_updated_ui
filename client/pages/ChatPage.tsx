@@ -1,5 +1,5 @@
-import MainLayout from "../components/layout/MainLayout";
+import AgentRoutes from "../routes/AgentRoutes";
 
 export default function ChatPage() {
-  return <MainLayout />;
+  return <AgentRoutes />;
 }
