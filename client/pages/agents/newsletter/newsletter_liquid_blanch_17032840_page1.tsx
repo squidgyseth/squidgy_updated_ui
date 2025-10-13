@@ -255,7 +255,7 @@ export default function NewsletterNewsletterLiquidBlanch17032840Page1() {
       const { data: project, error: dbError } = await supabase
         .from('newsletter_projects')
         .insert({
-          user_id: userId || 'anonymous',
+          firm_user_id: userId || 'anonymous',
           session_id: sessionId,
           content: message,
           uploaded_file_name: uploadedFile?.name || null,

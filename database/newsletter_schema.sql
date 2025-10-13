@@ -3,47 +3,49 @@
 
 -- Table: newsletter_projects
 -- Stores newsletter creation projects with content, instructions, and metadata
-CREATE TABLE IF NOT EXISTS newsletter_projects (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    session_id VARCHAR(255),
-    
-    -- Content Input
-    content TEXT,
-    uploaded_file_name VARCHAR(255),
-    uploaded_file_url TEXT,
-    uploaded_file_size INTEGER,
-    
-    -- Project Instructions
-    generation_instructions TEXT NOT NULL,
-    
-    -- Generated Newsletter Data
-    generated_newsletter TEXT,
-    newsletter_subject VARCHAR(500),
-    newsletter_html TEXT,
-    
-    -- Metadata
-    status VARCHAR(50) DEFAULT 'draft', -- draft, generating, completed, failed
-    generation_model VARCHAR(100), -- e.g., 'gpt-4', 'claude-3'
-    generation_time_ms INTEGER,
-    error_message TEXT,
-    
-    -- Timestamps
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    generated_at TIMESTAMP WITH TIME ZONE,
-    
-    -- Constraints
-    CONSTRAINT valid_status CHECK (status IN ('draft', 'generating', 'completed', 'failed'))
-);
+CREATE TABLE public.newsletter_projects (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  firm_user_id text NOT NULL,
+  session_id character varying(255) NULL,
+  content text NULL,
+  uploaded_file_name character varying(255) NULL,
+  uploaded_file_url text NULL,
+  uploaded_file_size integer NULL,
+  generation_instructions text NOT NULL,
+  generated_newsletter text NULL,
+  newsletter_subject character varying(500) NULL,
+  newsletter_html text NULL,
+  status character varying(50) NULL DEFAULT 'draft'::character varying,
+  generation_model character varying(100) NULL,
+  generation_time_ms integer NULL,
+  error_message text NULL,
+  created_at timestamp with time zone NULL DEFAULT now(),
+  updated_at timestamp with time zone NULL DEFAULT now(),
+  generated_at timestamp with time zone NULL,
+  CONSTRAINT newsletter_projects_pkey PRIMARY KEY (id),
+  CONSTRAINT valid_status CHECK (
+    (
+      (status)::text = ANY (
+        ARRAY[
+          ('draft'::character varying)::text,
+          ('generating'::character varying)::text,
+          ('completed'::character varying)::text,
+          ('failed'::character varying)::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
 
 
 
 
 -- Indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_newsletter_projects_user_id ON newsletter_projects(user_id);
-CREATE INDEX IF NOT EXISTS idx_newsletter_projects_status ON newsletter_projects(status);
-CREATE INDEX IF NOT EXISTS idx_newsletter_projects_created_at ON newsletter_projects(created_at);
+CREATE INDEX IF NOT EXISTS idx_newsletter_projects_firm_user_id ON public.newsletter_projects USING btree (firm_user_id) TABLESPACE pg_default;
+
+CREATE INDEX IF NOT EXISTS idx_newsletter_projects_status ON public.newsletter_projects USING btree (status) TABLESPACE pg_default;
+
+CREATE INDEX IF NOT EXISTS idx_newsletter_projects_created_at ON public.newsletter_projects USING btree (created_at) TABLESPACE pg_default;
 
 -- RLS is disabled for development/testing purposes
 -- Uncomment the following lines to enable Row Level Security in production:
@@ -80,12 +82,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers for automatic timestamp updates
-CREATE TRIGGER update_newsletter_projects_updated_at
-    BEFORE UPDATE ON newsletter_projects
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_newsletter_projects_updated_at BEFORE
+UPDATE ON newsletter_projects FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
 
 -- Sample data insertion query (for testing)
--- INSERT INTO newsletter_projects (user_id, session_id, content, generation_instructions, status)
+-- INSERT INTO newsletter_projects (firm_user_id, session_id, content, generation_instructions, status)
 -- VALUES (
 --     auth.uid(),
 --     'test_session_123',
