@@ -5,6 +5,10 @@ import AgentPageCarousel from '../AgentPageCarousel';
 import { AgentConfigService } from '../../services/agentConfigService';
 import type { AgentCarouselConfig } from '../../types/carouselTypes';
 import NewsletterComponent from '../../pages/agents/newsletter/newsletter_liquid_blanch_17032840_page1';
+import PersonalAssistantComponent from '../../pages/agents/personal_assistant/personal_dashboard';
+import SMMAssistantComponent from '../../pages/agents/smm_assistant/dashboard';
+import TestMultiAgentComponent from '../../pages/agents/test_multi_agent/dashboard';
+import TestMultiPageAgentComponent from '../../pages/agents/test_multi_page_agent/dashboard';
 
 interface EnhancedChatAreaProps {
   className?: string;
@@ -146,6 +150,42 @@ export default function EnhancedChatArea({ className = '' }: EnhancedChatAreaPro
         return (
           <div className={`h-full ${className}`}>
             <NewsletterComponent />
+          </div>
+        );
+      }
+
+      // For personal assistant agent
+      if (carouselConfig.agentId === 'personal_assistant') {
+        return (
+          <div className={`h-full ${className}`}>
+            <PersonalAssistantComponent />
+          </div>
+        );
+      }
+
+      // For SMM assistant agent
+      if (carouselConfig.agentId === 'smm_assistant') {
+        return (
+          <div className={`h-full ${className}`}>
+            <SMMAssistantComponent />
+          </div>
+        );
+      }
+
+      // For test multi-agent
+      if (carouselConfig.agentId === 'test_multi_agent') {
+        return (
+          <div className={`h-full ${className}`}>
+            <TestMultiAgentComponent />
+          </div>
+        );
+      }
+
+      // For test multi-page agent
+      if (carouselConfig.agentId === 'test_multi_page_agent') {
+        return (
+          <div className={`h-full ${className}`}>
+            <TestMultiPageAgentComponent />
           </div>
         );
       }

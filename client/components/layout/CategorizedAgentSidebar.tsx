@@ -1,426 +1,293 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  ChevronRight, 
-  ChevronDown, 
-  Users, 
-  TrendingUp, 
-  Briefcase, 
-  HeadphonesIcon,
-  Settings,
-  Plus,
-  Pin,
-  MoreVertical,
-  Layers
-} from 'lucide-react';
+import CreateGroupChatModal from '../modals/CreateGroupChatModal';
 
-interface AgentPage {
+interface Assistant {
   name: string;
-  path: string;
-  order: number;
-}
-
-interface Agent {
-  id: string;
-  name: string;
-  category: string;
   description: string;
-  avatar?: string;
-  pinned?: boolean;
-  pages?: AgentPage[];
-  isActive?: boolean;
+  avatar: string;
+  isOnline: boolean;
+  isSelected?: boolean;
+  id?: string;
+  category?: string;
 }
 
-interface AgentCategory {
+interface AssistantCategory {
   name: string;
-  displayName: string;
-  color: string;
-  icon: React.ReactNode;
-  agents: Agent[];
-  isExpanded?: boolean;
+  count: number;
+  assistants: Assistant[];
 }
-
-const categoryIcons: Record<string, React.ReactNode> = {
-  MARKETING: <TrendingUp className="w-4 h-4" />,
-  SALES: <Briefcase className="w-4 h-4" />,
-  HR: <Users className="w-4 h-4" />,
-  SUPPORT: <HeadphonesIcon className="w-4 h-4" />,
-  OPERATIONS: <Settings className="w-4 h-4" />,
-};
-
-const categoryColors: Record<string, string> = {
-  MARKETING: 'purple',
-  SALES: 'blue',
-  HR: 'green',
-  SUPPORT: 'orange',
-  OPERATIONS: 'gray',
-};
 
 export default function CategorizedAgentSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [categories, setCategories] = useState<AgentCategory[]>([]);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [pinnedAgents, setPinnedAgents] = useState<Agent[]>([]);
-  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
-  const [selectedPage, setSelectedPage] = useState<string | null>(null);
+  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+  const [categories, setCategories] = useState<AssistantCategory[]>([]);
+  const [selectedAssistant, setSelectedAssistant] = useState<string | null>(null);
 
   useEffect(() => {
-    loadAgents();
+    loadAgentsFromYAML();
   }, []);
 
   useEffect(() => {
-    // Parse current path to determine selected agent and page
+    // Extract selected agent from URL
     const pathParts = location.pathname.split('/');
-    if (pathParts.includes('agents') && pathParts.length > 3) {
-      const agentIndex = pathParts.indexOf('agents');
-      setSelectedAgent(pathParts[agentIndex + 1] || null);
-      setSelectedPage(pathParts[agentIndex + 2] || null);
+    if (pathParts[1] === 'chat' && pathParts[2]) {
+      setSelectedAssistant(pathParts[2]);
     }
   }, [location]);
 
-  const loadAgents = async () => {
+  const loadAgentsFromYAML = async () => {
     try {
       const response = await fetch('/api/agents/list');
       
       if (!response.ok) {
-        throw new Error(`Failed to load agents: ${response.status}`);
+        console.warn('Failed to load agents from API, using fallback');
+        setCategories(getDefaultCategories());
+        return;
       }
       
       const agentConfigs = await response.json();
       
-      // Transform agent configs from YAML to sidebar format
-      const agents: Agent[] = agentConfigs.map((config: any) => ({
-        id: config.agent.id,
+      // Transform YAML configs to match sidebar format
+      const assistants: Assistant[] = agentConfigs.map((config: any) => ({
         name: config.agent.name,
-        category: config.agent.category,
-        description: config.agent.description,
-        avatar: config.agent.avatar,
-        pinned: config.agent.pinned || false,
-        pages: config.ui_use?.pages?.map((page: any) => ({
-          name: page.name,
-          path: page.path,
-          order: page.order
-        })) || [],
-        isActive: false
+        description: config.agent.description || config.agent.specialization || 'AI Assistant',
+        avatar: config.agent.avatar || "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+        isOnline: true,
+        id: config.agent.id,
+        category: config.agent.category?.toUpperCase() || 'GENERAL'
       }));
-      
-      // Group agents by category
-      const grouped = groupAgentsByCategory(agents);
+
+      // Group by category
+      const grouped = groupAssistantsByCategory(assistants);
       setCategories(grouped);
       
-      // Filter pinned agents
-      const pinned = agents.filter(a => a.pinned);
-      setPinnedAgents(pinned);
-      
-      // Auto-expand categories with active agents
-      const categoriesToExpand = new Set<string>();
-      grouped.forEach(cat => {
-        if (cat.agents.some(a => a.isActive)) {
-          categoriesToExpand.add(cat.name);
-        }
-      });
-      setExpandedCategories(categoriesToExpand);
-      
-      console.log('Loaded agents from API:', agents);
-      
     } catch (error) {
-      console.error('Failed to load agents:', error);
-      // Show error state instead of mock data
-      setCategories([]);
+      console.error('Failed to load agents from YAML:', error);
+      setCategories(getDefaultCategories());
     }
   };
 
-  const groupAgentsByCategory = (agents: Agent[]): AgentCategory[] => {
-    const grouped: Record<string, Agent[]> = {};
+  const groupAssistantsByCategory = (assistants: Assistant[]): AssistantCategory[] => {
+    const grouped: Record<string, Assistant[]> = {};
     
-    agents.forEach(agent => {
-      const category = agent.category.toUpperCase();
+    // Add PINNED category first with Personal Assistant
+    grouped['PINNED'] = [{
+      name: "Personal Assistant",
+      description: "Always here to help.",
+      avatar: "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+      isOnline: true,
+    }];
+    
+    // Group other assistants by category
+    assistants.forEach(assistant => {
+      const category = assistant.category || 'GENERAL';
       if (!grouped[category]) {
         grouped[category] = [];
       }
-      grouped[category].push(agent);
+      grouped[category].push(assistant);
     });
 
-    return Object.entries(grouped).map(([category, agents]) => ({
-      name: category,
-      displayName: category.charAt(0) + category.slice(1).toLowerCase(),
-      color: categoryColors[category] || 'gray',
-      icon: categoryIcons[category] || <Settings className="w-4 h-4" />,
-      agents: agents.sort((a, b) => a.name.localeCompare(b.name))
+    // Convert to category format with proper counts
+    return Object.entries(grouped).map(([categoryName, categoryAssistants]) => ({
+      name: categoryName,
+      count: categoryName === 'PINNED' ? 0 : categoryAssistants.length, 
+      assistants: categoryAssistants
     }));
   };
 
-  const toggleCategory = (categoryName: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(categoryName)) {
-      newExpanded.delete(categoryName);
-    } else {
-      newExpanded.add(categoryName);
+  const getDefaultCategories = (): AssistantCategory[] => [
+    {
+      name: "PINNED",
+      count: 0,
+      assistants: [
+        {
+          name: "Personal Assistant",
+          description: "Always here to help.",
+          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+          isOnline: true,
+        }
+      ]
+    },
+    {
+      name: "MARKETING", 
+      count: 2,
+      assistants: [
+        {
+          name: "SMM Assistant",
+          description: "Trend. Post. Analyze.",
+          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+          isOnline: true,
+          id: "smm_assistant",
+        },
+        {
+          name: "Content Strategist",
+          description: "Plan. Write. Repurpose.",
+          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/fae0953bfe5842c25b1a321c667188d167c18abb?width=64",
+          isOnline: true,
+          id: "content_strategist",
+        }
+      ]
+    },
+    {
+      name: "SALES",
+      count: 2, 
+      assistants: [
+        {
+          name: "Lead Generator",
+          description: "Find leads fast.",
+          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/1c1a9e476685a48c996662d5e993f34fffc24ec0?width=64",
+          isOnline: true,
+          id: "lead_generator",
+        },
+        {
+          name: "CRM Updater", 
+          description: "Keep data clean.",
+          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/aba5f5c2e7b9e818f550225ff47becc0bcd708e2?width=64",
+          isOnline: true,
+          id: "crm_updater",
+        }
+      ]
+    },
+    {
+      name: "HR",
+      count: 2,
+      assistants: [
+        {
+          name: "Recruiter Assistant",
+          description: "Hire with ease.",
+          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/ffe6304047504c08d7faccb66297228d39227080?width=64",
+          isOnline: true,
+          id: "recruiter_assistant",
+        },
+        {
+          name: "Onboarding Coach",
+          description: "Smooth onboarding all the way.",
+          avatar: "https://api.builder.io/api/v1/image/assets/TEMP/46c75834fbbcdebb1b62ffbf7635f3f0a5191324?width=64",
+          isOnline: true,
+          id: "onboarding_coach",
+        }
+      ]
     }
-    setExpandedCategories(newExpanded);
+  ];
+
+  const handleCreateGroup = (groupName: string, selectedAssistants: string[]) => {
+    console.log('Creating group:', groupName, 'with assistants:', selectedAssistants);
+    // Here you would typically handle the group creation logic
   };
 
-  const handleAgentClick = (agent: Agent) => {
-    // Always navigate to /chat/{agent.id} 
-    // The carousel component will handle page navigation
-    navigate(`/chat/${agent.id}`);
-    setSelectedAgent(agent.id);
+  const handleAssistantClick = (assistant: Assistant) => {
+    if (assistant.id) {
+      navigate(`/chat/${assistant.id}`);
+      setSelectedAssistant(assistant.id);
+    }
   };
 
-  const handlePageClick = (agent: Agent, page: AgentPage) => {
-    navigate(`/chat/agents/${agent.id}/${page.path}`);
-    setSelectedAgent(agent.id);
-    setSelectedPage(page.path);
-  };
-
-  const togglePin = (agent: Agent) => {
-    // Toggle pin status
-    // This would call an API to persist the change
-    console.log('Toggle pin for:', agent.name);
-  };
-
-  const getMockCategories = (): AgentCategory[] => {
-    return [
-      {
-        name: 'MARKETING',
-        displayName: 'Marketing',
-        color: 'purple',
-        icon: categoryIcons.MARKETING,
-        agents: [
-          { 
-            id: 'newsletter', 
-            name: 'Newsletter Agent',
-            category: 'MARKETING',
-            description: 'Create and manage newsletters',
-            pinned: true
-          },
-          { 
-            id: 'smm_assistant', 
-            name: 'SMM Assistant',
-            category: 'MARKETING',
-            description: 'Social media marketing',
-            pages: [
-              { name: 'Dashboard', path: 'dashboard', order: 1 },
-              { name: 'Analytics', path: 'analytics', order: 2 },
-              { name: 'Content', path: 'content', order: 3 }
-            ]
-          },
-          { 
-            id: 'content_strategist', 
-            name: 'Content Strategist',
-            category: 'MARKETING',
-            description: 'Content planning'
-          }
-        ]
-      },
-      {
-        name: 'SALES',
-        displayName: 'Sales',
-        color: 'blue', 
-        icon: categoryIcons.SALES,
-        agents: [
-          { 
-            id: 'lead_generator', 
-            name: 'Lead Generator',
-            category: 'SALES',
-            description: 'Find leads fast'
-          },
-          { 
-            id: 'crm_updater', 
-            name: 'CRM Updater',
-            category: 'SALES',
-            description: 'Keep data clean'
-          }
-        ]
-      },
-      {
-        name: 'HR',
-        displayName: 'HR',
-        color: 'green',
-        icon: categoryIcons.HR,
-        agents: [
-          { 
-            id: 'recruiter_assistant', 
-            name: 'Recruiter Assistant',
-            category: 'HR',
-            description: 'Hire with ease'
-          },
-          { 
-            id: 'onboarding_coach', 
-            name: 'Onboarding Coach',
-            category: 'HR',
-            description: 'Smooth onboarding'
-          }
-        ]
-      }
-    ];
-  };
-
-  return (
-    <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Your Assistants</h2>
-          <div className="flex gap-2">
-            <button className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 flex items-center gap-1">
-              <Users className="w-4 h-4" />
-              Group Chat
-            </button>
-            <button className="px-3 py-1.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 flex items-center gap-1">
-              <Plus className="w-4 h-4" />
-              Add New
-            </button>
-          </div>
-        </div>
-
-        {/* Pinned Section */}
-        {pinnedAgents.length > 0 && (
-          <div className="mb-4">
-            <div className="flex items-center gap-1 text-xs text-gray-500 uppercase mb-2">
-              <Pin className="w-3 h-3" />
-              <span>Pinned</span>
-            </div>
-            <div className="space-y-1">
-              {pinnedAgents.map(agent => (
-                <button
-                  key={agent.id}
-                  onClick={() => handleAgentClick(agent)}
-                  className={`w-full px-3 py-2 rounded-lg flex items-center gap-3 transition-colors ${
-                    selectedAgent === agent.id 
-                      ? 'bg-purple-50 border border-purple-300' 
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  {agent.avatar ? (
-                    <img src={agent.avatar} alt={agent.name} className="w-8 h-8 rounded-full" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-purple-200 flex items-center justify-center">
-                      <span className="text-xs font-semibold">
-                        {agent.name.substring(0, 2).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex-1 text-left">
-                    <p className="text-sm font-medium">{agent.name}</p>
-                    <p className="text-xs text-gray-500">{agent.description}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+  const AssistantItem = ({ assistant, isSelected = false }: { assistant: Assistant; isSelected?: boolean }) => (
+    <div 
+      className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+        isSelected ? 'bg-bg-selected border-2 border-squidgy-primary/60 shadow-md' : 'hover:bg-bg-hover'
+      }`}
+      onClick={() => handleAssistantClick(assistant)}
+    >
+      <div className="relative">
+        <img 
+          src={assistant.avatar} 
+          alt={assistant.name}
+          className="w-8 h-8 rounded-full"
+        />
+        {assistant.isOnline && (
+          <div className="absolute -bottom-0 -right-0 w-2 h-2 bg-text-success rounded-full border border-white" />
         )}
       </div>
+      <div className="flex-1 min-w-0">
+        <h3 className={`text-sm font-semibold leading-5 ${isSelected ? 'text-squidgy-primary' : 'text-black'}`}>
+          {assistant.name}
+        </h3>
+        <p className="text-xs text-text-secondary leading-4">
+          {assistant.description}
+        </p>
+      </div>
+    </div>
+  );
 
-      {/* Categories */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {categories.map(category => (
-          <div key={category.name} className="mb-4">
+  return (
+    <div className="w-[284px] h-full flex flex-col border-r border-border-purple bg-white">
+      {/* Header with Squidgy logo */}
+      <div className="h-24 flex items-center justify-center gap-5 px-6 bg-header-gradient">
+        <img 
+          src="https://api.builder.io/api/v1/image/assets/TEMP/38911497e575307b8d9004ca969b8a56bbf75c3c?width=278"
+          alt="Squidgy"
+          className="w-[139px] h-12"
+        />
+      </div>
+      
+      {/* Assistant Controls */}
+      <div className="flex flex-col gap-3 px-6 py-4">
+        <div className="flex flex-col">
+          <h2 className="text-sm font-semibold text-black leading-5">Your Assistants</h2>
+        </div>
+        <div className="flex items-start gap-2">
+          <button 
+            onClick={() => setIsCreateGroupModalOpen(true)}
+            className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-squidgy-gradient text-white text-xs whitespace-nowrap"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.1839 13.7715V12.4889C12.1839 11.8086 11.9137 11.1562 11.4326 10.6751C10.9516 10.1941 10.2991 9.92383 9.6188 9.92383H5.77115C5.09085 9.92383 4.4384 10.1941 3.95735 10.6751C3.47631 11.1562 3.20605 11.8086 3.20605 12.4889V13.7715" stroke="white" strokeWidth="1.2825" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M7.69547 7.35872C9.11214 7.35872 10.2606 6.21028 10.2606 4.79362C10.2606 3.37695 9.11214 2.22852 7.69547 2.22852C6.27881 2.22852 5.13037 3.37695 5.13037 4.79362C5.13037 6.21028 6.27881 7.35872 7.69547 7.35872Z" stroke="white" strokeWidth="1.2825" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>Group Chat</span>
+          </button>
+          <button className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-squidgy-primary/10 text-squidgy-primary text-xs whitespace-nowrap">
+            <span className="text-sm">+</span>
+            <span>Add New</span>
+          </button>
+        </div>
+      </div>
+      
+      {/* Assistant Categories */}
+      <div className="flex-1 overflow-y-auto">
+        {categories.map((category) => (
+          <div key={category.name} className="px-6 py-2">
             {/* Category Header */}
-            <button
-              onClick={() => toggleCategory(category.name)}
-              className="w-full flex items-center justify-between px-2 py-1 hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <span className={`text-${category.color}-600`}>
-                  {expandedCategories.has(category.name) ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4" />
-                  )}
-                </span>
-                <span className={`text-${category.color}-600`}>
-                  {category.icon}
-                </span>
-                <span className="text-sm font-medium uppercase text-gray-700">
-                  {category.displayName}
-                </span>
+            <div className="flex items-center gap-2 mb-2">
+              {category.name === "PINNED" && (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7 9.91699V12.8337" stroke="#5E17EB" strokeWidth="1.16667" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M5.24984 6.27699C5.24972 6.49404 5.18906 6.70675 5.07467 6.89122C4.96029 7.07568 4.79671 7.22457 4.60234 7.32116L3.564 7.84616C3.36963 7.94275 3.20605 8.09164 3.09167 8.2761C2.97728 8.46056 2.91662 8.67328 2.9165 8.89033V9.33366C2.9165 9.48837 2.97796 9.63674 3.08736 9.74614C3.19675 9.85553 3.34513 9.91699 3.49984 9.91699H10.4998C10.6545 9.91699 10.8029 9.85553 10.9123 9.74614C11.0217 9.63674 11.0832 9.48837 11.0832 9.33366V8.89033C11.0831 8.67328 11.0224 8.46056 10.908 8.2761C10.7936 8.09164 10.63 7.94275 10.4357 7.84616L9.39734 7.32116C9.20296 7.22457 9.03939 7.07568 8.925 6.89122C8.81061 6.70675 8.74995 6.49404 8.74984 6.27699V4.08366C8.74984 3.92895 8.8113 3.78058 8.92069 3.67118C9.03009 3.56178 9.17846 3.50033 9.33317 3.50033C9.64259 3.50033 9.93934 3.37741 10.1581 3.15862C10.3769 2.93982 10.4998 2.64308 10.4998 2.33366C10.4998 2.02424 10.3769 1.72749 10.1581 1.5087C9.93934 1.28991 9.64259 1.16699 9.33317 1.16699H4.6665C4.35708 1.16699 4.06034 1.28991 3.84155 1.5087C3.62275 1.72749 3.49984 2.02424 3.49984 2.33366C3.49984 2.64308 3.62275 2.93982 3.84155 3.15862C4.06034 3.37741 4.35708 3.50033 4.6665 3.50033C4.82121 3.50033 4.96959 3.56178 5.07898 3.67118C5.18838 3.78058 5.24984 3.92895 5.24984 4.08366V6.27699Z" stroke="#5E17EB" strokeWidth="1.16667" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+              <div className="flex justify-between items-center w-full">
+                <span className="text-xs font-semibold text-squidgy-primary">{category.name}</span>
+                {category.count > 0 && (
+                  <span className="px-2 py-0.5 text-xs font-semibold text-squidgy-primary bg-squidgy-primary/20 rounded-full">
+                    {category.count}
+                  </span>
+                )}
               </div>
-              <span className={`text-xs px-2 py-0.5 bg-${category.color}-100 text-${category.color}-700 rounded-full`}>
-                {category.agents.length}
-              </span>
-            </button>
-
-            {/* Category Agents */}
-            {expandedCategories.has(category.name) && (
-              <div className="mt-2 space-y-1 pl-8">
-                {category.agents.map(agent => (
-                  <div key={agent.id}>
-                    <button
-                      onClick={() => handleAgentClick(agent)}
-                      className={`w-full px-3 py-2 rounded-lg flex items-center gap-3 transition-colors ${
-                        selectedAgent === agent.id 
-                          ? `bg-${category.color}-50 border border-${category.color}-300` 
-                          : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      {agent.avatar ? (
-                        <img src={agent.avatar} alt={agent.name} className="w-8 h-8 rounded-full" />
-                      ) : (
-                        <div className={`w-8 h-8 rounded-full bg-${category.color}-200 flex items-center justify-center`}>
-                          <span className="text-xs font-semibold">
-                            {agent.name.substring(0, 2).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex-1 text-left">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium">{agent.name}</p>
-                          {agent.pages && agent.pages.length > 1 && (
-                            <span className="flex items-center gap-1 text-xs text-gray-500">
-                              <Layers className="w-3 h-3" />
-                              {agent.pages.length}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500">{agent.description}</p>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          togglePin(agent);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <MoreVertical className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-                      </button>
-                    </button>
-
-                    {/* Sub-pages for multi-page agents */}
-                    {selectedAgent === agent.id && agent.pages && agent.pages.length > 1 && (
-                      <div className="ml-11 mt-1 space-y-1">
-                        {agent.pages
-                          .sort((a, b) => a.order - b.order)
-                          .map(page => (
-                            <button
-                              key={page.path}
-                              onClick={() => handlePageClick(agent, page)}
-                              className={`w-full px-3 py-1.5 text-left text-sm rounded-md transition-colors ${
-                                selectedPage === page.path
-                                  ? `bg-${category.color}-100 text-${category.color}-700`
-                                  : 'text-gray-600 hover:bg-gray-50'
-                              }`}
-                            >
-                              {page.name}
-                            </button>
-                          ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            </div>
+            
+            {/* Assistants */}
+            <div className="space-y-2">
+              {category.assistants.map((assistant) => (
+                <AssistantItem 
+                  key={assistant.name}
+                  assistant={assistant}
+                  isSelected={selectedAssistant === assistant.id}
+                />
+              ))}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
-        <button className="w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-          Log Out
-        </button>
-      </div>
+      {/* Create Group Chat Modal */}
+      <CreateGroupChatModal
+        isOpen={isCreateGroupModalOpen}
+        onClose={() => setIsCreateGroupModalOpen(false)}
+        onCreateGroup={handleCreateGroup}
+      />
     </div>
   );
 }

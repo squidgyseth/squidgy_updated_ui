@@ -9,34 +9,36 @@ interface Message {
 }
 
 interface AgentInfo {
-  id: string;
   name: string;
   avatar?: string;
   tagline?: string;
-  introMessage: string;
-  suggestionButtons: string[];
+  introMessage?: string;
 }
 
 interface CleanChatInterfaceProps {
   agent: AgentInfo;
+  suggestions?: string[];
   onSendMessage?: (message: string) => void;
   onSuggestionClick?: (suggestion: string) => void;
 }
 
 export default function CleanChatInterface({ 
   agent, 
+  suggestions = [],
   onSendMessage, 
   onSuggestionClick 
 }: CleanChatInterfaceProps) {
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: agent.introMessage,
-      sender: 'agent',
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(
+    agent.introMessage ? [
+      {
+        id: '1',
+        content: agent.introMessage,
+        sender: 'agent',
+        timestamp: new Date()
+      }
+    ] : []
+  );
 
   const handleSend = () => {
     if (message.trim()) {
@@ -119,13 +121,13 @@ export default function CleanChatInterface({
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={`Message ${agent.name}...`}
-              className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-squidgy-primary focus:border-transparent"
             />
             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-              <button className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition">
+              <button className="p-1.5 text-squidgy-primary hover:text-squidgy-primary/80 rounded-full hover:bg-squidgy-primary/10 transition">
                 <Paperclip size={16} />
               </button>
-              <button className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition">
+              <button className="p-1.5 text-squidgy-primary hover:text-squidgy-primary/80 rounded-full hover:bg-squidgy-primary/10 transition">
                 <Mic size={16} />
               </button>
             </div>
@@ -135,7 +137,7 @@ export default function CleanChatInterface({
             disabled={!message.trim()}
             className={`p-2.5 rounded-full transition ${
               message.trim()
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-squidgy-primary text-white hover:bg-squidgy-primary/90'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
@@ -145,11 +147,11 @@ export default function CleanChatInterface({
 
         {/* Suggestion Buttons */}
         <div className="flex flex-wrap gap-2">
-          {agent.suggestionButtons.map((suggestion, index) => (
+          {suggestions.map((suggestion, index) => (
             <button
               key={index}
               onClick={() => handleSuggestionClick(suggestion)}
-              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition"
+              className="px-4 py-2 text-sm bg-squidgy-primary/10 text-squidgy-primary rounded-full hover:bg-squidgy-primary/20 transition"
             >
               {suggestion}
             </button>

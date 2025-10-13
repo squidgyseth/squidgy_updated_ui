@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight } from 'lucide-react';
+import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface AgentConfig {
   id: string;
@@ -28,6 +28,7 @@ export default function UniversalChatLayout({
   onSettingsClick 
 }: UniversalChatLayoutProps) {
   const [isPinned, setIsPinned] = useState(agent.pinned || false);
+  const [isProfileExpanded, setIsProfileExpanded] = useState(true);
 
   const handlePinToggle = () => {
     const newPinnedState = !isPinned;
@@ -63,6 +64,12 @@ export default function UniversalChatLayout({
                 <h1 className="text-lg font-semibold text-gray-900">{agent.name}</h1>
                 <p className="text-sm text-gray-600">active • {agent.tagline}</p>
               </div>
+              <button 
+                onClick={() => setIsProfileExpanded(!isProfileExpanded)}
+                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition ml-2"
+              >
+                {isProfileExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              </button>
             </div>
             
             {/* Right: Action buttons */}
@@ -105,9 +112,9 @@ export default function UniversalChatLayout({
               />
             )}
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-purple-600">{agent.name}</h2>
+              <h2 className="text-xl font-bold text-squidgy-primary">{agent.name}</h2>
               {agent.specialization && (
-                <p className="text-sm font-medium text-purple-500 mb-1">{agent.specialization}</p>
+                <p className="text-sm font-medium text-squidgy-primary mb-1">{agent.specialization}</p>
               )}
             </div>
           </div>
@@ -118,17 +125,48 @@ export default function UniversalChatLayout({
           <div className="flex space-x-3">
             <button 
               onClick={handleSettingsClick}
-              className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium text-sm"
+              className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 bg-squidgy-red text-white rounded-lg hover:bg-squidgy-red/90 transition font-medium text-sm"
             >
               <Settings size={16} />
               <span>Settings</span>
             </button>
             <button 
               onClick={handlePinToggle}
-              className="flex items-center justify-center space-x-2 px-4 py-2.5 border-2 border-purple-200 text-purple-600 rounded-lg hover:bg-purple-50 transition font-medium text-sm"
+              className="flex items-center justify-center space-x-2 px-4 py-2.5 border-2 border-squidgy-primary/30 text-squidgy-primary rounded-lg hover:bg-squidgy-primary/10 transition font-medium text-sm"
             >
               {isPinned ? <Pin size={16} /> : <PinOff size={16} />}
               <span>{isPinned ? 'Pinned' : 'To pin'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Configure Section */}
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center space-x-2 mb-4">
+            <Settings className="text-squidgy-primary" size={18} />
+            <h3 className="text-lg font-semibold text-gray-900">Configure</h3>
+          </div>
+          <div className="space-y-3">
+            <button className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition cursor-pointer">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-squidgy-primary rounded-full"></div>
+                <span className="text-sm text-gray-700">Agent Settings</span>
+              </div>
+              <ChevronRight className="text-gray-400" size={14} />
+            </button>
+            <button className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition cursor-pointer">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-squidgy-primary rounded-full"></div>
+                <span className="text-sm text-gray-700">Customization Options</span>
+              </div>
+              <ChevronRight className="text-gray-400" size={14} />
+            </button>
+            <button className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition cursor-pointer">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-squidgy-primary rounded-full"></div>
+                <span className="text-sm text-gray-700">Integration Setup</span>
+              </div>
+              <ChevronRight className="text-gray-400" size={14} />
             </button>
           </div>
         </div>
@@ -137,13 +175,13 @@ export default function UniversalChatLayout({
         {agent.capabilities && agent.capabilities.length > 0 && (
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-center space-x-2 mb-4">
-              <Zap className="text-purple-500" size={18} />
+              <Zap className="text-squidgy-primary" size={18} />
               <h3 className="text-lg font-semibold text-gray-900">Capabilities</h3>
             </div>
             <div className="space-y-3">
               {agent.capabilities.map((capability, index) => (
                 <div key={index} className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="w-2 h-2 bg-squidgy-primary rounded-full mt-2 flex-shrink-0"></div>
                   <p className="text-sm text-gray-700 leading-relaxed">{capability}</p>
                 </div>
               ))}
@@ -155,13 +193,13 @@ export default function UniversalChatLayout({
         {agent.recent_actions && agent.recent_actions.length > 0 && (
           <div className="p-6">
             <div className="flex items-center space-x-2 mb-4">
-              <Clock className="text-blue-500" size={18} />
+              <Clock className="text-squidgy-primary" size={18} />
               <h3 className="text-lg font-semibold text-gray-900">Recent Actions</h3>
             </div>
             <div className="space-y-3">
               {agent.recent_actions.map((action, index) => (
                 <div key={index} className="flex items-start space-x-3 hover:bg-gray-50 rounded-lg p-2 -m-2 transition cursor-pointer">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="w-2 h-2 bg-squidgy-primary rounded-full mt-2 flex-shrink-0"></div>
                   <div className="flex-1">
                     <p className="text-sm text-gray-700 leading-relaxed">{action}</p>
                   </div>
