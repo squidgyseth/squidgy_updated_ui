@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight } from 'lucide-react';
 import { useSidebar } from '../../contexts/SidebarContext';
 
 interface AgentConfig {
@@ -29,7 +29,6 @@ export default function UniversalChatLayout({
   onSettingsClick 
 }: UniversalChatLayoutProps) {
   const [isPinned, setIsPinned] = useState(agent.pinned || false);
-  const [isProfileExpanded, setIsProfileExpanded] = useState(true);
   const { isSidebarOpen, toggleSidebar } = useSidebar();
 
   const handlePinToggle = () => {
@@ -76,13 +75,6 @@ export default function UniversalChatLayout({
                 <h1 className="text-base font-medium text-gray-900">{agent.name}</h1>
                 <p className="text-sm font-normal text-gray-500">active • {agent.tagline}</p>
               </div>
-              <button 
-                onClick={() => setIsProfileExpanded(!isProfileExpanded)}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200 ml-2"
-                title={isProfileExpanded ? "Collapse details" : "Expand details"}
-              >
-                {isProfileExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-              </button>
             </div>
             
             {/* Right: Action buttons */}
