@@ -10,6 +10,7 @@ interface Assistant {
   isSelected?: boolean;
   id?: string;
   category?: string;
+  pinned?: boolean;
 }
 
 interface AssistantCategory {
@@ -43,7 +44,11 @@ export default function CategorizedAgentSidebar() {
       
       if (!response.ok) {
         console.warn('Failed to load agents from API, using fallback');
-        setCategories(getDefaultCategories());
+        // Process fallback data through the same grouping logic
+        const fallbackCategories = getDefaultCategories();
+        const allAssistants = fallbackCategories.flatMap(cat => cat.assistants);
+        const processedCategories = groupAssistantsByCategory(allAssistants);
+        setCategories(processedCategories);
         return;
       }
       
@@ -56,7 +61,8 @@ export default function CategorizedAgentSidebar() {
         avatar: config.agent.avatar || "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
         isOnline: true,
         id: config.agent.id,
-        category: config.agent.category?.toUpperCase() || 'GENERAL'
+        category: config.agent.category?.toUpperCase() || 'GENERAL',
+        pinned: config.agent.pinned || false
       }));
 
       // Group by category
@@ -65,30 +71,35 @@ export default function CategorizedAgentSidebar() {
       
     } catch (error) {
       console.error('Failed to load agents from YAML:', error);
-      setCategories(getDefaultCategories());
+      // Process fallback data through the same grouping logic
+      const fallbackCategories = getDefaultCategories();
+      const allAssistants = fallbackCategories.flatMap(cat => cat.assistants);
+      const processedCategories = groupAssistantsByCategory(allAssistants);
+      setCategories(processedCategories);
     }
   };
 
   const groupAssistantsByCategory = (assistants: Assistant[]): AssistantCategory[] => {
     const grouped: Record<string, Assistant[]> = {};
+    const pinnedAssistants: Assistant[] = [];
     
-    // Add PINNED category first with Personal Assistant
-    grouped['PINNED'] = [{
-      name: "Personal Assistant",
-      description: "Always here to help.",
-      avatar: "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-      isOnline: true,
-      id: "personal_assistant",
-    }];
-    
-    // Group other assistants by category
+    // Separate pinned and regular assistants
     assistants.forEach(assistant => {
-      const category = assistant.category || 'GENERAL';
-      if (!grouped[category]) {
-        grouped[category] = [];
+      if (assistant.pinned) {
+        pinnedAssistants.push(assistant);
+      } else {
+        const category = assistant.category || 'GENERAL';
+        if (!grouped[category]) {
+          grouped[category] = [];
+        }
+        grouped[category].push(assistant);
       }
-      grouped[category].push(assistant);
     });
+    
+    // Add PINNED category first if there are pinned assistants
+    if (pinnedAssistants.length > 0) {
+      grouped['PINNED'] = pinnedAssistants;
+    }
 
     // Convert to category format with proper counts
     return Object.entries(grouped).map(([categoryName, categoryAssistants]) => ({
@@ -100,21 +111,22 @@ export default function CategorizedAgentSidebar() {
 
   const getDefaultCategories = (): AssistantCategory[] => [
     {
-      name: "PINNED",
-      count: 0,
+      name: "GENERAL", 
+      count: 1,
       assistants: [
         {
           name: "Personal Assistant",
-          description: "Always here to help.",
+          description: "Your versatile personal assistant ready to help with any task.",
           avatar: "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
           isOnline: true,
           id: "personal_assistant",
+          pinned: true,
         }
       ]
     },
     {
       name: "MARKETING", 
-      count: 3,
+      count: 2,
       assistants: [
         {
           name: "Newsletter Agent",
@@ -122,6 +134,7 @@ export default function CategorizedAgentSidebar() {
           avatar: "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
           isOnline: true,
           id: "newsletter",
+          pinned: true,
         },
         {
           name: "SMM Assistant",

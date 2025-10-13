@@ -2,7 +2,7 @@ agent:
   id: test_multi_page_agent
   name: Test Multi-Page Agent
   category: TESTING
-  description: Testing multi-page functionality with advanced navigation and complex user interface components.
+  description: Testing multi-page functionality.
   specialization: "Multi-Page Testing"
   tagline: "Navigate. Test. Validate."
   avatar: "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64"

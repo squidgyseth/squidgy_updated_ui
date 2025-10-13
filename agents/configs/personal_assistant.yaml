@@ -2,10 +2,11 @@ agent:
   id: personal_assistant
   name: Personal Assistant
   category: GENERAL
-  description: Your versatile personal assistant ready to help with any task, from scheduling and organization to research and general support.
+  description: Your versatile personal assistant ready to help with any task.
   specialization: "Always Ready to Help"
   tagline: "Organize. Schedule. Support."
   avatar: "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64"
+  pinned: true
   capabilities:
     - "Task management and scheduling coordination"
     - "Research and information gathering"
