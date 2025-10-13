@@ -4,6 +4,7 @@ import { MessageCircle, Layers, ArrowLeft, Settings } from 'lucide-react';
 import AgentPageCarousel from '../AgentPageCarousel';
 import { AgentConfigService } from '../../services/agentConfigService';
 import type { AgentCarouselConfig } from '../../types/carouselTypes';
+import NewsletterComponent from '../../pages/agents/newsletter/newsletter_liquid_blanch_17032840_page1';
 
 interface EnhancedChatAreaProps {
   className?: string;
@@ -135,36 +136,24 @@ export default function EnhancedChatArea({ className = '' }: EnhancedChatAreaPro
     );
   }
 
-  // Show carousel for multi-page agents
+  // Show carousel for multi-page agents - but bypass for clean chat interface
   if (viewMode === 'carousel' && carouselConfig.pages.length > 0) {
+    // Instead of showing carousel with unwanted headers, directly load the page component
+    const currentPage = carouselConfig.pages[0]; // Use first page
+    if (currentPage) {
+      // For newsletter agent, render the component directly
+      if (carouselConfig.agentId === 'newsletter') {
+        return (
+          <div className={`h-full ${className}`}>
+            <NewsletterComponent />
+          </div>
+        );
+      }
+    }
+    
+    // Fallback to original carousel if not newsletter
     return (
       <div className={`h-full flex flex-col ${className}`}>
-        {/* Top Controls */}
-        <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
-          <button
-            onClick={handleGoBack}
-            className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Back to Agents</span>
-          </button>
-
-          <div className="flex items-center gap-2">
-            {/* View Mode Toggle */}
-            <button
-              onClick={toggleViewMode}
-              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span className="text-sm">Chat Mode</span>
-            </button>
-            
-            <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
-              <Settings className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
         {/* Carousel Component */}
         <div className="flex-1">
           <AgentPageCarousel config={carouselConfig} />

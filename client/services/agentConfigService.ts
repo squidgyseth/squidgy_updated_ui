@@ -6,8 +6,12 @@ export interface AgentConfig {
     name: string;
     category: string;
     description: string;
+    specialization?: string;
+    tagline?: string;
     avatar?: string;
     pinned?: boolean;
+    capabilities?: string[];
+    recent_actions?: string[];
   };
   n8n: {
     webhook_url: string;
@@ -137,7 +141,7 @@ export class AgentConfigService {
   /**
    * Mock agent configuration for development
    */
-  private getMockAgentConfig(agentId: string): AgentConfig | null {
+  getMockAgentConfig(agentId: string): AgentConfig | null {
     const mockConfigs: Record<string, AgentConfig> = {
       'newsletter': {
         agent: {
@@ -145,8 +149,22 @@ export class AgentConfigService {
           name: 'Newsletter Agent',
           category: 'MARKETING',
           description: 'Create and manage newsletters',
+          specialization: 'Creative & Trendy',
+          tagline: 'Content. Create. Distribute.',
           avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter',
-          pinned: true
+          pinned: true,
+          capabilities: [
+            'Content creation and optimization for newsletters',
+            'PDF document processing and analysis',
+            'Speech-to-text content input',
+            'Newsletter template generation',
+            'Email marketing best practices'
+          ],
+          recent_actions: [
+            'Generated newsletter for Q4 product launch',
+            'Processed PDF content from marketing materials',
+            'Analyzed competitor newsletter performance'
+          ]
         },
         n8n: {
           webhook_url: 'https://n8n.theaiteam.uk/webhook/newsletter'
@@ -173,7 +191,20 @@ export class AgentConfigService {
           name: 'SMM Assistant',
           category: 'MARKETING',
           description: 'Social media marketing specialist',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=smm'
+          specialization: 'Creative & Trendy',
+          tagline: 'Trend. Post. Analyze.',
+          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=smm',
+          capabilities: [
+            'Content creation and optimization for all major social platforms',
+            'Trend analysis and hashtag research',
+            'Social media strategy development and planning',
+            'Engagement optimization and community management'
+          ],
+          recent_actions: [
+            'Created 15 Instagram post ideas for fashion brand',
+            'Analysed competitor performance',
+            'Generated trending hashtags for Q4 campaign'
+          ]
         },
         n8n: {
           webhook_url: 'https://n8n.example.com/webhook/smm'

@@ -1,13 +1,18 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import LeftNavigation from "./LeftNavigation";
 import CategorizedAgentSidebar from "./CategorizedAgentSidebar";
 import EnhancedChatArea from "./EnhancedChatArea";
 import AssistantDetails from "./AssistantDetails";
 
 export default function MainLayout() {
+  const location = useLocation();
   const [selectedAssistant, setSelectedAssistant] = useState("SMM Assistant");
-  const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  
+  // Check if we're on a specific agent page that uses UniversalChatLayout
+  const isOnAgentPage = location.pathname.includes('/chat/') && location.pathname !== '/chat';
+  const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(!isOnAgentPage);
 
   return (
     <div className="h-screen bg-white">
@@ -30,8 +35,8 @@ export default function MainLayout() {
           <EnhancedChatArea />
         </div>
 
-        {/* Assistant Details Panel - Fixed width, collapsible */}
-        {isDetailsPanelOpen && (
+        {/* Assistant Details Panel - Disabled when on specific agent pages */}
+        {isDetailsPanelOpen && !isOnAgentPage && (
           <div className="hidden xl:block">
             <AssistantDetails
               assistant={selectedAssistant}

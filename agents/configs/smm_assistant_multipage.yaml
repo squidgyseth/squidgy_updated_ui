@@ -14,11 +14,30 @@ agent:
   # Short description for the sidebar
   description: "Social media marketing specialist"
   
+  # Specialization tag (shown in right panel)
+  specialization: "Creative & Trendy"
+  
+  # Tagline (shown under name in right panel)
+  tagline: "Trend. Post. Analyze."
+  
   # Avatar URL (optional)
   avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=smm"
   
   # Pin to top of sidebar
   pinned: true
+  
+  # Agent Capabilities
+  capabilities:
+    - "Content creation and optimization for all major social platforms"
+    - "Trend analysis and hashtag research"
+    - "Social media strategy development and planning"
+    - "Engagement optimization and community management"
+  
+  # Recent Actions (can be dynamic or static examples)
+  recent_actions:
+    - "Created 15 Instagram post ideas for fashion brand"
+    - "Analysed competitor performance"
+    - "Generated trending hashtags for Q4 campaign"
 
 # N8N Webhook Configuration
 n8n:

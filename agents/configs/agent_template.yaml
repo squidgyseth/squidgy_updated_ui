@@ -24,12 +24,36 @@ agent:
   # Example: "Create and manage newsletters", "Track customer interactions"
   description: "Brief description of what this agent does"
   
+  # Specialization badge shown in chat header and right panel (optional)
+  # Example: "Creative & Trendy", "Data Expert", "Lead Specialist"
+  specialization: "Expert Level"
+  
+  # Tagline shown under agent name in right panel (optional)
+  # Example: "Create. Design. Deliver.", "Track. Analyze. Convert."
+  tagline: "Action. Create. Deliver."
+  
   # Avatar URL (optional - you can use dicebear API with any seed word)
   # Just change the seed= parameter to any word
   avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=your_agent"
   
   # Pin to top of sidebar - true or false
   pinned: false
+  
+  # Agent capabilities shown in right panel (list your agent's main features)
+  capabilities:
+    - "Primary capability or main function"
+    - "Secondary feature or service provided"
+    - "Integration or special functionality"
+    - "Advanced feature or automation"
+    - "Additional service or tool"
+  
+  # Recent actions shown in right panel (can be examples or dynamic)
+  # These help users understand what the agent has done recently
+  recent_actions:
+    - "Completed a recent task or project"
+    - "Generated content or performed analysis"
+    - "Processed user request or data"
+    - "Automated workflow or integration"
 
 # N8N Webhook Configuration
 n8n:

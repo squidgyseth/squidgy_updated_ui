@@ -3,8 +3,24 @@ agent:
   name: Newsletter Agent
   category: MARKETING
   description: Create and manage newsletters
+  specialization: "Creative & Trendy"
+  tagline: "Content. Create. Distribute."
   avatar: https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter
   pinned: true
+  
+  # Agent Capabilities
+  capabilities:
+    - "Content creation and optimization for newsletters"
+    - "PDF document processing and analysis"  
+    - "Speech-to-text content input"
+    - "Newsletter template generation"
+    - "Email marketing best practices"
+  
+  # Recent Actions (can be dynamic or static examples)
+  recent_actions:
+    - "Generated newsletter for Q4 product launch"
+    - "Processed PDF content from marketing materials"
+    - "Analyzed competitor newsletter performance"
 n8n:
   webhook_url: https://n8n.theaiteam.uk/webhook/newsletter
 ui:
