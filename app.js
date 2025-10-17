@@ -185,133 +185,70 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Initial template loaded on page load');
     });
     
-    // Template preview descriptions and visual representations
-    const templatePreviews = {
-        'ai_studio_code_classic.html': {
-            name: 'Classic Layout',
-            description: 'Traditional newsletter with sidebar blocks and orange accent bars',
-            features: ['White background', 'Sidebar blocks with orange accent', 'Clean typography', 'Three quick insight blocks'],
-            preview: `
-                <div style="border: 2px solid #ddd; background: white; padding: 20px; border-radius: 4px;">
-                    <div style="background: #1a3a52; color: white; padding: 15px; text-align: center; font-weight: bold; margin-bottom: 15px;">PERITUS LEARNING</div>
-                    <div style="padding: 15px; border-bottom: 1px solid #ddd; margin-bottom: 15px;">
-                        <div style="color: #1a3a52; font-weight: bold; margin-bottom: 8px;">Hero Article Title</div>
-                        <div style="color: #666; font-size: 0.9em;">Introduction paragraph with main content...</div>
-                    </div>
-                    <div style="border-left: 5px solid #ff6b35; background: #f8f9fa; padding: 12px; margin-bottom: 10px;">
-                        <div style="color: #1a3a52; font-weight: bold; font-size: 0.85em;">Quick Insight #1</div>
-                        <div style="color: #666; font-size: 0.8em;">Content preview...</div>
-                    </div>
-                    <div style="border-left: 5px solid #ff6b35; background: #f8f9fa; padding: 12px; margin-bottom: 10px;">
-                        <div style="color: #1a3a52; font-weight: bold; font-size: 0.85em;">Quick Insight #2</div>
-                        <div style="color: #666; font-size: 0.8em;">Content preview...</div>
-                    </div>
-                    <div style="background: #e8f4f8; padding: 15px; text-align: center; border-radius: 4px; margin-top: 15px;">
-                        <div style="color: #1a3a52; font-weight: bold; margin-bottom: 8px;">Product Highlight</div>
-                        <div style="background: #ff6b35; color: white; padding: 8px 20px; display: inline-block; border-radius: 4px; font-size: 0.85em;">CTA Button</div>
-                    </div>
-                </div>
-            `
-        },
-        'ai_studio_code_inverted.html': {
-            name: 'Inverted Hero',
-            description: 'Modern design with dark hero section and white text for high contrast',
-            features: ['Dark blue hero section', 'White text on dark background', 'Numbered insights with circles', 'Minimalist header'],
-            preview: `
-                <div style="border: 2px solid #ddd; background: white; border-radius: 4px; overflow: hidden;">
-                    <div style="background: white; border-bottom: 4px solid #ff6b35; padding: 15px; text-align: center;">
-                        <div style="color: #1a3a52; font-weight: bold; font-size: 1.1em; letter-spacing: 2px;">PERITUS LEARNING</div>
-                        <div style="color: #666; font-size: 0.7em; text-transform: uppercase; margin-top: 3px;">Weekly Strategic Insight</div>
-                    </div>
-                    <div style="background: #1a3a52; color: white; padding: 20px;">
-                        <div style="color: #ff6b35; font-size: 0.75em; font-weight: bold; margin-bottom: 8px;">THIS WEEK'S FOCUS</div>
-                        <div style="font-weight: bold; margin-bottom: 10px; font-size: 1.1em;">Hero Article Title</div>
-                        <div style="color: #e0e0e0; font-size: 0.85em; line-height: 1.4;">Introduction paragraph with engaging content on dark background...</div>
-                    </div>
-                    <div style="background: #f4f4f4; padding: 20px;">
-                        <div style="display: flex; align-items: start; margin-bottom: 12px;">
-                            <div style="background: #ff6b35; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85em; margin-right: 10px; flex-shrink: 0;">1</div>
-                            <div>
-                                <div style="color: #1a3a52; font-weight: bold; font-size: 0.85em; margin-bottom: 3px;">Key Takeaway</div>
-                                <div style="color: #666; font-size: 0.75em;">Insight content...</div>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: start;">
-                            <div style="background: #ff6b35; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85em; margin-right: 10px; flex-shrink: 0;">2</div>
-                            <div>
-                                <div style="color: #1a3a52; font-weight: bold; font-size: 0.85em; margin-bottom: 3px;">Key Takeaway</div>
-                                <div style="color: #666; font-size: 0.75em;">Insight content...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `
-        },
-        'ai_studio_code_split.html': {
-            name: 'Split Layout',
-            description: 'Two-column design with sidebar intro and segmented sections',
-            features: ['Two-column layout', 'Sidebar introduction', 'Underlined insights', 'Enhanced segmentation'],
-            preview: `
-                <div style="border: 2px solid #ddd; background: white; border-radius: 4px; overflow: hidden;">
-                    <div style="background: #1a3a52; color: white; padding: 15px; text-align: center; font-weight: bold;">PERITUS LEARNING</div>
-                    <div style="display: flex;">
-                        <div style="background: #e8f4f8; padding: 15px; width: 35%; border-right: 2px solid #ddd;">
-                            <div style="color: #ff6b35; font-size: 0.75em; font-weight: bold; text-transform: uppercase; margin-bottom: 8px;">Current Insight</div>
-                            <div style="color: #1a3a52; font-size: 0.8em; line-height: 1.3;">Welcome to this week's insight from Peritus Learning.</div>
-                        </div>
-                        <div style="padding: 15px; width: 65%;">
-                            <div style="color: #1a3a52; font-weight: bold; margin-bottom: 8px;">Hero Article Title</div>
-                            <div style="color: #666; font-size: 0.85em;">Introduction paragraph...</div>
-                        </div>
-                    </div>
-                    <div style="background: #f4f4f4; padding: 20px;">
-                        <div style="text-align: center; margin-bottom: 12px;">
-                            <div style="color: #1a3a52; font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">Quick Insight #1</div>
-                            <div style="color: #666; font-size: 0.75em;">Content preview...</div>
-                            <div style="border-bottom: 4px solid #ff6b35; width: 60%; margin: 8px auto 0;"></div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div style="color: #1a3a52; font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">Quick Insight #2</div>
-                            <div style="color: #666; font-size: 0.75em;">Content preview...</div>
-                            <div style="border-bottom: 4px solid #ff6b35; width: 60%; margin: 8px auto 0;"></div>
-                        </div>
-                    </div>
-                </div>
-            `
-        }
-    };
+    // Store loaded template HTML for previews
+    let templateHtmlCache = {};
     
     // Function to update template preview
-    function updateTemplatePreview(templateFileName) {
+    async function updateTemplatePreview(templateFileName) {
         if (!templatePreview) return;
         
         console.log('Updating template preview for:', templateFileName);
         
-        const previewData = templatePreviews[templateFileName];
+        // Show loading state
+        templatePreview.innerHTML = '<div class="preview-loading">Loading template preview...</div>';
         
-        if (!previewData) {
-            templatePreview.innerHTML = '<div class="preview-loading">Preview not available</div>';
-            return;
-        }
-        
-        // Create preview HTML
-        const previewHTML = `
-            <div class="template-preview-info">
-                <h3 style="color: var(--primary-color); margin: 0 0 10px 0; font-size: 1.1em;">${previewData.name}</h3>
-                <p style="color: var(--light-text); margin: 0 0 15px 0; font-size: 0.9em;">${previewData.description}</p>
-                <div style="margin-bottom: 15px;">
-                    <strong style="color: var(--secondary-color); font-size: 0.9em;">Key Features:</strong>
-                    <ul style="margin: 5px 0 0 20px; padding: 0; color: var(--light-text); font-size: 0.85em;">
-                        ${previewData.features.map(f => `<li>${f}</li>`).join('')}
-                    </ul>
+        try {
+            // Check if we have it cached
+            let html = templateHtmlCache[templateFileName];
+            
+            // If not cached, fetch it
+            if (!html) {
+                const response = await fetch(templateFileName);
+                if (!response.ok) {
+                    throw new Error(`Failed to load template: ${response.status}`);
+                }
+                html = await response.text();
+                templateHtmlCache[templateFileName] = html;
+                console.log('Template HTML loaded and cached:', templateFileName);
+            }
+            
+            // Create a scaled preview container
+            const previewContainer = document.createElement('div');
+            previewContainer.style.cssText = `
+                width: 100%;
+                height: 450px;
+                overflow: auto;
+                background: white;
+                border-radius: 4px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            `;
+            
+            // Create inner container with scale
+            const innerContainer = document.createElement('div');
+            innerContainer.style.cssText = `
+                transform: scale(0.5);
+                transform-origin: top left;
+                width: 200%;
+            `;
+            innerContainer.innerHTML = html;
+            
+            previewContainer.appendChild(innerContainer);
+            
+            // Clear and add the preview
+            templatePreview.innerHTML = '';
+            templatePreview.appendChild(previewContainer);
+            
+            console.log('Template preview rendered successfully');
+            
+        } catch (error) {
+            console.error('Error loading template preview:', error);
+            templatePreview.innerHTML = `
+                <div class="preview-loading" style="color: #d32f2f;">
+                    Failed to load template preview.<br>
+                    <small>Make sure you're running the local server.</small>
                 </div>
-            </div>
-            <div class="template-preview-visual">
-                ${previewData.preview}
-            </div>
-        `;
-        
-        templatePreview.innerHTML = previewHTML;
+            `;
+        }
     }
     
     // Initialize template preview on page load
