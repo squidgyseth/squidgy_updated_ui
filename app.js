@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const templateIdSelect = document.getElementById('template-id');
     const imageCountInput = document.getElementById('image-count');
     const saveSettingsBtn = document.getElementById('save-settings-btn');
+    const templatePreview = document.getElementById('template-preview');
     
     // Session Management
     const sessionIdDisplay = document.getElementById('session-id');
@@ -165,6 +166,49 @@ document.addEventListener('DOMContentLoaded', () => {
         templateHtmlContent = html;
         console.log('Initial template loaded on page load');
     });
+    
+    // Function to update template preview
+    function updateTemplatePreview(templateFileName) {
+        if (!templatePreview) return;
+        
+        console.log('Updating template preview for:', templateFileName);
+        
+        // Show loading state
+        templatePreview.innerHTML = '<div class="preview-loading">Loading preview...</div>';
+        
+        // Create an iframe to display the template
+        const iframe = document.createElement('iframe');
+        iframe.src = templateFileName;
+        iframe.style.transform = 'scale(0.6)';
+        iframe.style.transformOrigin = 'top left';
+        iframe.style.width = '166.67%'; // Compensate for scale
+        iframe.style.height = '750px'; // Compensate for scale
+        
+        iframe.onload = () => {
+            console.log('Template preview loaded successfully');
+        };
+        
+        iframe.onerror = () => {
+            console.error('Failed to load template preview');
+            templatePreview.innerHTML = '<div class="preview-loading">Failed to load preview</div>';
+        };
+        
+        // Clear and add the iframe
+        templatePreview.innerHTML = '';
+        templatePreview.appendChild(iframe);
+    }
+    
+    // Initialize template preview on page load
+    if (templatePreview) {
+        updateTemplatePreview(settings.templateId);
+    }
+    
+    // Add event listener to template selection dropdown
+    if (templateIdSelect) {
+        templateIdSelect.addEventListener('change', (e) => {
+            updateTemplatePreview(e.target.value);
+        });
+    }
     
     // Send message function
     function sendMessage(customMessage = null) {
