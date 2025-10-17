@@ -110,10 +110,15 @@ const handleRequest = (req, res) => {
     return;
   }
   
-  // Handle root URL
+  // Handle root URL and directory requests
   let filePath = req.url === '/' 
     ? path.join(__dirname, 'index.html')
     : path.join(__dirname, req.url);
+  
+  // If the URL ends with a slash, try to serve index.html from that directory
+  if (req.url.endsWith('/') && req.url !== '/') {
+    filePath = path.join(__dirname, req.url, 'index.html');
+  }
   
   // Get the file extension
   const extname = path.extname(filePath);
