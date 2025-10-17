@@ -53,6 +53,18 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             settings = JSON.parse(savedSettings);
             
+            // Migrate old template IDs to new filenames
+            if (settings.templateId === '1' || settings.templateId === '2' || settings.templateId === '3') {
+                const templateMap = {
+                    '1': 'ai_studio_code.html',
+                    '2': 'ai_studio_code (1).html',
+                    '3': 'ai_studio_code (2).html'
+                };
+                settings.templateId = templateMap[settings.templateId] || 'ai_studio_code.html';
+                // Save the migrated settings
+                localStorage.setItem('peritus_newsletter_settings', JSON.stringify(settings));
+            }
+            
             // Update form fields with saved settings
             if (templateIdSelect) templateIdSelect.value = settings.templateId;
             if (imageCountInput) imageCountInput.value = settings.imageCount;
@@ -793,6 +805,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatTabBtn.click();
             }
         });
+    }
+    
+    // Placeholder voice conversation functions (to be implemented)
+    function startVoiceConversation() {
+        console.log('Voice conversation mode - to be implemented');
+        alert('Voice conversation mode is not yet implemented.');
+    }
+    
+    function stopVoiceConversation(manual) {
+        console.log('Stop voice conversation - to be implemented');
+    }
+    
+    function sendVoiceTranscript() {
+        console.log('Send voice transcript - to be implemented');
+    }
+    
+    function cancelVoiceTranscript() {
+        console.log('Cancel voice transcript - to be implemented');
     }
     
     // Text mode voice input
