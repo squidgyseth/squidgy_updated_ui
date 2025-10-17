@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Newsletter Settings
     let settings = {
-        templateId: 'ai_studio_code.html',
+        templateId: 'ai_studio_code_classic.html',
         imageCount: 3
     };
     
@@ -54,13 +54,19 @@ document.addEventListener('DOMContentLoaded', () => {
             settings = JSON.parse(savedSettings);
             
             // Migrate old template IDs to new filenames
-            if (settings.templateId === '1' || settings.templateId === '2' || settings.templateId === '3') {
+            if (settings.templateId === '1' || settings.templateId === '2' || settings.templateId === '3' ||
+                settings.templateId === 'ai_studio_code.html' || 
+                settings.templateId === 'ai_studio_code (1).html' || 
+                settings.templateId === 'ai_studio_code (2).html') {
                 const templateMap = {
-                    '1': 'ai_studio_code.html',
-                    '2': 'ai_studio_code (1).html',
-                    '3': 'ai_studio_code (2).html'
+                    '1': 'ai_studio_code_classic.html',
+                    '2': 'ai_studio_code_inverted.html',
+                    '3': 'ai_studio_code_split.html',
+                    'ai_studio_code.html': 'ai_studio_code_classic.html',
+                    'ai_studio_code (1).html': 'ai_studio_code_inverted.html',
+                    'ai_studio_code (2).html': 'ai_studio_code_split.html'
                 };
-                settings.templateId = templateMap[settings.templateId] || 'ai_studio_code.html';
+                settings.templateId = templateMap[settings.templateId] || 'ai_studio_code_classic.html';
                 // Save the migrated settings
                 localStorage.setItem('peritus_newsletter_settings', JSON.stringify(settings));
             }
