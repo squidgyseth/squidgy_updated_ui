@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Newsletter Settings
     let settings = {
-        templateId: 'templates/ai_studio_code_classic.html',
+        templateId: 'templates/classic/',
         imageCount: 3
     };
     
@@ -53,26 +53,32 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             settings = JSON.parse(savedSettings);
             
-            // Migrate old template IDs to new filenames
+            // Migrate old template IDs to new folder structure
             if (settings.templateId === '1' || settings.templateId === '2' || settings.templateId === '3' ||
                 settings.templateId === 'ai_studio_code.html' || 
                 settings.templateId === 'ai_studio_code (1).html' || 
                 settings.templateId === 'ai_studio_code (2).html' ||
                 settings.templateId === 'ai_studio_code_classic.html' ||
                 settings.templateId === 'ai_studio_code_inverted.html' ||
-                settings.templateId === 'ai_studio_code_split.html') {
+                settings.templateId === 'ai_studio_code_split.html' ||
+                settings.templateId === 'templates/ai_studio_code_classic.html' ||
+                settings.templateId === 'templates/ai_studio_code_inverted.html' ||
+                settings.templateId === 'templates/ai_studio_code_split.html') {
                 const templateMap = {
-                    '1': 'templates/ai_studio_code_classic.html',
-                    '2': 'templates/ai_studio_code_inverted.html',
-                    '3': 'templates/ai_studio_code_split.html',
-                    'ai_studio_code.html': 'templates/ai_studio_code_classic.html',
-                    'ai_studio_code (1).html': 'templates/ai_studio_code_inverted.html',
-                    'ai_studio_code (2).html': 'templates/ai_studio_code_split.html',
-                    'ai_studio_code_classic.html': 'templates/ai_studio_code_classic.html',
-                    'ai_studio_code_inverted.html': 'templates/ai_studio_code_inverted.html',
-                    'ai_studio_code_split.html': 'templates/ai_studio_code_split.html'
+                    '1': 'templates/classic/',
+                    '2': 'templates/inverted/',
+                    '3': 'templates/split/',
+                    'ai_studio_code.html': 'templates/classic/',
+                    'ai_studio_code (1).html': 'templates/inverted/',
+                    'ai_studio_code (2).html': 'templates/split/',
+                    'ai_studio_code_classic.html': 'templates/classic/',
+                    'ai_studio_code_inverted.html': 'templates/inverted/',
+                    'ai_studio_code_split.html': 'templates/split/',
+                    'templates/ai_studio_code_classic.html': 'templates/classic/',
+                    'templates/ai_studio_code_inverted.html': 'templates/inverted/',
+                    'templates/ai_studio_code_split.html': 'templates/split/'
                 };
-                settings.templateId = templateMap[settings.templateId] || 'templates/ai_studio_code_classic.html';
+                settings.templateId = templateMap[settings.templateId] || 'templates/classic/';
                 // Save the migrated settings
                 localStorage.setItem('peritus_newsletter_settings', JSON.stringify(settings));
             }
