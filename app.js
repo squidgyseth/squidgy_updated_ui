@@ -39,9 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Newsletter Settings
     let settings = {
-        templateId: '1',
+        templateId: 'ai_studio_code.html',
         imageCount: 3
     };
+    
+    // Store template HTML content
+    let templateHtmlContent = '';
     
     // Load settings from local storage if they exist
     const savedSettings = localStorage.getItem('peritus_newsletter_settings');
@@ -156,6 +159,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize tabs after DOM is loaded
     setTimeout(initializeTabs, 100);
+    
+    // Load the initial template HTML
+    loadTemplateHtml(settings.templateId).then(html => {
+        templateHtmlContent = html;
+        console.log('Initial template loaded on page load');
+    });
     
     // Send message function
     function sendMessage(customMessage = null) {
@@ -331,6 +340,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // Function to load template HTML
+    async function loadTemplateHtml(templateFileName) {
+        try {
+            console.log('Loading template:', templateFileName);
+            const response = await fetch(templateFileName);
+            if (response.ok) {
+                const html = await response.text();
+                console.log('Template loaded successfully, length:', html.length);
+                return html;
+            } else {
+                console.error('Failed to load template:', response.status);
+                return '';
+            }
+        } catch (error) {
+            console.error('Error loading template:', error);
+            return '';
+        }
+    }
+    
     // Send data to webhook
     async function sendToWebhook(message, isVoiceMode = false) {
         // Always use the main chat container
@@ -338,6 +366,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Show processing indicator
         addMessageToChat('system', 'Processing your request...', messageContainer);
+        
+        // Load the template HTML if not already loaded or if template changed
+        if (!templateHtmlContent || templateHtmlContent === '') {
+            templateHtmlContent = await loadTemplateHtml(settings.templateId);
+        }
         
         try {
             const response = await fetch(WEBHOOK_URL, {
@@ -351,6 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     source: 'peritus-newsletter-interface',
                     session_id: sessionId,
                     template_id: settings.templateId,
+                    template_html: templateHtmlContent,
                     image_count: settings.imageCount
                 })
             });
@@ -686,16 +720,28 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Settings form handling
     if (saveSettingsBtn) {
-        saveSettingsBtn.addEventListener('click', () => {
+        saveSettingsBtn.addEventListener('click', async () => {
             // Update settings object
             settings.templateId = templateIdSelect.value;
             settings.imageCount = parseInt(imageCountInput.value, 10);
+            
+            // Load the new template HTML
+            console.log('Loading template HTML for:', settings.templateId);
+            templateHtmlContent = await loadTemplateHtml(settings.templateId);
+            
+            if (templateHtmlContent) {
+                console.log('Template HTML loaded successfully');
+            } else {
+                console.error('Failed to load template HTML');
+                alert('Warning: Could not load the selected template. Please try again.');
+                return;
+            }
             
             // Save to local storage
             localStorage.setItem('peritus_newsletter_settings', JSON.stringify(settings));
             
             // Show confirmation
-            alert('Settings saved successfully!');
+            alert('Settings saved successfully! Template loaded and ready to use.');
             
             // Switch to chat tab
             const chatTabBtn = document.querySelector('.tab-btn[data-tab="chat"]');
