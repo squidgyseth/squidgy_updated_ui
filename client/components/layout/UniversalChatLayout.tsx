@@ -121,11 +121,11 @@ export default function UniversalChatLayout({
               <img 
                 src={agent.avatar} 
                 alt={agent.name}
-                className="w-12 h-12 rounded-full"
+                className="w-10 h-10 rounded-full"
               />
             )}
             <div className="flex-1">
-              <h2 className="text-lg font-semibold bg-gradient-to-r from-red-500 to-purple-600 bg-clip-text text-transparent">{agent.name}</h2>
+              <h2 className="text-lg font-semibold text-purple-600">{agent.name}</h2>
             </div>
           </div>
           
