@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight } from 'lucide-react';
 import { useSidebar } from '../../contexts/SidebarContext';
+import { useUser } from '../../hooks/useUser';
+import ChatHistory from '../chat/ChatHistory';
 
 interface AgentConfig {
   id: string;
@@ -30,6 +32,7 @@ export default function UniversalChatLayout({
 }: UniversalChatLayoutProps) {
   const [isPinned, setIsPinned] = useState(agent.pinned || false);
   const { isSidebarOpen, toggleSidebar } = useSidebar();
+  const { userId } = useUser();
 
   const handlePinToggle = () => {
     const newPinnedState = !isPinned;
@@ -191,7 +194,7 @@ export default function UniversalChatLayout({
 
         {/* Recent Actions Section - matching screenshots exactly */}
         {agent.recent_actions && agent.recent_actions.length > 0 && (
-          <div className="p-6">
+          <div className="p-6 border-b border-gray-100">
             <div className="flex items-center space-x-2 mb-4">
               <Clock className="text-squidgy-primary" size={18} />
               <h3 className="text-lg font-semibold text-gray-900">Recent Actions</h3>
@@ -207,6 +210,25 @@ export default function UniversalChatLayout({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Previous Newsletters Section - Only for Newsletter Agent */}
+        {agent.id === 'newsletter' && userId && (
+          <div className="p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <MessageSquare className="text-squidgy-primary" size={18} />
+              <h3 className="text-lg font-semibold text-gray-900">Previous Newsletters</h3>
+            </div>
+            <ChatHistory
+              userId={userId}
+              agentId={agent.id}
+              agentName={agent.name}
+              onSessionSelect={(sessionId) => {
+                console.log('Selected session:', sessionId);
+                // TODO: Load session messages
+              }}
+            />
           </div>
         )}
       </div>
