@@ -275,7 +275,7 @@ export default function N8nChatInterface({
           <button
             type="button"
             onClick={handleAttachmentClick}
-            className="p-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-colors flex items-center justify-center"
+            className="p-3 bg-purple-100 hover:bg-purple-200 text-purple-600 rounded-xl transition-colors flex items-center justify-center"
             title="Attach file"
           >
             <Paperclip size={20} />
@@ -285,7 +285,7 @@ export default function N8nChatInterface({
           <button
             type="button"
             onClick={handleMicrophoneClick}
-            className="p-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-colors flex items-center justify-center"
+            className="p-3 bg-purple-100 hover:bg-purple-200 text-purple-600 rounded-xl transition-colors flex items-center justify-center"
             title="Voice input"
           >
             <Mic size={20} />
