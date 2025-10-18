@@ -112,46 +112,54 @@ export default function UniversalChatLayout({
         </div>
       </div>
 
-      {/* Right Sidebar - Agent Details - Exact match to screenshots */}
+      {/* Right Sidebar - Agent Details - Modal Style Design */}
       <div className="w-80 border-l border-gray-200 bg-white overflow-y-auto">
-        {/* Agent Header */}
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex items-center space-x-3 mb-4">
-            {agent.avatar && (
-              <img 
-                src={agent.avatar} 
-                alt={agent.name}
-                className="w-10 h-10 rounded-full"
-              />
-            )}
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold text-purple-600">{agent.name}</h2>
+        {/* Agent Header - Modal Style */}
+        <div className="p-8 text-center">
+          {/* Large Centered Avatar with Gradient Border */}
+          {agent.avatar && (
+            <div className="relative inline-block mb-6">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-r from-red-500 to-purple-600 p-1">
+                <img 
+                  src={agent.avatar} 
+                  alt={agent.name}
+                  className="w-full h-full rounded-full object-cover"
+                />
+                {/* Active indicator */}
+                <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-4 border-white"></div>
+              </div>
             </div>
-          </div>
+          )}
           
+          {/* Centered Agent Name */}
+          <h2 className="text-2xl font-bold text-purple-600 mb-4">{agent.name}</h2>
+          
+          {/* Centered Specialization Badge */}
           {agent.specialization && (
-            <div className="text-center mb-4">
-              <span className="inline-block px-4 py-2 bg-purple-100 text-purple-700 text-sm font-medium rounded-full">
+            <div className="mb-6">
+              <span className="inline-block px-6 py-3 bg-purple-100 text-purple-700 text-sm font-medium rounded-full">
                 {agent.specialization}
               </span>
             </div>
           )}
           
-          <p className="text-sm text-gray-600 leading-relaxed mb-6">{agent.description}</p>
+          {/* Centered Description */}
+          <p className="text-gray-600 leading-relaxed mb-8 text-center max-w-sm mx-auto">{agent.description}</p>
 
-          {/* Action Buttons - matching screenshot colors */}
+          {/* Action Buttons - matching screenshot */}
           <div className="flex space-x-3">
             <button 
-              className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-purple-600 text-white rounded-lg hover:from-red-600 hover:to-purple-700 transition font-medium text-sm"
+              onClick={handleSettingsClick}
+              className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-500 to-purple-600 text-white rounded-xl hover:from-red-600 hover:to-purple-700 transition font-medium"
             >
-              <Settings size={16} />
+              <Settings size={18} />
               <span>Settings</span>
             </button>
             <button 
               onClick={handlePinToggle}
-              className="flex items-center justify-center space-x-2 px-4 py-2.5 border-2 border-squidgy-primary/30 text-squidgy-primary rounded-lg hover:bg-squidgy-primary/10 transition font-medium text-sm"
+              className="flex items-center justify-center space-x-2 px-6 py-3 border-2 border-purple-300 text-purple-600 rounded-xl hover:bg-purple-50 transition font-medium"
             >
-              {isPinned ? <Pin size={16} /> : <PinOff size={16} />}
+              {isPinned ? <Pin size={18} /> : <PinOff size={18} />}
               <span>{isPinned ? 'Pinned' : 'To pin'}</span>
             </button>
           </div>
