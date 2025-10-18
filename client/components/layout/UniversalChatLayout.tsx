@@ -125,7 +125,7 @@ export default function UniversalChatLayout({
               />
             )}
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-gray-900">{agent.name}</h2>
+              <h2 className="text-lg font-semibold bg-gradient-to-r from-red-500 to-purple-600 bg-clip-text text-transparent">{agent.name}</h2>
             </div>
           </div>
           
