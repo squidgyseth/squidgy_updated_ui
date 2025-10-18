@@ -115,36 +115,36 @@ export default function UniversalChatLayout({
       {/* Right Sidebar - Agent Details - Modal Style Design */}
       <div className="w-80 border-l border-gray-200 bg-white overflow-y-auto">
         {/* Agent Header - Modal Style */}
-        <div className="p-8 text-center">
-          {/* Large Centered Avatar with Gradient Border */}
+        <div className="p-6 text-center">
+          {/* Centered Avatar with Gradient Border */}
           {agent.avatar && (
-            <div className="relative inline-block mb-6">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-r from-red-500 to-purple-600 p-1">
+            <div className="relative inline-block mb-4">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-r from-red-500 to-purple-600 p-1">
                 <img 
                   src={agent.avatar} 
                   alt={agent.name}
                   className="w-full h-full rounded-full object-cover"
                 />
                 {/* Active indicator */}
-                <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-4 border-white"></div>
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
               </div>
             </div>
           )}
           
           {/* Centered Agent Name */}
-          <h2 className="text-2xl font-bold text-purple-600 mb-4">{agent.name}</h2>
+          <h2 className="text-lg font-semibold text-purple-600 mb-3">{agent.name}</h2>
           
           {/* Centered Specialization Badge */}
           {agent.specialization && (
-            <div className="mb-6">
-              <span className="inline-block px-6 py-3 bg-purple-100 text-purple-700 text-sm font-medium rounded-full">
+            <div className="mb-4">
+              <span className="inline-block px-4 py-2 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
                 {agent.specialization}
               </span>
             </div>
           )}
           
           {/* Centered Description */}
-          <p className="text-gray-600 leading-relaxed mb-8 text-center max-w-sm mx-auto">{agent.description}</p>
+          <p className="text-sm text-gray-600 leading-relaxed mb-6 text-center max-w-xs mx-auto">{agent.description}</p>
 
           {/* Action Buttons - matching screenshot */}
           <div className="flex space-x-3">
