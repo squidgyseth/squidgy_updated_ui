@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Loader } from 'lucide-react';
+import { Send, Loader, Paperclip, Mic } from 'lucide-react';
 import type { N8nResponse, ChatMessage } from '../../types/n8n.types';
 import AgentResponseHandler from './AgentResponseHandler';
 import { sendToN8nWorkflow, generateRequestId, generateSessionId } from '../../lib/n8nService';
@@ -161,6 +161,16 @@ export default function N8nChatInterface({
     handleSendMessage(answer);
   };
 
+  const handleAttachmentClick = () => {
+    // TODO: Implement file attachment functionality
+    console.log('Attachment button clicked');
+  };
+
+  const handleMicrophoneClick = () => {
+    // TODO: Implement voice input functionality
+    console.log('Microphone button clicked');
+  };
+
   return (
     <div className={`flex flex-col h-full ${className}`}>
       {/* Messages Area */}
@@ -251,24 +261,47 @@ export default function N8nChatInterface({
 
       {/* Input Area */}
       <form onSubmit={handleSubmit} className="border-t border-gray-200 p-4">
-        <div className="flex gap-2">
+        <div className="flex gap-3 items-center">
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={`Message ${agent.name}...`}
             disabled={isLoading}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 text-gray-800"
           />
+          
+          {/* Attachment Button */}
+          <button
+            type="button"
+            onClick={handleAttachmentClick}
+            className="p-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-colors flex items-center justify-center"
+            title="Attach file"
+          >
+            <Paperclip size={20} />
+          </button>
+          
+          {/* Microphone Button */}
+          <button
+            type="button"
+            onClick={handleMicrophoneClick}
+            className="p-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-colors flex items-center justify-center"
+            title="Voice input"
+          >
+            <Mic size={20} />
+          </button>
+          
+          {/* Send Button */}
           <button
             type="submit"
             disabled={!inputValue.trim() || isLoading}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="p-3 bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            title="Send message"
           >
             {isLoading ? (
-              <Loader className="w-4 h-4 animate-spin" />
+              <Loader className="w-5 h-5 animate-spin" />
             ) : (
-              <Send size={18} />
+              <Send size={20} />
             )}
           </button>
         </div>

@@ -45,7 +45,8 @@ suggestions:
   - "Help me plan my upcoming trip"
 
 n8n:
-  webhook_url: https://n8n.theaiteam.uk/webhook/Squidgy/PersonalAssistant
+  webhook_url: https://n8n.theaiteam.uk/webhook/c2fcbad6-abc0-43af-8aa8-d1661ff4461d
+  #https://n8n.theaiteam.uk/webhook/Squidgy/PersonalAssistant
 
 personality:
   tone: professional

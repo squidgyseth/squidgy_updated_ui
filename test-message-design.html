@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Design Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bg-gradient-to-r {
+            background: linear-gradient(to right, rgb(236, 72, 153), rgb(239, 68, 68));
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold mb-6 text-center">Message Design Test</h1>
+            
+            <!-- Test Message Interface -->
+            <div class="border-t border-gray-200 p-4">
+                <div class="flex gap-3 items-center">
+                    <!-- Input Field -->
+                    <input
+                        type="text"
+                        placeholder="Message SMM Assistant..."
+                        class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-800"
+                    />
+                    
+                    <!-- Attachment Button -->
+                    <button class="p-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-colors flex items-center justify-center">
+                        📎
+                    </button>
+                    
+                    <!-- Microphone Button -->
+                    <button class="p-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-colors flex items-center justify-center">
+                        🎤
+                    </button>
+                    
+                    <!-- Send Button -->
+                    <button class="p-3 bg-gradient-to-r text-white rounded-xl transition-colors flex items-center justify-center">
+                        ✈️
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Suggestion Buttons -->
+            <div class="px-4 pb-4">
+                <div class="flex flex-wrap gap-2">
+                    <button class="px-3 py-1.5 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                        Create Instagram post ideas
+                    </button>
+                    <button class="px-3 py-1.5 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                        Analyze competitor content
+                    </button>
+                    <button class="px-3 py-1.5 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                        Write engaging captions
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-6 text-gray-600">
+        <p>✅ Updated message design with:</p>
+        <ul class="list-disc list-inside mt-2 space-y-1">
+            <li>Attachment button (purple)</li>
+            <li>Microphone button (purple)</li>
+            <li>Send button (pink-to-red gradient)</li>
+            <li>Rounded design (rounded-xl)</li>
+            <li>Consistent spacing and colors</li>
+        </ul>
+    </div>
+</body>
+</html>
