@@ -17,6 +17,9 @@ agent:
     - "Generated trending hashtags for Q4 campaign"
     - "Developed content calendar for December"
 
+n8n:
+  webhook_url: https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant
+
 ui_use:
   page_type: single_page
   pages:

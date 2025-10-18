@@ -60,6 +60,7 @@ const generateSessionId = (userId: string, agentName: string): string => {
  * @param agentName - The agent name from YAML (e.g., 'newsletter', 'personal_assistant')
  * @param sessionId - Optional session ID, will be generated if not provided
  * @param requestId - Optional request ID, will be generated if not provided
+ * @param webhookUrl - Optional webhook URL from agent config, defaults to env variable
  * @returns Promise<N8nResponse | null>
  */
 export const sendToN8nWorkflow = async (
@@ -67,9 +68,13 @@ export const sendToN8nWorkflow = async (
   userMessage: string,
   agentName: string,
   sessionId?: string,
-  requestId?: string
+  requestId?: string,
+  webhookUrl?: string
 ): Promise<N8nResponse | null> => {
-  if (!N8N_WEBHOOK_BASE || N8N_WEBHOOK_BASE === 'https://your-n8n-webhook-url') {
+  // Use the provided webhook URL or fall back to the environment variable for Personal Assistant
+  const n8nWebhookUrl = webhookUrl || N8N_WEBHOOK_BASE;
+  
+  if (!n8nWebhookUrl || n8nWebhookUrl === 'https://your-n8n-webhook-url') {
     console.warn('N8N webhook URL not configured, using development simulation');
     
     // Development mode simulation
@@ -127,7 +132,8 @@ export const sendToN8nWorkflow = async (
   };
   
   try {
-    const result = await fetch(N8N_WEBHOOK_BASE, {
+    console.log(`Sending to n8n webhook for ${agentName}:`, n8nWebhookUrl);
+    const result = await fetch(n8nWebhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

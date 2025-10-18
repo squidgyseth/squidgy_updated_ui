@@ -17,13 +17,15 @@ interface N8nChatInterfaceProps {
   userId: string;
   sessionId?: string;
   className?: string;
+  webhookUrl?: string; // Add webhook URL from agent config
 }
 
 export default function N8nChatInterface({
   agent,
   userId,
   sessionId: initialSessionId,
-  className = ''
+  className = '',
+  webhookUrl
 }: N8nChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -88,13 +90,14 @@ export default function N8nChatInterface({
     await saveMessageToHistory(message, 'User', userMessage.timestamp);
 
     try {
-      // Send to n8n workflow
+      // Send to n8n workflow with agent-specific webhook URL
       const response = await sendToN8nWorkflow(
         userId,
         message,
         agent.id,
         sessionId,
-        userMessage.id
+        userMessage.id,
+        webhookUrl // Pass the webhook URL from agent config
       );
 
       if (response) {

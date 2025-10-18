@@ -116,6 +116,7 @@ export default function DynamicAgentDashboard() {
         agent={agentInfo}
         userId={userId}
         sessionId={sessionId}
+        webhookUrl={agentConfig.n8n?.webhook_url} // Pass the webhook URL from agent config
       />
     </UniversalChatLayout>
   );
