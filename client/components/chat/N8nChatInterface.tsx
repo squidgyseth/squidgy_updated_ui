@@ -181,49 +181,52 @@ export default function N8nChatInterface({
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div className={`max-w-[70%] ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
-              {message.sender === 'agent' && (
-                <div className="flex items-start gap-3 mb-2">
+              {message.sender === 'agent' ? (
+                <div className="flex items-start gap-3">
                   {agent.avatar && (
                     <img
                       src={agent.avatar}
                       alt={agent.name}
-                      className="w-8 h-8 rounded-full"
+                      className="w-8 h-8 rounded-full flex-shrink-0"
                     />
                   )}
-                  <span className="text-sm text-gray-600 font-medium">{agent.name}</span>
+                  <div className="flex-1">
+                    {message.status ? (
+                      // Use AgentResponseHandler for agent messages with status
+                      <AgentResponseHandler
+                        response={{
+                          user_id: userId,
+                          session_id: sessionId,
+                          agent_name: agent.id,
+                          timestamp_of_call_made: message.timestamp.toISOString(),
+                          request_id: message.id,
+                          agent_response: message.content,
+                          agent_status: message.status
+                        }}
+                        onAnswerQuestion={handleAnswerQuestion}
+                      />
+                    ) : (
+                      // Regular message display
+                      <div className="bg-gray-100 text-gray-800 rounded-lg px-4 py-2">
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                      </div>
+                    )}
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      {message.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
                 </div>
-              )}
-              
-              {message.sender === 'agent' && message.status ? (
-                // Use AgentResponseHandler for agent messages with status
-                <AgentResponseHandler
-                  response={{
-                    user_id: userId,
-                    session_id: sessionId,
-                    agent_name: agent.id,
-                    timestamp_of_call_made: message.timestamp.toISOString(),
-                    request_id: message.id,
-                    agent_response: message.content,
-                    agent_status: message.status
-                  }}
-                  onAnswerQuestion={handleAnswerQuestion}
-                />
               ) : (
-                // Regular message display
-                <div
-                  className={`rounded-lg px-4 py-2 ${
-                    message.sender === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                // User message display
+                <div>
+                  <div className="bg-blue-500 text-white rounded-lg px-4 py-2">
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                  </div>
+                  <span className="text-xs text-gray-500 mt-1 block">
+                    {message.timestamp.toLocaleTimeString()}
+                  </span>
                 </div>
               )}
-              
-              <span className="text-xs text-gray-500 mt-1 block">
-                {message.timestamp.toLocaleTimeString()}
-              </span>
             </div>
           </div>
         ))}
@@ -241,23 +244,6 @@ export default function N8nChatInterface({
         
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Suggestion Buttons */}
-      {agent.suggestionButtons && agent.suggestionButtons.length > 0 && messages.length <= 1 && (
-        <div className="px-4 pb-2">
-          <div className="flex flex-wrap gap-2">
-            {agent.suggestionButtons.map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => handleSuggestionClick(suggestion)}
-                className="px-3 py-1.5 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Input Area */}
       <form onSubmit={handleSubmit} className="border-t border-gray-200 p-4">
@@ -306,6 +292,23 @@ export default function N8nChatInterface({
           </button>
         </div>
       </form>
+
+      {/* Suggestion Buttons - Below Input Area */}
+      {agent.suggestionButtons && agent.suggestionButtons.length > 0 && messages.length <= 1 && (
+        <div className="px-4 pb-4">
+          <div className="flex flex-wrap gap-2">
+            {agent.suggestionButtons.map((suggestion, index) => (
+              <button
+                key={index}
+                onClick={() => handleSuggestionClick(suggestion)}
+                className="px-3 py-1.5 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

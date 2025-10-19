@@ -75,7 +75,7 @@ export default function UniversalChatLayout({
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
               </div>
               <div>
-                <h1 className="text-sm font-medium text-black">{agent.name}</h1>
+                <h1 className="text-base font-bold text-black">{agent.name}</h1>
                 <p className="text-xs font-normal text-gray-500 mt-1">active • {agent.tagline}</p>
               </div>
             </div>
