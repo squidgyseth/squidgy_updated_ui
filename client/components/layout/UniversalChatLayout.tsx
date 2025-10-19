@@ -76,11 +76,6 @@ export default function UniversalChatLayout({
               </div>
               <div>
                 <h1 className="text-base font-medium bg-gradient-to-r from-red-500 to-purple-600 bg-clip-text text-transparent">{agent.name}</h1>
-                {agent.specialization && (
-                  <span className="inline-block mt-1 px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-                    {agent.specialization}
-                  </span>
-                )}
                 <p className="text-sm font-normal text-gray-500 mt-1">active • {agent.tagline}</p>
               </div>
             </div>
