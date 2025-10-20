@@ -126,15 +126,8 @@ export default function DynamicAgentDashboard() {
  * Generate intro message based on agent configuration
  */
 function generateIntroMessage(agent: any): string {
-  const { name, tagline, specialization, description, category } = agent;
+  const { initial_message } = agent;
   
-  // Category-specific intro messages
-  const categoryIntros: Record<string, string> = {
-    MARKETING: `Hi! I'm your ${name}. ${tagline || description} I'm here to help you with marketing strategies, content creation, and campaign optimization.`,
-    GENERAL: `Hi! I'm your ${name}. ${tagline || description} I'm here to help you with any task. How can I assist you today?`,
-    TESTING: `Hi! I'm your ${name}. ${tagline || description} I'm ready to help with testing, validation, and quality assurance.`,
-    DEFAULT: `Hi! I'm ${name}. ${tagline || description} How can I help you today?`
-  };
-
-  return categoryIntros[category] || categoryIntros.DEFAULT;
+  // Return the initial_message from YAML config
+  return initial_message || '';
 }

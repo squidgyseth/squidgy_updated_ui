@@ -160,29 +160,35 @@ export default function UniversalChatLayout({
           </div>
         </div>
 
-        {/* Configure Section */}
+        {/* Onboarding Section */}
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center space-x-2 mb-4">
             <Settings className="text-squidgy-primary" size={18} />
-            <h3 className="text-lg font-semibold text-gray-900">Configure</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Onboarding</h3>
           </div>
           <div className="space-y-3">
             <button 
               onClick={handleSettingsClick}
-              className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+              className="w-full flex items-center justify-between p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer border border-purple-200 relative"
             >
               <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-squidgy-primary rounded-full"></div>
-                <span className="text-sm text-gray-700">Configurable Data</span>
+                <div className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"></div>
+                <span className="text-sm text-purple-700 font-medium">Configurable Data</span>
               </div>
-              <ChevronRight className="text-gray-400" size={14} />
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Setup Required</span>
+                <ChevronRight className="text-purple-400" size={14} />
+              </div>
             </button>
-            <button className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition cursor-pointer">
+            <button className="w-full flex items-center justify-between p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer border border-purple-200 relative">
               <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-squidgy-primary rounded-full"></div>
-                <span className="text-sm text-gray-700">Integration Setup</span>
+                <div className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"></div>
+                <span className="text-sm text-purple-700 font-medium">Integration Setup</span>
               </div>
-              <ChevronRight className="text-gray-400" size={14} />
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Setup Required</span>
+                <ChevronRight className="text-purple-400" size={14} />
+              </div>
             </button>
           </div>
         </div>
@@ -226,12 +232,12 @@ export default function UniversalChatLayout({
           </div>
         )}
 
-        {/* Previous Newsletters Section - Only for Newsletter Agent */}
-        {agent.id === 'newsletter' && userId && (
+        {/* Chat History Section */}
+        {userId && (
           <div className="p-6">
             <div className="flex items-center space-x-2 mb-4">
               <MessageSquare className="text-squidgy-primary" size={18} />
-              <h3 className="text-lg font-semibold text-gray-900">Previous Newsletters</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Chat History</h3>
             </div>
             <ChatHistory
               userId={userId}

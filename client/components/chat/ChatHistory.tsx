@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Clock, Trash2, RefreshCw } from 'lucide-react';
+import { MessageCircle, Clock, Trash2, RefreshCw, FileText } from 'lucide-react';
 import { ChatHistoryService, ChatSession } from '../../services/chatHistoryService';
+import { FileUploadService } from '../../services/fileUploadService';
 
 interface ChatHistoryProps {
   userId: string;
@@ -25,6 +26,27 @@ export default function ChatHistory({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const chatHistoryService = ChatHistoryService.getInstance();
+  const fileUploadService = FileUploadService.getInstance();
+
+  // Utility function to detect if message contains file URL
+  const parseFileInfo = (message: string) => {
+    const fileUrlMatch = message.match(/URL:\s*(https?:\/\/[^\s]+)/);
+    const fileNameMatch = message.match(/File:\s*([^\n]+)/);
+    
+    if (fileUrlMatch && fileNameMatch) {
+      return {
+        hasFile: true,
+        fileName: fileNameMatch[1].trim(),
+        fileUrl: fileUrlMatch[1].trim(),
+        messageText: message.split('\n\nFile:')[0] // Get the text before file info
+      };
+    }
+    
+    return {
+      hasFile: false,
+      messageText: message
+    };
+  };
 
   useEffect(() => {
     loadSessions();
@@ -154,9 +176,23 @@ export default function ChatHistory({
                     {formatTimestamp(session.last_timestamp)}
                   </div>
                 </div>
-                <p className="text-sm text-gray-700 truncate">
-                  {truncateMessage(session.last_message)}
-                </p>
+                <div className="text-sm text-gray-700">
+                  {(() => {
+                    const fileInfo = parseFileInfo(session.last_message);
+                    if (fileInfo.hasFile) {
+                      return (
+                        <div className="flex items-center gap-2">
+                          {fileUploadService.getFileTypeIcon(fileInfo.fileName)}
+                          <span className="truncate">{truncateMessage(fileInfo.messageText)}</span>
+                          <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
+                            File
+                          </span>
+                        </div>
+                      );
+                    }
+                    return <p className="truncate">{truncateMessage(fileInfo.messageText)}</p>;
+                  })()}
+                </div>
               </div>
               
               <button

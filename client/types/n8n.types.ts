@@ -34,6 +34,20 @@ export interface N8nResponse {
 export type AgentStatus = 'Ready' | 'Waiting' | 'Nothing';
 
 /**
+ * File upload information for chat messages
+ */
+export interface FileUploadInfo {
+  fileName: string;
+  fileUrl: string;
+  fileId: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  agentId: string;
+  agentName: string;
+  extractedText?: string;
+  errorMessage?: string;
+}
+
+/**
  * Message types for chat interface
  */
 export interface ChatMessage {
@@ -43,4 +57,5 @@ export interface ChatMessage {
   timestamp: Date;
   status?: AgentStatus;
   isHtml?: boolean;
+  fileUpload?: FileUploadInfo;
 }

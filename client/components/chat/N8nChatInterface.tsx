@@ -2,8 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader, Paperclip, Mic } from 'lucide-react';
 import type { N8nResponse, ChatMessage } from '../../types/n8n.types';
 import AgentResponseHandler from './AgentResponseHandler';
+import FileMessage from './FileMessage';
 import { sendToN8nWorkflow, generateRequestId, generateSessionId } from '../../lib/n8nService';
 import { ChatHistoryService } from '../../services/chatHistoryService';
+import { FileUploadService } from '../../services/fileUploadService';
+import { supabase } from '../../lib/supabase';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -31,8 +34,10 @@ export default function N8nChatInterface({
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(initialSessionId || generateSessionId(userId, agent.id));
+  const [uploadingFiles, setUploadingFiles] = useState<Map<string, { name: string; status: string }>>(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatHistoryService = ChatHistoryService.getInstance();
+  const fileUploadService = FileUploadService.getInstance();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -72,28 +77,40 @@ export default function N8nChatInterface({
     }
   };
 
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message: string, fileUrl?: string, fileName?: string) => {
     if (!message.trim() || isLoading) return;
 
+    // If there's a file URL, include it in the message content
+    const messageContent = fileUrl ? `${message}\n\nFile: ${fileName}\nURL: ${fileUrl}` : message;
+
+    const messageId = generateRequestId();
     const userMessage: ChatMessage = {
-      id: generateRequestId(),
+      id: messageId,
       content: message,
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      fileUpload: fileUrl ? {
+        fileName: fileName || 'file',
+        fileUrl,
+        fileId: `file_${messageId}`, // Use message ID with prefix to ensure uniqueness
+        status: 'completed',
+        agentId: agent.id,
+        agentName: agent.name
+      } : undefined
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
 
-    // Save user message to database
-    await saveMessageToHistory(message, 'User', userMessage.timestamp);
+    // Save user message to database (with file info if present)
+    await saveMessageToHistory(messageContent, 'User', userMessage.timestamp);
 
     try {
       // Send to n8n workflow with agent-specific webhook URL
       const response = await sendToN8nWorkflow(
         userId,
-        message,
+        messageContent, // Send the full message content including file info
         agent.id,
         sessionId,
         userMessage.id,
@@ -162,8 +179,224 @@ export default function N8nChatInterface({
   };
 
   const handleAttachmentClick = () => {
-    // TODO: Implement file attachment functionality
-    console.log('Attachment button clicked');
+    // Create file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.pdf,.txt,.docx';
+    fileInput.style.display = 'none';
+    
+    fileInput.onchange = async (e) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      
+      if (!file) return;
+      
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+      }
+      
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Only PDF, TXT, and DOCX files are supported');
+        return;
+      }
+      
+      try {
+        await uploadFileToSupabase(file);
+      } catch (error) {
+        console.error('File upload error:', error);
+        console.error('Full error object:', error);
+        alert(`Failed to upload file. Please try again. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    };
+    
+    // Add to DOM and trigger click
+    document.body.appendChild(fileInput);
+    fileInput.click();
+    document.body.removeChild(fileInput);
+  };
+
+  const uploadFileToSupabase = async (file: File) => {
+    try {
+      const timestamp = Date.now();
+      const fileName = `${userId}_${timestamp}_${file.name}`;
+      
+      console.log('Uploading file to Supabase...', fileName);
+      console.log('File details:', { name: file.name, size: file.size, type: file.type });
+      
+      // Step 1: Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('newsletter')
+        .upload(fileName, file);
+      
+      if (error) {
+        console.error('Supabase upload error:', error);
+        console.error('Error details:', { message: error.message, statusCode: error.statusCode });
+        throw new Error(`Upload failed: ${error.message}`);
+      }
+      
+      console.log('File uploaded successfully:', data);
+    
+    // Step 2: Get public URL
+    const { data: urlData } = supabase.storage
+      .from('newsletter')
+      .getPublicUrl(data.path);
+    
+    const fileUrl = urlData.publicUrl;
+    console.log('File URL:', fileUrl);
+    
+      // Step 3: Call backend processing endpoint
+      await callBackendProcessing(file.name, fileUrl);
+    } catch (error) {
+      console.error('Error in uploadFileToSupabase:', error);
+      throw error; // Re-throw to be caught by the outer try-catch
+    }
+  };
+
+  const callBackendProcessing = async (fileName: string, fileUrl: string) => {
+    try {
+      const formData = new FormData();
+      formData.append('firm_user_id', userId);
+      formData.append('file_name', fileName);
+      formData.append('file_url', fileUrl);
+      formData.append('agent_id', agent.id);
+      formData.append('agent_name', agent.name);
+      
+      console.log('Calling backend processing...', {
+        firm_user_id: userId,
+        file_name: fileName,
+        file_url: fileUrl,
+        agent_id: agent.id,
+        agent_name: agent.name
+      });
+      
+      // Use the backend URL from environment variables, default to localhost for development
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/file/process`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      console.log('Backend response status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Backend error response:', errorText);
+        throw new Error(`Backend processing failed: ${response.statusText} - ${errorText}`);
+      }
+    
+    const result = await response.json();
+    console.log('Backend response:', result);
+    
+    // Track the file upload for status monitoring
+    const fileId = result.data?.file_id;
+    if (fileId) {
+      setUploadingFiles(prev => new Map(prev.set(fileId, { name: fileName, status: 'processing' })));
+      
+      // Start monitoring file status
+      monitorFileStatus(fileId, fileName);
+    }
+    
+      // Automatically send a message with the file URL
+      await handleSendMessage(`I've uploaded a file: ${fileName}`, fileUrl, fileName);
+    } catch (error) {
+      console.error('Error in callBackendProcessing:', error);
+      throw error; // Re-throw to be caught by the outer try-catch
+    }
+  };
+
+  const monitorFileStatus = async (fileId: string, fileName: string) => {
+    let attempts = 0;
+    const maxAttempts = 30; // Monitor for 5 minutes (30 attempts * 10 seconds)
+    
+    const checkStatus = async () => {
+      try {
+        const file = await fileUploadService.getFileStatus(fileId);
+        
+        if (file) {
+          // Update the file message status
+          setMessages(prev => prev.map(msg => {
+            if (msg.fileUpload?.fileId === fileId) {
+              return {
+                ...msg,
+                fileUpload: {
+                  ...msg.fileUpload,
+                  status: file.processing_status,
+                  extractedText: file.extracted_text,
+                  errorMessage: file.error_message
+                }
+              };
+            }
+            return msg;
+          }));
+          
+          if (file.processing_status === 'completed') {
+            // Show completion message
+            const completionMessage: ChatMessage = {
+              id: generateRequestId(),
+              content: `🎉 File "${fileName}" has been processed successfully! Click to preview the extracted text.`,
+              sender: 'agent',
+              timestamp: new Date()
+            };
+            
+            setMessages(prev => [...prev, completionMessage]);
+            await saveMessageToHistory(completionMessage.content, 'Agent', completionMessage.timestamp);
+            
+            // Remove from monitoring
+            setUploadingFiles(prev => {
+              const newMap = new Map(prev);
+              newMap.delete(fileId);
+              return newMap;
+            });
+            return;
+          } else if (file.processing_status === 'failed') {
+            // Show error message
+            const errorMessage: ChatMessage = {
+              id: generateRequestId(),
+              content: `❌ File "${fileName}" processing failed: ${file.error_message || 'Unknown error'}`,
+              sender: 'agent',
+              timestamp: new Date()
+            };
+            
+            setMessages(prev => [...prev, errorMessage]);
+            await saveMessageToHistory(errorMessage.content, 'Agent', errorMessage.timestamp);
+            
+            // Remove from monitoring
+            setUploadingFiles(prev => {
+              const newMap = new Map(prev);
+              newMap.delete(fileId);
+              return newMap;
+            });
+            return;
+          }
+        }
+        
+        // Continue monitoring if still processing
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkStatus, 10000); // Check every 10 seconds
+        } else {
+          // Timeout - remove from monitoring
+          setUploadingFiles(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(fileId);
+            return newMap;
+          });
+        }
+      } catch (error) {
+        console.error('Error checking file status:', error);
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkStatus, 10000);
+        }
+      }
+    };
+    
+    // Start monitoring after 5 seconds
+    setTimeout(checkStatus, 5000);
   };
 
   const handleMicrophoneClick = () => {
@@ -175,9 +408,9 @@ export default function N8nChatInterface({
     <div className={`flex flex-col h-full ${className}`}>
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
+        {messages.map((message, index) => (
           <div
-            key={message.id}
+            key={`${message.id}-${index}`}
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div className={`max-w-[70%] ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
@@ -208,7 +441,10 @@ export default function N8nChatInterface({
                     ) : (
                       // Regular message display
                       <div className="bg-gray-100 text-gray-800 rounded-lg px-4 py-2">
-                        <p className="whitespace-pre-wrap">{message.content}</p>
+                        <div 
+                          className="whitespace-pre-wrap"
+                          dangerouslySetInnerHTML={{ __html: message.content }}
+                        />
                       </div>
                     )}
                     <span className="text-xs text-gray-500 mt-1 block">
@@ -219,12 +455,23 @@ export default function N8nChatInterface({
               ) : (
                 // User message display
                 <div>
-                  <div className="bg-blue-500 text-white rounded-lg px-4 py-2">
-                    <p className="whitespace-pre-wrap">{message.content}</p>
-                  </div>
-                  <span className="text-xs text-gray-500 mt-1 block">
-                    {message.timestamp.toLocaleTimeString()}
-                  </span>
+                  {message.fileUpload ? (
+                    // File upload message
+                    <FileMessage 
+                      fileInfo={message.fileUpload} 
+                      timestamp={message.timestamp}
+                    />
+                  ) : (
+                    // Regular text message
+                    <>
+                      <div className="bg-blue-500 text-white rounded-lg px-4 py-2">
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1 block">
+                        {message.timestamp.toLocaleTimeString()}
+                      </span>
+                    </>
+                  )}
                 </div>
               )}
             </div>
