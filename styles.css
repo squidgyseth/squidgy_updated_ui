@@ -550,6 +550,16 @@ header h1 {
     box-shadow: none;
     transition: border-color 0.2s, box-shadow 0.2s;
     background: white;
+    overflow: hidden;
+}
+
+#user-input::-webkit-scrollbar {
+    display: none;
+}
+
+#user-input {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
 #user-input:focus {
