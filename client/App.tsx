@@ -19,6 +19,7 @@ import SetNewPassword from './pages/SetNewPassword';
 import WebsiteDetails from "./pages/WebsiteDetails";
 import BusinessDetails from "./pages/BusinessDetails";
 import SolarSetup from "./pages/SolarSetup";
+import SolarConfig from "./pages/SolarConfig";
 import CalendarSetup from "./pages/CalendarSetup";
 import NotificationsPreferences from "./pages/NotificationsPreferences";
 import FacebookConnect from "./pages/FacebookConnect";
@@ -137,6 +138,11 @@ const App = () => (
           <Route path="/solar-setup" element={
             <ProtectedRoute>
               <SolarSetup />
+            </ProtectedRoute>
+          } />
+          <Route path="/solar-config" element={
+            <ProtectedRoute>
+              <SolarConfig />
             </ProtectedRoute>
           } />
           <Route path="/calendar-setup" element={

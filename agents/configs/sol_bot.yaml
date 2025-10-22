@@ -28,7 +28,7 @@ agent:
   pinned: true
   
   # Custom initial welcome message (supports HTML)
-  initial_message: 'Hi! I''m SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href="/solar-setup" target="_blank" style="color: #7c3aed; text-decoration: underline;">Complete Solar Setup</a> - Configure your location and energy needs.'
+  initial_message: 'Hi! I''m SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href="/solar-config" target="_blank" style="color: #7c3aed; text-decoration: underline;">Complete Solar Setup</a> - Configure your solar offer details.'
   
   # Agent capabilities shown in right panel
   capabilities:
