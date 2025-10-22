@@ -45,8 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
         templateId: 'templates/classic/',
         imageCount: 3,
         ctas: [
-            { name: 'Remove', link: '' },
-            { name: 'Remove', link: '' }
+            { name: 'Free trial link', link: 'https://www.perituslearning.co.uk/request-a-demo' },
+            { name: 'Contact us', link: 'https://www.perituslearning.co.uk/contact-us' },
+            { name: 'Savings Calculator', link: 'https://www.perituslearning.co.uk/savings-calculator' }
         ]
     };
     
@@ -96,8 +97,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Ensure ctas array exists with defaults if empty
             if (!settings.ctas || settings.ctas.length === 0) {
                 settings.ctas = [
-                    { name: 'Remove', link: '' },
-                    { name: 'Remove', link: '' }
+                    { name: 'Free trial link', link: 'https://www.perituslearning.co.uk/request-a-demo' },
+                    { name: 'Contact us', link: 'https://www.perituslearning.co.uk/contact-us' },
+                    { name: 'Savings Calculator', link: 'https://www.perituslearning.co.uk/savings-calculator' }
                 ];
             }
         } catch (error) {
