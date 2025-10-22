@@ -1,4 +1,5 @@
 import type { AgentCarouselConfig, AgentPage } from '../types/carouselTypes';
+import YamlAgentLoader, { type AgentConfig as YamlAgentConfig } from './yamlAgentLoader';
 
 export interface AgentConfig {
   agent: {
@@ -46,24 +47,15 @@ export class AgentConfigService {
    */
   async loadAgentConfig(agentId: string): Promise<AgentConfig | null> {
     try {
-      // Try API first (development), then fallback to static JSON (production)
-      let response;
-      try {
-        response = await fetch(`/api/agents/${agentId}/config`);
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}`);
-        }
-      } catch (apiError) {
-        // Fallback to static JSON file
-        response = await fetch(`/agent-configs/${agentId}.json`);
-        if (!response.ok) {
-          throw new Error(`Static config not found: ${response.status}`);
-        }
-      }
+      const yamlLoader = YamlAgentLoader.getInstance();
+      const config = await yamlLoader.loadAgentConfig(agentId);
       
-      const config = await response.json();
-      this.agentConfigs.set(agentId, config);
-      return config;
+      if (config) {
+        // Convert YamlAgentConfig to AgentConfig format if needed
+        this.agentConfigs.set(agentId, config as AgentConfig);
+        return config as AgentConfig;
+      }
+      return null;
     } catch (error) {
       console.error(`Could not load config for agent ${agentId}:`, error);
       return null;
@@ -133,24 +125,10 @@ export class AgentConfigService {
    */
   async getAllAgents(): Promise<AgentConfig[]> {
     try {
-      // Try API first (development), then fallback to static JSON (production)
-      let response;
-      try {
-        response = await fetch('/api/agents/list');
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}`);
-        }
-      } catch (apiError) {
-        // Fallback to static JSON file
-        response = await fetch('/agents.json');
-        if (!response.ok) {
-          throw new Error(`Static agents file not found: ${response.status}`);
-        }
-      }
-      
-      const agents = await response.json();
-      console.log('Loaded agents:', agents);
-      return agents;
+      const yamlLoader = YamlAgentLoader.getInstance();
+      const agents = await yamlLoader.loadAllAgents();
+      console.log('Loaded agents from YAML:', agents);
+      return agents as AgentConfig[];
     } catch (error) {
       console.error('Could not load agents:', error);
       return [];

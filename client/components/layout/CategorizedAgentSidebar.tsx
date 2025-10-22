@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CreateGroupChatModal from '../modals/CreateGroupChatModal';
+import YamlAgentLoader from '../../services/yamlAgentLoader';
 
 interface Assistant {
   name: string;
@@ -40,32 +41,11 @@ export default function CategorizedAgentSidebar() {
 
   const loadAgentsFromYAML = async () => {
     try {
-      let response;
-      
-      // Try API first (development), then fallback to static JSON (production)
-      try {
-        response = await fetch('/api/agents/list');
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}`);
-        }
-      } catch (apiError) {
-        console.log('API not available, using static agents data');
-        response = await fetch('/agents.json');
-        if (!response.ok) {
-          throw new Error(`Static file not found: ${response.status}`);
-        }
-      }
-      
-      if (!response.ok) {
-        console.error('Failed to load agents:', response.status, response.statusText);
-        setCategories([]);
-        return;
-      }
-      
-      const agentConfigs = await response.json();
+      const yamlLoader = YamlAgentLoader.getInstance();
+      const agentConfigs = await yamlLoader.loadAllAgents();
       
       // Transform YAML configs to match sidebar format
-      const assistants: Assistant[] = agentConfigs.map((config: any) => ({
+      const assistants: Assistant[] = agentConfigs.map((config) => ({
         name: config.agent.name,
         description: config.agent.description || config.agent.specialization || 'AI Assistant',
         avatar: config.agent.avatar || "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
