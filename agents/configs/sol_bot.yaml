@@ -4,7 +4,7 @@
 
 agent:
   # Unique identifier (no spaces, lowercase, use underscores)
-  id: sol
+  id: SOL
   
   # Display name shown in the sidebar
   name: SOL Bot
@@ -102,8 +102,22 @@ personality:
 
 # Solar-specific configuration
 solar_config:
-  # Default values for calculations
+  # Default values for calculations and UI
   defaults:
+    # UI Configuration defaults
+    installation_price: 2  # $/Watt
+    dealer_fee: 15  # %
+    broker_fee: 50  # $
+    financing_apr: 5  # %
+    financing_term: 240  # months (20 years)
+    energy_price: 0.17  # $/kWh
+    yearly_cost_increase: 4  # %
+    installation_lifespan: 20  # years
+    typical_panel_count: 40  # panels
+    max_roof_segments: 4  # segments
+    solar_incentive: 3  # %
+    
+    # Technical calculation defaults
     panel_wattage: 400  # watts per panel
     system_efficiency: 0.85  # 85% efficiency factor
     degradation_rate: 0.005  # 0.5% annual degradation

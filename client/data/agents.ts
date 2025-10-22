@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2025-10-22T21:45:51.896Z
+// Generated on: 2025-10-22T22:16:19.847Z
 
 export interface AgentConfig {
   agent: {
@@ -228,7 +228,7 @@ export const ALL_AGENTS: AgentConfig[] = [
   },
   {
     "agent": {
-      "id": "sol",
+      "id": "SOL",
       "name": "SOL Bot",
       "category": "SALES",
       "description": "Solar sales expert - Calculate savings, design systems, close deals",
@@ -305,6 +305,17 @@ export const ALL_AGENTS: AgentConfig[] = [
     },
     "solar_config": {
       "defaults": {
+        "installation_price": 2,
+        "dealer_fee": 15,
+        "broker_fee": 50,
+        "financing_apr": 5,
+        "financing_term": 240,
+        "energy_price": 0.17,
+        "yearly_cost_increase": 4,
+        "installation_lifespan": 20,
+        "typical_panel_count": 40,
+        "max_roof_segments": 4,
+        "solar_incentive": 3,
         "panel_wattage": 400,
         "system_efficiency": 0.85,
         "degradation_rate": 0.005,
@@ -775,9 +786,9 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "approach": "data_driven"
     }
   },
-  "sol": {
+  "SOL": {
     "agent": {
-      "id": "sol",
+      "id": "SOL",
       "name": "SOL Bot",
       "category": "SALES",
       "description": "Solar sales expert - Calculate savings, design systems, close deals",
@@ -854,6 +865,17 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     },
     "solar_config": {
       "defaults": {
+        "installation_price": 2,
+        "dealer_fee": 15,
+        "broker_fee": 50,
+        "financing_apr": 5,
+        "financing_term": 240,
+        "energy_price": 0.17,
+        "yearly_cost_increase": 4,
+        "installation_lifespan": 20,
+        "typical_panel_count": 40,
+        "max_roof_segments": 4,
+        "solar_incentive": 3,
         "panel_wattage": 400,
         "system_efficiency": 0.85,
         "degradation_rate": 0.005,
@@ -1197,7 +1219,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
   "SALES": [
     {
       "agent": {
-        "id": "sol",
+        "id": "SOL",
         "name": "SOL Bot",
         "category": "SALES",
         "description": "Solar sales expert - Calculate savings, design systems, close deals",
@@ -1274,6 +1296,17 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       },
       "solar_config": {
         "defaults": {
+          "installation_price": 2,
+          "dealer_fee": 15,
+          "broker_fee": 50,
+          "financing_apr": 5,
+          "financing_term": 240,
+          "energy_price": 0.17,
+          "yearly_cost_increase": 4,
+          "installation_lifespan": 20,
+          "typical_panel_count": 40,
+          "max_roof_segments": 4,
+          "solar_incentive": 3,
           "panel_wattage": 400,
           "system_efficiency": 0.85,
           "degradation_rate": 0.005,
@@ -1494,7 +1527,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","newsletter","personal_assistant","smm_assistant","sol","test_multi_agent","test_multi_page_agent"];
+export const AGENT_IDS: string[] = ["content_repurposer","newsletter","personal_assistant","smm_assistant","SOL","test_multi_agent","test_multi_page_agent"];
 
 // Total count
 export const TOTAL_AGENTS = 7;

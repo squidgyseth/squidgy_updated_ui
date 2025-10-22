@@ -4,6 +4,7 @@ import { ChevronLeft, DollarSign, Percent, Home, Building2, Package, CreditCard,
 import { supabase } from '../lib/supabase';
 import { useUser } from '../hooks/useUser';
 import { toast } from 'sonner';
+import { OptimizedAgentService } from '../services/optimizedAgentService';
 
 interface SolarConfigData {
   installation_price: number;
@@ -24,10 +25,15 @@ interface SolarConfigData {
 
 export default function SolarConfig() {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, userId } = useUser();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [agentConfig, setAgentConfig] = useState<any>(null);
   
+  // Helper function to get agent ID
+  const getAgentId = () => agentConfig?.agent?.id || 'SOL';
+  
+  // Default values that will be updated from YAML
   const [config, setConfig] = useState<SolarConfigData>({
     installation_price: 2,
     dealer_fee: 15,
@@ -45,25 +51,76 @@ export default function SolarConfig() {
     solar_incentive: 3
   });
 
+  // Load agent configuration and defaults
+  useEffect(() => {
+    const loadAgentConfig = () => {
+      try {
+        const agentService = OptimizedAgentService.getInstance();
+        const config = agentService.getAgentById('SOL');
+        if (config) {
+          setAgentConfig(config);
+          
+          // Update default values from YAML if they exist
+          const defaults = config.solar_config?.defaults;
+          if (defaults) {
+            setConfig(prevConfig => ({
+              ...prevConfig,
+              installation_price: defaults.installation_price || prevConfig.installation_price,
+              dealer_fee: defaults.dealer_fee || prevConfig.dealer_fee,
+              broker_fee: defaults.broker_fee || prevConfig.broker_fee,
+              financing_apr: defaults.financing_apr || prevConfig.financing_apr,
+              financing_term: defaults.financing_term || prevConfig.financing_term,
+              energy_price: defaults.energy_price || prevConfig.energy_price,
+              yearly_cost_increase: defaults.yearly_cost_increase || prevConfig.yearly_cost_increase,
+              installation_lifespan: defaults.installation_lifespan || prevConfig.installation_lifespan,
+              typical_panel_count: defaults.typical_panel_count || prevConfig.typical_panel_count,
+              max_roof_segments: defaults.max_roof_segments || prevConfig.max_roof_segments,
+              solar_incentive: defaults.solar_incentive || prevConfig.solar_incentive
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load agent config:', error);
+      }
+    };
+
+    loadAgentConfig();
+  }, []);
+
   // Load existing configuration if available
   useEffect(() => {
-    if (user?.id) {
+    if (userId) {
       loadExistingConfig();
     }
-  }, [user]);
+  }, [userId]);
 
   const loadExistingConfig = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('solar_configurations')
+        .from('solar_setup')
         .select('*')
-        .eq('firm_user_id', user?.id)
+        .eq('firm_user_id', userId)
+        .eq('agent_id', getAgentId())
         .single();
 
       if (data && !error) {
-        setConfig(data.config_data);
-        toast.success('Loaded existing configuration');
+        setConfig({
+          installation_price: data.installation_price || 2,
+          dealer_fee: data.dealer_fee || 15,
+          broker_fee: data.broker_fee || 50,
+          property_type: data.property_type?.toLowerCase() || 'residential',
+          allow_financed: data.allow_financed !== false,
+          allow_cash: data.allow_cash !== false,
+          financing_apr: data.financing_apr || 5,
+          financing_term: data.financing_term || 240,
+          energy_price: data.energy_price || 0.17,
+          yearly_cost_increase: data.yearly_electric_cost_increase || 4,
+          installation_lifespan: data.installation_lifespan || 20,
+          typical_panel_count: data.typical_panel_count || 40,
+          max_roof_segments: data.max_roof_segments || 4,
+          solar_incentive: data.solar_incentive || 3
+        });
       }
     } catch (error) {
       console.log('No existing config found');
@@ -73,7 +130,7 @@ export default function SolarConfig() {
   };
 
   const handleSave = async () => {
-    if (!user?.id) {
+    if (!userId) {
       toast.error('Please log in to save configuration');
       return;
     }
@@ -82,22 +139,37 @@ export default function SolarConfig() {
       setSaving(true);
       
       const { error } = await supabase
-        .from('solar_configurations')
+        .from('solar_setup')
         .upsert({
-          firm_user_id: user.id,
-          config_data: config,
-          updated_at: new Date().toISOString()
+          firm_user_id: userId,
+          agent_id: getAgentId(),
+          installation_price: config.installation_price,
+          dealer_fee: config.dealer_fee,
+          broker_fee: config.broker_fee,
+          property_type: config.property_type.charAt(0).toUpperCase() + config.property_type.slice(1),
+          allow_financed: config.allow_financed,
+          allow_cash: config.allow_cash,
+          financing_apr: config.financing_apr,
+          financing_term: config.financing_term,
+          energy_price: config.energy_price,
+          yearly_electric_cost_increase: config.yearly_cost_increase,
+          installation_lifespan: config.installation_lifespan,
+          typical_panel_count: config.typical_panel_count,
+          max_roof_segments: config.max_roof_segments,
+          solar_incentive: config.solar_incentive,
+          setup_status: 'completed',
+          last_updated_timestamp: new Date().toISOString()
         }, {
-          onConflict: 'firm_user_id'
+          onConflict: 'firm_user_id,agent_id'
         });
 
       if (error) throw error;
       
       toast.success('Solar configuration saved successfully!');
       
-      // Navigate to SOL Bot chat after saving
+      // Navigate to agent chat after saving
       setTimeout(() => {
-        navigate('/chat/sol');
+        navigate(`/chat/${getAgentId()}`);
       }, 1500);
       
     } catch (error: any) {
@@ -116,7 +188,7 @@ export default function SolarConfig() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate(-1)}
+                onClick={() => navigate(`/chat/${getAgentId()}`)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -131,13 +203,6 @@ export default function SolarConfig() {
                 </div>
               </div>
             </div>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-6 py-2 bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-lg hover:from-orange-600 hover:to-yellow-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg"
-            >
-              {saving ? 'Saving...' : 'Save & Continue'}
-            </button>
           </div>
         </div>
       </div>
@@ -419,7 +484,7 @@ export default function SolarConfig() {
               disabled={saving}
               className="px-12 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-xl hover:from-orange-600 hover:to-yellow-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg shadow-xl"
             >
-              {saving ? 'Saving Configuration...' : 'Continue'}
+              {saving ? 'Saving Configuration...' : 'Save'}
             </button>
           </div>
         </div>

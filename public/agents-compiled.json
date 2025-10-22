@@ -187,7 +187,7 @@
     },
     {
       "agent": {
-        "id": "sol",
+        "id": "SOL",
         "name": "SOL Bot",
         "category": "SALES",
         "description": "Solar sales expert - Calculate savings, design systems, close deals",
@@ -264,6 +264,17 @@
       },
       "solar_config": {
         "defaults": {
+          "installation_price": 2,
+          "dealer_fee": 15,
+          "broker_fee": 50,
+          "financing_apr": 5,
+          "financing_term": 240,
+          "energy_price": 0.17,
+          "yearly_cost_increase": 4,
+          "installation_lifespan": 20,
+          "typical_panel_count": 40,
+          "max_roof_segments": 4,
+          "solar_incentive": 3,
           "panel_wattage": 400,
           "system_efficiency": 0.85,
           "degradation_rate": 0.005,
@@ -732,9 +743,9 @@
         "approach": "data_driven"
       }
     },
-    "sol": {
+    "SOL": {
       "agent": {
-        "id": "sol",
+        "id": "SOL",
         "name": "SOL Bot",
         "category": "SALES",
         "description": "Solar sales expert - Calculate savings, design systems, close deals",
@@ -811,6 +822,17 @@
       },
       "solar_config": {
         "defaults": {
+          "installation_price": 2,
+          "dealer_fee": 15,
+          "broker_fee": 50,
+          "financing_apr": 5,
+          "financing_term": 240,
+          "energy_price": 0.17,
+          "yearly_cost_increase": 4,
+          "installation_lifespan": 20,
+          "typical_panel_count": 40,
+          "max_roof_segments": 4,
+          "solar_incentive": 3,
           "panel_wattage": 400,
           "system_efficiency": 0.85,
           "degradation_rate": 0.005,
@@ -1152,7 +1174,7 @@
     "SALES": [
       {
         "agent": {
-          "id": "sol",
+          "id": "SOL",
           "name": "SOL Bot",
           "category": "SALES",
           "description": "Solar sales expert - Calculate savings, design systems, close deals",
@@ -1229,6 +1251,17 @@
         },
         "solar_config": {
           "defaults": {
+            "installation_price": 2,
+            "dealer_fee": 15,
+            "broker_fee": 50,
+            "financing_apr": 5,
+            "financing_term": 240,
+            "energy_price": 0.17,
+            "yearly_cost_increase": 4,
+            "installation_lifespan": 20,
+            "typical_panel_count": 40,
+            "max_roof_segments": 4,
+            "solar_incentive": 3,
             "panel_wattage": 400,
             "system_efficiency": 0.85,
             "degradation_rate": 0.005,
@@ -1449,6 +1482,6 @@
   },
   "meta": {
     "total": 7,
-    "buildTime": "2025-10-22T21:45:51.899Z"
+    "buildTime": "2025-10-22T22:16:19.850Z"
   }
 }
