@@ -76,6 +76,95 @@
             box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
         }
         
+        /* Formatting Toolbar */
+        .formatting-toolbar {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .toolbar-separator {
+            width: 1px;
+            height: 30px;
+            background-color: var(--border-color);
+        }
+        
+        .toolbar-btn {
+            background-color: #f5f5f5;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-size: 14px;
+        }
+        
+        .toolbar-btn:hover {
+            background-color: #e0e0e0;
+            border-color: var(--primary-color);
+        }
+        
+        .toolbar-btn:active,
+        .toolbar-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .toolbar-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-right: 5px;
+        }
+        
+        .toolbar-select {
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .toolbar-select:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .toolbar-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+        }
+        
+        .toolbar-color-picker {
+            width: 40px;
+            height: 32px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 2px;
+        }
+        
+        .toolbar-color-picker:hover {
+            border-color: var(--primary-color);
+        }
+        
         .editor-controls {
             width: 300px;
             background-color: white;
@@ -207,6 +296,68 @@
                 </button>
             </div>
         </header>
+        
+        <!-- Text Formatting Toolbar -->
+        <div class="formatting-toolbar" id="formatting-toolbar" style="display: none;">
+            <div class="toolbar-group">
+                <button class="toolbar-btn" id="bold-btn" title="Bold">
+                    <i class="fas fa-bold"></i>
+                </button>
+                <button class="toolbar-btn" id="italic-btn" title="Italic">
+                    <i class="fas fa-italic"></i>
+                </button>
+                <button class="toolbar-btn" id="underline-btn" title="Underline">
+                    <i class="fas fa-underline"></i>
+                </button>
+            </div>
+            
+            <div class="toolbar-separator"></div>
+            
+            <div class="toolbar-group">
+                <label class="toolbar-label">Size:</label>
+                <select id="font-size-select" class="toolbar-select">
+                    <option value="">Default</option>
+                    <option value="12px">12px</option>
+                    <option value="14px">14px</option>
+                    <option value="16px">16px</option>
+                    <option value="18px">18px</option>
+                    <option value="20px">20px</option>
+                    <option value="24px">24px</option>
+                    <option value="28px">28px</option>
+                    <option value="32px">32px</option>
+                </select>
+            </div>
+            
+            <div class="toolbar-separator"></div>
+            
+            <div class="toolbar-group">
+                <label class="toolbar-label">Font:</label>
+                <select id="font-family-select" class="toolbar-select">
+                    <option value="">Default</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="'Times New Roman', serif">Times New Roman</option>
+                    <option value="'Courier New', monospace">Courier New</option>
+                    <option value="Georgia, serif">Georgia</option>
+                    <option value="Verdana, sans-serif">Verdana</option>
+                    <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+                </select>
+            </div>
+            
+            <div class="toolbar-separator"></div>
+            
+            <div class="toolbar-group">
+                <label class="toolbar-label">Color:</label>
+                <input type="color" id="text-color-picker" class="toolbar-color-picker" title="Text Color">
+            </div>
+            
+            <div class="toolbar-separator"></div>
+            
+            <div class="toolbar-group">
+                <button class="toolbar-btn" id="remove-format-btn" title="Clear Formatting">
+                    <i class="fas fa-remove-format"></i>
+                </button>
+            </div>
+        </div>
         
         <div class="editor-container">
             <div class="newsletter-preview" id="newsletter-preview">
@@ -568,6 +719,107 @@
                     window.close();
                 } else {
                     window.location.href = 'index.html';
+                }
+            });
+            
+            // Text Formatting Toolbar Elements
+            const formattingToolbar = document.getElementById('formatting-toolbar');
+            const boldBtn = document.getElementById('bold-btn');
+            const italicBtn = document.getElementById('italic-btn');
+            const underlineBtn = document.getElementById('underline-btn');
+            const fontSizeSelect = document.getElementById('font-size-select');
+            const fontFamilySelect = document.getElementById('font-family-select');
+            const textColorPicker = document.getElementById('text-color-picker');
+            const removeFormatBtn = document.getElementById('remove-format-btn');
+            
+            let currentEditableElement = null;
+            
+            // Show/hide toolbar when text is focused
+            newsletterPreview.addEventListener('focusin', (e) => {
+                if (e.target.hasAttribute('contenteditable')) {
+                    currentEditableElement = e.target;
+                    formattingToolbar.style.display = 'flex';
+                    updateToolbarState();
+                }
+            });
+            
+            // Update toolbar button states based on current selection
+            function updateToolbarState() {
+                if (!currentEditableElement) return;
+                
+                // Check if bold, italic, underline are applied
+                const isBold = document.queryCommandState('bold');
+                const isItalic = document.queryCommandState('italic');
+                const isUnderline = document.queryCommandState('underline');
+                
+                boldBtn.classList.toggle('active', isBold);
+                italicBtn.classList.toggle('active', isItalic);
+                underlineBtn.classList.toggle('active', isUnderline);
+            }
+            
+            // Bold button
+            boldBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.execCommand('bold', false, null);
+                updateToolbarState();
+                currentEditableElement.focus();
+            });
+            
+            // Italic button
+            italicBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.execCommand('italic', false, null);
+                updateToolbarState();
+                currentEditableElement.focus();
+            });
+            
+            // Underline button
+            underlineBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.execCommand('underline', false, null);
+                updateToolbarState();
+                currentEditableElement.focus();
+            });
+            
+            // Font size
+            fontSizeSelect.addEventListener('change', (e) => {
+                const size = e.target.value;
+                if (size && currentEditableElement) {
+                    document.execCommand('fontSize', false, '7');
+                    const fontElements = currentEditableElement.querySelectorAll('font[size="7"]');
+                    fontElements.forEach(el => {
+                        el.removeAttribute('size');
+                        el.style.fontSize = size;
+                    });
+                    currentEditableElement.focus();
+                }
+            });
+            
+            // Font family
+            fontFamilySelect.addEventListener('change', (e) => {
+                const font = e.target.value;
+                if (font && currentEditableElement) {
+                    document.execCommand('fontName', false, font);
+                    currentEditableElement.focus();
+                }
+            });
+            
+            // Text color
+            textColorPicker.addEventListener('change', (e) => {
+                const color = e.target.value;
+                if (currentEditableElement) {
+                    document.execCommand('foreColor', false, color);
+                    currentEditableElement.focus();
+                }
+            });
+            
+            // Remove formatting
+            removeFormatBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentEditableElement) {
+                    document.execCommand('removeFormat', false, null);
+                    updateToolbarState();
+                    currentEditableElement.focus();
                 }
             });
             
