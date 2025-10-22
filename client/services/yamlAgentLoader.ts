@@ -110,7 +110,7 @@ class YamlAgentLoader {
     }
 
     try {
-      // Fetch the YAML file directly from the public folder
+      // Fetch the YAML file directly from the original agents folder
       const response = await fetch(`/agents/configs/${agentId}.yaml`);
       
       if (!response.ok) {
