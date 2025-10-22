@@ -585,13 +585,37 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         // Different message based on Status
                         if (isReadyStatus) {
-                            // Special handling for Status: Ready
-                            addMessageToChat('system', 'The newsletter is ready! Click the button below to edit it.', messageContainer);
-                            contentDiv.innerHTML = '<h3>Newsletter Ready!</h3><p>Your final newsletter has been generated and is ready to edit.</p>';
+                            // Special handling for Status: Ready - Enhanced display
+                            contentDiv.innerHTML = `
+                                <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 25px; border-radius: 12px; border-left: 5px solid #4caf50; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);">
+                                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                                        <i class="fas fa-check-circle" style="font-size: 32px; color: #4caf50; margin-right: 15px;"></i>
+                                        <div>
+                                            <h3 style="margin: 0; color: #2e7d32; font-size: 1.4rem;">Newsletter Ready!</h3>
+                                            <p style="margin: 5px 0 0 0; color: #558b2f; font-size: 0.95rem;">Your final newsletter has been generated and is ready to edit.</p>
+                                        </div>
+                                    </div>
+                                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                        <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                                            <i class="fas fa-info-circle" style="color: #4caf50; margin-right: 8px;"></i>
+                                            <strong>What's next?</strong> Click the button below to open the editor where you can customize text, upload images, and adjust formatting.
+                                        </p>
+                                    </div>
+                                </div>
+                            `;
                         } else {
                             // For other newsletter-like content
-                            addMessageToChat('system', 'Newsletter content detected! Click the button below to edit it.', messageContainer);
-                            contentDiv.innerHTML = '<h3>Newsletter Content Detected!</h3><p>Click the button below to open the newsletter editor.</p>';
+                            contentDiv.innerHTML = `
+                                <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 25px; border-radius: 12px; border-left: 5px solid #2196f3; box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);">
+                                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                                        <i class="fas fa-newspaper" style="font-size: 32px; color: #2196f3; margin-right: 15px;"></i>
+                                        <div>
+                                            <h3 style="margin: 0; color: #1565c0; font-size: 1.4rem;">Newsletter Content Detected!</h3>
+                                            <p style="margin: 5px 0 0 0; color: #1976d2; font-size: 0.95rem;">Click the button below to open the newsletter editor.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
                         }
                         
                         contentDiv.appendChild(buttonContainer);
