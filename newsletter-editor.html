@@ -152,17 +152,48 @@
             box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
         }
         
-        .toolbar-color-picker {
-            width: 40px;
-            height: 32px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 2px;
+        .color-picker-wrapper {
+            position: relative;
+            display: inline-block;
         }
         
-        .toolbar-color-picker:hover {
+        .color-display-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background-color: #f5f5f5;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .color-display-btn:hover {
+            background-color: #e0e0e0;
             border-color: var(--primary-color);
+        }
+        
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background-color: #000000;
+            display: inline-block;
+        }
+        
+        .color-display-btn i {
+            font-size: 12px;
+            color: var(--text-color);
+        }
+        
+        .toolbar-color-picker-hidden {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
         }
         
         .editor-controls {
@@ -347,7 +378,13 @@
             
             <div class="toolbar-group">
                 <label class="toolbar-label">Color:</label>
-                <input type="color" id="text-color-picker" class="toolbar-color-picker" title="Text Color">
+                <div class="color-picker-wrapper">
+                    <button class="color-display-btn" id="color-display-btn" title="Current text color">
+                        <span class="color-box" id="color-box"></span>
+                        <i class="fas fa-caret-down"></i>
+                    </button>
+                    <input type="color" id="text-color-picker" class="toolbar-color-picker-hidden" title="Text Color">
+                </div>
             </div>
             
             <div class="toolbar-separator"></div>
@@ -730,6 +767,8 @@
             const fontSizeSelect = document.getElementById('font-size-select');
             const fontFamilySelect = document.getElementById('font-family-select');
             const textColorPicker = document.getElementById('text-color-picker');
+            const colorDisplayBtn = document.getElementById('color-display-btn');
+            const colorBox = document.getElementById('color-box');
             const removeFormatBtn = document.getElementById('remove-format-btn');
             
             let currentEditableElement = null;
@@ -755,6 +794,27 @@
                 boldBtn.classList.toggle('active', isBold);
                 italicBtn.classList.toggle('active', isItalic);
                 underlineBtn.classList.toggle('active', isUnderline);
+                
+                // Update color box to show current text color
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    const container = range.commonAncestorContainer;
+                    const element = container.nodeType === 3 ? container.parentElement : container;
+                    
+                    if (element) {
+                        const color = window.getComputedStyle(element).color;
+                        // Convert rgb to hex for the color box
+                        const rgb = color.match(/\d+/g);
+                        if (rgb && rgb.length >= 3) {
+                            const hex = '#' + rgb.slice(0, 3).map(x => {
+                                const h = parseInt(x).toString(16);
+                                return h.length === 1 ? '0' + h : h;
+                            }).join('');
+                            colorBox.style.backgroundColor = hex;
+                        }
+                    }
+                }
             }
             
             // Bold button
@@ -804,29 +864,22 @@
                 }
             });
             
-            // Text color
+            // Color display button - opens the color picker
+            colorDisplayBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                textColorPicker.click();
+            });
+            
+            // Text color picker
             textColorPicker.addEventListener('input', (e) => {
                 const color = e.target.value;
                 if (currentEditableElement) {
-                    // Save the current selection
-                    const selection = window.getSelection();
-                    if (selection.rangeCount > 0) {
-                        const range = selection.getRangeAt(0);
-                        
-                        // Apply the color
-                        document.execCommand('foreColor', false, color);
-                        
-                        // Restore focus
-                        currentEditableElement.focus();
-                        
-                        // Try to restore selection
-                        try {
-                            selection.removeAllRanges();
-                            selection.addRange(range);
-                        } catch (e) {
-                            console.log('Could not restore selection');
-                        }
-                    }
+                    // Update the color box display
+                    colorBox.style.backgroundColor = color;
+                    
+                    // Apply the color to selected text
+                    document.execCommand('foreColor', false, color);
+                    currentEditableElement.focus();
                 }
             });
             
@@ -834,6 +887,10 @@
             textColorPicker.addEventListener('change', (e) => {
                 const color = e.target.value;
                 if (currentEditableElement) {
+                    // Update the color box display
+                    colorBox.style.backgroundColor = color;
+                    
+                    // Apply the color
                     document.execCommand('foreColor', false, color);
                     currentEditableElement.focus();
                 }
