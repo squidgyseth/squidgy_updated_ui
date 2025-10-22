@@ -44,7 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let settings = {
         templateId: 'templates/classic/',
         imageCount: 3,
-        ctas: []
+        ctas: [
+            { name: 'Learn More', link: 'https://example.com' },
+            { name: 'Get Started', link: 'https://example.com' }
+        ]
     };
     
     // Store template HTML content
@@ -90,8 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (templateIdSelect) templateIdSelect.value = settings.templateId;
             if (imageCountInput) imageCountInput.value = settings.imageCount;
             
-            // Ensure ctas array exists
-            if (!settings.ctas) settings.ctas = [];
+            // Ensure ctas array exists with defaults if empty
+            if (!settings.ctas || settings.ctas.length === 0) {
+                settings.ctas = [
+                    { name: 'Learn More', link: 'https://example.com' },
+                    { name: 'Get Started', link: 'https://example.com' }
+                ];
+            }
         } catch (error) {
             console.error('Error parsing saved settings:', error);
         }
