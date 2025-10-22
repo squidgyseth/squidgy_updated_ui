@@ -1,0 +1,64 @@
+{
+  "agent": {
+    "id": "newsletter",
+    "name": "Newsletter Agent",
+    "category": "MARKETING",
+    "description": "Create and manage newsletters",
+    "specialization": "Creative & Trendy",
+    "tagline": "Content. Create. Distribute.",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+    "pinned": true,
+    "initial_message": "Hi! I'm your Newsletter Agent. Content. Create. Distribute.<br><br>📋 **Quick Setup Required:** <a href=\"/agent-settings/newsletter\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Onboarding</a> - You can come back and change if needed.",
+    "capabilities": [
+      "Content creation and optimization for newsletters",
+      "PDF document processing and analysis",
+      "Speech-to-text content input",
+      "Newsletter template generation",
+      "Email marketing best practices"
+    ],
+    "recent_actions": [
+      "Generated newsletter for Q4 product launch",
+      "Processed PDF content from marketing materials",
+      "Analyzed competitor newsletter performance"
+    ]
+  },
+  "suggestions": [
+    "Create newsletter content",
+    "Process PDF document",
+    "Generate email templates",
+    "Analyze newsletter performance",
+    "Design email layout",
+    "Optimize subject lines"
+  ],
+  "n8n": {
+    "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter"
+  },
+  "ui": {
+    "page_type": "standard",
+    "figma_url": "",
+    "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+    "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+    "pages": [
+      {
+        "name": "newsletter_liquid-blanch-17032840_page1",
+        "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+        "order": 1,
+        "source": {
+          "type": "figma_deployed",
+          "url": "https://liquid-blanch-17032840.figma.site/"
+        }
+      }
+    ]
+  },
+  "ui_use": {
+    "pages": [
+      {
+        "name": "Newsletter Liquid-Blanch-17032840 Page1",
+        "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+        "order": 1,
+        "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+      }
+    ],
+    "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+  }
+}

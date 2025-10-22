@@ -46,19 +46,28 @@ export class AgentConfigService {
    */
   async loadAgentConfig(agentId: string): Promise<AgentConfig | null> {
     try {
-      // Try to load from API first
-      const response = await fetch(`/api/agents/${agentId}/config`);
-      if (response.ok) {
-        const config = await response.json();
-        this.agentConfigs.set(agentId, config);
-        return config;
+      // Try API first (development), then fallback to static JSON (production)
+      let response;
+      try {
+        response = await fetch(`/api/agents/${agentId}/config`);
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+      } catch (apiError) {
+        // Fallback to static JSON file
+        response = await fetch(`/agent-configs/${agentId}.json`);
+        if (!response.ok) {
+          throw new Error(`Static config not found: ${response.status}`);
+        }
       }
+      
+      const config = await response.json();
+      this.agentConfigs.set(agentId, config);
+      return config;
     } catch (error) {
-      console.error(`Could not load config for agent ${agentId} from API:`, error);
+      console.error(`Could not load config for agent ${agentId}:`, error);
+      return null;
     }
-
-    // No fallback - return null if API fails
-    return null;
   }
 
   /**
@@ -124,18 +133,28 @@ export class AgentConfigService {
    */
   async getAllAgents(): Promise<AgentConfig[]> {
     try {
-      const response = await fetch('/api/agents/list');
-      if (response.ok) {
-        const agents = await response.json();
-        console.log('Loaded agents from API:', agents);
-        return agents;
+      // Try API first (development), then fallback to static JSON (production)
+      let response;
+      try {
+        response = await fetch('/api/agents/list');
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+      } catch (apiError) {
+        // Fallback to static JSON file
+        response = await fetch('/agents.json');
+        if (!response.ok) {
+          throw new Error(`Static agents file not found: ${response.status}`);
+        }
       }
+      
+      const agents = await response.json();
+      console.log('Loaded agents:', agents);
+      return agents;
     } catch (error) {
-      console.error('Could not load agents from API:', error);
+      console.error('Could not load agents:', error);
+      return [];
     }
-
-    // No fallback - return empty array if API fails
-    return [];
   }
 
 

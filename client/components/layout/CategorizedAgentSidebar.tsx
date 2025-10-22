@@ -40,10 +40,24 @@ export default function CategorizedAgentSidebar() {
 
   const loadAgentsFromYAML = async () => {
     try {
-      const response = await fetch('/api/agents/list');
+      let response;
+      
+      // Try API first (development), then fallback to static JSON (production)
+      try {
+        response = await fetch('/api/agents/list');
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+      } catch (apiError) {
+        console.log('API not available, using static agents data');
+        response = await fetch('/agents.json');
+        if (!response.ok) {
+          throw new Error(`Static file not found: ${response.status}`);
+        }
+      }
       
       if (!response.ok) {
-        console.error('Failed to load agents from API:', response.status, response.statusText);
+        console.error('Failed to load agents:', response.status, response.statusText);
         setCategories([]);
         return;
       }
