@@ -805,6 +805,32 @@
             });
             
             // Text color
+            textColorPicker.addEventListener('input', (e) => {
+                const color = e.target.value;
+                if (currentEditableElement) {
+                    // Save the current selection
+                    const selection = window.getSelection();
+                    if (selection.rangeCount > 0) {
+                        const range = selection.getRangeAt(0);
+                        
+                        // Apply the color
+                        document.execCommand('foreColor', false, color);
+                        
+                        // Restore focus
+                        currentEditableElement.focus();
+                        
+                        // Try to restore selection
+                        try {
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                        } catch (e) {
+                            console.log('Could not restore selection');
+                        }
+                    }
+                }
+            });
+            
+            // Also handle change event for better compatibility
             textColorPicker.addEventListener('change', (e) => {
                 const color = e.target.value;
                 if (currentEditableElement) {
