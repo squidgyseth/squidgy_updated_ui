@@ -61,6 +61,21 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         
+        /* Make text elements editable */
+        .newsletter-preview [contenteditable="true"] {
+            outline: none;
+            transition: background-color 0.2s;
+        }
+        
+        .newsletter-preview [contenteditable="true"]:hover {
+            background-color: #f0f8ff;
+        }
+        
+        .newsletter-preview [contenteditable="true"]:focus {
+            background-color: #e6f3ff;
+            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+        }
+        
         .editor-controls {
             width: 300px;
             background-color: white;
@@ -226,6 +241,12 @@
                 </div>
                 
                 <div class="control-group">
+                    <div style="background-color: #e6f3ff; padding: 12px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid var(--primary-color);">
+                        <p style="margin: 0; font-size: 0.9rem; color: var(--text-color);">
+                            <i class="fas fa-info-circle" style="color: var(--primary-color);"></i>
+                            <strong>Tip:</strong> Click on any text in the newsletter to edit it directly!
+                        </p>
+                    </div>
                     <button id="save-newsletter-btn" class="btn btn-success btn-block">
                         <i class="fas fa-save"></i> Save Changes
                     </button>
@@ -316,6 +337,9 @@
                 
                 // Update the HTML with our processed version
                 newsletterPreview.innerHTML = processedHtml;
+                
+                // Make all text elements editable
+                makeTextEditable();
                 
                 console.log('Processed HTML:', newsletterPreview.innerHTML);
                 
@@ -545,6 +569,42 @@
                     window.location.href = 'index.html';
                 }
             });
+            
+            // Make text elements editable
+            function makeTextEditable() {
+                // Select common text elements (excluding image placeholders)
+                const textElements = newsletterPreview.querySelectorAll(
+                    'p, h1, h2, h3, h4, h5, h6, span, div:not(.image-placeholder), td, th, li, a'
+                );
+                
+                textElements.forEach(element => {
+                    // Skip if it's an image placeholder or already editable
+                    if (element.classList.contains('image-placeholder') || 
+                        element.hasAttribute('contenteditable')) {
+                        return;
+                    }
+                    
+                    // Skip if element only contains an image placeholder
+                    const hasOnlyPlaceholder = element.children.length === 1 && 
+                        element.children[0].classList.contains('image-placeholder');
+                    if (hasOnlyPlaceholder) {
+                        return;
+                    }
+                    
+                    // Make it editable
+                    element.setAttribute('contenteditable', 'true');
+                });
+                
+                console.log('Made', textElements.length, 'elements editable');
+            }
+            
+            // Re-apply editability after image updates
+            const originalUpdatePlaceholderImage = updatePlaceholderImage;
+            updatePlaceholderImage = function(id, imageData) {
+                originalUpdatePlaceholderImage(id, imageData);
+                // Re-apply editability in case new elements were added
+                setTimeout(() => makeTextEditable(), 100);
+            };
             
             // Initialize
             loadNewsletterHtml();
