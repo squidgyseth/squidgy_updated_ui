@@ -1,5 +1,6 @@
 import type { AgentCarouselConfig, AgentPage } from '../types/carouselTypes';
-import YamlAgentLoader, { type AgentConfig as YamlAgentConfig } from './yamlAgentLoader';
+import OptimizedAgentService from './optimizedAgentService';
+import { type AgentConfig as OptimizedAgentConfig } from '../data/agents';
 
 export interface AgentConfig {
   agent: {
@@ -47,11 +48,10 @@ export class AgentConfigService {
    */
   async loadAgentConfig(agentId: string): Promise<AgentConfig | null> {
     try {
-      const yamlLoader = YamlAgentLoader.getInstance();
-      const config = await yamlLoader.loadAgentConfig(agentId);
+      const agentService = OptimizedAgentService.getInstance();
+      const config = agentService.getAgentById(agentId);
       
       if (config) {
-        // Convert YamlAgentConfig to AgentConfig format if needed
         this.agentConfigs.set(agentId, config as AgentConfig);
         return config as AgentConfig;
       }
@@ -125,9 +125,9 @@ export class AgentConfigService {
    */
   async getAllAgents(): Promise<AgentConfig[]> {
     try {
-      const yamlLoader = YamlAgentLoader.getInstance();
-      const agents = await yamlLoader.loadAllAgents();
-      console.log('Loaded agents from YAML:', agents);
+      const agentService = OptimizedAgentService.getInstance();
+      const agents = agentService.getAllAgents();
+      console.log('Loaded agents (optimized):', agents);
       return agents as AgentConfig[];
     } catch (error) {
       console.error('Could not load agents:', error);

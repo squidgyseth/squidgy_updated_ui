@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CreateGroupChatModal from '../modals/CreateGroupChatModal';
-import YamlAgentLoader from '../../services/yamlAgentLoader';
+import OptimizedAgentService from '../../services/optimizedAgentService';
 
 interface Assistant {
   name: string;
@@ -39,12 +39,12 @@ export default function CategorizedAgentSidebar() {
     }
   }, [location]);
 
-  const loadAgentsFromYAML = async () => {
+  const loadAgentsFromYAML = () => {
     try {
-      const yamlLoader = YamlAgentLoader.getInstance();
-      const agentConfigs = await yamlLoader.loadAllAgents();
+      const agentService = OptimizedAgentService.getInstance();
+      const agentConfigs = agentService.getAllAgents();
       
-      // Transform YAML configs to match sidebar format
+      // Transform configs to match sidebar format
       const assistants: Assistant[] = agentConfigs.map((config) => ({
         name: config.agent.name,
         description: config.agent.description || config.agent.specialization || 'AI Assistant',
@@ -60,7 +60,7 @@ export default function CategorizedAgentSidebar() {
       setCategories(grouped);
       
     } catch (error) {
-      console.error('Failed to load agents from YAML:', error);
+      console.error('Failed to load agents:', error);
       setCategories([]);
     }
   };
