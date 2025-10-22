@@ -318,53 +318,54 @@
                 
                 // First, do a direct string replacement in the HTML
                 // This ensures we catch all instances regardless of DOM structure
-                const html = newsletterPreview.innerHTML;
+                let html = newsletterPreview.innerHTML;
                 
-                // Try different formats of [IMG_HERE] that might appear
-                const processedHtml = html
-                    .replace(/\[IMG_HERE\]/g, (match) => {
-                        const placeholderId = `placeholder-${index++}`;
-                        return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
-                    })
-                    .replace(/\[img_here\]/gi, (match) => {
-                        const placeholderId = `placeholder-${index++}`;
-                        return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
-                    })
-                    .replace(/\[image\]/gi, (match) => {
-                        const placeholderId = `placeholder-${index++}`;
-                        return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
-                    });
+                // Use a single comprehensive regex to match all image placeholder variations
+                // This prevents double-counting the same placeholder
+                const placeholderRegex = /\[(IMG_HERE|img_here|image)\]/gi;
+                
+                html = html.replace(placeholderRegex, (match) => {
+                    const placeholderId = `placeholder-${index++}`;
+                    return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
+                });
                 
                 // Update the HTML with our processed version
-                newsletterPreview.innerHTML = processedHtml;
+                newsletterPreview.innerHTML = html;
                 
                 // Make all text elements editable
                 makeTextEditable();
                 
-                console.log('Processed HTML:', newsletterPreview.innerHTML);
+                console.log('Processed HTML with placeholders');
                 
                 // Now find all the placeholder divs we created
                 const placeholderElements = newsletterPreview.querySelectorAll('.image-placeholder[data-placeholder="true"]');
                 console.log('Found placeholder elements:', placeholderElements.length);
                 
-                // If no placeholders were found, try to find img tags without src
+                // Only look for empty img tags if we found NO text placeholders at all
                 if (placeholderElements.length === 0) {
-                    console.log('No placeholders found, looking for empty img tags');
-                    const emptyImgTags = newsletterPreview.querySelectorAll('img:not([src]), img[src=""]');
+                    console.log('No text placeholders found, looking for empty img tags');
+                    const emptyImgTags = newsletterPreview.querySelectorAll('img:not([src]), img[src=""], img[src="#"]');
                     
                     emptyImgTags.forEach((img) => {
+                        // Skip if this img is already inside a placeholder div
+                        if (img.closest('.image-placeholder')) {
+                            return;
+                        }
+                        
                         const placeholderId = `placeholder-${index++}`;
                         img.id = placeholderId;
-                        img.dataset.placeholder = true;
+                        img.dataset.placeholder = 'true';
                         img.classList.add('image-placeholder');
-                        placeholderElements.push(img);
                     });
                     
                     console.log('Found empty img tags:', emptyImgTags.length);
                 }
                 
+                // Get the final list of placeholders (only those with data-placeholder="true")
+                const finalPlaceholders = newsletterPreview.querySelectorAll('[data-placeholder="true"]');
+                
                 // Add them to our placeholders array
-                placeholderElements.forEach((element, i) => {
+                finalPlaceholders.forEach((element, i) => {
                     placeholders.push({
                         id: element.id,
                         element: element,
