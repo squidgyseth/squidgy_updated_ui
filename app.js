@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const imageCountInput = document.getElementById('image-count');
     const saveSettingsBtn = document.getElementById('save-settings-btn');
     const templatePreview = document.getElementById('template-preview');
+    const ctaList = document.getElementById('cta-list');
+    const addCtaBtn = document.getElementById('add-cta-btn');
     
     // Session Management
     const sessionIdDisplay = document.getElementById('session-id');
@@ -41,7 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Newsletter Settings
     let settings = {
         templateId: 'templates/classic/',
-        imageCount: 3
+        imageCount: 3,
+        ctas: []
     };
     
     // Store template HTML content
@@ -86,6 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update form fields with saved settings
             if (templateIdSelect) templateIdSelect.value = settings.templateId;
             if (imageCountInput) imageCountInput.value = settings.imageCount;
+            
+            // Ensure ctas array exists
+            if (!settings.ctas) settings.ctas = [];
         } catch (error) {
             console.error('Error parsing saved settings:', error);
         }
@@ -494,7 +500,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     session_id: sessionId,
                     template_id: settings.templateId,
                     template_html: templateHtmlContent,
-                    image_count: settings.imageCount
+                    image_count: settings.imageCount,
+                    ctas: settings.ctas
                 })
             });
             
@@ -827,12 +834,80 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // CTA Management Functions
+    function createCtaItem(name = '', link = '') {
+        const ctaItem = document.createElement('div');
+        ctaItem.className = 'cta-item';
+        
+        ctaItem.innerHTML = `
+            <div class="cta-item-inputs">
+                <input type="text" class="cta-name" placeholder="CTA Name (e.g., Learn More)" value="${name}">
+                <input type="text" class="cta-link" placeholder="Link (optional, e.g., https://example.com)" value="${link}">
+            </div>
+            <button type="button" class="remove-cta-btn">Remove</button>
+        `;
+        
+        // Add remove functionality
+        const removeBtn = ctaItem.querySelector('.remove-cta-btn');
+        removeBtn.addEventListener('click', () => {
+            ctaItem.remove();
+        });
+        
+        return ctaItem;
+    }
+    
+    function loadCtas() {
+        if (!ctaList) return;
+        
+        ctaList.innerHTML = '';
+        
+        if (settings.ctas && settings.ctas.length > 0) {
+            settings.ctas.forEach(cta => {
+                const ctaItem = createCtaItem(cta.name, cta.link || '');
+                ctaList.appendChild(ctaItem);
+            });
+        }
+    }
+    
+    function getCtasFromForm() {
+        if (!ctaList) return [];
+        
+        const ctaItems = ctaList.querySelectorAll('.cta-item');
+        const ctas = [];
+        
+        ctaItems.forEach(item => {
+            const name = item.querySelector('.cta-name').value.trim();
+            const link = item.querySelector('.cta-link').value.trim();
+            
+            if (name) { // Only add if name is not empty
+                ctas.push({
+                    name: name,
+                    link: link || null // Set to null if empty
+                });
+            }
+        });
+        
+        return ctas;
+    }
+    
+    // Add CTA button handler
+    if (addCtaBtn) {
+        addCtaBtn.addEventListener('click', () => {
+            const ctaItem = createCtaItem();
+            ctaList.appendChild(ctaItem);
+        });
+    }
+    
+    // Load CTAs on page load
+    loadCtas();
+    
     // Settings form handling
     if (saveSettingsBtn) {
         saveSettingsBtn.addEventListener('click', async () => {
             // Update settings object
             settings.templateId = templateIdSelect.value;
             settings.imageCount = parseInt(imageCountInput.value, 10);
+            settings.ctas = getCtasFromForm();
             
             // Load the new template HTML
             console.log('Loading template HTML for:', settings.templateId);
@@ -850,6 +925,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('peritus_newsletter_settings', JSON.stringify(settings));
             
             // Show confirmation
+            console.log('Settings saved with CTAs:', settings.ctas);
             alert('Settings saved successfully! Template loaded and ready to use.');
             
             // Switch to chat tab
