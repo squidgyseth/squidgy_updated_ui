@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, DollarSign, Percent, Home, Building2, Package, CreditCard, Banknote, Calendar, Zap, TrendingUp, Clock, Solar, Layers, Award } from 'lucide-react';
+import { ChevronLeft, DollarSign, Percent, Home, Building2, Package, CreditCard, Banknote, Calendar, Zap, TrendingUp, Clock, Sun, Layers, Award } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../hooks/useUser';
 import { toast } from 'sonner';
@@ -123,7 +123,7 @@ export default function SolarConfig() {
               </button>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gradient-to-br from-orange-400 to-yellow-400 rounded-xl">
-                  <Solar className="w-6 h-6 text-white" />
+                  <Sun className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h1 className="text-xl font-semibold text-gray-900">Solar Setup</h1>
@@ -363,7 +363,7 @@ export default function SolarConfig() {
             {/* Typical Panel Count */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Solar className="w-4 h-4 text-orange-500" />
+                <Sun className="w-4 h-4 text-orange-500" />
                 Typical panel count
               </label>
               <div className="relative">
