@@ -542,28 +542,30 @@ header h1 {
 
 #user-input {
     flex-grow: 1;
-    padding: 15px;
+    padding: 12px 18px;
     border: 1px solid var(--border-color);
-    border-radius: 24px;
+    border-radius: 20px;
     resize: none;
-    height: 60px;
+    height: 44px;
     font-family: inherit;
-    font-size: 1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) inset;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    font-size: 15px;
+    box-shadow: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: white;
 }
 
 #user-input:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(74, 111, 165, 0.2) inset;
+    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
 }
 
 .input-buttons {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    gap: 8px;
     margin-left: 12px;
-    justify-content: center;
+    align-items: center;
 }
 
 .input-buttons button {
@@ -577,19 +579,18 @@ header h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s;
-    margin-bottom: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
 }
 
 .input-buttons button:hover {
-    background-color: var(--secondary-color);
+    background: linear-gradient(135deg, #007aff, #0051d5);
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
 }
 
-.input-buttons button:last-child {
-    margin-bottom: 0;
+.input-buttons button:active {
+    transform: translateY(0);
 }
 
 /* Instructions and Knowledge Base */

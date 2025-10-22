@@ -555,25 +555,40 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.latestNewsletterHtml = data.response;
                         console.log('Also stored newsletter HTML in global variable window.latestNewsletterHtml');
                         
-                        // Create a prominent button container
+                        // Create a prominent button container with horizontal layout
                         const buttonContainer = document.createElement('div');
-                        buttonContainer.className = 'newsletter-button-container';
+                        buttonContainer.style.cssText = 'display: flex; gap: 12px; margin-top: 16px;';
                         
                         // Create a large, prominent edit button
                         const editorBtn = document.createElement('button');
-                        editorBtn.className = 'open-editor-btn large';
+                        editorBtn.style.cssText = 'flex: 1; background: linear-gradient(135deg, #007aff, #0051d5); color: white; border: none; padding: 14px 24px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);';
                         editorBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Newsletter';
                         editorBtn.addEventListener('click', () => openNewsletterEditor(data.response));
+                        editorBtn.addEventListener('mouseenter', (e) => {
+                            e.target.style.transform = 'translateY(-2px)';
+                            e.target.style.boxShadow = '0 6px 16px rgba(0, 122, 255, 0.4)';
+                        });
+                        editorBtn.addEventListener('mouseleave', (e) => {
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(0, 122, 255, 0.3)';
+                        });
                         
                         // Create a backup button that uses stored HTML
                         const backupBtn = document.createElement('button');
-                        backupBtn.className = 'open-editor-btn';
-                        backupBtn.innerHTML = '<i class="fas fa-file-alt"></i> Open Editor (Backup)';
+                        backupBtn.style.cssText = 'flex: 1; background: white; color: #007aff; border: 2px solid #007aff; padding: 14px 24px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;';
+                        backupBtn.innerHTML = '<i class="fas fa-file-alt"></i> Backup';
                         backupBtn.addEventListener('click', () => openNewsletterEditor());
+                        backupBtn.addEventListener('mouseenter', (e) => {
+                            e.target.style.background = '#f5f5f7';
+                            e.target.style.transform = 'translateY(-2px)';
+                        });
+                        backupBtn.addEventListener('mouseleave', (e) => {
+                            e.target.style.background = 'white';
+                            e.target.style.transform = 'translateY(0)';
+                        });
                         
                         // Add the buttons to the container
                         buttonContainer.appendChild(editorBtn);
-                        buttonContainer.appendChild(document.createTextNode(' '));
                         buttonContainer.appendChild(backupBtn);
                         
                         // Create a message div for the button
@@ -585,33 +600,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         // Different message based on Status
                         if (isReadyStatus) {
-                            // Special handling for Status: Ready - Apple-style clean design
+                            // Special handling for Status: Ready - Compact Apple-style design
                             contentDiv.innerHTML = `
-                                <div style="background: white; padding: 32px; border-radius: 18px; box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08); border: 1px solid rgba(0, 0, 0, 0.04);">
-                                    <div style="text-align: center; margin-bottom: 24px;">
-                                        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #34c759, #30d158); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(52, 199, 89, 0.3);">
-                                            <i class="fas fa-check" style="font-size: 32px; color: white;"></i>
-                                        </div>
-                                        <h3 style="margin: 0 0 8px 0; color: #1d1d1f; font-size: 28px; font-weight: 600; letter-spacing: -0.015em;">Newsletter Ready</h3>
-                                        <p style="margin: 0; color: #86868b; font-size: 17px; line-height: 1.47059;">Your newsletter has been generated and is ready to edit.</p>
+                                <div style="background: white; padding: 24px; border-radius: 16px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08); border: 1px solid rgba(0, 0, 0, 0.04); display: flex; align-items: center; gap: 20px;">
+                                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #34c759, #30d158); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.25);">
+                                        <i class="fas fa-check" style="font-size: 24px; color: white;"></i>
                                     </div>
-                                    <div style="background: #f5f5f7; padding: 16px 20px; border-radius: 12px; margin-bottom: 24px;">
-                                        <p style="margin: 0; color: #1d1d1f; font-size: 15px; line-height: 1.47059;">
-                                            <strong style="font-weight: 600;">What's next?</strong> Customize text, upload images, and adjust formatting in the editor.
-                                        </p>
+                                    <div style="flex: 1;">
+                                        <h3 style="margin: 0 0 4px 0; color: #1d1d1f; font-size: 19px; font-weight: 600; letter-spacing: -0.015em;">Newsletter Ready</h3>
+                                        <p style="margin: 0; color: #86868b; font-size: 15px; line-height: 1.4;">Customize text, upload images, and adjust formatting.</p>
                                     </div>
                                 </div>
                             `;
                         } else {
                             // For other newsletter-like content
                             contentDiv.innerHTML = `
-                                <div style="background: white; padding: 32px; border-radius: 18px; box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08); border: 1px solid rgba(0, 0, 0, 0.04);">
-                                    <div style="text-align: center; margin-bottom: 24px;">
-                                        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #007aff, #0051d5); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3);">
-                                            <i class="fas fa-newspaper" style="font-size: 28px; color: white;"></i>
-                                        </div>
-                                        <h3 style="margin: 0 0 8px 0; color: #1d1d1f; font-size: 28px; font-weight: 600; letter-spacing: -0.015em;">Newsletter Detected</h3>
-                                        <p style="margin: 0; color: #86868b; font-size: 17px; line-height: 1.47059;">Open the editor to customize your newsletter.</p>
+                                <div style="background: white; padding: 24px; border-radius: 16px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08); border: 1px solid rgba(0, 0, 0, 0.04); display: flex; align-items: center; gap: 20px;">
+                                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #007aff, #0051d5); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);">
+                                        <i class="fas fa-newspaper" style="font-size: 22px; color: white;"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <h3 style="margin: 0 0 4px 0; color: #1d1d1f; font-size: 19px; font-weight: 600; letter-spacing: -0.015em;">Newsletter Detected</h3>
+                                        <p style="margin: 0; color: #86868b; font-size: 15px; line-height: 1.4;">Open the editor to customize your newsletter.</p>
                                     </div>
                                 </div>
                             `;
