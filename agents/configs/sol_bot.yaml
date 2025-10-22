@@ -4,7 +4,7 @@
 
 agent:
   # Unique identifier (no spaces, lowercase, use underscores)
-  id: sol_bot
+  id: sol
   
   # Display name shown in the sidebar
   name: SOL Bot
@@ -28,7 +28,7 @@ agent:
   pinned: true
   
   # Custom initial welcome message (supports HTML)
-  initial_message: 'Hi! I''m SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href="/agent-settings/sol_bot" target="_blank" style="color: #7c3aed; text-decoration: underline;">Complete Solar Setup</a> - Configure your location and energy needs.'
+  initial_message: 'Hi! I''m SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href="/solar-setup" target="_blank" style="color: #7c3aed; text-decoration: underline;">Complete Solar Setup</a> - Configure your location and energy needs.'
   
   # Agent capabilities shown in right panel
   capabilities:

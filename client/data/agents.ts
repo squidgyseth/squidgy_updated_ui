@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2025-10-22T21:38:28.867Z
+// Generated on: 2025-10-22T21:41:46.986Z
 
 export interface AgentConfig {
   agent: {
@@ -228,7 +228,7 @@ export const ALL_AGENTS: AgentConfig[] = [
   },
   {
     "agent": {
-      "id": "sol_bot",
+      "id": "sol",
       "name": "SOL Bot",
       "category": "SALES",
       "description": "Solar sales expert - Calculate savings, design systems, close deals",
@@ -236,7 +236,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tagline": "Illuminate. Calculate. Convert.",
       "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
       "pinned": true,
-      "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/agent-settings/sol_bot\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your location and energy needs.",
+      "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-setup\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your location and energy needs.",
       "capabilities": [
         "Solar panel system sizing and design",
         "ROI and payback period calculations",
@@ -775,9 +775,9 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "approach": "data_driven"
     }
   },
-  "sol_bot": {
+  "sol": {
     "agent": {
-      "id": "sol_bot",
+      "id": "sol",
       "name": "SOL Bot",
       "category": "SALES",
       "description": "Solar sales expert - Calculate savings, design systems, close deals",
@@ -785,7 +785,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tagline": "Illuminate. Calculate. Convert.",
       "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
       "pinned": true,
-      "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/agent-settings/sol_bot\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your location and energy needs.",
+      "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-setup\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your location and energy needs.",
       "capabilities": [
         "Solar panel system sizing and design",
         "ROI and payback period calculations",
@@ -1197,7 +1197,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
   "SALES": [
     {
       "agent": {
-        "id": "sol_bot",
+        "id": "sol",
         "name": "SOL Bot",
         "category": "SALES",
         "description": "Solar sales expert - Calculate savings, design systems, close deals",
@@ -1205,7 +1205,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "tagline": "Illuminate. Calculate. Convert.",
         "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
         "pinned": true,
-        "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/agent-settings/sol_bot\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your location and energy needs.",
+        "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-setup\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your location and energy needs.",
         "capabilities": [
           "Solar panel system sizing and design",
           "ROI and payback period calculations",
@@ -1494,7 +1494,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","newsletter","personal_assistant","smm_assistant","sol_bot","test_multi_agent","test_multi_page_agent"];
+export const AGENT_IDS: string[] = ["content_repurposer","newsletter","personal_assistant","smm_assistant","sol","test_multi_agent","test_multi_page_agent"];
 
 // Total count
 export const TOTAL_AGENTS = 7;
