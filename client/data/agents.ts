@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2025-10-22T15:08:51.517Z
+// Generated on: 2025-10-22T21:38:28.867Z
 
 export interface AgentConfig {
   agent: {
@@ -224,6 +224,108 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tone": "creative",
       "style": "trendy",
       "approach": "data_driven"
+    }
+  },
+  {
+    "agent": {
+      "id": "sol_bot",
+      "name": "SOL Bot",
+      "category": "SALES",
+      "description": "Solar sales expert - Calculate savings, design systems, close deals",
+      "specialization": "Solar Energy Expert",
+      "tagline": "Illuminate. Calculate. Convert.",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
+      "pinned": true,
+      "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/agent-settings/sol_bot\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your location and energy needs.",
+      "capabilities": [
+        "Solar panel system sizing and design",
+        "ROI and payback period calculations",
+        "Energy consumption analysis",
+        "Federal and state incentive guidance",
+        "Shade analysis and roof assessment",
+        "Battery storage recommendations",
+        "Net metering calculations",
+        "Financing options comparison",
+        "Carbon footprint reduction estimates",
+        "Utility rate analysis"
+      ],
+      "recent_actions": [
+        "Calculated 25-year savings of $47,000 for residential system",
+        "Designed 10kW system with Tesla Powerwall",
+        "Analyzed time-of-use rates for optimal savings",
+        "Provided tax credit documentation for IRS Form 5695",
+        "Generated proposal for 50-panel commercial installation"
+      ]
+    },
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/sol_bot"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Solar Dashboard",
+          "path": "solar-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons",
+        "calculator_widget",
+        "map_integration"
+      ]
+    },
+    "suggestions": [
+      "Calculate my solar savings",
+      "What size system do I need?",
+      "Explain solar tax credits",
+      "Compare financing options",
+      "Analyze my utility bill",
+      "Show battery storage options",
+      "Calculate payback period",
+      "Environmental impact report"
+    ],
+    "personality": {
+      "tone": "enthusiastic",
+      "style": "educational",
+      "approach": "consultative"
+    },
+    "solar_config": {
+      "defaults": {
+        "panel_wattage": 400,
+        "system_efficiency": 0.85,
+        "degradation_rate": 0.005,
+        "electricity_rate_increase": 0.03
+      },
+      "regions": [
+        "US_Federal",
+        "California",
+        "Texas",
+        "Florida",
+        "Arizona",
+        "Nevada",
+        "New_York",
+        "Colorado"
+      ],
+      "integrations": [
+        "google_sunroof",
+        "pvwatts",
+        "utility_apis",
+        "permit_databases"
+      ]
     }
   },
   {
@@ -673,6 +775,108 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "approach": "data_driven"
     }
   },
+  "sol_bot": {
+    "agent": {
+      "id": "sol_bot",
+      "name": "SOL Bot",
+      "category": "SALES",
+      "description": "Solar sales expert - Calculate savings, design systems, close deals",
+      "specialization": "Solar Energy Expert",
+      "tagline": "Illuminate. Calculate. Convert.",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
+      "pinned": true,
+      "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/agent-settings/sol_bot\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your location and energy needs.",
+      "capabilities": [
+        "Solar panel system sizing and design",
+        "ROI and payback period calculations",
+        "Energy consumption analysis",
+        "Federal and state incentive guidance",
+        "Shade analysis and roof assessment",
+        "Battery storage recommendations",
+        "Net metering calculations",
+        "Financing options comparison",
+        "Carbon footprint reduction estimates",
+        "Utility rate analysis"
+      ],
+      "recent_actions": [
+        "Calculated 25-year savings of $47,000 for residential system",
+        "Designed 10kW system with Tesla Powerwall",
+        "Analyzed time-of-use rates for optimal savings",
+        "Provided tax credit documentation for IRS Form 5695",
+        "Generated proposal for 50-panel commercial installation"
+      ]
+    },
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/sol_bot"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Solar Dashboard",
+          "path": "solar-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons",
+        "calculator_widget",
+        "map_integration"
+      ]
+    },
+    "suggestions": [
+      "Calculate my solar savings",
+      "What size system do I need?",
+      "Explain solar tax credits",
+      "Compare financing options",
+      "Analyze my utility bill",
+      "Show battery storage options",
+      "Calculate payback period",
+      "Environmental impact report"
+    ],
+    "personality": {
+      "tone": "enthusiastic",
+      "style": "educational",
+      "approach": "consultative"
+    },
+    "solar_config": {
+      "defaults": {
+        "panel_wattage": 400,
+        "system_efficiency": 0.85,
+        "degradation_rate": 0.005,
+        "electricity_rate_increase": 0.03
+      },
+      "regions": [
+        "US_Federal",
+        "California",
+        "Texas",
+        "Florida",
+        "Arizona",
+        "Nevada",
+        "New_York",
+        "Colorado"
+      ],
+      "integrations": [
+        "google_sunroof",
+        "pvwatts",
+        "utility_apis",
+        "permit_databases"
+      ]
+    }
+  },
   "test_multi_agent": {
     "agent": {
       "id": "test_multi_agent",
@@ -993,6 +1197,108 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
   "SALES": [
     {
       "agent": {
+        "id": "sol_bot",
+        "name": "SOL Bot",
+        "category": "SALES",
+        "description": "Solar sales expert - Calculate savings, design systems, close deals",
+        "specialization": "Solar Energy Expert",
+        "tagline": "Illuminate. Calculate. Convert.",
+        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
+        "pinned": true,
+        "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/agent-settings/sol_bot\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your location and energy needs.",
+        "capabilities": [
+          "Solar panel system sizing and design",
+          "ROI and payback period calculations",
+          "Energy consumption analysis",
+          "Federal and state incentive guidance",
+          "Shade analysis and roof assessment",
+          "Battery storage recommendations",
+          "Net metering calculations",
+          "Financing options comparison",
+          "Carbon footprint reduction estimates",
+          "Utility rate analysis"
+        ],
+        "recent_actions": [
+          "Calculated 25-year savings of $47,000 for residential system",
+          "Designed 10kW system with Tesla Powerwall",
+          "Analyzed time-of-use rates for optimal savings",
+          "Provided tax credit documentation for IRS Form 5695",
+          "Generated proposal for 50-panel commercial installation"
+        ]
+      },
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/sol_bot"
+      },
+      "ui": {
+        "page_type": "standard",
+        "figma_url": "",
+        "figma_deployed_url": "",
+        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
+      },
+      "ui_use": {
+        "page_type": "single_page",
+        "pages": [
+          {
+            "name": "Solar Dashboard",
+            "path": "solar-dashboard",
+            "order": 1,
+            "validated": true
+          }
+        ]
+      },
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "voice_input",
+          "suggestion_buttons",
+          "calculator_widget",
+          "map_integration"
+        ]
+      },
+      "suggestions": [
+        "Calculate my solar savings",
+        "What size system do I need?",
+        "Explain solar tax credits",
+        "Compare financing options",
+        "Analyze my utility bill",
+        "Show battery storage options",
+        "Calculate payback period",
+        "Environmental impact report"
+      ],
+      "personality": {
+        "tone": "enthusiastic",
+        "style": "educational",
+        "approach": "consultative"
+      },
+      "solar_config": {
+        "defaults": {
+          "panel_wattage": 400,
+          "system_efficiency": 0.85,
+          "degradation_rate": 0.005,
+          "electricity_rate_increase": 0.03
+        },
+        "regions": [
+          "US_Federal",
+          "California",
+          "Texas",
+          "Florida",
+          "Arizona",
+          "Nevada",
+          "New_York",
+          "Colorado"
+        ],
+        "integrations": [
+          "google_sunroof",
+          "pvwatts",
+          "utility_apis",
+          "permit_databases"
+        ]
+      }
+    },
+    {
+      "agent": {
         "id": "content_repurposer",
         "name": "Content Repurposer",
         "category": "SALES",
@@ -1188,7 +1494,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","newsletter","personal_assistant","smm_assistant","test_multi_agent","test_multi_page_agent"];
+export const AGENT_IDS: string[] = ["content_repurposer","newsletter","personal_assistant","smm_assistant","sol_bot","test_multi_agent","test_multi_page_agent"];
 
 // Total count
-export const TOTAL_AGENTS = 6;
+export const TOTAL_AGENTS = 7;

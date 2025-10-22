@@ -1,0 +1,128 @@
+# ===========================================
+# SOL BOT - SOLAR SALES AGENT CONFIGURATION
+# ===========================================
+
+agent:
+  # Unique identifier (no spaces, lowercase, use underscores)
+  id: sol_bot
+  
+  # Display name shown in the sidebar
+  name: SOL Bot
+  
+  # Category - SALES for solar sales
+  category: SALES
+  
+  # Short description for the sidebar
+  description: "Solar sales expert - Calculate savings, design systems, close deals"
+  
+  # Specialization badge shown in chat header and right panel
+  specialization: "Solar Energy Expert"
+  
+  # Tagline shown under agent name in right panel
+  tagline: "Illuminate. Calculate. Convert."
+  
+  # Avatar URL (solar-themed avatar)
+  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238"
+  
+  # Pin to top of category
+  pinned: true
+  
+  # Custom initial welcome message (supports HTML)
+  initial_message: 'Hi! I''m SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href="/agent-settings/sol_bot" target="_blank" style="color: #7c3aed; text-decoration: underline;">Complete Solar Setup</a> - Configure your location and energy needs.'
+  
+  # Agent capabilities shown in right panel
+  capabilities:
+    - "Solar panel system sizing and design"
+    - "ROI and payback period calculations"
+    - "Energy consumption analysis"
+    - "Federal and state incentive guidance"
+    - "Shade analysis and roof assessment"
+    - "Battery storage recommendations"
+    - "Net metering calculations"
+    - "Financing options comparison"
+    - "Carbon footprint reduction estimates"
+    - "Utility rate analysis"
+  
+  # Recent actions shown in right panel
+  recent_actions:
+    - "Calculated 25-year savings of $47,000 for residential system"
+    - "Designed 10kW system with Tesla Powerwall"
+    - "Analyzed time-of-use rates for optimal savings"
+    - "Provided tax credit documentation for IRS Form 5695"
+    - "Generated proposal for 50-panel commercial installation"
+
+# N8N Webhook Configuration
+n8n:
+  # Webhook URL for solar calculations and integrations
+  webhook_url: https://n8n.theaiteam.uk/webhook/sol_bot
+
+# UI Configuration
+ui:
+  page_type: "standard"
+  figma_url: ''
+  figma_deployed_url: ''
+  figma_token: figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd
+
+# UI Configuration - Generated
+ui_use:
+  page_type: single_page
+  pages:
+    - name: Solar Dashboard
+      path: solar-dashboard
+      order: 1
+      validated: true
+
+# Interface Configuration
+interface:
+  type: chat
+  features:
+    - text_input
+    - file_upload  # For utility bills and roof photos
+    - voice_input
+    - suggestion_buttons
+    - calculator_widget  # Solar savings calculator
+    - map_integration  # For location-based analysis
+
+# Suggestion buttons shown in chat interface
+suggestions:
+  - "Calculate my solar savings"
+  - "What size system do I need?"
+  - "Explain solar tax credits"
+  - "Compare financing options"
+  - "Analyze my utility bill"
+  - "Show battery storage options"
+  - "Calculate payback period"
+  - "Environmental impact report"
+
+# Agent personality configuration
+personality:
+  tone: enthusiastic  # Excited about solar energy
+  style: educational  # Teaches while selling
+  approach: consultative  # Focuses on customer needs and ROI
+
+# Solar-specific configuration
+solar_config:
+  # Default values for calculations
+  defaults:
+    panel_wattage: 400  # watts per panel
+    system_efficiency: 0.85  # 85% efficiency factor
+    degradation_rate: 0.005  # 0.5% annual degradation
+    electricity_rate_increase: 0.03  # 3% annual increase
+  
+  # Supported regions for incentive calculations
+  regions:
+    - US_Federal
+    - California
+    - Texas
+    - Florida
+    - Arizona
+    - Nevada
+    - New_York
+    - Colorado
+  
+  # Integration capabilities
+  integrations:
+    - google_sunroof  # For shade analysis
+    - pvwatts  # NREL calculator
+    - utility_apis  # Rate schedule access
+    - permit_databases  # Local permit requirements
