@@ -555,13 +555,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.latestNewsletterHtml = data.response;
                         console.log('Also stored newsletter HTML in global variable window.latestNewsletterHtml');
                         
-                        // Create a prominent button container with horizontal layout
+                        // Create a prominent button container
                         const buttonContainer = document.createElement('div');
-                        buttonContainer.style.cssText = 'display: flex; gap: 12px; margin-top: 16px;';
+                        buttonContainer.style.cssText = 'display: flex; margin-top: 16px;';
                         
                         // Create a large, prominent edit button
                         const editorBtn = document.createElement('button');
-                        editorBtn.style.cssText = 'flex: 1; background: linear-gradient(135deg, #007aff, #0051d5); color: white; border: none; padding: 14px 24px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);';
+                        editorBtn.style.cssText = 'width: 100%; background: linear-gradient(135deg, #007aff, #0051d5); color: white; border: none; padding: 14px 24px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);';
                         editorBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Newsletter';
                         editorBtn.addEventListener('click', () => openNewsletterEditor(data.response));
                         editorBtn.addEventListener('mouseenter', (e) => {
@@ -573,23 +573,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             e.target.style.boxShadow = '0 4px 12px rgba(0, 122, 255, 0.3)';
                         });
                         
-                        // Create a backup button that uses stored HTML
-                        const backupBtn = document.createElement('button');
-                        backupBtn.style.cssText = 'flex: 1; background: white; color: #007aff; border: 2px solid #007aff; padding: 14px 24px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;';
-                        backupBtn.innerHTML = '<i class="fas fa-file-alt"></i> Backup';
-                        backupBtn.addEventListener('click', () => openNewsletterEditor());
-                        backupBtn.addEventListener('mouseenter', (e) => {
-                            e.target.style.background = '#f5f5f7';
-                            e.target.style.transform = 'translateY(-2px)';
-                        });
-                        backupBtn.addEventListener('mouseleave', (e) => {
-                            e.target.style.background = 'white';
-                            e.target.style.transform = 'translateY(0)';
-                        });
-                        
-                        // Add the buttons to the container
+                        // Add the button to the container
                         buttonContainer.appendChild(editorBtn);
-                        buttonContainer.appendChild(backupBtn);
                         
                         // Create a message div for the button
                         const messageDiv = document.createElement('div');
