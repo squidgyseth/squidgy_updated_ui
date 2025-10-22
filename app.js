@@ -45,8 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
         templateId: 'templates/classic/',
         imageCount: 3,
         ctas: [
-            { name: 'Learn More', link: 'https://example.com' },
-            { name: 'Get Started', link: 'https://example.com' }
+            { name: 'Remove', link: '' },
+            { name: 'Remove', link: '' }
         ]
     };
     
@@ -96,8 +96,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Ensure ctas array exists with defaults if empty
             if (!settings.ctas || settings.ctas.length === 0) {
                 settings.ctas = [
-                    { name: 'Learn More', link: 'https://example.com' },
-                    { name: 'Get Started', link: 'https://example.com' }
+                    { name: 'Remove', link: '' },
+                    { name: 'Remove', link: '' }
                 ];
             }
         } catch (error) {
