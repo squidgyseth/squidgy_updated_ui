@@ -104,19 +104,21 @@ header h1 {
 .chat-container {
     display: flex;
     flex-direction: column;
-    height: 70vh;
+    height: calc(100vh - 280px);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border-radius: 18px;
     overflow: hidden;
     background-color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--card-shadow);
+    margin-bottom: 16px;
 }
 
 .chat-messages {
-    flex-grow: 1;
+    flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 24px;
     background-color: #f9fafc;
+    min-height: 0;
 }
 
 .message {
@@ -523,17 +525,13 @@ header h1 {
 
 .chat-input-container {
     display: flex;
-    padding: 18px;
-    border-top: 1px solid var(--border-color);
+    padding: 16px 20px;
     background-color: white;
     border-radius: 18px;
     box-shadow: var(--card-shadow);
-    padding: 24px;
-    height: 60vh;
-    overflow-y: auto;
-    margin-bottom: 16px;
     border: 1px solid rgba(0, 0, 0, 0.04);
     transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    align-items: center;
 }
 
 .chat-input-container:hover {
