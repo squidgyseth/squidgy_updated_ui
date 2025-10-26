@@ -52,35 +52,63 @@ export const maskStorageUrlsInText = (text: string): string => {
   let maskedText = text;
   
   // Replace different types of storage URLs with appropriate clickable labels
+  // Handle both full URLs (with https://) and partial URLs (without protocol)
   maskedText = maskedText.replace(
-    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/avatars[^\s]*)/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Profile Image</a>'
+    /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/avatars[^\s]*)/g,
+    (match, urlPart) => {
+      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
+      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Profile Image</a>`;
+    }
   );
   
   maskedText = maskedText.replace(
-    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/screenshots[^\s]*)/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Screenshot</a>'
+    /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/screenshots[^\s]*)/g,
+    (match, urlPart) => {
+      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
+      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Screenshot</a>`;
+    }
   );
   
   maskedText = maskedText.replace(
-    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/images[^\s]*)/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Image</a>'
+    /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/images[^\s]*)/g,
+    (match, urlPart) => {
+      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
+      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Image</a>`;
+    }
   );
   
   maskedText = maskedText.replace(
-    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/documents[^\s]*)/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download Document</a>'
+    /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/documents[^\s]*)/g,
+    (match, urlPart) => {
+      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
+      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download Document</a>`;
+    }
+  );
+  
+  // Handle favicon URLs specifically (they may be in /static/favicons/ folder)
+  maskedText = maskedText.replace(
+    /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/static\/favicons\/[^\s]*)/g,
+    (match, urlPart) => {
+      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
+      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Favicon</a>`;
+    }
   );
   
   maskedText = maskedText.replace(
-    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/[^\s]*)/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download File</a>'
+    /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/[^\s]*)/g,
+    (match, urlPart) => {
+      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
+      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download File</a>`;
+    }
   );
   
   // General Supabase URL masking with clickable links
   maskedText = maskedText.replace(
-    /(https?:\/\/[^\s]*\.supabase\.co[^\s]*)/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Link</a>'
+    /(?:https?:\/\/)?([^\s]*\.supabase\.co[^\s]*)/g,
+    (match, urlPart) => {
+      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
+      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Link</a>`;
+    }
   );
 
   return maskedText;

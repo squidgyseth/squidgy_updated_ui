@@ -6,7 +6,7 @@ const router = express.Router();
  * Proxy route to serve Supabase storage files without exposing the original URLs
  * This route masks the underlying Supabase storage URLs for security and branding
  */
-router.get('/:type/:filePath(*)', async (req, res) => {
+router.get('/:type/:filePath', async (req, res) => {
   try {
     const { type, filePath } = req.params;
     

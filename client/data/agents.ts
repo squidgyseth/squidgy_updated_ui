@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2025-10-22T22:16:19.847Z
+// Generated on: 2025-10-26T17:55:14.104Z
 
 export interface AgentConfig {
   agent: {
@@ -36,27 +36,6 @@ export interface AgentConfig {
     tone: string;
     style: string;
     approach: string;
-  };
-  solar_config?: {
-    defaults?: {
-      installation_price?: number;
-      dealer_fee?: number;
-      broker_fee?: number;
-      financing_apr?: number;
-      financing_term?: number;
-      energy_price?: number;
-      yearly_cost_increase?: number;
-      installation_lifespan?: number;
-      typical_panel_count?: number;
-      max_roof_segments?: number;
-      solar_incentive?: number;
-      panel_wattage?: number;
-      system_efficiency?: number;
-      degradation_rate?: number;
-      electricity_rate_increase?: number;
-    };
-    regions?: string[];
-    integrations?: string[];
   };
 }
 

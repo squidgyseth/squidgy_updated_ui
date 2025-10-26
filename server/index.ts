@@ -35,7 +35,7 @@ export function createServer() {
   app.use("/agents", agentsRouter);
 
   // Storage proxy routes (for masking Supabase URLs)
-  app.use("/api/storage", storageProxyRouter);
+  app.use("/storage", storageProxyRouter);
 
   return app;
 }

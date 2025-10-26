@@ -187,6 +187,14 @@ export default function WebsiteDetails() {
     setScreenshotLoading(true);
     clearProgress();
     
+    // Clear all previous form data before starting new analysis
+    setCompanyDescription("");
+    setValueProposition("");
+    setBusinessNiche("");
+    setTags([]);
+    setScreenshotUrl("");
+    setFaviconUrl("");
+    
     // Add detailed progress steps
     const progressSteps = [
       { message: '🔍 Finding website...', delay: 500 },
@@ -270,19 +278,11 @@ export default function WebsiteDetails() {
       if (n8nResponse.agent_response) {
         const parsedData = parseAgentResponse(n8nResponse.agent_response);
         
-        // Update form fields with extracted data
-        if (parsedData.companyDescription) {
-          setCompanyDescription(parsedData.companyDescription);
-        }
-        if (parsedData.valueProposition) {
-          setValueProposition(parsedData.valueProposition);
-        }
-        if (parsedData.businessNiche) {
-          setBusinessNiche(parsedData.businessNiche);
-        }
-        if (parsedData.tags) {
-          setTags(parsedData.tags);
-        }
+        // Update form fields with extracted data (always set, even if empty)
+        setCompanyDescription(parsedData.companyDescription || "");
+        setValueProposition(parsedData.valueProposition || "");
+        setBusinessNiche(parsedData.businessNiche || "");
+        setTags(parsedData.tags || []);
         
         // Update screenshot URL state (React will handle UI update)
         if (parsedData.screenshotUrl) {
