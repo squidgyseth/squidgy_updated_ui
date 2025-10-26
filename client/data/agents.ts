@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2025-10-26T17:55:14.104Z
+// Generated on: 2025-10-26T21:03:46.692Z
 
 export interface AgentConfig {
   agent: {
@@ -289,14 +289,14 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "suggestions": [
-      "Calculate my solar savings",
-      "What size system do I need?",
-      "Explain solar tax credits",
-      "Compare financing options",
-      "Analyze my utility bill",
-      "Show battery storage options",
-      "Calculate payback period",
-      "Environmental impact report"
+      "Have I had any new leads today?",
+      "Show me this week's sales performance",
+      "Generate a proposal for commercial solar",
+      "What's the ROI calculation for this project?",
+      "Create a quote for residential installation",
+      "Schedule a site assessment appointment",
+      "Request a callback for this lead",
+      "Track my pipeline conversion rates"
     ],
     "personality": {
       "tone": "enthusiastic",
@@ -849,14 +849,14 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
-      "Calculate my solar savings",
-      "What size system do I need?",
-      "Explain solar tax credits",
-      "Compare financing options",
-      "Analyze my utility bill",
-      "Show battery storage options",
-      "Calculate payback period",
-      "Environmental impact report"
+      "Have I had any new leads today?",
+      "Show me this week's sales performance",
+      "Generate a proposal for commercial solar",
+      "What's the ROI calculation for this project?",
+      "Create a quote for residential installation",
+      "Schedule a site assessment appointment",
+      "Request a callback for this lead",
+      "Track my pipeline conversion rates"
     ],
     "personality": {
       "tone": "enthusiastic",
@@ -1280,14 +1280,14 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "suggestions": [
-        "Calculate my solar savings",
-        "What size system do I need?",
-        "Explain solar tax credits",
-        "Compare financing options",
-        "Analyze my utility bill",
-        "Show battery storage options",
-        "Calculate payback period",
-        "Environmental impact report"
+        "Have I had any new leads today?",
+        "Show me this week's sales performance",
+        "Generate a proposal for commercial solar",
+        "What's the ROI calculation for this project?",
+        "Create a quote for residential installation",
+        "Schedule a site assessment appointment",
+        "Request a callback for this lead",
+        "Track my pipeline conversion rates"
       ],
       "personality": {
         "tone": "enthusiastic",

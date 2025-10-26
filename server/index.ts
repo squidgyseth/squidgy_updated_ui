@@ -6,6 +6,7 @@ import { analyzeWebsite, captureScreenshot, getFavicon } from "./routes/website"
 import { createSubaccountAndUser } from "./routes/ghl";
 import agentsRouter from "./routes/agents";
 import storageProxyRouter from "./routes/storage-proxy";
+import googleCalendarRouter from "./routes/googleCalendar";
 
 export function createServer() {
   const app = express();
@@ -36,6 +37,9 @@ export function createServer() {
 
   // Storage proxy routes (for masking Supabase URLs)
   app.use("/storage", storageProxyRouter);
+
+  // Google Calendar integration routes
+  app.use("/api/google/calendar", googleCalendarRouter);
 
   return app;
 }

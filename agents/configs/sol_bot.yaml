@@ -85,14 +85,14 @@ interface:
 
 # Suggestion buttons shown in chat interface
 suggestions:
-  - "Calculate my solar savings"
-  - "What size system do I need?"
-  - "Explain solar tax credits"
-  - "Compare financing options"
-  - "Analyze my utility bill"
-  - "Show battery storage options"
-  - "Calculate payback period"
-  - "Environmental impact report"
+  - "Have I had any new leads today?"
+  - "Show me this week's sales performance"
+  - "Generate a proposal for commercial solar"
+  - "What's the ROI calculation for this project?"
+  - "Create a quote for residential installation"
+  - "Schedule a site assessment appointment"
+  - "Request a callback for this lead"
+  - "Track my pipeline conversion rates"
 
 # Agent personality configuration
 personality:
