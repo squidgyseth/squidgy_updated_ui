@@ -54,30 +54,6 @@ export default function LeftNavigation({ currentPage }: LeftNavigationProps) {
     <div className="w-[60px] bg-white border-r border-purple-200 flex flex-col items-center py-7 h-screen fixed left-0 top-0 z-10">
       {/* Top navigation items */}
       <div className="flex flex-col items-center gap-4">
-        {/* Chat Icon */}
-        <button 
-          onClick={handleChatClick}
-          className={`flex flex-col items-center p-2 w-full hover:bg-gray-100 rounded-lg transition-colors ${
-            activePage === 'chat' ? 'bg-gray-50' : ''
-          }`}
-        >
-          <div className="flex justify-center items-center mb-1">
-            <svg width="24" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M2.5 22V4C2.5 3.45 2.69583 2.97917 3.0875 2.5875C3.47917 2.19583 3.95 2 4.5 2H20.5C21.05 2 21.5208 2.19583 21.9125 2.5875C22.3042 2.97917 22.5 3.45 22.5 4V16C22.5 16.55 22.3042 17.0208 21.9125 17.4125C21.5208 17.8042 21.05 18 20.5 18H6.5L2.5 22Z" fill="url(#chatGradient)"/>
-              <defs>
-                <linearGradient id="chatGradient" x1="2.5" y1="2" x2="21.6521" y2="22.7814" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#FB252A"/>
-                  <stop offset="0.5" stopColor="#A61D92"/>
-                  <stop offset="1" stopColor="#6017E8"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center">
-            Chats
-          </span>
-        </button>
-        
         {/* Home Icon */}
         <button 
           onClick={handleHomeClick}
@@ -128,6 +104,30 @@ export default function LeftNavigation({ currentPage }: LeftNavigationProps) {
           </div>
           <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center w-[46px]">
             Create
+          </span>
+        </button>
+        
+        {/* Chat Icon */}
+        <button 
+          onClick={handleChatClick}
+          className={`flex flex-col items-center p-2 w-full hover:bg-gray-100 rounded-lg transition-colors ${
+            activePage === 'chat' ? 'bg-gray-50' : ''
+          }`}
+        >
+          <div className="flex justify-center items-center mb-1">
+            <svg width="24" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2.5 22V4C2.5 3.45 2.69583 2.97917 3.0875 2.5875C3.47917 2.19583 3.95 2 4.5 2H20.5C21.05 2 21.5208 2.19583 21.9125 2.5875C22.3042 2.97917 22.5 3.45 22.5 4V16C22.5 16.55 22.3042 17.0208 21.9125 17.4125C21.5208 17.8042 21.05 18 20.5 18H6.5L2.5 22Z" fill="url(#chatGradient)"/>
+              <defs>
+                <linearGradient id="chatGradient" x1="2.5" y1="2" x2="21.6521" y2="22.7814" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#FB252A"/>
+                  <stop offset="0.5" stopColor="#A61D92"/>
+                  <stop offset="1" stopColor="#6017E8"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center">
+            Chats
           </span>
         </button>
         
