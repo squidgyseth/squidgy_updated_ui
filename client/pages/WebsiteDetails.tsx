@@ -45,6 +45,20 @@ export default function WebsiteDetails() {
   const [screenshotUrl, setScreenshotUrl] = useState("");
   const [faviconUrl, setFaviconUrl] = useState("");
   const [screenshotLoading, setScreenshotLoading] = useState(false);
+  const [progressStep, setProgressStep] = useState("");
+  const [progressSteps, setProgressSteps] = useState<string[]>([]);
+  
+  // Function to add progress step
+  const addProgressStep = (step: string) => {
+    setProgressStep(step);
+    setProgressSteps(prev => [...prev, step]);
+  };
+
+  // Function to clear progress
+  const clearProgress = () => {
+    setProgressStep("");
+    setProgressSteps([]);
+  };
   
   // Load existing data on mount
   useEffect(() => {
@@ -171,6 +185,32 @@ export default function WebsiteDetails() {
     
     setLoading(true);
     setScreenshotLoading(true);
+    clearProgress();
+    
+    // Add detailed progress steps
+    const progressSteps = [
+      { message: '🔍 Finding website...', delay: 500 },
+      { message: '🌐 Connecting to server...', delay: 800 },
+      { message: '📄 Accessing home page...', delay: 1200 },
+      { message: '🏗️ Analyzing site structure...', delay: 1000 },
+      { message: '📝 Scanning page content...', delay: 1500 },
+      { message: '📸 Capturing screenshot...', delay: 2000 },
+      { message: '🎨 Getting favicon...', delay: 800 },
+      { message: '🔎 Extracting business data...', delay: 1200 },
+      { message: '🧠 Processing with AI...', delay: 2500 }
+    ];
+
+    // Show progress steps with realistic timing
+    const showProgressSteps = async () => {
+      for (const step of progressSteps) {
+        await new Promise(resolve => setTimeout(resolve, step.delay));
+        addProgressStep(step.message);
+      }
+    };
+
+    // Start progress steps (don't await so it runs parallel to actual work)
+    showProgressSteps();
+    
     try {
       // Ensure URL has protocol and www
       let formattedUrl = websiteUrl;
@@ -277,6 +317,7 @@ export default function WebsiteDetails() {
     } finally {
       setLoading(false);
       setScreenshotLoading(false);
+      clearProgress();
     }
   };
 
@@ -445,9 +486,21 @@ export default function WebsiteDetails() {
               </label>
               <div className="border border-gray-300 rounded-lg overflow-hidden relative">
                 {screenshotLoading && (
-                  <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
-                    <Loader2 className="w-8 h-8 text-squidgy-purple animate-spin" />
-                    <span className="ml-2 text-sm text-gray-600">Capturing screenshot...</span>
+                  <div className="absolute inset-0 bg-gray-100 flex flex-col items-center justify-center z-10 p-4">
+                    <Loader2 className="w-8 h-8 text-squidgy-purple animate-spin mb-3" />
+                    {progressStep && (
+                      <div className="text-center">
+                        <span className="text-sm font-medium text-gray-700 mb-2 block">{progressStep}</span>
+                        <div className="text-xs text-gray-500 space-y-1">
+                          {progressSteps.slice(-3).map((step, index) => (
+                            <div key={index} className="opacity-60">{step}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {!progressStep && (
+                      <span className="text-sm text-gray-600">Analyzing website...</span>
+                    )}
                   </div>
                 )}
                 <img 
@@ -491,13 +544,40 @@ export default function WebsiteDetails() {
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Analyzing...
+                      {progressStep || 'Analyzing...'}
                     </>
                   ) : (
-                    'Analyze'
+                    'Analyze Website'
                   )}
                 </Button>
               </div>
+              
+              {/* Progress Steps Display */}
+              {loading && progressSteps.length > 0 && (
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
+                  <div className="text-xs font-medium text-gray-700 mb-2">Analysis Progress:</div>
+                  <div className="space-y-1">
+                    {progressSteps.slice(-4).map((step, index) => (
+                      <div 
+                        key={index} 
+                        className={`text-xs flex items-center ${
+                          index === progressSteps.slice(-4).length - 1 
+                            ? 'text-blue-600 font-medium' 
+                            : 'text-gray-500'
+                        }`}
+                      >
+                        <div className={`w-1.5 h-1.5 rounded-full mr-2 ${
+                          index === progressSteps.slice(-4).length - 1 
+                            ? 'bg-blue-600' 
+                            : 'bg-gray-400'
+                        }`}></div>
+                        {step}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200 mt-2">
                 💡 <strong>Tip:</strong> You can analyze your website using the button above OR by pasting the URL in the chat on the right - Seth will automatically extract your business information!
               </div>

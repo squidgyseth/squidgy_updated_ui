@@ -51,19 +51,24 @@ export function ChatInterface({
 
   const handleWebsiteAnalysis = async (url: string) => {
     try {
-      // Show analysis steps
+      // Show detailed analysis steps with realistic timing
       const steps = [
-        { message: '📸 Taking screenshot...', delay: 1000 },
-        { message: '🎨 Getting favicon...', delay: 2000 },
-        { message: '🧠 Analyzing content...', delay: 3000 }
+        { message: '🔍 Finding website...', delay: 500 },
+        { message: '🌐 Accessing home page...', delay: 1500 },
+        { message: '📄 Scanning page content...', delay: 2000 },
+        { message: '🏗️ Analyzing site structure...', delay: 1200 },
+        { message: '📸 Taking screenshot...', delay: 2500 },
+        { message: '🎨 Capturing favicon...', delay: 800 },
+        { message: '🔎 Extracting business information...', delay: 2000 },
+        { message: '🧠 Processing with AI analysis...', delay: 3000 }
       ];
 
-      // Add step messages with delays
-      for (const step of steps) {
-        await new Promise(resolve => setTimeout(resolve, step.delay));
+      // Add step messages with realistic delays
+      for (let i = 0; i < steps.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, steps[i].delay));
         const stepMessage: Message = {
           type: 'bot',
-          content: step.message,
+          content: steps[i].message,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
         setMessages(prev => [...prev, stepMessage]);
