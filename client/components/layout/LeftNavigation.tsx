@@ -103,7 +103,7 @@ export default function LeftNavigation({ currentPage }: LeftNavigationProps) {
             </svg>
           </div>
           <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center w-[46px]">
-            Create
+            Create Agents
           </span>
         </button>
         
