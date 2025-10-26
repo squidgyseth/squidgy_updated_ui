@@ -121,12 +121,50 @@ export const detectCountryFromWebsite = (websiteUrl: string, websiteContent?: st
   try {
     const url = new URL(websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`);
     const domain = url.hostname.toLowerCase();
+    const fullUrl = url.href.toLowerCase();
     
-    // Check top-level domain patterns
-    if (domain.endsWith('.co.uk') || domain.endsWith('.uk')) return 'GB';
-    if (domain.endsWith('.com') || domain.endsWith('.us')) return 'US';
-    if (domain.endsWith('.ca')) return 'CA';
-    if (domain.endsWith('.com.au') || domain.endsWith('.au')) return 'AU';
+    // UK domain patterns (highest priority for UK)
+    if (domain.endsWith('.co.uk') || 
+        domain.endsWith('.org.uk') || 
+        domain.endsWith('.gov.uk') || 
+        domain.endsWith('.ac.uk') || 
+        domain.endsWith('.uk') ||
+        domain.endsWith('.gb') ||
+        domain.endsWith('.scot') ||
+        domain.endsWith('.wales') ||
+        domain.endsWith('.cymru') ||
+        domain.endsWith('.london')) {
+      return 'GB';
+    }
+    
+    // US domain patterns
+    if (domain.endsWith('.us') || 
+        domain.endsWith('.gov') || 
+        domain.endsWith('.edu') || 
+        domain.endsWith('.mil') ||
+        fullUrl.includes('/us/') ||
+        fullUrl.includes('/usa/') ||
+        fullUrl.includes('/united-states/')) {
+      return 'US';
+    }
+    
+    // Canada domain patterns
+    if (domain.endsWith('.ca') || 
+        domain.endsWith('.gc.ca') ||
+        fullUrl.includes('/ca/') ||
+        fullUrl.includes('/canada/')) {
+      return 'CA';
+    }
+    
+    // Australia domain patterns
+    if (domain.endsWith('.com.au') || 
+        domain.endsWith('.gov.au') || 
+        domain.endsWith('.edu.au') ||
+        domain.endsWith('.au')) {
+      return 'AU';
+    }
+    
+    // Other country-specific TLDs
     if (domain.endsWith('.de')) return 'DE';
     if (domain.endsWith('.fr')) return 'FR';
     if (domain.endsWith('.es')) return 'ES';
@@ -134,25 +172,90 @@ export const detectCountryFromWebsite = (websiteUrl: string, websiteContent?: st
     if (domain.endsWith('.nl')) return 'NL';
     if (domain.endsWith('.be')) return 'BE';
     
-    // Check content for country indicators if available
+    // Check content for stronger country indicators
     if (websiteContent) {
       const content = websiteContent.toLowerCase();
-      if (content.includes('united kingdom') || content.includes('england') || content.includes('scotland') || content.includes('wales')) return 'GB';
-      if (content.includes('united states') || content.includes('usa')) return 'US';
-      if (content.includes('canada')) return 'CA';
-      if (content.includes('australia')) return 'AU';
-      if (content.includes('germany') || content.includes('deutschland')) return 'DE';
-      if (content.includes('france')) return 'FR';
+      
+      // UK indicators (check first as default)
+      if (content.includes('united kingdom') || 
+          content.includes('uk limited') ||
+          content.includes('uk ltd') ||
+          content.includes('england') || 
+          content.includes('scotland') || 
+          content.includes('wales') ||
+          content.includes('northern ireland') ||
+          content.includes('british') ||
+          content.includes('£') || // British pound symbol
+          content.includes('gbp') ||
+          content.includes('vat number') || // Common in UK/EU
+          content.includes('companies house') ||
+          content.includes('postcode') || // UK uses "postcode" vs US "zip code"
+          content.match(/\b[A-Z]{1,2}\d{1,2}\s?\d[A-Z]{2}\b/)) { // UK postcode pattern
+        return 'GB';
+      }
+      
+      // US indicators
+      if (content.includes('united states') || 
+          content.includes('usa') ||
+          content.includes('u.s.a') ||
+          content.includes('america') ||
+          content.includes('$') || // Dollar sign (though used elsewhere)
+          content.includes('usd') ||
+          content.includes('inc.') || // US corporation
+          content.includes('llc') ||
+          content.includes('corp.') ||
+          content.includes('zip code') ||
+          content.includes('state tax') ||
+          content.includes('federal') ||
+          content.match(/\b\d{5}(-\d{4})?\b/)) { // US ZIP code pattern
+        return 'US';
+      }
+      
+      // Canada indicators
+      if (content.includes('canada') || 
+          content.includes('canadian') ||
+          content.includes('cad') ||
+          content.includes('c$') ||
+          content.includes('province') ||
+          content.includes('postal code') ||
+          content.match(/\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/)) { // Canadian postal code pattern
+        return 'CA';
+      }
+      
+      // Australia indicators
+      if (content.includes('australia') || 
+          content.includes('australian') ||
+          content.includes('aud') ||
+          content.includes('a$') ||
+          content.includes('pty ltd') ||
+          content.includes('abn') || // Australian Business Number
+          content.includes('acn')) { // Australian Company Number
+        return 'AU';
+      }
+      
+      // Other country indicators
+      if (content.includes('germany') || content.includes('deutschland') || content.includes('€') || content.includes('eur')) return 'DE';
+      if (content.includes('france') || content.includes('français')) return 'FR';
       if (content.includes('spain') || content.includes('españa')) return 'ES';
       if (content.includes('italy') || content.includes('italia')) return 'IT';
       if (content.includes('netherlands') || content.includes('nederland')) return 'NL';
-      if (content.includes('belgium') || content.includes('belgië')) return 'BE';
+      if (content.includes('belgium') || content.includes('belgië') || content.includes('belgique')) return 'BE';
     }
+    
+    // .com domains - try to determine based on content or default to US
+    if (domain.endsWith('.com')) {
+      // If we have content, already checked above
+      // Default .com to US as it's most common
+      return 'US';
+    }
+    
+    // .org, .net, .io etc - check content or default to UK
+    // (UK default since that's the business requirement)
   } catch (error) {
     console.error('Error detecting country from website:', error);
   }
   
-  // Default to UK
+  // Default to UK as requested
   return 'GB';
 };
 

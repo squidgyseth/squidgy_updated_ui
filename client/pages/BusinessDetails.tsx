@@ -290,13 +290,13 @@ export default function BusinessDetails() {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder={getPhoneNumberPlaceholder(country)}
-                  className="w-full p-3 pl-16 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
+                  className="w-full p-3 pl-20 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
                 />
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 20 20">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
-                  <span className="text-xs text-gray-500 font-medium">{getCountryByCode(country)?.dialCode}</span>
+                  <span className="text-sm text-gray-700 font-bold">{getCountryByCode(country)?.dialCode}</span>
                 </div>
               </div>
             </div>
@@ -312,13 +312,13 @@ export default function BusinessDetails() {
                       value={number}
                       onChange={(e) => updateEmergencyNumber(index, e.target.value)}
                       placeholder={getPhoneNumberPlaceholder(country)}
-                      className="w-full p-3 pl-16 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
+                      className="w-full p-3 pl-20 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
                     />
                     <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
                       <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 20 20">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                       </svg>
-                      <span className="text-xs text-gray-500 font-medium">{getCountryByCode(country)?.dialCode}</span>
+                      <span className="text-sm text-gray-700 font-bold">{getCountryByCode(country)?.dialCode}</span>
                     </div>
                   </div>
                   {emergencyNumbers.length > 1 && (
