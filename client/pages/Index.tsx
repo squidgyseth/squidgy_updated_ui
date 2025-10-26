@@ -44,7 +44,7 @@ export default function Index() {
         <div className="relative w-full max-w-[400px] bg-white rounded-2xl border border-squidgy-border p-6 flex flex-col items-center">
           {/* Close Button */}
           <button
-            onClick={() => setShowModal(false)}
+            onClick={() => navigate('/dashboard')}
             className="absolute top-4 right-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"
           >
             <X className="w-6 h-6 text-squidgy-text-primary" strokeWidth={1.5} />
