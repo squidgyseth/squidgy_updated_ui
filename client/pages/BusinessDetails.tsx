@@ -8,6 +8,7 @@ import { AddressAutocomplete } from "../components/AddressAutocomplete";
 import { saveBusinessDetails, getBusinessDetails, getWebsiteAnalysis } from "../lib/api";
 import { useUser } from "../hooks/useUser";
 import { useToast } from "../hooks/use-toast";
+import { COUNTRIES, getCountryByCode, formatPhoneNumber, detectCountryFromWebsite, getPhoneNumberPlaceholder } from "../utils/phoneNumberUtils";
 
 
 
@@ -26,7 +27,7 @@ export default function BusinessDetails() {
   const [businessName, setBusinessName] = useState('');
   const [businessEmail, setBusinessEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [country, setCountry] = useState('US');
+  const [country, setCountry] = useState('GB');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
@@ -45,7 +46,7 @@ export default function BusinessDetails() {
           setBusinessEmail(existingBusinessData.business_email || "");
           setPhoneNumber(existingBusinessData.phone_number || "");
           setEmergencyNumbers(existingBusinessData.emergency_numbers?.length > 0 ? existingBusinessData.emergency_numbers : ['']);
-          setCountry(existingBusinessData.country || "US");
+          setCountry(existingBusinessData.country || "GB");
           setAddressMethod(existingBusinessData.address_method || "lookup");
           setAddress(existingBusinessData.address_line || "");
           setCity(existingBusinessData.city || "");
@@ -69,12 +70,18 @@ export default function BusinessDetails() {
               }
             }
             
+            // Detect country from website URL
+            const detectedCountry = detectCountryFromWebsite(
+              websiteAnalysisData.website_url || "", 
+              websiteAnalysisData.company_description
+            );
+            
             // Populate form with website analysis data
             setBusinessName(extractedBusinessName || "");
             setBusinessEmail(""); // No email extraction from description yet
             setPhoneNumber(""); // No phone extraction from description yet  
             setEmergencyNumbers(['']);
-            setCountry("US");
+            setCountry(detectedCountry);
             setAddressMethod("lookup");
             setAddress("");
             setCity("");
@@ -84,6 +91,8 @@ export default function BusinessDetails() {
             
             console.log('🔄 BusinessDetails: Populated from website analysis data:', {
               extractedBusinessName,
+              detectedCountry,
+              websiteUrl: websiteAnalysisData.website_url,
               originalDescription: websiteAnalysisData.company_description
             });
           } else {
@@ -92,7 +101,7 @@ export default function BusinessDetails() {
             setBusinessName("");
             setBusinessEmail("");
             setPhoneNumber("");
-            setCountry("US");
+            setCountry("GB");
             setDataLoaded(true);
             
             console.log('📝 BusinessDetails: No existing data found, using empty defaults');
@@ -280,11 +289,15 @@ export default function BusinessDetails() {
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="w-full p-3 pl-10 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
+                  placeholder={getPhoneNumberPlaceholder(country)}
+                  className="w-full p-3 pl-16 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
                 />
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 20 20">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 20 20">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <span className="text-xs text-gray-500 font-medium">{getCountryByCode(country)?.dialCode}</span>
+                </div>
               </div>
             </div>
 
@@ -298,11 +311,15 @@ export default function BusinessDetails() {
                       type="tel"
                       value={number}
                       onChange={(e) => updateEmergencyNumber(index, e.target.value)}
-                      className="w-full p-3 pl-10 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
+                      placeholder={getPhoneNumberPlaceholder(country)}
+                      className="w-full p-3 pl-16 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
                     />
-                    <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 20 20">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 20 20">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      <span className="text-xs text-gray-500 font-medium">{getCountryByCode(country)?.dialCode}</span>
+                    </div>
                   </div>
                   {emergencyNumbers.length > 1 && (
                     <button
@@ -328,9 +345,11 @@ export default function BusinessDetails() {
               <label className="block text-sm font-semibold text-text-primary mb-2">Country</label>
               <div className="relative">
                 <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full p-3 pl-10 pr-10 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent appearance-none">
-                  <option value="US">🇺🇸 United States</option>
-                  <option value="CA">🇨🇦 Canada</option>
-                  <option value="GB">🇬🇧 United Kingdom</option>
+                  {COUNTRIES.map((countryOption) => (
+                    <option key={countryOption.code} value={countryOption.code}>
+                      {countryOption.flag} {countryOption.name}
+                    </option>
+                  ))}
                 </select>
                 <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 20 20">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.914a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
