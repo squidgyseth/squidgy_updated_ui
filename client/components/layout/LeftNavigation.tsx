@@ -33,6 +33,10 @@ export default function LeftNavigation({ currentPage }: LeftNavigationProps) {
     navigate('/dashboard');
   };
 
+  const handleCreateAgentClick = () => {
+    navigate('/welcome');
+  };
+
   const handleLogout = async () => {
     try {
       console.log('Starting logout process...');
@@ -100,6 +104,30 @@ export default function LeftNavigation({ currentPage }: LeftNavigationProps) {
           </div>
           <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center w-[46px]">
             Home
+          </span>
+        </button>
+        
+        {/* Create Agent Icon */}
+        <button 
+          onClick={handleCreateAgentClick}
+          className="flex flex-col items-center p-2 w-full hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <div className="flex justify-center items-center mb-1">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#createAgentGradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M2 17L12 22L22 17" stroke="url(#createAgentGradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M2 12L12 17L22 12" stroke="url(#createAgentGradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <defs>
+                <linearGradient id="createAgentGradient" x1="2" y1="2" x2="18.7851" y2="24.74" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#FB252A"/>
+                  <stop offset="0.5" stopColor="#A61D92"/>
+                  <stop offset="1" stopColor="#6017E8"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center w-[46px]">
+            Create
           </span>
         </button>
         
