@@ -26,7 +26,7 @@ export default function LeftNavigation({ currentPage }: LeftNavigationProps) {
   };
 
   const handleHomeClick = () => {
-    navigate('/welcome');
+    navigate('/dashboard');
   };
 
   const handleDashboardClick = () => {

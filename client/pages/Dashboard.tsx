@@ -33,6 +33,7 @@ import {
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("weekly");
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-white">
@@ -91,6 +92,13 @@ export default function Index() {
               <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 px-3 py-1">
                 3 Urgent Follow-ups
               </Badge>
+              <button 
+                onClick={() => navigate('/welcome')}
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Create Agent
+              </button>
               <div className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-full bg-gray-100 text-gray-700 text-sm">
                 <Settings className="w-4 h-4" />
                 Settings

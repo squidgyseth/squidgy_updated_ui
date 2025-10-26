@@ -120,7 +120,7 @@ export default function Login() {
       // The auth state change listener will do the email lookup to get correct user_id
       
       toast.success('Login successful!');
-      navigate('/welcome');
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Login error:', error);
       
