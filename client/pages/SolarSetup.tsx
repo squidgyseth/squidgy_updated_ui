@@ -6,8 +6,9 @@ import { UserAccountDropdown } from "../components/UserAccountDropdown";
 import { SetupStepsSidebar } from "../components/SetupStepsSidebar";
 import NotificationBell from "../components/NotificationBell";
 import { useUser } from "../hooks/useUser";
-import { saveSolarSetup, getSolarSetup } from "../lib/api";
+import { saveSolarSetup, getSolarSetup, getBusinessDetails } from "../lib/api";
 import { toast } from "sonner";
+import { CURRENCIES, getCountryEnergyDefaults, getCurrencyFromCountry } from "../utils/currencyUtils";
 
 
 
@@ -42,6 +43,10 @@ export default function SolarSetup() {
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   
+  // Currency state
+  const [selectedCurrency, setSelectedCurrency] = useState('GBP'); // Default to GBP
+  const currency = CURRENCIES[selectedCurrency];
+  
   // Form state - starting with empty/default values
   const [installationPrice, setInstallationPrice] = useState(0);
   const [dealerFee, setDealerFee] = useState(0);
@@ -62,36 +67,51 @@ export default function SolarSetup() {
   useEffect(() => {
     const loadExistingData = async () => {
       if (userId && !dataLoaded) {
+        // First, get the user's country from business details
+        const businessDetails = await getBusinessDetails(userId);
+        const countryCode = businessDetails?.country || 'GB'; // Default to UK
+        
+        // Get country-specific defaults
+        const countryDefaults = getCountryEnergyDefaults(countryCode);
+        setSelectedCurrency(countryDefaults.currency.code);
+        
+        // Then check for existing solar setup data
         const existingData = await getSolarSetup(userId);
         if (existingData) {
-          setInstallationPrice(existingData.installation_price || 0);
-          setDealerFee(existingData.dealer_fee || 0);
-          setBrokerFee(existingData.broker_fee || 0);
+          setInstallationPrice(existingData.installation_price || countryDefaults.installationPrice);
+          setDealerFee(existingData.dealer_fee || 15);
+          setBrokerFee(existingData.broker_fee || countryDefaults.brokerFee);
           setAllowFinanced(existingData.allow_financed ?? true);
           setAllowCash(existingData.allow_cash ?? true);
-          setFinancingApr(existingData.financing_apr || 0);
-          setFinancingTerm(existingData.financing_term || 0);
-          setEnergyPrice(existingData.energy_price || 0);
-          setYearlyElectricCostIncrease(existingData.yearly_electric_cost_increase || 0);
-          setInstallationLifespan(existingData.installation_lifespan || 0);
-          setTypicalPanelCount(existingData.typical_panel_count || 0);
-          setMaxRoofSegments(existingData.max_roof_segments || 0);
-          setSolarIncentive(existingData.solar_incentive || 0);
+          setFinancingApr(existingData.financing_apr || 5);
+          setFinancingTerm(existingData.financing_term || 240);
+          setEnergyPrice(existingData.energy_price || countryDefaults.energyPrice);
+          setYearlyElectricCostIncrease(existingData.yearly_electric_cost_increase || 4);
+          setInstallationLifespan(existingData.installation_lifespan || 25);
+          setTypicalPanelCount(existingData.typical_panel_count || 40);
+          setMaxRoofSegments(existingData.max_roof_segments || 4);
+          setSolarIncentive(existingData.solar_incentive || 30);
           setPropertyType(existingData.property_type || 'Residential');
+          
+          // If there's a saved currency in the data, use it
+          if (existingData.currency) {
+            setSelectedCurrency(existingData.currency);
+          }
+          
           setDataLoaded(true);
         } else {
-          // Set default values if no existing data (all > 0 except Purchase Options)
-          setInstallationPrice(2.00);
+          // Set country-specific default values if no existing data
+          setInstallationPrice(countryDefaults.installationPrice);
           setDealerFee(15.0);
-          setBrokerFee(50.00); // Changed from 0.00 to 50.00
+          setBrokerFee(countryDefaults.brokerFee);
           setFinancingApr(5.0);
           setFinancingTerm(240);
-          setEnergyPrice(0.17);
+          setEnergyPrice(countryDefaults.energyPrice);
           setYearlyElectricCostIncrease(4.0);
-          setInstallationLifespan(20);
+          setInstallationLifespan(25);
           setTypicalPanelCount(40);
           setMaxRoofSegments(4);
-          setSolarIncentive(3.0);
+          setSolarIncentive(30.0);
           setPropertyType('Residential');
           setDataLoaded(true);
         }
@@ -150,6 +170,7 @@ export default function SolarSetup() {
         max_roof_segments: maxRoofSegments,
         solar_incentive: solarIncentive,
         property_type: propertyType,
+        currency: selectedCurrency,
         setup_status: 'completed'
       };
 
@@ -230,22 +251,39 @@ export default function SolarSetup() {
               </p>
             </div>
 
+            {/* Currency Selector */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-text-primary mb-2">Currency</label>
+              <select
+                value={selectedCurrency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
+                className="w-full p-3 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
+              >
+                {Object.values(CURRENCIES).map((curr) => (
+                  <option key={curr.code} value={curr.code}>
+                    {curr.symbol} {curr.name} ({curr.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Installation Price */}
             <div className="mb-6">
               <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
                 Installation price
-                <HelpTooltip content="Base price charged per watt of solar panel capacity. Default: $2.00." />
+                <HelpTooltip content={`Base price charged per kilowatt of solar panel capacity. Typical: ${currency.symbol}${getCountryEnergyDefaults('GB').installationPrice}/kW`} />
               </label>
               <div className="flex items-center">
+                <span className="px-4 py-3 bg-gray-50 border border-r-0 border-grey-500 rounded-l-md text-text-primary font-bold">{currency.symbol}</span>
                 <input
                   type="number"
-                  step="0.01"
+                  step="1"
                   min="0"
                   value={installationPrice}
                   onChange={(e) => setInstallationPrice(parseFloat(e.target.value) || 0)}
-                  className="flex-1 p-3 border border-grey-500 rounded-l-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
+                  className="flex-1 p-3 border border-grey-500 text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
                 />
-                <span className="px-4 py-3 bg-gray-50 border border-l-0 border-grey-500 rounded-r-md text-text-primary">$/Watt</span>
+                <span className="px-4 py-3 bg-gray-50 border border-l-0 border-grey-500 rounded-r-md text-text-primary">/kW</span>
               </div>
             </div>
 
@@ -272,18 +310,18 @@ export default function SolarSetup() {
             <div className="mb-6">
               <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
                 Broker fee
-                <HelpTooltip content="Fixed dollar amount charged as a broker fee for the installation." />
+                <HelpTooltip content={`Fixed amount charged as a broker fee for the installation. Typical: ${currency.symbol}${getCountryEnergyDefaults('GB').brokerFee}%`} />
               </label>
               <div className="flex items-center">
-                <span className="px-4 py-3 bg-gray-50 border border-r-0 border-grey-500 rounded-l-md text-text-primary">$</span>
                 <input
                   type="number"
-                  step="1"
+                  step="0.1"
                   min="0"
                   value={brokerFee}
                   onChange={(e) => setBrokerFee(parseFloat(e.target.value) || 0)}
-                  className="flex-1 p-3 border border-grey-500 rounded-r-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
+                  className="flex-1 p-3 border border-grey-500 rounded-l-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
                 />
+                <span className="px-4 py-3 bg-gray-50 border border-l-0 border-grey-500 rounded-r-md text-text-primary">%</span>
               </div>
             </div>
 
@@ -397,18 +435,19 @@ export default function SolarSetup() {
             <div className="mb-6">
               <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
                 Energy price
-                <HelpTooltip content="Current electricity rate per kilowatt-hour for cost comparison calculations." />
+                <HelpTooltip content={`Current electricity rate per kilowatt-hour for cost comparison calculations. Typical: ${currency.symbol}${getCountryEnergyDefaults('GB').energyPrice}/kWh`} />
               </label>
               <div className="flex items-center">
+                <span className="px-4 py-3 bg-gray-50 border border-r-0 border-grey-500 rounded-l-md text-text-primary font-bold">{currency.symbol}</span>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   value={energyPrice}
                   onChange={(e) => setEnergyPrice(parseFloat(e.target.value) || 0)}
-                  className="flex-1 p-3 border border-grey-500 rounded-l-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
+                  className="flex-1 p-3 border border-grey-500 text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
                 />
-                <span className="px-4 py-3 bg-gray-50 border border-l-0 border-grey-500 rounded-r-md text-text-primary">$/kW</span>
+                <span className="px-4 py-3 bg-gray-50 border border-l-0 border-grey-500 rounded-r-md text-text-primary">/kWh</span>
               </div>
             </div>
 
