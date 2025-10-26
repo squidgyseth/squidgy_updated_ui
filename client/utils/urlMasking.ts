@@ -36,46 +36,51 @@ export const createProxyUrl = (originalUrl: string, resourceType: 'avatar' | 'im
 export const maskUrlsInText = (text: string): string => {
   if (!text) return text;
 
-  // Replace Supabase URLs with generic link text
+  // Replace Supabase URLs with clickable generic links
   return text.replace(
     /https?:\/\/[^\s]*\.supabase\.co[^\s]*/g,
-    '[Link]'
+    '<a href="$&" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Link</a>'
   );
 };
 
 /**
- * Replaces any storage URLs in text with appropriate link text
+ * Replaces any storage URLs in text with appropriate clickable link text
  */
 export const maskStorageUrlsInText = (text: string): string => {
   if (!text) return text;
 
   let maskedText = text;
   
-  // Replace different types of storage URLs with appropriate labels
+  // Replace different types of storage URLs with appropriate clickable labels
   maskedText = maskedText.replace(
-    /https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/avatars[^\s]*/g,
-    '[Profile Image]'
+    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/avatars[^\s]*)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Profile Image</a>'
   );
   
   maskedText = maskedText.replace(
-    /https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/images[^\s]*/g,
-    '[Image]'
+    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/screenshots[^\s]*)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Screenshot</a>'
   );
   
   maskedText = maskedText.replace(
-    /https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/documents[^\s]*/g,
-    '[Document]'
+    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/images[^\s]*)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Image</a>'
   );
   
   maskedText = maskedText.replace(
-    /https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/[^\s]*/g,
-    '[File]'
+    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/documents[^\s]*)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download Document</a>'
   );
   
-  // General Supabase URL masking
   maskedText = maskedText.replace(
-    /https?:\/\/[^\s]*\.supabase\.co[^\s]*/g,
-    '[Link]'
+    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/[^\s]*)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download File</a>'
+  );
+  
+  // General Supabase URL masking with clickable links
+  maskedText = maskedText.replace(
+    /(https?:\/\/[^\s]*\.supabase\.co[^\s]*)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Link</a>'
   );
 
   return maskedText;
@@ -93,4 +98,66 @@ export const createMaskedDownloadLink = (originalUrl: string, filename?: string)
   const displayName = filename || 'Download File';
   
   return { url: proxyUrl, displayName };
+};
+
+/**
+ * Alternative function that uses proxy URLs in the links for maximum security
+ * This version hides the original URLs completely by routing through our backend
+ */
+export const maskStorageUrlsWithProxy = (text: string): string => {
+  if (!text) return text;
+
+  let maskedText = text;
+  
+  // Replace different types of storage URLs with proxy links
+  maskedText = maskedText.replace(
+    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/(avatars[^\s]*))/g,
+    (match, fullUrl, filePath) => {
+      const proxyUrl = createProxyUrl(fullUrl, 'avatar');
+      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Profile Image</a>`;
+    }
+  );
+  
+  maskedText = maskedText.replace(
+    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/(screenshots[^\s]*))/g,
+    (match, fullUrl, filePath) => {
+      const proxyUrl = createProxyUrl(fullUrl, 'image');
+      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Screenshot</a>`;
+    }
+  );
+  
+  maskedText = maskedText.replace(
+    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/(images[^\s]*))/g,
+    (match, fullUrl, filePath) => {
+      const proxyUrl = createProxyUrl(fullUrl, 'image');
+      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Image</a>`;
+    }
+  );
+  
+  maskedText = maskedText.replace(
+    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/(documents[^\s]*))/g,
+    (match, fullUrl, filePath) => {
+      const proxyUrl = createProxyUrl(fullUrl, 'file');
+      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download Document</a>`;
+    }
+  );
+  
+  maskedText = maskedText.replace(
+    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/([^\s]*))/g,
+    (match, fullUrl, filePath) => {
+      const proxyUrl = createProxyUrl(fullUrl, 'file');
+      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download File</a>`;
+    }
+  );
+  
+  // General Supabase URL masking with proxy links
+  maskedText = maskedText.replace(
+    /(https?:\/\/[^\s]*\.supabase\.co[^\s]*)/g,
+    (match, fullUrl) => {
+      const proxyUrl = createProxyUrl(fullUrl, 'file');
+      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Link</a>`;
+    }
+  );
+
+  return maskedText;
 };

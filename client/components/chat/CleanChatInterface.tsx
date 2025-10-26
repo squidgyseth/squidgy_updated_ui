@@ -99,7 +99,10 @@ export default function CleanChatInterface({
                   ? 'bg-blue-600 text-white' 
                   : 'bg-gray-100 text-gray-900'
               }`}>
-                <p className="text-sm leading-relaxed">{maskStorageUrlsInText(msg.content)}</p>
+                <div 
+                  className="text-sm leading-relaxed" 
+                  dangerouslySetInnerHTML={{ __html: maskStorageUrlsInText(msg.content) }}
+                />
                 <span className={`text-xs mt-1 block ${
                   msg.sender === 'user' ? 'text-blue-200' : 'text-gray-500'
                 }`}>
