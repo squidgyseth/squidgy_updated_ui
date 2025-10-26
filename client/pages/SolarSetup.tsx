@@ -323,6 +323,11 @@ export default function SolarSetup() {
 
             {/* Dealer Fee */}
             <div className="mb-6">
+              <div className="mb-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-800">
+                  <strong>Note:</strong> If you are the installer or work directly without a dealer, set this to 0%.
+                </p>
+              </div>
               <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
                 Dealer fee
                 <HelpTooltip content="Percentage fee added to the base installation price for dealer markup. Set to 0% if you are the installer or there's no dealer involved." />
@@ -342,6 +347,11 @@ export default function SolarSetup() {
 
             {/* Broker Fee */}
             <div className="mb-6">
+              <div className="mb-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-800">
+                  <strong>Note:</strong> If you handle sales directly or work without a broker, set this to 0%.
+                </p>
+              </div>
               <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
                 Broker fee
                 <HelpTooltip content={`Percentage charged as a broker fee for the installation. Set to 0% if you handle sales directly or there's no broker involved. Typical: ${getCountryEnergyDefaults('GB').brokerFee}%`} />
