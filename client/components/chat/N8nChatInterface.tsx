@@ -7,6 +7,7 @@ import { sendToN8nWorkflow, generateRequestId, generateSessionId } from '../../l
 import { ChatHistoryService } from '../../services/chatHistoryService';
 import { FileUploadService } from '../../services/fileUploadService';
 import { supabase } from '../../lib/supabase';
+import { maskStorageUrlsInText, createProxyUrl } from '../../utils/urlMasking';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -418,7 +419,7 @@ export default function N8nChatInterface({
                 <div className="flex items-start gap-3">
                   {agent.avatar && (
                     <img
-                      src={agent.avatar}
+                      src={agent.avatar ? createProxyUrl(agent.avatar, 'avatar') : agent.avatar}
                       alt={agent.name}
                       className="w-8 h-8 rounded-full flex-shrink-0"
                     />
@@ -443,7 +444,7 @@ export default function N8nChatInterface({
                       <div className="bg-gray-100 text-gray-800 rounded-lg px-4 py-2">
                         <div 
                           className="whitespace-pre-wrap"
-                          dangerouslySetInnerHTML={{ __html: message.content }}
+                          dangerouslySetInnerHTML={{ __html: maskStorageUrlsInText(message.content) }}
                         />
                       </div>
                     )}

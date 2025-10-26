@@ -9,6 +9,7 @@ import { websiteApi, callN8NWebhook, saveWebsiteAnalysis, getWebsiteAnalysis } f
 import { ChatInterface } from '../components/ChatInterface';
 import { UserAccountDropdown } from '../components/UserAccountDropdown';
 import { SetupStepsSidebar } from '../components/SetupStepsSidebar';
+import { createProxyUrl, maskStorageUrlsInText } from '../utils/urlMasking';
 
 // Tag Chip Component
 function TagChip({ label, onRemove }: { label: string; onRemove: () => void }) {
@@ -90,18 +91,19 @@ export default function WebsiteDetails() {
       // Clean the response by removing screenshot and favicon links
       let cleanedResponse = agentResponse;
       
-      // Remove screenshot links and references
+      // Use the improved URL masking utility to handle all Supabase URLs
+      cleanedResponse = maskStorageUrlsInText(cleanedResponse);
+      
+      // Additional specific cleaning for website analysis responses
       cleanedResponse = cleanedResponse.replace(/screenshot.*?(?:can be (?:viewed|accessed|found)|is available).*?\[here\]\([^)]+\)[^.]*\./gi, '');
       cleanedResponse = cleanedResponse.replace(/(?:I have also captured|captured) a screenshot.*?\[here\]\([^)]+\)[^.]*\./gi, '');
-      cleanedResponse = cleanedResponse.replace(/screenshot.*?https?:\/\/[^\s)]+(?:screenshots|favicons)[^\s)]*[^.]*\./gi, '');
-      
-      // Remove favicon links and references  
       cleanedResponse = cleanedResponse.replace(/favicon.*?(?:can be (?:viewed|accessed|found)|is available).*?\[here\]\([^)]+\)[^.]*\./gi, '');
       cleanedResponse = cleanedResponse.replace(/(?:and the |the )?favicon.*?\[here\]\([^)]+\)[^.]*\./gi, '');
-      cleanedResponse = cleanedResponse.replace(/favicon.*?https?:\/\/[^\s)]+(?:screenshots|favicons)[^\s)]*[^.]*\./gi, '');
       
-      // Remove any remaining Supabase storage links
-      cleanedResponse = cleanedResponse.replace(/https?:\/\/[^\s]*supabase[^\s]*(?:screenshots|favicons)[^\s]*/gi, '');
+      // Remove any remaining storage link references
+      cleanedResponse = cleanedResponse.replace(/\[Link\]\s*[-.]/gi, '');
+      cleanedResponse = cleanedResponse.replace(/\[Image\]\s*[-.]/gi, '');
+      cleanedResponse = cleanedResponse.replace(/\[File\]\s*[-.]/gi, '');
       
       // Look for company description
       const companyMatch = cleanedResponse.match(/company name:\s*([^|]+)/i) || 
@@ -449,7 +451,7 @@ export default function WebsiteDetails() {
                   </div>
                 )}
                 <img 
-                  src={screenshotUrl || "https://api.builder.io/api/v1/image/assets/TEMP/f4d168c44c076c21cd4c9f5f8d6e8c8c8cb1fbed?width=840"}
+                  src={screenshotUrl ? createProxyUrl(screenshotUrl, 'image') : "https://api.builder.io/api/v1/image/assets/TEMP/f4d168c44c076c21cd4c9f5f8d6e8c8c8cb1fbed?width=840"}
                   alt={websiteUrl ? `${websiteUrl} website screenshot` : "Website screenshot placeholder"}
                   className="w-full h-64 object-cover"
                   onLoad={() => setScreenshotLoading(false)}

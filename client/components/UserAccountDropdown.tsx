@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { User, Settings, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
 import { useUser } from "../hooks/useUser";
 import { useNavigate } from "react-router-dom";
+import { createProxyUrl } from "../utils/urlMasking";
 
 export function UserAccountDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -62,7 +63,7 @@ export function UserAccountDropdown() {
 
   const displayName = profile?.full_name || user?.email?.split('@')[0] || "User";
   const displayEmail = user?.email || "user@example.com";
-  const avatarUrl = profile?.profile_avatar_url;
+  const avatarUrl = profile?.profile_avatar_url ? createProxyUrl(profile.profile_avatar_url, 'avatar') : undefined;
 
   return (
     <div className="relative" ref={dropdownRef}>

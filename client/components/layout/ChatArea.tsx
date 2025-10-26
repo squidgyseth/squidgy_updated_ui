@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createProxyUrl, maskStorageUrlsInText } from "../../utils/urlMasking";
 
 interface ChatAreaProps {
   selectedAssistant: string;
@@ -128,7 +129,7 @@ export default function ChatArea({ selectedAssistant, onToggleDetails, onToggleS
         <div className="flex items-center gap-3">
           <div className="relative">
             <img 
-              src={assistantData?.avatar} 
+              src={assistantData?.avatar ? createProxyUrl(assistantData.avatar, 'avatar') : assistantData?.avatar} 
               alt={assistantData?.name}
               className="w-10 h-10 rounded-full"
             />
@@ -178,7 +179,7 @@ export default function ChatArea({ selectedAssistant, onToggleDetails, onToggleS
         {messages.length === 0 ? (
           <div className="flex items-start gap-3 max-w-4xl">
             <img 
-              src={assistantData?.avatar}
+              src={assistantData?.avatar ? createProxyUrl(assistantData.avatar, 'avatar') : assistantData?.avatar}
               alt={assistantData?.name}
               className="w-8 h-8 rounded-full flex-shrink-0"
             />
@@ -197,7 +198,7 @@ export default function ChatArea({ selectedAssistant, onToggleDetails, onToggleS
               <div key={message.id} className={`flex items-start gap-3 max-w-4xl ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
                 {message.sender === 'assistant' && (
                   <img 
-                    src={assistantData?.avatar}
+                    src={assistantData?.avatar ? createProxyUrl(assistantData.avatar, 'avatar') : assistantData?.avatar}
                     alt={assistantData?.name}
                     className="w-8 h-8 rounded-full flex-shrink-0"
                   />

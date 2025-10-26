@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Send, Mic, Paperclip } from 'lucide-react';
+import { createProxyUrl, maskStorageUrlsInText } from '../../utils/urlMasking';
 
 interface Message {
   id: string;
@@ -88,7 +89,7 @@ export default function CleanChatInterface({
             <div className={`flex items-start space-x-3 max-w-2xl ${msg.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
               {msg.sender === 'agent' && (
                 <img 
-                  src={agent.avatar} 
+                  src={agent.avatar ? createProxyUrl(agent.avatar, 'avatar') : agent.avatar} 
                   alt={agent.name}
                   className="w-8 h-8 rounded-full flex-shrink-0"
                 />
@@ -98,7 +99,7 @@ export default function CleanChatInterface({
                   ? 'bg-blue-600 text-white' 
                   : 'bg-gray-100 text-gray-900'
               }`}>
-                <p className="text-sm leading-relaxed">{msg.content}</p>
+                <p className="text-sm leading-relaxed">{maskStorageUrlsInText(msg.content)}</p>
                 <span className={`text-xs mt-1 block ${
                   msg.sender === 'user' ? 'text-blue-200' : 'text-gray-500'
                 }`}>

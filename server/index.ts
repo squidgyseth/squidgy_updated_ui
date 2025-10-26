@@ -5,6 +5,7 @@ import { handleDemo } from "./routes/demo";
 import { analyzeWebsite, captureScreenshot, getFavicon } from "./routes/website";
 import { createSubaccountAndUser } from "./routes/ghl";
 import agentsRouter from "./routes/agents";
+import storageProxyRouter from "./routes/storage-proxy";
 
 export function createServer() {
   const app = express();
@@ -32,6 +33,9 @@ export function createServer() {
 
   // Agent management routes
   app.use("/agents", agentsRouter);
+
+  // Storage proxy routes (for masking Supabase URLs)
+  app.use("/api/storage", storageProxyRouter);
 
   return app;
 }

@@ -37,6 +37,27 @@ export interface AgentConfig {
     style: string;
     approach: string;
   };
+  solar_config?: {
+    defaults?: {
+      installation_price?: number;
+      dealer_fee?: number;
+      broker_fee?: number;
+      financing_apr?: number;
+      financing_term?: number;
+      energy_price?: number;
+      yearly_cost_increase?: number;
+      installation_lifespan?: number;
+      typical_panel_count?: number;
+      max_roof_segments?: number;
+      solar_incentive?: number;
+      panel_wattage?: number;
+      system_efficiency?: number;
+      degradation_rate?: number;
+      electricity_rate_increase?: number;
+    };
+    regions?: string[];
+    integrations?: string[];
+  };
 }
 
 // All agents (pre-sorted)
