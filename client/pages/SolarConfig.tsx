@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase';
 import { useUser } from '../hooks/useUser';
 import { toast } from 'sonner';
 import { OptimizedAgentService } from '../services/optimizedAgentService';
+import { CURRENCIES, getCountryEnergyDefaults, getCurrencyFromCountry } from '../utils/currencyUtils';
+import { getBusinessDetails } from '../lib/api';
 
 interface SolarConfigData {
   installation_price: number;
@@ -29,6 +31,10 @@ export default function SolarConfig() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [agentConfig, setAgentConfig] = useState<any>(null);
+  
+  // Currency state
+  const [selectedCurrency, setSelectedCurrency] = useState('GBP'); // Default to GBP
+  const currency = CURRENCIES[selectedCurrency];
   
   // Helper function to get agent ID
   const getAgentId = () => agentConfig?.agent?.id || 'SOL';
@@ -97,6 +103,15 @@ export default function SolarConfig() {
   const loadExistingConfig = async () => {
     try {
       setLoading(true);
+      
+      // First, get the user's country from business details
+      const businessDetails = await getBusinessDetails(userId);
+      const countryCode = businessDetails?.country || 'GB'; // Default to UK
+      
+      // Get country-specific defaults
+      const countryDefaults = getCountryEnergyDefaults(countryCode);
+      setSelectedCurrency(countryDefaults.currency.code);
+      
       const { data, error } = await supabase
         .from('solar_setup')
         .select('*')
@@ -106,20 +121,43 @@ export default function SolarConfig() {
 
       if (data && !error) {
         setConfig({
-          installation_price: data.installation_price || 2,
+          installation_price: data.installation_price || countryDefaults.installationPrice,
           dealer_fee: data.dealer_fee || 15,
-          broker_fee: data.broker_fee || 50,
+          broker_fee: data.broker_fee || countryDefaults.brokerFee,
           property_type: data.property_type?.toLowerCase() || 'residential',
           allow_financed: data.allow_financed !== false,
           allow_cash: data.allow_cash !== false,
           financing_apr: data.financing_apr || 5,
           financing_term: data.financing_term || 240,
-          energy_price: data.energy_price || 0.17,
+          energy_price: data.energy_price || countryDefaults.energyPrice,
           yearly_cost_increase: data.yearly_electric_cost_increase || 4,
-          installation_lifespan: data.installation_lifespan || 20,
+          installation_lifespan: data.installation_lifespan || 25,
           typical_panel_count: data.typical_panel_count || 40,
           max_roof_segments: data.max_roof_segments || 4,
-          solar_incentive: data.solar_incentive || 3
+          solar_incentive: data.solar_incentive || 30
+        });
+        
+        // If there's a saved currency in the data, use it
+        if (data.currency) {
+          setSelectedCurrency(data.currency);
+        }
+      } else {
+        // Set country-specific default values if no existing data
+        setConfig({
+          installation_price: countryDefaults.installationPrice,
+          dealer_fee: 15,
+          broker_fee: countryDefaults.brokerFee,
+          property_type: 'residential',
+          allow_financed: true,
+          allow_cash: true,
+          financing_apr: 5,
+          financing_term: 240,
+          energy_price: countryDefaults.energyPrice,
+          yearly_cost_increase: 4,
+          installation_lifespan: 25,
+          typical_panel_count: 40,
+          max_roof_segments: 4,
+          solar_incentive: 30
         });
       }
     } catch (error) {
@@ -151,6 +189,7 @@ export default function SolarConfig() {
           allow_cash: config.allow_cash,
           financing_apr: config.financing_apr,
           financing_term: config.financing_term,
+          currency: selectedCurrency,
           energy_price: config.energy_price,
           yearly_electric_cost_increase: config.yearly_cost_increase,
           installation_lifespan: config.installation_lifespan,
@@ -214,6 +253,50 @@ export default function SolarConfig() {
             Please review your solar offer details. You can edit these later as well.
           </p>
 
+          {/* Currency Selector */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+            <select
+              value={selectedCurrency}
+              onChange={(e) => setSelectedCurrency(e.target.value)}
+              className="w-full md:w-64 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              {Object.values(CURRENCIES).map((curr) => (
+                <option key={curr.code} value={curr.code}>
+                  {curr.symbol} {curr.name} ({curr.code})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Pricing Formula Explanation */}
+          <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="text-sm font-semibold text-blue-900 mb-3 flex items-center">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              How Solar Pricing is Calculated
+            </h3>
+            <div className="text-xs text-blue-800 space-y-2">
+              <div className="font-medium">Total Installation Cost:</div>
+              <div className="ml-2 font-mono bg-white px-2 py-1 rounded border">
+                Base Cost = (System Size in kW) × (Installation Price per kW)
+              </div>
+              <div className="ml-2 font-mono bg-white px-2 py-1 rounded border">
+                + Dealer Fee = Base Cost × (Dealer Fee %)
+              </div>
+              <div className="ml-2 font-mono bg-white px-2 py-1 rounded border">
+                + Broker Fee = Broker Fee %
+              </div>
+              <div className="ml-2 font-mono bg-white px-2 py-1 rounded border border-blue-300">
+                <strong>Final Price = Base Cost + Dealer Fee + Broker Fee</strong>
+              </div>
+              <div className="mt-3 text-blue-700">
+                <strong>Annual Savings:</strong> System Output (kWh) × Energy Price ({currency.symbol}/kWh) × (1 + Annual Increase)
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Installation Price */}
             <div className="space-y-2">
@@ -222,18 +305,24 @@ export default function SolarConfig() {
                 Installation price
               </label>
               <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 font-bold">{currency.symbol}</span>
                 <input
                   type="number"
                   value={config.installation_price}
                   onChange={(e) => setConfig({...config, installation_price: parseFloat(e.target.value) || 0})}
-                  className="w-full px-4 py-3 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-12 py-3 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">$/Watt</span>
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">/kW</span>
               </div>
             </div>
 
             {/* Dealer Fee */}
             <div className="space-y-2">
+              <div className="mb-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-800">
+                  <strong>Note:</strong> If you are the installer or work directly without a dealer, set this to 0.
+                </p>
+              </div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Percent className="w-4 h-4 text-orange-500" />
                 Dealer fee
@@ -251,18 +340,23 @@ export default function SolarConfig() {
 
             {/* Broker Fee */}
             <div className="space-y-2">
+              <div className="mb-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-800">
+                  <strong>Note:</strong> If you handle sales directly or work without a broker, set this to 0.
+                </p>
+              </div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <DollarSign className="w-4 h-4 text-orange-500" />
+                <Percent className="w-4 h-4 text-orange-500" />
                 Broker fee
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                 <input
                   type="number"
                   value={config.broker_fee}
                   onChange={(e) => setConfig({...config, broker_fee: parseFloat(e.target.value) || 0})}
-                  className="w-full px-8 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">%</span>
               </div>
             </div>
 
@@ -337,41 +431,44 @@ export default function SolarConfig() {
               </div>
             </div>
 
-            {/* Financing APR */}
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Percent className="w-4 h-4 text-orange-500" />
-                Financing APR
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={config.financing_apr}
-                  onChange={(e) => setConfig({...config, financing_apr: parseFloat(e.target.value) || 0})}
-                  disabled={!config.allow_financed}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">%</span>
-              </div>
-            </div>
+            {/* Financing Fields - Only show if financing is allowed */}
+            {config.allow_financed && (
+              <>
+                {/* Financing APR */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Percent className="w-4 h-4 text-orange-500" />
+                    Financing APR
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={config.financing_apr}
+                      onChange={(e) => setConfig({...config, financing_apr: parseFloat(e.target.value) || 0})}
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">%</span>
+                  </div>
+                </div>
 
-            {/* Financing Term */}
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Calendar className="w-4 h-4 text-orange-500" />
-                Financing term
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={config.financing_term}
-                  onChange={(e) => setConfig({...config, financing_term: parseInt(e.target.value) || 0})}
-                  disabled={!config.allow_financed}
-                  className="w-full px-4 py-3 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">Months</span>
-              </div>
-            </div>
+                {/* Financing Term */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Calendar className="w-4 h-4 text-orange-500" />
+                    Financing term
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={config.financing_term}
+                      onChange={(e) => setConfig({...config, financing_term: parseInt(e.target.value) || 0})}
+                      className="w-full px-4 py-3 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">Months</span>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Energy Price */}
             <div className="space-y-2">
@@ -380,14 +477,15 @@ export default function SolarConfig() {
                 Energy price
               </label>
               <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 font-bold">{currency.symbol}</span>
                 <input
                   type="number"
                   step="0.01"
                   value={config.energy_price}
                   onChange={(e) => setConfig({...config, energy_price: parseFloat(e.target.value) || 0})}
-                  className="w-full px-4 py-3 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-12 py-3 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">$/kWh</span>
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">/kWh</span>
               </div>
             </div>
 
