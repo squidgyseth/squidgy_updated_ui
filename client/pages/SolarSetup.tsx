@@ -325,7 +325,7 @@ export default function SolarSetup() {
             <div className="mb-6">
               <div className="mb-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-xs text-amber-800">
-                  <strong>Note:</strong> If you are the installer or work directly without a dealer, set this to 0%.
+                  <strong>Note:</strong> If you are the installer or work directly without a dealer, set this to 0.
                 </p>
               </div>
               <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
@@ -349,7 +349,7 @@ export default function SolarSetup() {
             <div className="mb-6">
               <div className="mb-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-xs text-amber-800">
-                  <strong>Note:</strong> If you handle sales directly or work without a broker, set this to 0%.
+                  <strong>Note:</strong> If you handle sales directly or work without a broker, set this to 0.
                 </p>
               </div>
               <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
