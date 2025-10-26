@@ -132,8 +132,6 @@ export default function SolarSetup() {
       { value: installationPrice, name: 'Installation price' },
       { value: dealerFee, name: 'Dealer fee' },
       { value: brokerFee, name: 'Broker fee' },
-      { value: financingApr, name: 'Financing APR' },
-      { value: financingTerm, name: 'Financing term' },
       { value: energyPrice, name: 'Energy price' },
       { value: yearlyElectricCostIncrease, name: 'Yearly electric cost increase' },
       { value: installationLifespan, name: 'Installation lifespan' },
@@ -141,6 +139,14 @@ export default function SolarSetup() {
       { value: maxRoofSegments, name: 'Maximum roof segments' },
       { value: solarIncentive, name: 'Solar incentive' }
     ];
+
+    // Add financing fields to validation only if financing is enabled
+    if (allowFinanced) {
+      numericFields.push(
+        { value: financingApr, name: 'Financing APR' },
+        { value: financingTerm, name: 'Financing term' }
+      );
+    }
 
     const invalidFields = numericFields.filter(field => field.value < 0);
     
@@ -267,6 +273,34 @@ export default function SolarSetup() {
               </select>
             </div>
 
+            {/* Pricing Formula Explanation */}
+            <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="text-sm font-semibold text-blue-900 mb-3 flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                How Solar Pricing is Calculated
+              </h3>
+              <div className="text-xs text-blue-800 space-y-2">
+                <div className="font-medium">Total Installation Cost:</div>
+                <div className="ml-2 font-mono bg-white px-2 py-1 rounded border">
+                  Base Cost = (System Size in kW) × (Installation Price per kW)
+                </div>
+                <div className="ml-2 font-mono bg-white px-2 py-1 rounded border">
+                  + Dealer Fee = Base Cost × (Dealer Fee %)
+                </div>
+                <div className="ml-2 font-mono bg-white px-2 py-1 rounded border">
+                  + Broker Fee = Broker Fee %
+                </div>
+                <div className="ml-2 font-mono bg-white px-2 py-1 rounded border border-blue-300">
+                  <strong>Final Price = Base Cost + Dealer Fee + Broker Fee</strong>
+                </div>
+                <div className="mt-3 text-blue-700">
+                  <strong>Annual Savings:</strong> System Output (kWh) × Energy Price ({currency.symbol}/kWh) × (1 + Annual Increase)
+                </div>
+              </div>
+            </div>
+
             {/* Installation Price */}
             <div className="mb-6">
               <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
@@ -291,7 +325,7 @@ export default function SolarSetup() {
             <div className="mb-6">
               <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
                 Dealer fee
-                <HelpTooltip content="Percentage fee added to the base installation price for dealer markup." />
+                <HelpTooltip content="Percentage fee added to the base installation price for dealer markup. Set to 0% if you are the installer or there's no dealer involved." />
               </label>
               <div className="flex items-center">
                 <input
@@ -310,7 +344,7 @@ export default function SolarSetup() {
             <div className="mb-6">
               <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
                 Broker fee
-                <HelpTooltip content={`Fixed amount charged as a broker fee for the installation. Typical: ${currency.symbol}${getCountryEnergyDefaults('GB').brokerFee}%`} />
+                <HelpTooltip content={`Percentage charged as a broker fee for the installation. Set to 0% if you handle sales directly or there's no broker involved. Typical: ${getCountryEnergyDefaults('GB').brokerFee}%`} />
               </label>
               <div className="flex items-center">
                 <input
@@ -393,43 +427,48 @@ export default function SolarSetup() {
               </div>
             </div>
 
-            {/* Financing APR */}
-            <div className="mb-6">
-              <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
-                Financing APR
-                <HelpTooltip content="Annual Percentage Rate for financing options offered to customers." />
-              </label>
-              <div className="flex items-center">
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={financingApr}
-                  onChange={(e) => setFinancingApr(parseFloat(e.target.value) || 0)}
-                  className="flex-1 p-3 border border-grey-500 rounded-l-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
-                />
-                <span className="px-4 py-3 bg-gray-50 border border-l-0 border-grey-500 rounded-r-md text-text-primary">%</span>
-              </div>
-            </div>
+            {/* Financing Fields - Only show if financing is allowed */}
+            {allowFinanced && (
+              <>
+                {/* Financing APR */}
+                <div className="mb-6">
+                  <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
+                    Financing APR
+                    <HelpTooltip content="Annual Percentage Rate for financing options offered to customers." />
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={financingApr}
+                      onChange={(e) => setFinancingApr(parseFloat(e.target.value) || 0)}
+                      className="flex-1 p-3 border border-grey-500 rounded-l-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
+                    />
+                    <span className="px-4 py-3 bg-gray-50 border border-l-0 border-grey-500 rounded-r-md text-text-primary">%</span>
+                  </div>
+                </div>
 
-            {/* Financing Term */}
-            <div className="mb-6">
-              <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
-                Financing term
-                <HelpTooltip content="Length of the financing term in months." />
-              </label>
-              <div className="flex items-center">
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  value={financingTerm}
-                  onChange={(e) => setFinancingTerm(parseInt(e.target.value) || 0)}
-                  className="flex-1 p-3 border border-grey-500 rounded-l-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
-                />
-                <span className="px-4 py-3 bg-gray-50 border border-l-0 border-grey-500 rounded-r-md text-text-primary">Months</span>
-              </div>
-            </div>
+                {/* Financing Term */}
+                <div className="mb-6">
+                  <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
+                    Financing term
+                    <HelpTooltip content="Length of the financing term in months." />
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      value={financingTerm}
+                      onChange={(e) => setFinancingTerm(parseInt(e.target.value) || 0)}
+                      className="flex-1 p-3 border border-grey-500 rounded-l-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
+                    />
+                    <span className="px-4 py-3 bg-gray-50 border border-l-0 border-grey-500 rounded-r-md text-text-primary">Months</span>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Energy Price */}
             <div className="mb-6">
