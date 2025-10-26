@@ -45,7 +45,7 @@ Set these in your Vercel project dashboard (Settings → Environment Variables):
 1. Go to your Vercel project dashboard
 2. Navigate to Settings → Environment Variables
 3. Add each variable with its corresponding value
-4. Select the appropriate environments (Production, Preview, Development)
+4. Select the appropriate environments (Production, Preview, Development, Test)
 5. Deploy your project
 
 ### Build Configuration for Vercel:
