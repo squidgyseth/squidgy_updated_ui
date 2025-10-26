@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { authService } from "../../lib/auth-service";
+import { useCompanyBranding } from "../../hooks/useCompanyBranding";
 
 interface LeftNavigationProps {
   currentPage?: 'chat' | 'dashboard' | 'home';
@@ -8,6 +9,7 @@ interface LeftNavigationProps {
 export default function LeftNavigation({ currentPage }: LeftNavigationProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { companyName, faviconUrl, isLoading } = useCompanyBranding();
 
   // Auto-detect current page if not provided
   const detectCurrentPage = () => {
@@ -180,11 +182,27 @@ export default function LeftNavigation({ currentPage }: LeftNavigationProps) {
 
         {/* Profile Section */}
         <div className="flex flex-col items-center p-2 w-full">
-          <div className="w-8 h-8 rounded-full mb-1 flex items-center justify-center overflow-hidden">
-            <img src="https://api.builder.io/api/v1/image/assets/TEMP/84d0b086716590166781f74d276307d7cb0735bb?width=64" alt="Assistant" className="w-full h-full rounded-full object-cover" />
+          <div className="w-8 h-8 rounded-full mb-1 flex items-center justify-center overflow-hidden bg-gray-100">
+            {!isLoading && faviconUrl ? (
+              <img 
+                src={faviconUrl} 
+                alt={`${companyName} logo`} 
+                className="w-full h-full rounded-full object-cover"
+                onError={(e) => {
+                  // Fallback to Squidgy logo if favicon fails to load
+                  e.currentTarget.src = "https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64";
+                }}
+              />
+            ) : (
+              <img 
+                src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64" 
+                alt="Squidgy logo" 
+                className="w-full h-full rounded-full object-cover" 
+              />
+            )}
           </div>
-          <span className="text-gray-500 text-[8.5px] font-normal leading-4 text-center w-[46px]">
-            WasteLess
+          <span className="text-gray-500 text-[8.5px] font-normal leading-4 text-center w-[46px] truncate">
+            {isLoading ? 'Loading...' : companyName}
           </span>
         </div>
       </div>

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useCompanyBranding } from "../hooks/useCompanyBranding";
+import { useUser } from "../hooks/useUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,8 @@ import {
 export default function Index() {
   const [activeTab, setActiveTab] = useState("weekly");
   const navigate = useNavigate();
+  const { companyName, faviconUrl, isLoading } = useCompanyBranding();
+  const { user } = useUser();
 
   return (
     <div className="min-h-screen bg-white">
@@ -68,11 +72,27 @@ export default function Index() {
               
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">WasteLess Team</p>
-                  <p className="text-xs text-gray-500">wasteless@gmail.com</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {isLoading ? 'Loading...' : `${companyName} Team`}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {user?.email || 'admin@example.com'}
+                  </p>
                 </div>
-                <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center overflow-hidden">
+                  {!isLoading && faviconUrl ? (
+                    <img 
+                      src={faviconUrl} 
+                      alt={`${companyName} logo`} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to checkmark icon if favicon fails to load
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling.style.display = 'block';
+                      }}
+                    />
+                  ) : null}
+                  <CheckCircle className="w-6 h-6 text-white" style={{display: faviconUrl ? 'none' : 'block'}} />
                 </div>
               </div>
             </div>
