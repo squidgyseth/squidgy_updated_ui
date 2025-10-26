@@ -5,7 +5,7 @@ import { ChatInterface } from "../components/ChatInterface";
 import { UserAccountDropdown } from "../components/UserAccountDropdown";
 import { SetupStepsSidebar } from "../components/SetupStepsSidebar";
 import { AddressAutocomplete } from "../components/AddressAutocomplete";
-import { saveBusinessDetails, getBusinessDetails } from "../lib/api";
+import { saveBusinessDetails, getBusinessDetails, getWebsiteAnalysis } from "../lib/api";
 import { useUser } from "../hooks/useUser";
 import { useToast } from "../hooks/use-toast";
 
@@ -36,26 +36,67 @@ export default function BusinessDetails() {
   useEffect(() => {
     const loadExistingData = async () => {
       if (userId && !dataLoaded) {
-        const existingData = await getBusinessDetails(userId);
-        if (existingData) {
-          setBusinessName(existingData.business_name || "");
-          setBusinessEmail(existingData.business_email || "");
-          setPhoneNumber(existingData.phone_number || "");
-          setEmergencyNumbers(existingData.emergency_numbers?.length > 0 ? existingData.emergency_numbers : ['']);
-          setCountry(existingData.country || "US");
-          setAddressMethod(existingData.address_method || "lookup");
-          setAddress(existingData.address_line || "");
-          setCity(existingData.city || "");
-          setState(existingData.state || "");
-          setPostalCode(existingData.postal_code || "");
+        // First, try to load existing business details
+        const existingBusinessData = await getBusinessDetails(userId);
+        
+        if (existingBusinessData) {
+          // Use existing business details if they exist
+          setBusinessName(existingBusinessData.business_name || "");
+          setBusinessEmail(existingBusinessData.business_email || "");
+          setPhoneNumber(existingBusinessData.phone_number || "");
+          setEmergencyNumbers(existingBusinessData.emergency_numbers?.length > 0 ? existingBusinessData.emergency_numbers : ['']);
+          setCountry(existingBusinessData.country || "US");
+          setAddressMethod(existingBusinessData.address_method || "lookup");
+          setAddress(existingBusinessData.address_line || "");
+          setCity(existingBusinessData.city || "");
+          setState(existingBusinessData.state || "");
+          setPostalCode(existingBusinessData.postal_code || "");
           setDataLoaded(true);
         } else {
-          // Set default values if no existing data
-          setEmergencyNumbers(['888-683-3631']);
-          setBusinessName('RMS Energy Ltd.');
-          setBusinessEmail('info@rmsenergy.com');
-          setPhoneNumber('888-683-3630');
-          setDataLoaded(true);
+          // If no business details exist, try to load website analysis data
+          const websiteAnalysisData = await getWebsiteAnalysis(userId);
+          
+          if (websiteAnalysisData) {
+            // Extract business name from company description
+            let extractedBusinessName = "";
+            if (websiteAnalysisData.company_description) {
+              // Try to extract business name from various patterns
+              const nameMatch = websiteAnalysisData.company_description.match(/^([^-|*•]+)/);
+              if (nameMatch) {
+                extractedBusinessName = nameMatch[1].trim();
+                // Remove common prefixes/suffixes
+                extractedBusinessName = extractedBusinessName.replace(/^(company name:|name:)/i, '').trim();
+              }
+            }
+            
+            // Populate form with website analysis data
+            setBusinessName(extractedBusinessName || "");
+            setBusinessEmail(""); // No email extraction from description yet
+            setPhoneNumber(""); // No phone extraction from description yet  
+            setEmergencyNumbers(['']);
+            setCountry("US");
+            setAddressMethod("lookup");
+            setAddress("");
+            setCity("");
+            setState("");
+            setPostalCode("");
+            setDataLoaded(true);
+            
+            console.log('🔄 BusinessDetails: Populated from website analysis data:', {
+              extractedBusinessName,
+              originalDescription: websiteAnalysisData.company_description
+            });
+          } else {
+            // No data at all - use minimal defaults
+            setEmergencyNumbers(['']);
+            setBusinessName("");
+            setBusinessEmail("");
+            setPhoneNumber("");
+            setCountry("US");
+            setDataLoaded(true);
+            
+            console.log('📝 BusinessDetails: No existing data found, using empty defaults');
+          }
         }
       }
     };
