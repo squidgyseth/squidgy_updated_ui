@@ -315,11 +315,6 @@ export default function SolarConfig() {
 
             {/* Dealer Fee */}
             <div className="space-y-2">
-              <div className="mb-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-xs text-green-800">
-                  <strong>Note:</strong> If you are the installer or work directly without a dealer, set this to 0.
-                </p>
-              </div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Percent className="w-4 h-4 text-orange-500" />
                 Dealer fee
@@ -333,15 +328,15 @@ export default function SolarConfig() {
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">%</span>
               </div>
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-xs text-green-800">
+                  <strong>Note:</strong> If you are the installer or work directly without a dealer, set this to 0.
+                </p>
+              </div>
             </div>
 
             {/* Broker Fee */}
             <div className="space-y-2">
-              <div className="mb-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-xs text-green-800">
-                  <strong>Note:</strong> If you handle sales directly or work without a broker, set this to 0.
-                </p>
-              </div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Percent className="w-4 h-4 text-orange-500" />
                 Broker fee
@@ -354,6 +349,11 @@ export default function SolarConfig() {
                   className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">%</span>
+              </div>
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-xs text-green-800">
+                  <strong>Note:</strong> If you handle sales directly or work without a broker, set this to 0.
+                </p>
               </div>
             </div>
 
