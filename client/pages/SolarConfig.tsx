@@ -253,25 +253,6 @@ export default function SolarConfig() {
             Please review your solar offer details. You can edit these later as well.
           </p>
 
-          {/* Green Success Note */}
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm text-green-800 font-medium mb-1">Smart Pricing Configuration</p>
-                <p className="text-xs text-green-700">
-                  Your pricing is automatically configured based on your location and industry standards. 
-                  All values can be adjusted to match your specific business model. The AI will use these 
-                  settings to provide accurate quotes and ROI calculations to potential customers.
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Currency Selector */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
@@ -337,8 +318,8 @@ export default function SolarConfig() {
 
             {/* Dealer Fee */}
             <div className="space-y-2">
-              <div className="mb-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-xs text-amber-800">
+              <div className="mb-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-xs text-green-800">
                   <strong>Note:</strong> If you are the installer or work directly without a dealer, set this to 0.
                 </p>
               </div>
@@ -359,8 +340,8 @@ export default function SolarConfig() {
 
             {/* Broker Fee */}
             <div className="space-y-2">
-              <div className="mb-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-xs text-amber-800">
+              <div className="mb-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-xs text-green-800">
                   <strong>Note:</strong> If you handle sales directly or work without a broker, set this to 0.
                 </p>
               </div>
