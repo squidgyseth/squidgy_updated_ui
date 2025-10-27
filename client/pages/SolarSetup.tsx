@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Menu, Sun, HelpCircle } from "lucide-react";
+import { X, Menu, Sun, HelpCircle, Banknote } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ChatInterface } from "../components/ChatInterface";
 import { UserAccountDropdown } from "../components/UserAccountDropdown";
@@ -304,6 +304,7 @@ export default function SolarSetup() {
             {/* Installation Price */}
             <div className="mb-6">
               <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
+                <Banknote className="w-4 h-4 text-squidgy-purple mr-1" />
                 Installation price
                 <HelpTooltip content={`Base price charged per kilowatt of solar panel capacity. Typical: ${currency.symbol}${getCountryEnergyDefaults('GB').installationPrice}/kW`} />
               </label>
@@ -483,6 +484,7 @@ export default function SolarSetup() {
             {/* Energy Price */}
             <div className="mb-6">
               <label className="flex items-center text-sm font-semibold text-text-primary mb-2">
+                <Banknote className="w-4 h-4 text-squidgy-purple mr-1" />
                 Energy price
                 <HelpTooltip content={`Current electricity rate per kilowatt-hour for cost comparison calculations. Typical: ${currency.symbol}${getCountryEnergyDefaults('GB').energyPrice}/kWh`} />
               </label>
