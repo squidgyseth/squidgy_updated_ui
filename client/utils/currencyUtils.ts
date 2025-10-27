@@ -50,6 +50,60 @@ export const CURRENCIES: Record<string, CurrencyConfig> = {
     symbol: 'A$',
     name: 'Australian Dollar',
     position: 'before'
+  },
+  JPY: {
+    code: 'JPY',
+    symbol: '¥',
+    name: 'Japanese Yen',
+    position: 'before'
+  },
+  CHF: {
+    code: 'CHF',
+    symbol: 'CHF',
+    name: 'Swiss Franc',
+    position: 'before'
+  },
+  SEK: {
+    code: 'SEK',
+    symbol: 'kr',
+    name: 'Swedish Krona',
+    position: 'after'
+  },
+  NOK: {
+    code: 'NOK',
+    symbol: 'kr',
+    name: 'Norwegian Krone',
+    position: 'after'
+  },
+  DKK: {
+    code: 'DKK',
+    symbol: 'kr',
+    name: 'Danish Krone',
+    position: 'after'
+  },
+  PLN: {
+    code: 'PLN',
+    symbol: 'zł',
+    name: 'Polish Złoty',
+    position: 'after'
+  },
+  INR: {
+    code: 'INR',
+    symbol: '₹',
+    name: 'Indian Rupee',
+    position: 'before'
+  },
+  BRL: {
+    code: 'BRL',
+    symbol: 'R$',
+    name: 'Brazilian Real',
+    position: 'before'
+  },
+  ZAR: {
+    code: 'ZAR',
+    symbol: 'R',
+    name: 'South African Rand',
+    position: 'before'
   }
 };
 
@@ -144,6 +198,69 @@ export const COUNTRY_ENERGY_DEFAULTS: Record<string, CountryEnergyDefaults> = {
     energyPrice: 0.35,           // €0.35/kWh typical Belgian electricity price
     powerUnit: 'kW',
     energyUnit: 'kWh'
+  },
+  JP: {
+    countryCode: 'JP',
+    currency: CURRENCIES.JPY,
+    brokerFee: 3,                // 3% typical Japanese broker fee
+    installationPrice: 280000,    // ¥280,000/kW typical Japanese installation cost
+    energyPrice: 30,             // ¥30/kWh typical Japanese electricity price
+    powerUnit: 'kW',
+    energyUnit: 'kWh'
+  },
+  CH: {
+    countryCode: 'CH',
+    currency: CURRENCIES.CHF,
+    brokerFee: 4,                // 4% typical Swiss broker fee
+    installationPrice: 1800,      // CHF 1,800/kW typical Swiss installation cost
+    energyPrice: 0.22,           // CHF 0.22/kWh typical Swiss electricity price
+    powerUnit: 'kW',
+    energyUnit: 'kWh'
+  },
+  SE: {
+    countryCode: 'SE',
+    currency: CURRENCIES.SEK,
+    brokerFee: 5,                // 5% typical Swedish broker fee
+    installationPrice: 12000,     // 12,000 kr/kW typical Swedish installation cost
+    energyPrice: 1.5,            // 1.5 kr/kWh typical Swedish electricity price
+    powerUnit: 'kW',
+    energyUnit: 'kWh'
+  },
+  NO: {
+    countryCode: 'NO',
+    currency: CURRENCIES.NOK,
+    brokerFee: 5,                // 5% typical Norwegian broker fee
+    installationPrice: 15000,     // 15,000 kr/kW typical Norwegian installation cost
+    energyPrice: 1.8,            // 1.8 kr/kWh typical Norwegian electricity price
+    powerUnit: 'kW',
+    energyUnit: 'kWh'
+  },
+  IN: {
+    countryCode: 'IN',
+    currency: CURRENCIES.INR,
+    brokerFee: 6,                // 6% typical Indian broker fee
+    installationPrice: 45000,     // ₹45,000/kW typical Indian installation cost
+    energyPrice: 6,              // ₹6/kWh typical Indian electricity price
+    powerUnit: 'kW',
+    energyUnit: 'kWh'
+  },
+  BR: {
+    countryCode: 'BR',
+    currency: CURRENCIES.BRL,
+    brokerFee: 8,                // 8% typical Brazilian broker fee
+    installationPrice: 3500,      // R$3,500/kW typical Brazilian installation cost
+    energyPrice: 0.65,           // R$0.65/kWh typical Brazilian electricity price
+    powerUnit: 'kW',
+    energyUnit: 'kWh'
+  },
+  ZA: {
+    countryCode: 'ZA',
+    currency: CURRENCIES.ZAR,
+    brokerFee: 6,                // 6% typical South African broker fee
+    installationPrice: 18000,     // R18,000/kW typical South African installation cost
+    energyPrice: 1.8,            // R1.8/kWh typical South African electricity price
+    powerUnit: 'kW',
+    energyUnit: 'kWh'
   }
 };
 
@@ -197,7 +314,7 @@ export const getCurrencyFromCountry = (countryCode: string): CurrencyConfig => {
  */
 export const parseCurrencyValue = (value: string): number => {
   // Remove currency symbols and whitespace
-  const cleanValue = value.replace(/[£$€C\s,]/g, '');
+  const cleanValue = value.replace(/[£$€¥₹\s,krCHFR\$AzłAC]/g, '');
   const parsed = parseFloat(cleanValue);
   return isNaN(parsed) ? 0 : parsed;
 };
