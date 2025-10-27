@@ -249,9 +249,6 @@ export default function SolarConfig() {
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-orange-100">
-          <p className="text-gray-600 mb-8">
-            Please review your solar offer details. You can edit these later as well.
-          </p>
 
           {/* Currency Selector */}
           <div className="mb-8">

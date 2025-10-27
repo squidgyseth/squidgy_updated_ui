@@ -252,9 +252,6 @@ export default function SolarSetup() {
                 <Sun className="w-6 h-6 text-squidgy-purple" />
               </div>
               <h2 className="text-xl font-semibold text-text-primary mb-2">3. Solar setup</h2>
-              <p className="text-text-secondary text-sm">
-                Please review your solar offer details. You can edit these later as well.
-              </p>
             </div>
 
             {/* Currency Selector */}
