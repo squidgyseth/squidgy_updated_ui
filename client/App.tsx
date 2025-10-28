@@ -26,6 +26,11 @@ import FacebookConnect from "./pages/FacebookConnect";
 import SetupComplete from "./pages/SetupComplete";
 import Dashboard from "./pages/Dashboard";
 import AccountSettings from "./pages/AccountSettings";
+import BusinessSettings from "./pages/BusinessSettings";
+import TeamSettings from "./pages/TeamSettings";
+import PersonalisationSettings from "./pages/PersonalisationSettings";
+import BillingSettings from "./pages/BillingSettings";
+import Leads from "./pages/Leads";
 import TestEmailCheck from "./pages/TestEmailCheck";
 import NotFound from "./pages/NotFound";
 import ChatPage from "./pages/ChatPage";
@@ -173,6 +178,31 @@ const App = () => (
           <Route path="/account-settings" element={
             <ProtectedRoute>
               <AccountSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/business-settings" element={
+            <ProtectedRoute>
+              <BusinessSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/team-settings" element={
+            <ProtectedRoute>
+              <TeamSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/personalisation-settings" element={
+            <ProtectedRoute>
+              <PersonalisationSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/billing-settings" element={
+            <ProtectedRoute>
+              <BillingSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/leads" element={
+            <ProtectedRoute>
+              <Leads />
             </ProtectedRoute>
           } />
           <Route path="/chat/*" element={

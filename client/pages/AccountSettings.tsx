@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Camera, Save, X, ArrowLeft, User } from 'lucide-react';
+import { Camera, Save } from 'lucide-react';
 import { useUser } from '../hooks/useUser';
-import { UserAccountDropdown } from '../components/UserAccountDropdown';
 import { profilesApi } from '../lib/supabase-api';
+import { toast } from 'sonner';
+import { SettingsLayout } from '../components/layout/SettingsLayout';
 
 export default function AccountSettings() {
   const navigate = useNavigate();
@@ -288,171 +289,124 @@ export default function AccountSettings() {
   }
 
   return (
-    <div className="fixed inset-0 w-full h-full">
-      {/* Background Image */}
-      <img
-        src="https://api.builder.io/api/v1/image/assets/TEMP/7132d4367431f4961e3e9053caa76e48cac8bfd0?width=2900"
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover"
-      />
-      
-      {/* Blur Overlay */}
-      <div 
-        className="absolute inset-0 w-full h-full"
-        style={{
-          background: 'rgba(1, 1, 1, 0.06)',
-          backdropFilter: 'blur(25px)',
-        }}
-      >
-        {/* Header */}
-        <div className="h-16 bg-white/80 backdrop-blur-sm border-b border-grey-700 flex items-center px-5">
-          <div className="flex items-center gap-3">
-            {/* Squidgy Logo */}
-            <div className="w-6 h-6 bg-squidgy-gradient rounded flex items-center justify-center">
-              <span className="text-white text-xs font-bold">S</span>
-            </div>
-            <span className="font-bold text-lg text-text-primary">Squidgy</span>
-            
-            {/* User Account Dropdown */}
-            <UserAccountDropdown />
-          </div>
-        </div>
-        
-        {/* Progress Bar */}
-        <div className="h-1 bg-grey-800">
-          <div className="h-full w-full bg-squidgy-gradient"></div>
-        </div>
-
-        {/* Main Content */}
-        <div className="max-w-2xl mx-auto px-6 py-8">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h1 className="text-2xl font-semibold text-gray-900 flex items-center">
-                <Settings className="mr-3 w-6 h-6" />
-                Account Settings
-              </h1>
-              <p className="text-gray-600 mt-1">Manage your profile information and preferences</p>
-            </div>
-
-            {/* Form */}
-            <div className="p-6">
-              {message && (
-                <div className={`mb-6 p-4 rounded-lg ${
-                  message.type === 'success' 
-                    ? 'bg-green-50 border border-green-200 text-green-800' 
-                    : 'bg-red-50 border border-red-200 text-red-800'
-                }`}>
-                  {message.text}
-                </div>
+    <SettingsLayout title="Profile Settings">
+      {/* Profile Photo Section */}
+      <div className="bg-white rounded-lg border border-gray-200 p-8 mb-6">
+        <div className="flex items-start gap-6">
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center">
+              {avatarUrl ? (
+                <img 
+                  src={avatarUrl} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-white text-2xl font-bold">
+                  {fullName ? fullName.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase() || 'U'}
+                </span>
               )}
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Avatar Upload */}
-                <div className="flex flex-col items-center">
-                  <div className="w-24 h-24 bg-gray-100 rounded-full overflow-hidden relative mb-4 border-4 border-white shadow-lg">
-                    {avatarUrl ? (
-                      <img 
-                        src={avatarUrl} 
-                        alt={fullName} 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl font-semibold text-gray-500 bg-gradient-to-r from-purple-100 to-pink-100">
-                        <User className="w-8 h-8" />
-                      </div>
-                    )}
-                  </div>
-                  
-                  <label className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-2 rounded-lg cursor-pointer flex items-center text-sm font-medium transition-all">
-                    <Camera size={16} className="mr-2" />
-                    {isUploading ? 'Uploading...' : 'Change Profile Picture'}
-                    <input 
-                      ref={fileInputRef}
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={handleAvatarChange}
-                      disabled={isUploading || isSaving}
-                    />
-                  </label>
-                  
-                  {isUploading && (
-                    <div className="w-full max-w-xs mt-3">
-                      <div className="text-xs text-gray-600 mb-1 text-center">
-                        Uploading... {Math.round(uploadProgress)}%
-                      </div>
-                      <div className="w-full h-2 bg-gray-200 rounded-full">
-                        <div 
-                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300"
-                          style={{ width: `${uploadProgress}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Full Name */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Enter your full name"
-                    required
-                  />
-                </div>
-                
-                {/* Email - read only */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={user?.email || profile?.email || ''}
-                    className="w-full p-3 border border-gray-300 rounded-lg text-gray-900 bg-gray-50 cursor-not-allowed"
-                    disabled
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Email address cannot be changed</p>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex justify-end gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => navigate(-1)}
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSaving || isUploading}
-                    className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg flex items-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSaving ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save size={16} className="mr-2" />
-                        Save Changes
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+            </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute -bottom-1 -right-1 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors"
+            >
+              <Camera className="w-4 h-4 text-gray-600" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Profile Photo</h3>
+            <p className="text-sm text-gray-500 mb-4">This will be displayed on your profile</p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setAvatarUrl('');
+                  setAvatarFile(null);
+                  toast.success('Profile photo removed');
+                }}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Delete
+              </button>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Change
+              </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Profile Information */}
+      <div className="bg-white rounded-lg border border-gray-200 p-8 mb-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-6">Profile Information</h3>
+        
+        <div className="space-y-6">
+          {/* Name Field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="Enter your full name"
+            />
+          </div>
+
+          {/* Email Field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <input
+              type="email"
+              value={user?.email || ''}
+              disabled
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+            />
+          </div>
+
+          {/* Password Field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <input
+              type="password"
+              value="••••••••••"
+              disabled
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleSubmit}
+          disabled={isSaving || isUploading}
+          className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg flex items-center gap-2"
+        >
+          {isSaving ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4" />
+              Save Changes
+            </>
+          )}
+        </button>
+      </div>
+    </SettingsLayout>
   );
 }

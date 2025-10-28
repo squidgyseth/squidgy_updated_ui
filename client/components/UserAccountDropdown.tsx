@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { User, Settings, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
+import { User, Settings, LogOut, ChevronDown, LayoutDashboard, Building2 } from "lucide-react";
 import { useUser } from "../hooks/useUser";
 import { useNavigate } from "react-router-dom";
 import { createProxyUrl } from "../utils/urlMasking";
@@ -44,6 +44,11 @@ export function UserAccountDropdown() {
   const handleAccountSettings = () => {
     setIsOpen(false);
     navigate('/account-settings');
+  };
+
+  const handleBusinessSettings = () => {
+    setIsOpen(false);
+    navigate('/business-settings');
   };
 
   const handleDashboard = () => {
@@ -129,6 +134,14 @@ export function UserAccountDropdown() {
             >
               <Settings className="w-4 h-4 text-gray-500" />
               Account Settings
+            </button>
+            
+            <button
+              onClick={handleBusinessSettings}
+              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition-colors"
+            >
+              <Building2 className="w-4 h-4 text-gray-500" />
+              Business Settings
             </button>
             
             <button
