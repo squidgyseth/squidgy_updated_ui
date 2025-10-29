@@ -3,6 +3,7 @@ import {
   MoreHorizontal,
   UserPlus
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
@@ -18,42 +19,65 @@ interface TeamMember {
 }
 
 export default function TeamSettings() {
-  const { user, userId } = useUser();
+  const navigate = useNavigate();
+  const { user, profile, isReady, isAuthenticated } = useUser();
   const [loading, setLoading] = useState(false);
   const [inviting, setInviting] = useState(false);
   
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'Admin' | 'Sales Rep' | 'Viewer'>('Admin');
   
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      id: '1',
-      name: 'Alex Johnson',
-      email: 'alex@wasteless.com',
-      role: 'Admin',
-      status: 'Active',
-      avatarText: 'AJ',
-      avatarColor: 'bg-gray-400'
-    },
-    {
-      id: '2',
-      name: 'Sarah Wilson',
-      email: 'sarah@wasteless.com',
-      role: 'Sales Rep',
-      status: 'Active',
-      avatarText: 'SW',
-      avatarColor: 'bg-gray-400'
-    },
-    {
-      id: '3',
-      name: 'Michael Chen',
-      email: 'michael@wasteless.com',
-      role: 'Viewer',
-      status: 'Invited',
-      avatarText: 'MC',
-      avatarColor: 'bg-purple-200'
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+
+  // Load existing team members
+  useEffect(() => {
+    const loadTeamMembers = async () => {
+      if (!profile?.user_id || !profile?.company_id) return;
+      
+      setLoading(true);
+      try {
+        const { supabase } = await import('../lib/supabase');
+        const { data, error } = await supabase
+          .from('team_members')
+          .select('*')
+          .eq('company_id', profile.company_id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error loading team members:', error);
+          return;
+        }
+
+        if (data) {
+          const formattedMembers: TeamMember[] = data.map(member => ({
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            role: member.role,
+            status: member.status,
+            avatarText: member.avatar_text || member.email.slice(0, 2).toUpperCase(),
+            avatarColor: member.avatar_color || 'bg-gray-400'
+          }));
+          setTeamMembers(formattedMembers);
+        }
+      } catch (error) {
+        console.error('Error loading team members:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isReady && isAuthenticated) {
+      loadTeamMembers();
     }
-  ]);
+  }, [profile?.user_id, profile?.company_id, isReady, isAuthenticated]);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (isReady && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isReady, isAuthenticated, navigate]);
 
   const handleInviteMember = async () => {
     if (!inviteEmail) {
@@ -66,25 +90,63 @@ export default function TeamSettings() {
       return;
     }
 
+    if (!profile?.user_id || !profile?.company_id) {
+      toast.error('Please log in to invite team members');
+      return;
+    }
+
     try {
       setInviting(true);
       
-      // TODO: Implement API call to invite team member
+      const { supabase } = await import('../lib/supabase');
       
-      // For now, add to local state
-      const newMember: TeamMember = {
-        id: Date.now().toString(),
-        name: inviteEmail.split('@')[0],
-        email: inviteEmail,
-        role: inviteRole,
-        status: 'Invited',
-        avatarText: inviteEmail.slice(0, 2).toUpperCase(),
-        avatarColor: 'bg-purple-200'
-      };
+      // Generate avatar text and color
+      const avatarText = inviteEmail.slice(0, 2).toUpperCase();
+      const avatarColor = 'bg-purple-200';
       
-      setTeamMembers([...teamMembers, newMember]);
-      setInviteEmail('');
-      toast.success(`Invitation sent to ${inviteEmail}`);
+      // Insert new team member invitation
+      const { data, error } = await supabase
+        .from('team_members')
+        .insert({
+          user_id: profile.user_id, // The person who invited
+          sent_user_id: null, // Will be filled when they accept invitation
+          company_id: profile.company_id,
+          name: inviteEmail.split('@')[0], // Default name from email
+          email: inviteEmail,
+          role: inviteRole,
+          status: 'Invited',
+          avatar_text: avatarText,
+          avatar_color: avatarColor,
+          invited_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === '23505') { // Unique constraint violation
+          toast.error('This email is already invited to your team');
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      if (data) {
+        // Add to local state
+        const newMember: TeamMember = {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          status: data.status,
+          avatarText: data.avatar_text,
+          avatarColor: data.avatar_color
+        };
+        
+        setTeamMembers([newMember, ...teamMembers]);
+        setInviteEmail('');
+        toast.success(`Invitation sent to ${inviteEmail}`);
+      }
     } catch (error: any) {
       console.error('Error inviting member:', error);
       toast.error(error.message || 'Failed to invite team member');
@@ -93,25 +155,75 @@ export default function TeamSettings() {
     }
   };
 
-  const handleRemoveMember = (memberId: string) => {
+  const handleRemoveMember = async (memberId: string) => {
     const member = teamMembers.find(m => m.id === memberId);
-    if (member) {
-      if (confirm(`Are you sure you want to remove ${member.name} from the team?`)) {
-        setTeamMembers(teamMembers.filter(m => m.id !== memberId));
-        toast.success(`${member.name} has been removed from the team`);
+    if (!member) return;
+
+    if (!confirm(`Are you sure you want to remove ${member.name} from the team?`)) {
+      return;
+    }
+
+    try {
+      const { supabase } = await import('../lib/supabase');
+      
+      const { error } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('id', memberId);
+
+      if (error) {
+        throw error;
       }
+
+      setTeamMembers(teamMembers.filter(m => m.id !== memberId));
+      toast.success(`${member.name} has been removed from the team`);
+    } catch (error: any) {
+      console.error('Error removing member:', error);
+      toast.error(error.message || 'Failed to remove team member');
     }
   };
 
-  const handleRoleChange = (memberId: string, newRole: 'Admin' | 'Sales Rep' | 'Viewer') => {
-    setTeamMembers(teamMembers.map(member => 
-      member.id === memberId ? { ...member, role: newRole } : member
-    ));
-    const member = teamMembers.find(m => m.id === memberId);
-    if (member) {
-      toast.success(`${member.name}'s role updated to ${newRole}`);
+  const handleRoleChange = async (memberId: string, newRole: string) => {
+    try {
+      const { supabase } = await import('../lib/supabase');
+      
+      const { error } = await supabase
+        .from('team_members')
+        .update({ 
+          role: newRole,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', memberId);
+
+      if (error) {
+        throw error;
+      }
+
+      setTeamMembers(teamMembers.map(member => 
+        member.id === memberId ? { ...member, role: newRole } : member
+      ));
+      
+      const member = teamMembers.find(m => m.id === memberId);
+      if (member) {
+        toast.success(`${member.name}'s role updated to ${newRole}`);
+      }
+    } catch (error: any) {
+      console.error('Error updating role:', error);
+      toast.error(error.message || 'Failed to update role');
     }
   };
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Will redirect to login
+  }
 
   return (
     <SettingsLayout title="Team Settings">
@@ -203,12 +315,15 @@ export default function TeamSettings() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
                         value={member.role}
-                        onChange={(e) => handleRoleChange(member.id, e.target.value as 'Admin' | 'Sales Rep' | 'Viewer')}
+                        onChange={(e) => handleRoleChange(member.id, e.target.value)}
                         className="text-sm text-gray-900 border border-gray-300 rounded px-3 py-1 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       >
                         <option value="Admin">Admin</option>
                         <option value="Sales Rep">Sales Rep</option>
                         <option value="Viewer">Viewer</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Developer">Developer</option>
+                        <option value="Support">Support</option>
                       </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

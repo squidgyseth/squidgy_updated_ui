@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useUser } from '../hooks/useUser';
-import { profilesApi } from '../lib/supabase-api';
 import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
 
@@ -14,8 +13,6 @@ export default function AccountSettings() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -41,14 +38,14 @@ export default function AccountSettings() {
     // Validate file type
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      setMessage({ type: 'error', text: 'Please select a valid image file (JPEG, PNG, GIF, WEBP)' });
+      toast.error('Please select a valid image file (JPEG, PNG, GIF, WEBP)');
       return;
     }
     
     // Validate file size (5MB max)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      setMessage({ type: 'error', text: 'Image file is too large (max 5MB)' });
+      toast.error('Image file is too large (max 5MB)');
       return;
     }
     
@@ -62,14 +59,12 @@ export default function AccountSettings() {
     reader.readAsDataURL(file);
     
     setAvatarFile(file);
-    setMessage(null);
   };
 
   const uploadAvatar = async (file: File): Promise<string | null> => {
-    if (!profile) return null;
+    if (!user || !profile?.user_id) return null;
     
     setIsUploading(true);
-    setUploadProgress(0);
     
     try {
       // Check if Supabase is configured
@@ -78,36 +73,23 @@ export default function AccountSettings() {
                            import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
 
       if (isDevelopment) {
-        // Simulate upload progress for development
-        const progressInterval = setInterval(() => {
-          setUploadProgress(prev => {
-            if (prev >= 90) {
-              clearInterval(progressInterval);
-              return 90;
-            }
-            return prev + 10;
-          });
-        }, 100);
-
         // Simulate upload delay
         await new Promise(resolve => setTimeout(resolve, 1000));
-        clearInterval(progressInterval);
-        setUploadProgress(100);
         
         // Return the current preview URL (base64) for development
         return avatarUrl;
       }
 
-      // Production mode - use Supabase storage like old design
+      // Production mode - use Supabase storage
       const { supabase } = await import('../lib/supabase');
       
       // Generate a unique filename
       const fileExt = file.name.split('.').pop();
-      const fileName = `${profile.user_id || profile.id}-${Date.now()}.${fileExt}`;
+      const fileName = `${profile.user_id}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
       
-      // Upload to profiles bucket (same as old design)
-      const { data, error } = await supabase
+      // Upload to profiles bucket
+      const { error } = await supabase
         .storage
         .from('profiles')
         .upload(filePath, file, {
@@ -117,9 +99,7 @@ export default function AccountSettings() {
         
       if (error) throw error;
       
-      setUploadProgress(100);
-      
-      // Get public URL (same as old design)
+      // Get public URL
       const { data: urlData } = supabase
         .storage
         .from('profiles')
@@ -142,10 +122,12 @@ export default function AccountSettings() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!profile || !user) return;
+    if (!user || !profile?.user_id) {
+      toast.error('Please log in to update profile');
+      return;
+    }
     
     setIsSaving(true);
-    setMessage(null);
     
     try {
       let newAvatarUrl = avatarUrl;
@@ -162,102 +144,48 @@ export default function AccountSettings() {
         }
       }
       
-      // Always attempt Supabase update - remove development mode bypass
+      // Get Supabase client
       const { supabase } = await import('../lib/supabase');
       
-      const profileId = profile.user_id || profile.id || user?.id;
-      
-      console.log('Attempting Supabase update with profile:', {
-        profile_id: profile.id,
+      // Prepare profile data for upsert
+      const profileData = {
         user_id: profile.user_id,
-        full_name: fullName,
+        email: user.email,
+        full_name: fullName.trim(),
         profile_avatar_url: newAvatarUrl,
-        profileId: profileId
-      });
+        updated_at: new Date().toISOString(),
+        // Set defaults for new profiles
+        company_id: profile?.company_id || crypto.randomUUID(),
+        role: profile?.role || 'member',
+        email_confirmed: profile?.email_confirmed || true,
+        created_at: profile?.created_at || new Date().toISOString()
+      };
       
-      if (!profileId) {
-        throw new Error('No valid profile ID found. Cannot update profile.');
-      }
+      console.log('Upserting profile data:', profileData);
       
-      // Check if profile exists by id first
-      const { data: existingProfile } = await profilesApi.getById(profileId);
-        
-      console.log('Existing profile check by id:', existingProfile);
-      
-      let updateResult;
-      
-      if (!existingProfile) {
-        // Check if profile exists by email (to avoid duplicate email constraint)
-        const { data: emailProfile } = await profilesApi.getByEmail(user?.email || profile?.email);
-          
-        console.log('Existing profile check by email:', emailProfile);
-        
-        if (emailProfile) {
-          // Profile exists with this email, update it instead of creating new one
-          console.log('Updating existing profile found by email:', emailProfile.id);
-          updateResult = await profilesApi.updateById(emailProfile.id, {
-            full_name: fullName,
-            profile_avatar_url: newAvatarUrl,
-            updated_at: new Date().toISOString()
-          });
-        } else {
-          // Create new profile only if no profile exists with this email
-          console.log('Creating new profile for user:', profileId);
-          updateResult = await profilesApi.create({
-            id: profileId,
-            user_id: crypto.randomUUID(),
-            email: user?.email || profile?.email,
-            full_name: fullName,
-            profile_avatar_url: newAvatarUrl,
-            role: 'member',
-            company_id: crypto.randomUUID(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-        }
-      } else {
-        // Update existing profile using id column (same as old design)
-        console.log('Updating existing profile for user:', profileId);
-        updateResult = await profilesApi.updateById(profileId, {
-          full_name: fullName,
+      // Update profile using user_id
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: fullName.trim(),
           profile_avatar_url: newAvatarUrl,
           updated_at: new Date().toISOString()
-        });
-      }
-        
-      console.log('Supabase operation result:', updateResult);
+        })
+        .eq('user_id', profile.user_id);
       
-      if (updateResult.error) {
-        console.error('Supabase operation error:', updateResult.error);
-        throw updateResult.error;
+      if (error) {
+        console.error('Supabase upsert error:', error);
+        throw new Error(error.message || 'Failed to update profile');
       }
       
-      if (!updateResult.data || updateResult.data.length === 0) {
-        throw new Error(`Failed to save profile for user ID: ${profileId}`);
-      }
-      
-      console.log('Profile saved successfully in Supabase:', updateResult.data[0]);
-      
-      // Log the exact record that was updated for debugging
-      console.log('Updated profile record details:', {
-        id: updateResult.data[0].id,
-        user_id: updateResult.data[0].user_id,
-        email: updateResult.data[0].email,
-        full_name: updateResult.data[0].full_name,
-        profile_avatar_url: updateResult.data[0].profile_avatar_url
-      });
-      
-      // Also verify the update by querying the database again
-      const { data: verifyData } = await profilesApi.getById(profileId);
-        
-      console.log('Verification query result:', verifyData);
+      console.log('Profile upserted successfully');
       
       // Refresh the profile in UserProvider to show updated data immediately
       if (refreshProfile) {
         await refreshProfile();
       }
       
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      toast.success('Profile updated successfully!');
       
       // Reset file input
       if (fileInputRef.current) {
@@ -267,10 +195,7 @@ export default function AccountSettings() {
       
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      setMessage({ 
-        type: 'error', 
-        text: error.message || 'Error updating profile. Please try again.' 
-      });
+      toast.error(error.message || 'Error updating profile. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -293,26 +218,18 @@ export default function AccountSettings() {
       {/* Profile Photo Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-8 mb-6">
         <div className="flex items-start gap-6">
-          <div className="relative">
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center">
-              {avatarUrl ? (
-                <img 
-                  src={avatarUrl} 
-                  alt="Profile" 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-white text-2xl font-bold">
-                  {fullName ? fullName.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              )}
-            </div>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute -bottom-1 -right-1 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors"
-            >
-              <Camera className="w-4 h-4 text-gray-600" />
-            </button>
+          <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center">
+            {avatarUrl ? (
+              <img 
+                src={avatarUrl} 
+                alt="Profile" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-white text-2xl font-bold">
+                {fullName ? fullName.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase() || 'U'}
+              </span>
+            )}
             <input
               ref={fileInputRef}
               type="file"
@@ -384,6 +301,7 @@ export default function AccountSettings() {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
             />
           </div>
+
         </div>
       </div>
 
