@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Filter,
@@ -16,159 +16,125 @@ import { useCompanyBranding } from '../hooks/useCompanyBranding';
 import NotificationBell from '../components/NotificationBell';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { LeadService, type Lead } from '../services/leadService';
 
-interface Lead {
-  id: string;
-  name: string;
-  company: string;
-  email: string;
-  phone: string;
-  qualification: number;
-  status: 'Qualified' | 'New' | 'Survey Booked' | 'Won' | 'Lost';
-  statusColor: 'green' | 'blue' | 'yellow' | 'emerald' | 'red';
-  value: number;
-  source: 'Facebook' | 'Instagram' | 'Website' | 'Referral';
-  leadType: string;
-  assignedAssistant: string;
-  lastActivity: string;
-  lastActivityTime: string;
-}
+// Lead interface is now imported from LeadService
 
 export default function Leads() {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, profile, isReady, isAuthenticated } = useUser();
   const { companyName, faviconUrl, isLoading } = useCompanyBranding();
   
   const [statusFilter, setStatusFilter] = useState('All');
-  const [minQualification, setMinQualification] = useState(0);
-  const [minValue, setMinValue] = useState(0);
+  const [minQualification, setMinQualification] = useState('');
+  const [minValue, setMinValue] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [creatingDummies, setCreatingDummies] = useState(false);
   
-  const [leads] = useState<Lead[]>([
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      company: 'Green Home Solutions',
-      email: 'sarah@example.com',
-      phone: '07700 900123',
-      qualification: 85,
-      status: 'Qualified',
-      statusColor: 'green',
-      value: 8500,
-      source: 'Facebook',
-      leadType: 'Residential property',
-      assignedAssistant: 'Solar Advisor',
-      lastActivity: '15 Jun 2023',
-      lastActivityTime: '14:30'
-    },
-    {
-      id: '2',
-      name: 'Michael Chen',
-      company: 'Residential',
-      email: 'michael@example.com',
-      phone: '07700 900456',
-      qualification: 65,
-      status: 'New',
-      statusColor: 'blue',
-      value: 6200,
-      source: 'Instagram',
-      leadType: 'Residential property',
-      assignedAssistant: 'Unassigned',
-      lastActivity: '14 Jun 2023',
-      lastActivityTime: '11:20'
-    },
-    {
-      id: '3',
-      name: 'Emma Williams',
-      company: 'EcoFriendly Ltd',
-      email: 'emma@example.com',
-      phone: '07700 900789',
-      qualification: 92,
-      status: 'Survey Booked',
-      statusColor: 'yellow',
-      value: 12000,
-      source: 'Facebook',
-      leadType: 'Commercial',
-      assignedAssistant: 'Technical Advisor',
-      lastActivity: '16 Jun 2023',
-      lastActivityTime: '09:45'
-    },
-    {
-      id: '4',
-      name: 'David Thompson',
-      company: 'Residential',
-      email: 'david@example.com',
-      phone: '07700 900234',
-      qualification: 78,
-      status: 'Qualified',
-      statusColor: 'green',
-      value: 7800,
-      source: 'Instagram',
-      leadType: 'Residential property',
-      assignedAssistant: 'Solar Advisor',
-      lastActivity: '15 Jun 2023',
-      lastActivityTime: '13:10'
-    },
-    {
-      id: '5',
-      name: 'Olivia Martinez',
-      company: 'Residential',
-      email: 'olivia@example.com',
-      phone: '07700 900567',
-      qualification: 45,
-      status: 'New',
-      statusColor: 'blue',
-      value: 5000,
-      source: 'Facebook',
-      leadType: 'Unknown',
-      assignedAssistant: 'Unassigned',
-      lastActivity: '14 Jun 2023',
-      lastActivityTime: '16:20'
-    },
-    {
-      id: '6',
-      name: 'James Wilson',
-      company: 'Wilson Properties',
-      email: 'james@example.com',
-      phone: '07700 900890',
-      qualification: 95,
-      status: 'Won',
-      statusColor: 'emerald',
-      value: 15000,
-      source: 'Instagram',
-      leadType: 'Commercial',
-      assignedAssistant: 'Senior Consultant',
-      lastActivity: '16 Jun 2023',
-      lastActivityTime: '14:00'
-    },
-    {
-      id: '7',
-      name: 'Sophia Brown',
-      company: 'Residential',
-      email: 'sophia@example.com',
-      phone: '07700 900123',
-      qualification: 25,
-      status: 'Lost',
-      statusColor: 'red',
-      value: 4500,
-      source: 'Facebook',
-      leadType: 'Residential property',
-      assignedAssistant: 'Junior Advisor',
-      lastActivity: '15 Jun 2023',
-      lastActivityTime: '10:00'
+  // Load leads from database
+  useEffect(() => {
+    const loadLeads = async () => {
+      if (!profile?.user_id || !profile?.company_id) return;
+      
+      setLoading(true);
+      try {
+        const leadsData = await LeadService.getLeads(profile.user_id, profile.company_id);
+        setLeads(leadsData);
+      } catch (error) {
+        console.error('Error loading leads:', error);
+        toast.error('Failed to load leads');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isReady && isAuthenticated) {
+      loadLeads();
     }
-  ]);
+  }, [profile?.user_id, profile?.company_id, isReady, isAuthenticated]);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (isReady && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isReady, isAuthenticated, navigate]);
 
   const handleAddLead = () => {
     toast.success('Opening add lead form...');
     // TODO: Navigate to add lead page or open modal
   };
 
+  const createDummyLeads = async () => {
+    if (!profile?.user_id || !profile?.company_id) {
+      toast.error('Please log in to create dummy leads');
+      return;
+    }
+
+    try {
+      setCreatingDummies(true);
+      const newLeads = await LeadService.createDummyLeads(profile.user_id, profile.company_id);
+      
+      // Create dummy activities for the first lead
+      if (newLeads.length > 0 && profile?.user_id) {
+        await LeadService.createDummyLeadActivities(
+          newLeads[0].id, 
+          profile.user_id, 
+          profile.company_id, 
+          profile.user_id
+        );
+      }
+      
+      setLeads(prevLeads => [...newLeads, ...prevLeads]);
+      toast.success(`Created ${newLeads.length} dummy leads with activities!`);
+    } catch (error: any) {
+      console.error('Error creating dummy leads:', error);
+      toast.error(error.message || 'Failed to create dummy leads');
+    } finally {
+      setCreatingDummies(false);
+    }
+  };
+
+  // Filter leads based on criteria
+  const filteredLeads = leads.filter(lead => {
+    // Status filter
+    if (statusFilter !== 'All' && lead.status !== statusFilter) {
+      return false;
+    }
+    
+    // Qualification filter
+    if (minQualification && lead.qualification_score !== null) {
+      if (lead.qualification_score < parseInt(minQualification)) {
+        return false;
+      }
+    }
+    
+    // Value filter
+    if (minValue && lead.estimated_value !== null) {
+      if (lead.estimated_value < parseFloat(minValue)) {
+        return false;
+      }
+    }
+    
+    // Date filter
+    if (fromDate) {
+      const leadDate = new Date(lead.created_at);
+      const filterDate = new Date(fromDate);
+      if (leadDate < filterDate) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+
   const handleReset = () => {
     setStatusFilter('All');
-    setMinQualification(0);
-    setMinValue(0);
+    setMinQualification('');
+    setMinValue('');
     setFromDate('');
     toast.success('Filters reset');
   };
@@ -181,22 +147,49 @@ export default function Leads() {
     setSelectedLead(null);
   };
 
-  const getQualificationColor = (qualification: number) => {
+  const getQualificationColor = (qualification: number | null) => {
+    if (!qualification) return 'bg-gray-400';
     if (qualification >= 80) return 'bg-green-500';
     if (qualification >= 60) return 'bg-blue-500';
     if (qualification >= 40) return 'bg-yellow-500';
     return 'bg-red-500';
   };
 
-  const getStatusBgColor = (statusColor: string) => {
+  const getStatusBgColor = (status: string) => {
     const colors: Record<string, string> = {
-      green: 'bg-green-100 text-green-800',
-      blue: 'bg-blue-100 text-blue-800',
-      yellow: 'bg-yellow-100 text-yellow-800',
-      emerald: 'bg-emerald-100 text-emerald-800',
-      red: 'bg-red-100 text-red-800'
+      new: 'bg-blue-100 text-blue-800',
+      contacted: 'bg-yellow-100 text-yellow-800',
+      qualified: 'bg-green-100 text-green-800',
+      proposal_sent: 'bg-purple-100 text-purple-800',
+      won: 'bg-emerald-100 text-emerald-800',
+      lost: 'bg-red-100 text-red-800'
     };
-    return colors[statusColor] || 'bg-gray-100 text-gray-800';
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusDisplayName = (status: string) => {
+    const names: Record<string, string> = {
+      new: 'New',
+      contacted: 'Contacted',
+      qualified: 'Qualified',
+      proposal_sent: 'Proposal Sent',
+      won: 'Won',
+      lost: 'Lost'
+    };
+    return names[status] || status;
+  };
+
+  const getSourceDisplayName = (source: string | null) => {
+    if (!source) return 'Unknown';
+    const names: Record<string, string> = {
+      facebook: 'Facebook',
+      instagram: 'Instagram',
+      website: 'Website',
+      referral: 'Referral',
+      google: 'Google',
+      linkedin: 'LinkedIn'
+    };
+    return names[source] || source;
   };
 
   return (
@@ -274,11 +267,12 @@ export default function Leads() {
                 className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
                 <option value="All">All</option>
-                <option value="Qualified">Qualified</option>
-                <option value="New">New</option>
-                <option value="Survey Booked">Survey Booked</option>
-                <option value="Won">Won</option>
-                <option value="Lost">Lost</option>
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="qualified">Qualified</option>
+                <option value="proposal_sent">Proposal Sent</option>
+                <option value="won">Won</option>
+                <option value="lost">Lost</option>
               </select>
             </div>
 
@@ -287,7 +281,7 @@ export default function Leads() {
               <input
                 type="number"
                 value={minQualification}
-                onChange={(e) => setMinQualification(Number(e.target.value))}
+                onChange={(e) => setMinQualification(e.target.value)}
                 className="w-20 px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 min="0"
                 max="100"
@@ -299,7 +293,7 @@ export default function Leads() {
               <input
                 type="number"
                 value={minValue}
-                onChange={(e) => setMinValue(Number(e.target.value))}
+                onChange={(e) => setMinValue(e.target.value)}
                 className="w-24 px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 min="0"
               />
@@ -323,6 +317,14 @@ export default function Leads() {
             </button>
 
             <button
+              onClick={createDummyLeads}
+              disabled={creatingDummies}
+              className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {creatingDummies ? 'Creating...' : 'Add Test Data'}
+            </button>
+
+            <button
               onClick={handleAddLead}
               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium flex items-center gap-2 text-sm"
             >
@@ -334,8 +336,18 @@ export default function Leads() {
 
           {/* Leads Table */}
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            {loading ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="ml-3 text-gray-600">Loading leads...</span>
+              </div>
+            ) : filteredLeads.length === 0 ? (
+              <div className="text-center p-8 text-gray-500">
+                No leads found. Click "Add Test Data" to create sample leads.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
                     <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -357,18 +369,18 @@ export default function Leads() {
                       Source
                     </th>
                     <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Lead Type
+                      Industry
                     </th>
                     <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Assigned Assistant
+                      Priority
                     </th>
                     <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Activity
+                      Created
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {leads.map((lead) => (
+                  {filteredLeads.map((lead) => (
                     <tr 
                       key={lead.id} 
                       className={`cursor-pointer transition-colors ${
@@ -381,58 +393,71 @@ export default function Leads() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">{lead.name}</div>
-                          <div className="text-xs text-gray-500">{lead.company}</div>
+                          <div className="text-xs text-gray-500">{lead.company || 'No company'}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm text-gray-900">{lead.email}</div>
-                          <div className="text-xs text-gray-500">{lead.phone}</div>
+                          <div className="text-xs text-gray-500">{lead.phone || 'No phone'}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <div className="w-16 bg-gray-200 rounded-full h-2">
                             <div 
-                              className={`h-2 rounded-full ${getQualificationColor(lead.qualification)}`}
-                              style={{ width: `${lead.qualification}%` }}
+                              className={`h-2 rounded-full ${getQualificationColor(lead.qualification_score)}`}
+                              style={{ width: `${lead.qualification_score || 0}%` }}
                             />
                           </div>
-                          <span className="text-sm text-gray-700">{lead.qualification}%</span>
+                          <span className="text-sm text-gray-700">{lead.qualification_score || 0}%</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBgColor(lead.statusColor)}`}>
-                          {lead.status}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBgColor(lead.status)}`}>
+                          {getStatusDisplayName(lead.status)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-medium text-gray-900">
-                          £{lead.value.toLocaleString()}
+                          {lead.currency === 'GBP' ? '£' : '$'}{(lead.estimated_value || 0).toLocaleString()}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-700">{lead.source}</span>
+                        <span className="text-sm text-gray-700">{getSourceDisplayName(lead.lead_source)}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-700">{lead.leadType}</span>
+                        <span className="text-sm text-gray-700">{lead.industry || 'Unknown'}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-sm ${lead.assignedAssistant === 'Unassigned' ? 'text-gray-400' : 'text-gray-700'}`}>
-                          {lead.assignedAssistant}
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          lead.priority === 'high' ? 'bg-red-100 text-red-800' :
+                          lead.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                          lead.priority === 'urgent' ? 'bg-purple-100 text-purple-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {lead.priority.charAt(0).toUpperCase() + lead.priority.slice(1)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
-                          <div className="text-sm text-gray-900">{lead.lastActivity}</div>
-                          <div className="text-xs text-gray-500">{lead.lastActivityTime}</div>
+                          <div className="text-sm text-gray-900">
+                            {new Date(lead.created_at).toLocaleDateString('en-GB')}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(lead.created_at).toLocaleTimeString('en-GB', { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </div>
                         </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
