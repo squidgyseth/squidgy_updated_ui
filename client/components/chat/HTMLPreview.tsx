@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { ExternalLink, Copy, Download, Maximize2, Edit } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface HTMLPreviewProps {
   content: string;
@@ -11,6 +12,7 @@ interface HTMLPreviewProps {
  * Used when agent_status is "Ready" (e.g., newsletter HTML generation)
  */
 export default function HTMLPreview({ content, className = '' }: HTMLPreviewProps) {
+  const navigate = useNavigate();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -92,8 +94,8 @@ export default function HTMLPreview({ content, className = '' }: HTMLPreviewProp
     // Save content to localStorage for the editor to access
     localStorage.setItem('newsletterContent', content);
     
-    // Open newsletter-editor.html in a new tab
-    window.open('/newsletter-editor.html', '_blank');
+    // Navigate to the React newsletter editor component
+    navigate('/newsletter-editor');
   };
 
   return (

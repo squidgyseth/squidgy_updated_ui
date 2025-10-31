@@ -35,6 +35,7 @@ import TestEmailCheck from "./pages/TestEmailCheck";
 import NotFound from "./pages/NotFound";
 import ChatPage from "./pages/ChatPage";
 import AgentSettings from "./pages/AgentSettings";
+import NewsletterEditor from "./pages/NewsletterEditor";
 
 const queryClient = new QueryClient();
 
@@ -213,6 +214,11 @@ const App = () => (
           <Route path="/agent-settings/:agentId" element={
             <ProtectedRoute>
               <AgentSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/newsletter-editor" element={
+            <ProtectedRoute>
+              <NewsletterEditor />
             </ProtectedRoute>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
