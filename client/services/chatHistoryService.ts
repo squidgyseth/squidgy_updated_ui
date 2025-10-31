@@ -12,6 +12,7 @@ export interface ChatHistoryRecord {
   sender: 'User' | 'Agent';
   message: string;
   timestamp?: string;
+  created_at?: string;
   agent_name: string;
   agent_id: string;
   message_hash?: string;
@@ -24,6 +25,22 @@ export interface ChatSession {
   last_message: string;
   last_timestamp: string;
   message_count: number;
+}
+
+export interface NewsletterHistory {
+  id: string;
+  session_id: string;
+  message: string;
+  timestamp: string;
+  created_at: string;
+}
+
+export interface SocialContentHistory {
+  id: string;
+  session_id: string;
+  message: string;
+  timestamp: string;
+  created_at: string;
 }
 
 export class ChatHistoryService {
@@ -281,6 +298,176 @@ export class ChatHistoryService {
       console.error('Error in getUserChatStats:', error);
       return { totalSessions: 0, totalMessages: 0, agentBreakdown: [] };
     }
+  }
+
+  /**
+   * Get all content_repurposer agent messages for a user
+   */
+  async getContentRepurposerHistory(userId: string): Promise<ChatHistoryRecord[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_history')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('agent_id', 'content_repurposer')
+        .eq('sender', 'Agent')
+        .order('timestamp', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching content repurposer history:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getContentRepurposerHistory:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get previous newsletters (HTML content from newsletter agent)
+   */
+  async getPreviousNewsletters(userId: string): Promise<NewsletterHistory[]> {
+    try {
+      console.log('🔍 QUERY: Fetching newsletters for user:', userId);
+      
+      // Get newsletters with optimized query - filter for HTML content
+      const { data, error } = await supabase
+        .from('chat_history')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('agent_id', 'newsletter')
+        .eq('sender', 'Agent')
+        .like('message', '%<!DOCTYPE html>%')
+        .order('timestamp', { ascending: false });
+
+      console.log('📰 QUERY RESULT: newsletters raw data count:', data?.length || 0);
+
+      if (error) {
+        console.error('Error fetching newsletter history:', error);
+        return [];
+      }
+
+      // Deduplicate by created_date + message_hash - keep only the most recent for each unique combination
+      const seenCombinations = new Set<string>();
+      const uniqueNewsletters = (data || []).filter(record => {
+        const createdDate = record.created_at ? new Date(record.created_at).toISOString().split('T')[0] : 'unknown';
+        const messageHash = record.message_hash || 'no-hash';
+        const combinationKey = `${createdDate}_${messageHash}`;
+        
+        if (seenCombinations.has(combinationKey)) {
+          return false;
+        }
+        seenCombinations.add(combinationKey);
+        return true;
+      });
+
+      return uniqueNewsletters.map(record => ({
+        id: record.id || crypto.randomUUID(),
+        session_id: record.session_id,
+        message: record.message,
+        timestamp: record.timestamp || record.created_at || new Date().toISOString(),
+        created_at: record.created_at || new Date().toISOString()
+      }));
+    } catch (error) {
+      console.error('Error getting previous newsletters:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get previous social media content (JSON content)
+   */
+  async getPreviousSocialContent(userId: string): Promise<SocialContentHistory[]> {
+    try {
+      console.log('🔍 QUERY: Fetching social content for user:', userId);
+      
+      // Get social media content with optimized query - filter for JSON content
+      const { data, error } = await supabase
+        .from('chat_history')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('agent_id', 'content_repurposer')
+        .eq('sender', 'Agent')
+        .like('message', '%Post1%')
+        .order('timestamp', { ascending: false });
+
+      console.log('📱 QUERY RESULT: social content raw data count:', data?.length || 0);
+
+      if (error) {
+        console.error('Error fetching social content history:', error);
+        return [];
+      }
+
+      // Deduplicate by created_date + message_hash - keep only the most recent for each unique combination
+      const seenCombinations = new Set<string>();
+      const uniqueSocialContent = (data || []).filter(record => {
+        const createdDate = record.created_at ? new Date(record.created_at).toISOString().split('T')[0] : 'unknown';
+        const messageHash = record.message_hash || 'no-hash';
+        const combinationKey = `${createdDate}_${messageHash}`;
+        
+        if (seenCombinations.has(combinationKey)) {
+          return false;
+        }
+        seenCombinations.add(combinationKey);
+        return true;
+      });
+
+      return uniqueSocialContent.map(record => ({
+        id: record.id || crypto.randomUUID(),
+        session_id: record.session_id,
+        message: record.message,
+        timestamp: record.timestamp || record.created_at || new Date().toISOString(),
+        created_at: record.created_at || new Date().toISOString()
+      }));
+    } catch (error) {
+      console.error('Error getting previous social content:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Group content by date for tabs
+   */
+  static groupContentByDate<T extends { timestamp: string; created_at: string }>(
+    content: T[]
+  ): Record<string, T[]> {
+    const grouped: Record<string, T[]> = {};
+
+    content.forEach(item => {
+      // Use timestamp if available, otherwise use created_at
+      const dateStr = item.timestamp || item.created_at;
+      const date = new Date(dateStr);
+      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(item);
+    });
+
+    return grouped;
+  }
+
+  /**
+   * Format date for display
+   */
+  static formatDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  /**
+   * Get unique session count for display
+   */
+  static getUniqueSessionsCount(content: { session_id: string }[]): number {
+    const uniqueSessions = new Set(content.map(item => item.session_id));
+    return uniqueSessions.size;
   }
 }
 

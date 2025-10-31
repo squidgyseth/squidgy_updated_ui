@@ -3,6 +3,7 @@ import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight } from '
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useUser } from '../../hooks/useUser';
 import ChatHistory from '../chat/ChatHistory';
+import PreviousContent from '../chat/PreviousContent';
 
 interface AgentConfig {
   id: string;
@@ -250,6 +251,11 @@ export default function UniversalChatLayout({
             />
           </div>
         )}
+
+        {/* Previous Content Section */}
+        <div className="px-6 py-2">
+          <PreviousContent agentId={agent.id} />
+        </div>
       </div>
     </div>
   );

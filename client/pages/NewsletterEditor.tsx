@@ -32,12 +32,15 @@ export default function NewsletterEditor() {
 
   // Load content from localStorage or params on mount
   useEffect(() => {
-    const storedContent = localStorage.getItem('newsletterContent') || 
+    const storedContent = localStorage.getItem('newsletterEditorContent') || 
+                         localStorage.getItem('newsletterContent') || 
                          localStorage.getItem('newsletter_html_for_editor') || 
                          localStorage.getItem('newsletter_html');
     
     if (storedContent) {
       setNewsletterContent(storedContent);
+      // Clean up the specific editor content after loading
+      localStorage.removeItem('newsletterEditorContent');
     } else {
       // Default template if no content
       setNewsletterContent(`

@@ -36,7 +36,10 @@ import NotFound from "./pages/NotFound";
 import ChatPage from "./pages/ChatPage";
 import AgentSettings from "./pages/AgentSettings";
 import NewsletterEditor from "./pages/NewsletterEditor";
+import NewsletterPreview from "./pages/NewsletterPreview";
 import SocialMediaPreview from "./pages/SocialMediaPreview";
+import HistoricalNewsletters from "./pages/HistoricalNewsletters";
+import HistoricalSocialPosts from "./pages/HistoricalSocialPosts";
 
 const queryClient = new QueryClient();
 
@@ -222,9 +225,24 @@ const App = () => (
               <NewsletterEditor />
             </ProtectedRoute>
           } />
+          <Route path="/newsletter-preview" element={
+            <ProtectedRoute>
+              <NewsletterPreview />
+            </ProtectedRoute>
+          } />
           <Route path="/social-preview" element={
             <ProtectedRoute>
               <SocialMediaPreview />
+            </ProtectedRoute>
+          } />
+          <Route path="/historical-newsletters" element={
+            <ProtectedRoute>
+              <HistoricalNewsletters />
+            </ProtectedRoute>
+          } />
+          <Route path="/historical-social-posts" element={
+            <ProtectedRoute>
+              <HistoricalSocialPosts />
             </ProtectedRoute>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
