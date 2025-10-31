@@ -44,8 +44,39 @@ export default function SocialMediaPreview() {
     const storedContent = localStorage.getItem('socialMediaContent');
     if (storedContent) {
       try {
-        const content: SocialMediaContent[] = JSON.parse(storedContent);
-        const parsedPosts = parseSocialMediaContent(content[0] || content);
+        const rawContent = JSON.parse(storedContent);
+        let socialMediaContent: SocialMediaContent;
+
+        // Handle different content structures
+        if (Array.isArray(rawContent)) {
+          socialMediaContent = rawContent[0] || {};
+        } else if (rawContent && typeof rawContent === 'object') {
+          // Check if it's direct social media content
+          if (rawContent.LinkedIn || rawContent.InstagramFacebook || rawContent.TikTokReels) {
+            socialMediaContent = rawContent;
+          } else {
+            // Look for social media content in nested objects (agent response format)
+            socialMediaContent = {};
+            for (const [key, value] of Object.entries(rawContent)) {
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                if (value.LinkedIn || value.InstagramFacebook || value.TikTokReels) {
+                  socialMediaContent = value;
+                  break;
+                }
+              }
+              // Also check if the current object has social media keys
+              if (['LinkedIn', 'InstagramFacebook', 'TikTokReels', 'GeneralAssets'].includes(key)) {
+                socialMediaContent[key] = value;
+              }
+            }
+          }
+        } else {
+          socialMediaContent = {};
+        }
+
+        console.log('Parsed social media content:', socialMediaContent);
+        const parsedPosts = parseSocialMediaContent(socialMediaContent);
+        console.log('Generated posts:', parsedPosts);
         setPosts(parsedPosts);
       } catch (error) {
         console.error('Error parsing social media content:', error);

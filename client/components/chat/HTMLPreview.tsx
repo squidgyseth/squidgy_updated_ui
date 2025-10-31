@@ -22,14 +22,40 @@ export default function HTMLPreview({ content, className = '' }: HTMLPreviewProp
     // Check if content is social media data
     try {
       const parsed = JSON.parse(content);
+      
+      // Direct social media content
       if (parsed && (parsed.LinkedIn || parsed.InstagramFacebook || parsed.TikTokReels)) {
         setIsSocialMedia(true);
         return;
       }
-      // Also check if it's an array with social media content
+      
+      // Array with social media content
       if (Array.isArray(parsed) && parsed[0] && (parsed[0].LinkedIn || parsed[0].InstagramFacebook || parsed[0].TikTokReels)) {
         setIsSocialMedia(true);
         return;
+      }
+      
+      // Agent response format: check if there's an object with agent metadata and social media content
+      if (parsed && typeof parsed === 'object') {
+        // Look for social media content in any property that's not metadata
+        const socialMediaKeys = ['LinkedIn', 'InstagramFacebook', 'TikTokReels', 'GeneralAssets'];
+        const hasSocialContent = socialMediaKeys.some(key => parsed[key]);
+        
+        if (hasSocialContent) {
+          setIsSocialMedia(true);
+          return;
+        }
+        
+        // Check if any property contains an object with social media keys
+        for (const [key, value] of Object.entries(parsed)) {
+          if (value && typeof value === 'object' && !Array.isArray(value)) {
+            const hasNestedSocialContent = socialMediaKeys.some(socialKey => value[socialKey]);
+            if (hasNestedSocialContent) {
+              setIsSocialMedia(true);
+              return;
+            }
+          }
+        }
       }
     } catch (e) {
       // Not JSON, continue with HTML preview
