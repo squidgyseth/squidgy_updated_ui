@@ -4,7 +4,7 @@ A web-based interface for generating the Peritus newsletter using Claude AI via 
 
 ## Overview
 
-This application provides a simple chat interface that allows Peritus team members to input their weekly guidelines and receive a generated newsletter. The system supports both text and voice input methods.
+This application provides a simple chat interface that allows Peritus team members to input their weekly guidelines and receive a generated newsletter. The system supports both text and voice input methods, with a powerful newsletter editor for customization.
 
 ## Features
 
@@ -14,21 +14,31 @@ This application provides a simple chat interface that allows Peritus team membe
 - **Voice Conversation**: Fully voice-based conversation with automatic speech detection and text-to-speech responses
 - **Session Management**: Unique session IDs to maintain conversation context across interactions
 - **Newsletter Settings**: Configure template ID and number of images for newsletter generation
-- **Newsletter Display**: Renders the generated newsletter HTML directly in the interface
-- **Image Upload**: Replace image placeholders in the newsletter with uploaded images
-- **Newsletter Download**: Download the completed newsletter as an HTML file
+- **Newsletter Editor**: Advanced editor with the following capabilities:
+  - **Live Text Editing**: Click any text in the newsletter to edit it directly
+  - **Rich Text Formatting**: Bold, italic, underline, font size, font family, and text color
+  - **Image Management**: Upload and replace image placeholders
+  - **Save Options**: 
+    - Save locally to browser storage
+    - Save to Supabase database
+    - Download as HTML file
+- **Database Integration**: Newsletters are automatically saved to Supabase for persistence
 - **Instructions Tab**: Contains information on how to use the system
 - **Knowledge Base Tab**: Contains reference information for the newsletter generation
 
 ## Technical Details
 
 - The application is built with vanilla HTML, CSS, and JavaScript
+- Backend powered by Node.js with Express
 - Voice features use the Web Speech API:
   - Speech Recognition (SpeechRecognition or webkitSpeechRecognition) for voice input
   - Speech Synthesis (SpeechSynthesisUtterance) for text-to-speech output
 - Automatic silence detection (2 seconds) to determine when the user has finished speaking
 - Communication with Claude AI is handled via an n8n webhook
 - The webhook endpoint is: `https://n8n.theaiteam.uk/webhook/50a96b33-becb-4fa1-bd57-535251afdeeb`
+- Database: Supabase (PostgreSQL) for newsletter storage
+  - Table: `Peritus Newsletter`
+  - Stores newsletter HTML with timestamps
 
 ### n8n Workflow
 
@@ -120,18 +130,19 @@ The interface handles this format by:
 
 ### Newsletter Editing
 1. After answering all the required questions, the system will generate a newsletter
-2. The newsletter will be displayed directly in the chat interface
-3. Image placeholders marked with `[IMG_HERE]` will be converted to upload buttons
-4. To add an image:
-   - Click the "Upload Image" button below a placeholder
-   - Select an image file from your device
-   - The image will be displayed in the newsletter
-5. To change an uploaded image:
-   - Click the "Change Image" button that appears after uploading
-   - Select a new image file
-6. When finished editing:
-   - Click the "Download Newsletter" button at the bottom of the newsletter
-   - The newsletter will be saved as an HTML file with all your uploaded images embedded
+2. Click "Open in Editor" to launch the newsletter editor in a new window
+3. In the editor, you can:
+   - **Edit Text**: Click any text element to edit it directly
+   - **Format Text**: Use the formatting toolbar to apply bold, italic, underline, change font size, font family, and text color
+   - **Upload Images**: 
+     - Select an image placeholder from the sidebar
+     - Click "Select Image" to upload an image
+     - The image will replace the placeholder in the newsletter
+   - **Save Your Work**:
+     - **Save**: Saves changes to browser storage
+     - **Save to Database**: Saves the newsletter to Supabase database
+     - **Download Newsletter**: Downloads the newsletter as a standalone HTML file
+4. All images are embedded as base64 data, so the downloaded HTML is completely self-contained
 
 ## Browser Compatibility
 
@@ -143,10 +154,54 @@ The application works best in modern browsers:
 
 Note: Voice input functionality may not be available in all browsers.
 
+## Project Structure
+
+```
+peritus-newsletter/
+├── index.html              # Main application interface
+├── app.js                  # Main application logic
+├── styles.css              # Application styles
+├── newsletter-editor.html  # Newsletter editor interface
+├── server.js               # Node.js server with API endpoints
+├── package.json            # Node.js dependencies
+├── templates/              # Newsletter templates
+├── public/                 # Public assets
+└── api/                    # API routes
+```
+
+## API Endpoints
+
+### POST /api/save-newsletter
+Saves a newsletter to the Supabase database.
+
+**Request Body:**
+```json
+{
+  "html": "<html>...</html>"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Newsletter saved to database successfully",
+  "data": [...]
+}
+```
+
+## Environment Variables
+
+The application uses the following configuration:
+- **Supabase URL**: `https://plucnavrxntdcjptpqgq.supabase.co`
+- **Supabase Key**: Configured in `server.js`
+- **Port**: 3000 (default) or set via `PORT` environment variable
+
 ## Future Enhancements
 
 - User authentication
-- Newsletter template selection
-- History of previous newsletters
-- Direct editing of generated newsletters
-- Integration with email delivery systems
+- Newsletter template management
+- History of previous newsletters with retrieval
+- Email delivery integration
+- Multi-user collaboration
+- Newsletter analytics
