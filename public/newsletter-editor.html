@@ -61,6 +61,141 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         
+        /* Make text elements editable */
+        .newsletter-preview [contenteditable="true"] {
+            outline: none;
+            transition: background-color 0.2s;
+        }
+        
+        .newsletter-preview [contenteditable="true"]:hover {
+            background-color: #f0f8ff;
+        }
+        
+        .newsletter-preview [contenteditable="true"]:focus {
+            background-color: #e6f3ff;
+            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+        }
+        
+        /* Formatting Toolbar */
+        .formatting-toolbar {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .toolbar-separator {
+            width: 1px;
+            height: 30px;
+            background-color: var(--border-color);
+        }
+        
+        .toolbar-btn {
+            background-color: #f5f5f5;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-size: 14px;
+        }
+        
+        .toolbar-btn:hover {
+            background-color: #e0e0e0;
+            border-color: var(--primary-color);
+        }
+        
+        .toolbar-btn:active,
+        .toolbar-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .toolbar-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-right: 5px;
+        }
+        
+        .toolbar-select {
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .toolbar-select:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .toolbar-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+        }
+        
+        .color-picker-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .color-display-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background-color: #f5f5f5;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .color-display-btn:hover {
+            background-color: #e0e0e0;
+            border-color: var(--primary-color);
+        }
+        
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background-color: #000000;
+            display: inline-block;
+        }
+        
+        .color-display-btn i {
+            font-size: 12px;
+            color: var(--text-color);
+        }
+        
+        .toolbar-color-picker-hidden {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+        
         .editor-controls {
             width: 300px;
             background-color: white;
@@ -187,11 +322,82 @@
                 <button id="download-btn" class="btn">
                     <i class="fas fa-download"></i> Download Newsletter
                 </button>
+                <button id="save-to-database-btn" class="btn" style="background-color: #166088;">
+                    <i class="fas fa-database"></i> Save to Database
+                </button>
                 <button id="close-btn" class="btn">
                     <i class="fas fa-times"></i> Close Editor
                 </button>
             </div>
         </header>
+        
+        <!-- Text Formatting Toolbar -->
+        <div class="formatting-toolbar" id="formatting-toolbar" style="display: none;">
+            <div class="toolbar-group">
+                <button class="toolbar-btn" id="bold-btn" title="Bold">
+                    <i class="fas fa-bold"></i>
+                </button>
+                <button class="toolbar-btn" id="italic-btn" title="Italic">
+                    <i class="fas fa-italic"></i>
+                </button>
+                <button class="toolbar-btn" id="underline-btn" title="Underline">
+                    <i class="fas fa-underline"></i>
+                </button>
+            </div>
+            
+            <div class="toolbar-separator"></div>
+            
+            <div class="toolbar-group">
+                <label class="toolbar-label">Size:</label>
+                <select id="font-size-select" class="toolbar-select">
+                    <option value="">Default</option>
+                    <option value="12px">12px</option>
+                    <option value="14px">14px</option>
+                    <option value="16px">16px</option>
+                    <option value="18px">18px</option>
+                    <option value="20px">20px</option>
+                    <option value="24px">24px</option>
+                    <option value="28px">28px</option>
+                    <option value="32px">32px</option>
+                </select>
+            </div>
+            
+            <div class="toolbar-separator"></div>
+            
+            <div class="toolbar-group">
+                <label class="toolbar-label">Font:</label>
+                <select id="font-family-select" class="toolbar-select">
+                    <option value="">Default</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="'Times New Roman', serif">Times New Roman</option>
+                    <option value="'Courier New', monospace">Courier New</option>
+                    <option value="Georgia, serif">Georgia</option>
+                    <option value="Verdana, sans-serif">Verdana</option>
+                    <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+                </select>
+            </div>
+            
+            <div class="toolbar-separator"></div>
+            
+            <div class="toolbar-group">
+                <label class="toolbar-label">Color:</label>
+                <div class="color-picker-wrapper">
+                    <button class="color-display-btn" id="color-display-btn" title="Current text color">
+                        <span class="color-box" id="color-box"></span>
+                        <i class="fas fa-caret-down"></i>
+                    </button>
+                    <input type="color" id="text-color-picker" class="toolbar-color-picker-hidden" title="Text Color">
+                </div>
+            </div>
+            
+            <div class="toolbar-separator"></div>
+            
+            <div class="toolbar-group">
+                <button class="toolbar-btn" id="remove-format-btn" title="Clear Formatting">
+                    <i class="fas fa-remove-format"></i>
+                </button>
+            </div>
+        </div>
         
         <div class="editor-container">
             <div class="newsletter-preview" id="newsletter-preview">
@@ -226,8 +432,14 @@
                 </div>
                 
                 <div class="control-group">
+                    <div style="background-color: #e6f3ff; padding: 12px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid var(--primary-color);">
+                        <p style="margin: 0; font-size: 0.9rem; color: var(--text-color);">
+                            <i class="fas fa-info-circle" style="color: var(--primary-color);"></i>
+                            <strong>Tip:</strong> Click on any text in the newsletter to edit it directly!
+                        </p>
+                    </div>
                     <button id="save-newsletter-btn" class="btn btn-success btn-block">
-                        <i class="fas fa-save"></i> Save Changes
+                        <i class="fas fa-save"></i> Save
                     </button>
                 </div>
             </div>
@@ -248,6 +460,7 @@
             const changeImageBtn = document.getElementById('change-image-btn');
             const saveNewsletterBtn = document.getElementById('save-newsletter-btn');
             const downloadBtn = document.getElementById('download-btn');
+            const saveToDatabaseBtn = document.getElementById('save-to-database-btn');
             const closeBtn = document.getElementById('close-btn');
             
             // State
@@ -256,40 +469,27 @@
             let placeholders = [];
             let uploadedImages = {};
             
-            // Get newsletter HTML from localStorage or URL parameter
+            // Get newsletter HTML from localStorage
             function loadNewsletterHtml() {
-                console.log('Loading newsletter HTML...');
-                const urlParams = new URLSearchParams(window.location.search);
-                const encodedHtml = urlParams.get('html');
-                const useLocalStorage = urlParams.get('useLocalStorage');
+                console.log('Loading newsletter HTML from localStorage...');
                 
-                if (encodedHtml) {
-                    console.log('Found HTML in URL parameter, length:', encodedHtml.length);
-                    try {
-                        newsletterHtml = decodeURIComponent(encodedHtml);
-                        console.log('Decoded HTML length:', newsletterHtml.length);
-                        renderNewsletter();
-                    } catch (error) {
-                        console.error('Error decoding HTML:', error);
-                        newsletterPreview.innerHTML = '<p>Error loading newsletter content: ' + error.message + '</p>';
-                    }
-                } else if (useLocalStorage === 'true') {
-                    console.log('Using localStorage to get HTML');
-                    // Try to get the HTML from localStorage
-                    const storedHtml = localStorage.getItem('newsletter_html_for_editor');
-                    if (storedHtml) {
-                        console.log('Found HTML in localStorage, length:', storedHtml.length);
-                        newsletterHtml = storedHtml;
-                        renderNewsletter();
-                        // Clear the localStorage to avoid using stale data in the future
-                        localStorage.removeItem('newsletter_html_for_editor');
-                    } else {
-                        console.error('No HTML found in localStorage');
-                        newsletterPreview.innerHTML = '<p>No newsletter content found in localStorage.</p>';
-                    }
+                // Always use localStorage for HTML content
+                const storedHtml = localStorage.getItem('newsletterContent') || localStorage.getItem('newsletter_html_for_editor') || localStorage.getItem('newsletter_html');
+                
+                if (storedHtml) {
+                    console.log('Found HTML in localStorage, length:', storedHtml.length);
+                    newsletterHtml = storedHtml;
+                    renderNewsletter();
                 } else {
-                    console.error('No HTML parameter or localStorage flag provided');
-                    newsletterPreview.innerHTML = '<p>No newsletter content provided. Make sure to open this page from the main application.</p>';
+                    console.error('No HTML found in localStorage');
+                    newsletterPreview.innerHTML = `
+                        <div style="padding: 20px; text-align: center;">
+                            <h2>No Newsletter Content Found</h2>
+                            <p>Please return to the main application and try again.</p>
+                            <p>If you're seeing this message, it means no newsletter HTML was found in localStorage.</p>
+                            <button onclick="window.close()" style="padding: 10px 20px; background-color: #4a6fa5; color: white; border: none; border-radius: 4px; cursor: pointer;">Close Editor</button>
+                        </div>
+                    `;
                 }
             }
             
@@ -310,50 +510,54 @@
                 
                 // First, do a direct string replacement in the HTML
                 // This ensures we catch all instances regardless of DOM structure
-                const html = newsletterPreview.innerHTML;
+                let html = newsletterPreview.innerHTML;
                 
-                // Try different formats of [IMG_HERE] that might appear
-                const processedHtml = html
-                    .replace(/\[IMG_HERE\]/g, (match) => {
-                        const placeholderId = `placeholder-${index++}`;
-                        return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
-                    })
-                    .replace(/\[img_here\]/gi, (match) => {
-                        const placeholderId = `placeholder-${index++}`;
-                        return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
-                    })
-                    .replace(/\[image\]/gi, (match) => {
-                        const placeholderId = `placeholder-${index++}`;
-                        return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
-                    });
+                // Use a single comprehensive regex to match all image placeholder variations
+                // This prevents double-counting the same placeholder
+                const placeholderRegex = /\[(IMG_HERE|img_here|image)\]/gi;
+                
+                html = html.replace(placeholderRegex, (match) => {
+                    const placeholderId = `placeholder-${index++}`;
+                    return `<div class="image-placeholder" id="${placeholderId}" data-placeholder="true">[IMG_HERE]</div>`;
+                });
                 
                 // Update the HTML with our processed version
-                newsletterPreview.innerHTML = processedHtml;
+                newsletterPreview.innerHTML = html;
                 
-                console.log('Processed HTML:', newsletterPreview.innerHTML);
+                // Make all text elements editable
+                makeTextEditable();
+                
+                console.log('Processed HTML with placeholders');
                 
                 // Now find all the placeholder divs we created
                 const placeholderElements = newsletterPreview.querySelectorAll('.image-placeholder[data-placeholder="true"]');
                 console.log('Found placeholder elements:', placeholderElements.length);
                 
-                // If no placeholders were found, try to find img tags without src
+                // Only look for empty img tags if we found NO text placeholders at all
                 if (placeholderElements.length === 0) {
-                    console.log('No placeholders found, looking for empty img tags');
-                    const emptyImgTags = newsletterPreview.querySelectorAll('img:not([src]), img[src=""]');
+                    console.log('No text placeholders found, looking for empty img tags');
+                    const emptyImgTags = newsletterPreview.querySelectorAll('img:not([src]), img[src=""], img[src="#"]');
                     
                     emptyImgTags.forEach((img) => {
+                        // Skip if this img is already inside a placeholder div
+                        if (img.closest('.image-placeholder')) {
+                            return;
+                        }
+                        
                         const placeholderId = `placeholder-${index++}`;
                         img.id = placeholderId;
-                        img.dataset.placeholder = true;
+                        img.dataset.placeholder = 'true';
                         img.classList.add('image-placeholder');
-                        placeholderElements.push(img);
                     });
                     
                     console.log('Found empty img tags:', emptyImgTags.length);
                 }
                 
+                // Get the final list of placeholders (only those with data-placeholder="true")
+                const finalPlaceholders = newsletterPreview.querySelectorAll('[data-placeholder="true"]');
+                
                 // Add them to our placeholders array
-                placeholderElements.forEach((element, i) => {
+                finalPlaceholders.forEach((element, i) => {
                     placeholders.push({
                         id: element.id,
                         element: element,
@@ -480,7 +684,7 @@
                 }
             }
             
-            // Save the newsletter with all images
+            // Save the newsletter with all images (locally)
             saveNewsletterBtn.addEventListener('click', () => {
                 // Get the current HTML with all images
                 const updatedHtml = newsletterPreview.innerHTML;
@@ -490,6 +694,44 @@
                 
                 // Notify the user
                 alert('Newsletter saved! You can now close this editor.');
+            });
+            
+            // Save the newsletter to database
+            saveToDatabaseBtn.addEventListener('click', async () => {
+                try {
+                    // Disable button and show loading state
+                    saveToDatabaseBtn.disabled = true;
+                    saveToDatabaseBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                    
+                    // Get the current HTML with all images
+                    const updatedHtml = newsletterPreview.innerHTML;
+                    
+                    // Send to server
+                    const response = await fetch('/api/save-newsletter', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ html: updatedHtml })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert('Newsletter saved to database successfully!');
+                        // Also save locally
+                        localStorage.setItem('edited_newsletter_html', updatedHtml);
+                    } else {
+                        alert('Error saving to database: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Error saving to database:', error);
+                    alert('Failed to save to database. Please check your connection and try again.');
+                } finally {
+                    // Re-enable button
+                    saveToDatabaseBtn.disabled = false;
+                    saveToDatabaseBtn.innerHTML = '<i class="fas fa-database"></i> Save to Database';
+                }
             });
             
             // Download the newsletter as HTML
@@ -558,6 +800,189 @@
                     window.location.href = 'index.html';
                 }
             });
+            
+            // Text Formatting Toolbar Elements
+            const formattingToolbar = document.getElementById('formatting-toolbar');
+            const boldBtn = document.getElementById('bold-btn');
+            const italicBtn = document.getElementById('italic-btn');
+            const underlineBtn = document.getElementById('underline-btn');
+            const fontSizeSelect = document.getElementById('font-size-select');
+            const fontFamilySelect = document.getElementById('font-family-select');
+            const textColorPicker = document.getElementById('text-color-picker');
+            const colorDisplayBtn = document.getElementById('color-display-btn');
+            const colorBox = document.getElementById('color-box');
+            const removeFormatBtn = document.getElementById('remove-format-btn');
+            
+            let currentEditableElement = null;
+            
+            // Show/hide toolbar when text is focused
+            newsletterPreview.addEventListener('focusin', (e) => {
+                if (e.target.hasAttribute('contenteditable')) {
+                    currentEditableElement = e.target;
+                    formattingToolbar.style.display = 'flex';
+                    updateToolbarState();
+                }
+            });
+            
+            // Update toolbar button states based on current selection
+            function updateToolbarState() {
+                if (!currentEditableElement) return;
+                
+                // Check if bold, italic, underline are applied
+                const isBold = document.queryCommandState('bold');
+                const isItalic = document.queryCommandState('italic');
+                const isUnderline = document.queryCommandState('underline');
+                
+                boldBtn.classList.toggle('active', isBold);
+                italicBtn.classList.toggle('active', isItalic);
+                underlineBtn.classList.toggle('active', isUnderline);
+                
+                // Update color box to show current text color
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    const container = range.commonAncestorContainer;
+                    const element = container.nodeType === 3 ? container.parentElement : container;
+                    
+                    if (element) {
+                        const color = window.getComputedStyle(element).color;
+                        // Convert rgb to hex for the color box
+                        const rgb = color.match(/\d+/g);
+                        if (rgb && rgb.length >= 3) {
+                            const hex = '#' + rgb.slice(0, 3).map(x => {
+                                const h = parseInt(x).toString(16);
+                                return h.length === 1 ? '0' + h : h;
+                            }).join('');
+                            colorBox.style.backgroundColor = hex;
+                        }
+                    }
+                }
+            }
+            
+            // Bold button
+            boldBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.execCommand('bold', false, null);
+                updateToolbarState();
+                currentEditableElement.focus();
+            });
+            
+            // Italic button
+            italicBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.execCommand('italic', false, null);
+                updateToolbarState();
+                currentEditableElement.focus();
+            });
+            
+            // Underline button
+            underlineBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.execCommand('underline', false, null);
+                updateToolbarState();
+                currentEditableElement.focus();
+            });
+            
+            // Font size
+            fontSizeSelect.addEventListener('change', (e) => {
+                const size = e.target.value;
+                if (size && currentEditableElement) {
+                    document.execCommand('fontSize', false, '7');
+                    const fontElements = currentEditableElement.querySelectorAll('font[size="7"]');
+                    fontElements.forEach(el => {
+                        el.removeAttribute('size');
+                        el.style.fontSize = size;
+                    });
+                    currentEditableElement.focus();
+                }
+            });
+            
+            // Font family
+            fontFamilySelect.addEventListener('change', (e) => {
+                const font = e.target.value;
+                if (font && currentEditableElement) {
+                    document.execCommand('fontName', false, font);
+                    currentEditableElement.focus();
+                }
+            });
+            
+            // Color display button - opens the color picker
+            colorDisplayBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                textColorPicker.click();
+            });
+            
+            // Text color picker
+            textColorPicker.addEventListener('input', (e) => {
+                const color = e.target.value;
+                if (currentEditableElement) {
+                    // Update the color box display
+                    colorBox.style.backgroundColor = color;
+                    
+                    // Apply the color to selected text
+                    document.execCommand('foreColor', false, color);
+                    currentEditableElement.focus();
+                }
+            });
+            
+            // Also handle change event for better compatibility
+            textColorPicker.addEventListener('change', (e) => {
+                const color = e.target.value;
+                if (currentEditableElement) {
+                    // Update the color box display
+                    colorBox.style.backgroundColor = color;
+                    
+                    // Apply the color
+                    document.execCommand('foreColor', false, color);
+                    currentEditableElement.focus();
+                }
+            });
+            
+            // Remove formatting
+            removeFormatBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentEditableElement) {
+                    document.execCommand('removeFormat', false, null);
+                    updateToolbarState();
+                    currentEditableElement.focus();
+                }
+            });
+            
+            // Make text elements editable
+            function makeTextEditable() {
+                // Select common text elements (excluding image placeholders)
+                const textElements = newsletterPreview.querySelectorAll(
+                    'p, h1, h2, h3, h4, h5, h6, span, div:not(.image-placeholder), td, th, li, a'
+                );
+                
+                textElements.forEach(element => {
+                    // Skip if it's an image placeholder or already editable
+                    if (element.classList.contains('image-placeholder') || 
+                        element.hasAttribute('contenteditable')) {
+                        return;
+                    }
+                    
+                    // Skip if element only contains an image placeholder
+                    const hasOnlyPlaceholder = element.children.length === 1 && 
+                        element.children[0].classList.contains('image-placeholder');
+                    if (hasOnlyPlaceholder) {
+                        return;
+                    }
+                    
+                    // Make it editable
+                    element.setAttribute('contenteditable', 'true');
+                });
+                
+                console.log('Made', textElements.length, 'elements editable');
+            }
+            
+            // Re-apply editability after image updates
+            const originalUpdatePlaceholderImage = updatePlaceholderImage;
+            updatePlaceholderImage = function(id, imageData) {
+                originalUpdatePlaceholderImage(id, imageData);
+                // Re-apply editability in case new elements were added
+                setTimeout(() => makeTextEditable(), 100);
+            };
             
             // Initialize
             loadNewsletterHtml();

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ExternalLink, Copy, Download, Maximize2 } from 'lucide-react';
+import { ExternalLink, Copy, Download, Maximize2, Edit } from 'lucide-react';
 
 interface HTMLPreviewProps {
   content: string;
@@ -88,12 +88,27 @@ export default function HTMLPreview({ content, className = '' }: HTMLPreviewProp
     setIsFullscreen(!isFullscreen);
   };
 
+  const handleEdit = () => {
+    // Save content to localStorage for the editor to access
+    localStorage.setItem('newsletterContent', content);
+    
+    // Open newsletter-editor.html in a new tab
+    window.open('/newsletter-editor.html', '_blank');
+  };
+
   return (
     <div className={`html-preview-container ${className}`}>
       {/* Toolbar */}
       <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
-        <span className="text-sm font-medium text-gray-700">HTML Preview</span>
+        <span className="text-sm font-medium text-gray-700">Newsletter Preview</span>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleEdit}
+            className="p-2 hover:bg-white rounded-lg transition-colors"
+            title="Edit Newsletter"
+          >
+            <Edit size={16} className="text-gray-600" />
+          </button>
           <button
             onClick={handleCopy}
             className="p-2 hover:bg-white rounded-lg transition-colors"

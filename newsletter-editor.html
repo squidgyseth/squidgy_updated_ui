@@ -474,7 +474,7 @@
                 console.log('Loading newsletter HTML from localStorage...');
                 
                 // Always use localStorage for HTML content
-                const storedHtml = localStorage.getItem('newsletter_html_for_editor') || localStorage.getItem('newsletter_html');
+                const storedHtml = localStorage.getItem('newsletterContent') || localStorage.getItem('newsletter_html_for_editor') || localStorage.getItem('newsletter_html');
                 
                 if (storedHtml) {
                     console.log('Found HTML in localStorage, length:', storedHtml.length);
