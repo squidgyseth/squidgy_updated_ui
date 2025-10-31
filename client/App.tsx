@@ -36,6 +36,7 @@ import NotFound from "./pages/NotFound";
 import ChatPage from "./pages/ChatPage";
 import AgentSettings from "./pages/AgentSettings";
 import NewsletterEditor from "./pages/NewsletterEditor";
+import SocialMediaPreview from "./pages/SocialMediaPreview";
 
 const queryClient = new QueryClient();
 
@@ -219,6 +220,11 @@ const App = () => (
           <Route path="/newsletter-editor" element={
             <ProtectedRoute>
               <NewsletterEditor />
+            </ProtectedRoute>
+          } />
+          <Route path="/social-preview" element={
+            <ProtectedRoute>
+              <SocialMediaPreview />
             </ProtectedRoute>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

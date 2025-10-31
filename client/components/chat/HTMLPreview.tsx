@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ExternalLink, Copy, Download, Maximize2, Edit } from 'lucide-react';
+import { ExternalLink, Copy, Download, Maximize2, Edit, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface HTMLPreviewProps {
@@ -16,8 +16,26 @@ export default function HTMLPreview({ content, className = '' }: HTMLPreviewProp
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isSocialMedia, setIsSocialMedia] = useState(false);
 
   useEffect(() => {
+    // Check if content is social media data
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed && (parsed.LinkedIn || parsed.InstagramFacebook || parsed.TikTokReels)) {
+        setIsSocialMedia(true);
+        return;
+      }
+      // Also check if it's an array with social media content
+      if (Array.isArray(parsed) && parsed[0] && (parsed[0].LinkedIn || parsed[0].InstagramFacebook || parsed[0].TikTokReels)) {
+        setIsSocialMedia(true);
+        return;
+      }
+    } catch (e) {
+      // Not JSON, continue with HTML preview
+    }
+    setIsSocialMedia(false);
+
     if (iframeRef.current) {
       // Set iframe content with proper HTML structure
       const htmlContent = `
@@ -91,25 +109,33 @@ export default function HTMLPreview({ content, className = '' }: HTMLPreviewProp
   };
 
   const handleEdit = () => {
-    // Save content to localStorage for the editor to access
-    localStorage.setItem('newsletterContent', content);
-    
-    // Navigate to the React newsletter editor component
-    navigate('/newsletter-editor');
+    if (isSocialMedia) {
+      // Save content to localStorage for social media preview
+      localStorage.setItem('socialMediaContent', content);
+      // Navigate to social media preview
+      navigate('/social-preview');
+    } else {
+      // Save content to localStorage for the newsletter editor
+      localStorage.setItem('newsletterContent', content);
+      // Navigate to the React newsletter editor component
+      navigate('/newsletter-editor');
+    }
   };
 
   return (
     <div className={`html-preview-container ${className}`}>
       {/* Toolbar */}
       <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
-        <span className="text-sm font-medium text-gray-700">Newsletter Preview</span>
+        <span className="text-sm font-medium text-gray-700">
+          {isSocialMedia ? 'Social Media Content' : 'Newsletter Preview'}
+        </span>
         <div className="flex items-center gap-2">
           <button
             onClick={handleEdit}
             className="p-2 hover:bg-white rounded-lg transition-colors"
-            title="Edit Newsletter"
+            title={isSocialMedia ? "Preview Social Posts" : "Edit Newsletter"}
           >
-            <Edit size={16} className="text-gray-600" />
+            {isSocialMedia ? <Share2 size={16} className="text-gray-600" /> : <Edit size={16} className="text-gray-600" />}
           </button>
           <button
             onClick={handleCopy}
@@ -144,13 +170,33 @@ export default function HTMLPreview({ content, className = '' }: HTMLPreviewProp
 
       {/* Preview Frame */}
       <div className={`relative bg-white ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
-        <iframe
-          ref={iframeRef}
-          className={`w-full border-0 ${isFullscreen ? 'h-screen' : 'h-96'}`}
-          title="HTML Content Preview"
-          sandbox="allow-same-origin"
-          style={{ backgroundColor: 'white' }}
-        />
+        {isSocialMedia ? (
+          <div className="p-8 text-center">
+            <div className="max-w-md mx-auto">
+              <Share2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Social Media Content Generated</h3>
+              <p className="text-gray-600 mb-4">
+                Your content has been repurposed for LinkedIn, Instagram, and TikTok. 
+                Click the preview button to see all posts in a social media feed layout.
+              </p>
+              <button
+                onClick={handleEdit}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Share2 className="w-4 h-4" />
+                Preview Social Posts
+              </button>
+            </div>
+          </div>
+        ) : (
+          <iframe
+            ref={iframeRef}
+            className={`w-full border-0 ${isFullscreen ? 'h-screen' : 'h-96'}`}
+            title="HTML Content Preview"
+            sandbox="allow-same-origin"
+            style={{ backgroundColor: 'white' }}
+          />
+        )}
         
         {isFullscreen && (
           <button
