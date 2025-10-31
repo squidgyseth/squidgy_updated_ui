@@ -49,13 +49,21 @@ export default function SocialMediaPreview() {
 
         // Handle different content structures
         if (Array.isArray(rawContent)) {
-          socialMediaContent = rawContent[0] || {};
+          // Check if first element has ContentRepurposerPosts
+          if (rawContent[0] && rawContent[0].ContentRepurposerPosts) {
+            socialMediaContent = rawContent[0].ContentRepurposerPosts;
+          } else {
+            socialMediaContent = rawContent[0] || {};
+          }
         } else if (rawContent && typeof rawContent === 'object') {
-          // Check if it's direct social media content
-          if (rawContent.LinkedIn || rawContent.InstagramFacebook || rawContent.TikTokReels) {
+          // Check for ContentRepurposerPosts wrapper
+          if (rawContent.ContentRepurposerPosts) {
+            socialMediaContent = rawContent.ContentRepurposerPosts;
+          } else if (rawContent.LinkedIn || rawContent.InstagramFacebook || rawContent.TikTokReels) {
+            // Direct social media content
             socialMediaContent = rawContent;
           } else {
-            // Look for social media content in nested objects (agent response format)
+            // Look for social media content in nested objects
             socialMediaContent = {};
             for (const [key, value] of Object.entries(rawContent)) {
               if (value && typeof value === 'object' && !Array.isArray(value)) {

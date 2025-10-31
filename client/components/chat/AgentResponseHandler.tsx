@@ -2,6 +2,7 @@ import React from 'react';
 import type { N8nResponse } from '../../types/n8n.types';
 import HTMLPreview from './HTMLPreview';
 import QuestionPrompt from './QuestionPrompt';
+import SocialMediaLink from './SocialMediaLink';
 
 interface AgentResponseHandlerProps {
   response: N8nResponse;
@@ -21,10 +22,39 @@ export default function AgentResponseHandler({
   className = ''
 }: AgentResponseHandlerProps) {
   
+  // Check if response is social media content
+  const isSocialMediaContent = () => {
+    try {
+      const parsed = JSON.parse(response.agent_response);
+      // Check for ContentRepurposerPosts structure
+      if (Array.isArray(parsed) && parsed[0] && parsed[0].ContentRepurposerPosts) {
+        return true;
+      }
+      if (parsed && parsed.ContentRepurposerPosts) {
+        return true;
+      }
+      // Also check for direct social media keys
+      if (parsed && (parsed.LinkedIn || parsed.InstagramFacebook || parsed.TikTokReels)) {
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
   // Handle different agent statuses
   switch (response.agent_status) {
     case 'Ready':
-      // For Ready status, agent_response contains HTML to preview
+      // Check if it's social media content
+      if (isSocialMediaContent()) {
+        return (
+          <div className={`agent-response ready-state ${className}`}>
+            <SocialMediaLink content={response.agent_response} />
+          </div>
+        );
+      }
+      // For other Ready status, agent_response contains HTML to preview
       return (
         <div className={`agent-response ready-state ${className}`}>
           <HTMLPreview content={response.agent_response} />
