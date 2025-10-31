@@ -1,9 +1,15 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
 // Use environment port or default to 3000
 const PORT = process.env.PORT || 3000;
+
+// Initialize Supabase client
+const supabaseUrl = 'https://plucnavrxntdcjptpqgq.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsdWNuYXZyeG50ZGNqcHRwcWdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxNTA1ODQsImV4cCI6MjA2NzcyNjU4NH0.lRBLUJFH1Vpo-VV2AVufRuSj8kImDNhX0nRQTZtmwFI';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -30,6 +36,65 @@ const handleRequest = (req, res) => {
       'Access-Control-Max-Age': '86400' // 24 hours
     });
     res.end();
+    return;
+  }
+  
+  // Handle POST request to save newsletter to database
+  if (req.method === 'POST' && req.url === '/api/save-newsletter') {
+    let body = '';
+    
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    
+    req.on('end', async () => {
+      try {
+        const { html } = JSON.parse(body);
+        
+        if (!html) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'HTML content is required' }));
+          return;
+        }
+        
+        // Save to Supabase
+        const { data, error } = await supabase
+          .from('Peritus Newsletter')
+          .insert([
+            { 'Newsletter HTML': html }
+          ])
+          .select();
+        
+        if (error) {
+          console.error('Supabase error:', error);
+          res.writeHead(500, { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          });
+          res.end(JSON.stringify({ error: error.message }));
+          return;
+        }
+        
+        res.writeHead(200, { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.end(JSON.stringify({ 
+          success: true, 
+          message: 'Newsletter saved to database successfully',
+          data: data 
+        }));
+        
+      } catch (error) {
+        console.error('Error saving newsletter:', error);
+        res.writeHead(500, { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.end(JSON.stringify({ error: 'Failed to save newsletter' }));
+      }
+    });
+    
     return;
   }
   

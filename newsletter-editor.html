@@ -436,7 +436,10 @@
                         </p>
                     </div>
                     <button id="save-newsletter-btn" class="btn btn-success btn-block">
-                        <i class="fas fa-save"></i> Save Changes
+                        <i class="fas fa-save"></i> Save Locally
+                    </button>
+                    <button id="save-to-database-btn" class="btn btn-block" style="background-color: #166088; margin-top: 10px;">
+                        <i class="fas fa-database"></i> Save to Database
                     </button>
                 </div>
             </div>
@@ -456,6 +459,7 @@
             const imagePreview = document.getElementById('image-preview');
             const changeImageBtn = document.getElementById('change-image-btn');
             const saveNewsletterBtn = document.getElementById('save-newsletter-btn');
+            const saveToDatabaseBtn = document.getElementById('save-to-database-btn');
             const downloadBtn = document.getElementById('download-btn');
             const closeBtn = document.getElementById('close-btn');
             
@@ -680,7 +684,7 @@
                 }
             }
             
-            // Save the newsletter with all images
+            // Save the newsletter with all images (locally)
             saveNewsletterBtn.addEventListener('click', () => {
                 // Get the current HTML with all images
                 const updatedHtml = newsletterPreview.innerHTML;
@@ -689,7 +693,45 @@
                 localStorage.setItem('edited_newsletter_html', updatedHtml);
                 
                 // Notify the user
-                alert('Newsletter saved! You can now close this editor.');
+                alert('Newsletter saved locally! You can now close this editor.');
+            });
+            
+            // Save the newsletter to database
+            saveToDatabaseBtn.addEventListener('click', async () => {
+                try {
+                    // Disable button and show loading state
+                    saveToDatabaseBtn.disabled = true;
+                    saveToDatabaseBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                    
+                    // Get the current HTML with all images
+                    const updatedHtml = newsletterPreview.innerHTML;
+                    
+                    // Send to server
+                    const response = await fetch('/api/save-newsletter', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ html: updatedHtml })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert('Newsletter saved to database successfully!');
+                        // Also save locally
+                        localStorage.setItem('edited_newsletter_html', updatedHtml);
+                    } else {
+                        alert('Error saving to database: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Error saving to database:', error);
+                    alert('Failed to save to database. Please check your connection and try again.');
+                } finally {
+                    // Re-enable button
+                    saveToDatabaseBtn.disabled = false;
+                    saveToDatabaseBtn.innerHTML = '<i class="fas fa-database"></i> Save to Database';
+                }
             });
             
             // Download the newsletter as HTML
