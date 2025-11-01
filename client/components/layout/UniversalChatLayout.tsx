@@ -233,24 +233,6 @@ export default function UniversalChatLayout({
           </div>
         )}
 
-        {/* Chat History Section */}
-        {userId && (
-          <div className="p-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <MessageSquare className="text-squidgy-primary" size={18} />
-              <h3 className="text-lg font-semibold text-gray-900">Chat History</h3>
-            </div>
-            <ChatHistory
-              userId={userId}
-              agentId={agent.id}
-              agentName={agent.name}
-              onSessionSelect={(sessionId) => {
-                console.log('Selected session:', sessionId);
-                // TODO: Load session messages
-              }}
-            />
-          </div>
-        )}
 
         {/* Previous Content Section */}
         <div className="px-6 py-2">
