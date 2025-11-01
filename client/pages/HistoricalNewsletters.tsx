@@ -85,13 +85,13 @@ export default function HistoricalNewsletters() {
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => navigate(-1)}
+                  onClick={() => navigate('/chat/newsletter')}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Go back"
+                  title="Go back to chat"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                <h1 className="text-xl font-semibold text-gray-900">Historical Newsletters</h1>
+                <h1 className="text-xl font-semibold text-gray-900">Newsletters</h1>
               </div>
             </div>
           </div>
@@ -174,15 +174,14 @@ export default function HistoricalNewsletters() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/chat/newsletter')}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Go back"
+                title="Go back to chat"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">Historical Newsletters</h1>
-                <p className="text-sm text-gray-500">{newsletters.length} newsletters total</p>
+                <h1 className="text-xl font-semibold text-gray-900">Newsletters</h1>
               </div>
             </div>
           </div>

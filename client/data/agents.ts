@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2025-10-31T21:38:19.141Z
+// Generated on: 2025-11-01T04:37:06.815Z
 
 export interface AgentConfig {
   agent: {
@@ -136,7 +136,8 @@ export const ALL_AGENTS: AgentConfig[] = [
       "Optimize subject lines"
     ],
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
     },
     "ui": {
       "page_type": "standard",
@@ -364,7 +365,8 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
     },
     "ui": {
       "page_type": "standard",
@@ -559,7 +561,8 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
     },
     "ui": {
       "page_type": "standard",
@@ -634,7 +637,8 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "Optimize subject lines"
     ],
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
     },
     "ui": {
       "page_type": "standard",
@@ -1125,7 +1129,8 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "Optimize subject lines"
       ],
       "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter"
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
+        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
       },
       "ui": {
         "page_type": "standard",
@@ -1355,7 +1360,8 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer"
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
+        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
       },
       "ui": {
         "page_type": "standard",

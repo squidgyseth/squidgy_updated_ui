@@ -62,6 +62,7 @@ agent:
 n8n:
   # Your N8N webhook URL - replace with your specific webhook
   webhook_url: https://n8n.theaiteam.uk/webhook/content_repurposer
+  image_generator_url: https://n8n.theaiteam.uk/webhook/image_generator
 
 # UI Configuration - FIGMA SOURCE (for generating custom interfaces)
 # This section is used by the import script to generate React components from Figma
