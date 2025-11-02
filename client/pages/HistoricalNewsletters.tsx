@@ -255,12 +255,6 @@ export default function HistoricalNewsletters() {
                       <ExternalLink className="w-3 h-3" />
                       Preview
                     </button>
-                    <button
-                      onClick={() => handleNewsletterClick(newsletter)}
-                      className="px-3 py-1 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm"
-                    >
-                      View Details
-                    </button>
                   </div>
                 </div>
                 
