@@ -504,7 +504,7 @@ export default function WebsiteDetails() {
                   </div>
                 )}
                 <img 
-                  src={screenshotUrl ? createProxyUrl(screenshotUrl, 'image') : "https://api.builder.io/api/v1/image/assets/TEMP/f4d168c44c076c21cd4c9f5f8d6e8c8c8cb1fbed?width=840"}
+                  src={screenshotUrl || "https://api.builder.io/api/v1/image/assets/TEMP/f4d168c44c076c21cd4c9f5f8d6e8c8c8cb1fbed?width=840"}
                   alt={websiteUrl ? `${websiteUrl} website screenshot` : "Website screenshot placeholder"}
                   className="w-full h-64 object-cover"
                   onLoad={() => setScreenshotLoading(false)}
