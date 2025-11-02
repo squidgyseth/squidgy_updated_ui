@@ -35,11 +35,11 @@ export default function WebsiteDetails() {
   const { userId, sessionId, agentId, isReady, user, profile } = useUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [companyDescription, setCompanyDescription] = useState("");
-  const [valueProposition, setValueProposition] = useState("");
-  const [businessNiche, setBusinessNiche] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+  const [websiteUrl, setWebsiteUrl] = useState("https://theai.team/");
+  const [companyDescription, setCompanyDescription] = useState("TheAI.Team provides cutting-edge AI solutions and development services for businesses looking to integrate artificial intelligence into their operations.");
+  const [valueProposition, setValueProposition] = useState("Expert AI development team delivering custom AI solutions, from machine learning models to AI-powered applications, helping businesses automate processes and gain competitive advantages through intelligent technology.");
+  const [businessNiche, setBusinessNiche] = useState("AI development services, machine learning consulting, and custom AI solution implementation for enterprises and startups.");
+  const [tags, setTags] = useState<string[]>(["AI Development", "Machine Learning", "Custom AI Solutions", "AI Consulting", "Technology Services"]);
   const [newTag, setNewTag] = useState("");
   const [dataLoaded, setDataLoaded] = useState(false);
   const [screenshotUrl, setScreenshotUrl] = useState("");
@@ -512,17 +512,17 @@ export default function WebsiteDetails() {
                   </div>
                 )}
                 <img 
-                  src={screenshotUrl || "https://api.builder.io/api/v1/image/assets/TEMP/f4d168c44c076c21cd4c9f5f8d6e8c8c8cb1fbed?width=840"}
-                  alt={websiteUrl ? `${websiteUrl} website screenshot` : "Website screenshot placeholder"}
+                  src={screenshotUrl || "/theaiteam.png"}
+                  alt={websiteUrl ? `${websiteUrl} website screenshot` : "TheAITeam website screenshot"}
                   className="w-full h-64 object-cover"
                   onLoad={() => setScreenshotLoading(false)}
                   onError={(e) => {
                     setScreenshotLoading(false);
                     // Fallback to placeholder if screenshot fails to load
                     const target = e.target as HTMLImageElement;
-                    if (target.src !== "https://api.builder.io/api/v1/image/assets/TEMP/f4d168c44c076c21cd4c9f5f8d6e8c8c8cb1fbed?width=840") {
-                      target.src = "https://api.builder.io/api/v1/image/assets/TEMP/f4d168c44c076c21cd4c9f5f8d6e8c8c8cb1fbed?width=840";
-                      console.log('⚠️ Screenshot failed to load, using fallback');
+                    if (target.src !== "/theaiteam.png") {
+                      target.src = "/theaiteam.png";
+                      console.log('⚠️ Screenshot failed to load, using TheAITeam fallback');
                     }
                   }}
                 />
