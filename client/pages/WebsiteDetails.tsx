@@ -102,63 +102,71 @@ export default function WebsiteDetails() {
     try {
       console.log('🔍 Parsing agent response:', agentResponse);
       
-      // Clean the response by removing screenshot and favicon links
-      let cleanedResponse = agentResponse;
-      
-      // Use the improved URL masking utility to handle all Supabase URLs
-      cleanedResponse = maskStorageUrlsInText(cleanedResponse);
-      
-      // Additional specific cleaning for website analysis responses
-      cleanedResponse = cleanedResponse.replace(/screenshot.*?(?:can be (?:viewed|accessed|found)|is available).*?\[here\]\([^)]+\)[^.]*\./gi, '');
-      cleanedResponse = cleanedResponse.replace(/(?:I have also captured|captured) a screenshot.*?\[here\]\([^)]+\)[^.]*\./gi, '');
-      cleanedResponse = cleanedResponse.replace(/favicon.*?(?:can be (?:viewed|accessed|found)|is available).*?\[here\]\([^)]+\)[^.]*\./gi, '');
-      cleanedResponse = cleanedResponse.replace(/(?:and the |the )?favicon.*?\[here\]\([^)]+\)[^.]*\./gi, '');
-      
-      // Remove any remaining storage link references
-      cleanedResponse = cleanedResponse.replace(/\[Link\]\s*[-.]/gi, '');
-      cleanedResponse = cleanedResponse.replace(/\[Image\]\s*[-.]/gi, '');
-      cleanedResponse = cleanedResponse.replace(/\[File\]\s*[-.]/gi, '');
-      
-      // Look for company description
-      const companyMatch = cleanedResponse.match(/company name:\s*([^|]+)/i) || 
-                          cleanedResponse.match(/description:\s*([^|]+)/i) ||
-                          cleanedResponse.match(/what.*company.*does[:\s]*([^|]+)/i);
-      
-      // Look for value proposition/takeaways
-      const valueMatch = cleanedResponse.match(/takeaways:\s*([^|]+)/i) ||
-                        cleanedResponse.match(/value proposition[:\s]*([^|]+)/i);
-      
-      // Look for business niche
-      const nicheMatch = cleanedResponse.match(/niche:\s*([^|]+)/i) ||
-                        cleanedResponse.match(/market[:\s]*([^|]+)/i);
-      
-      // Look for tags and limit to top 5
-      const tagsMatch = cleanedResponse.match(/tags:\s*([^|]+)/i);
-      let extractedTags: string[] = [];
-      if (tagsMatch && tagsMatch[1]) {
-        const allTags = tagsMatch[1].split(/[,.]/).map(tag => tag.trim()).filter(tag => tag.length > 0);
-        // Limit to top 5 tags only
-        extractedTags = allTags.slice(0, 5);
-      }
-
+      // First extract URLs before cleaning
       // Extract screenshot URL from the original response (before cleaning)
-      const screenshotMatch = agentResponse.match(/https?:\/\/[^\s]*supabase[^\s]*\/screenshots\/[^\s]*/i) ||
+      const screenshotMatch = agentResponse.match(/https?:\/\/[^\s]*supabase[^\s]*\/screenshots\/[^\s)]*/i) ||
                              agentResponse.match(/(https?:\/\/[^\s]+\.(png|jpg|jpeg|webp))/i);
       
       // Extract favicon URL from the original response (before cleaning) 
-      const faviconMatch = agentResponse.match(/https?:\/\/[^\s]*supabase[^\s]*\/favicons\/[^\s]*/i) ||
-                          agentResponse.match(/https?:\/\/[^\s]*favicon[^\s]*/i);
+      const faviconMatch = agentResponse.match(/https?:\/\/[^\s]*supabase[^\s]*\/favicons\/[^\s)]*/i) ||
+                          agentResponse.match(/https?:\/\/[^\s]*favicon[^\s)]*/i);
       
       console.log('🔍 Screenshot match result:', screenshotMatch);
       console.log('🔍 Favicon match result:', faviconMatch);
       
+      // Clean the response by removing ALL HTML and markdown links first
+      let cleanedResponse = agentResponse
+        .replace(/<a[^>]*>.*?<\/a>/gi, '') // Remove all HTML anchor tags and their content
+        .replace(/<[^>]*>/g, '') // Remove any other HTML tags
+        .replace(/\[View[^]]*\]\([^)]+\)/gi, '') // Remove all [View...] markdown links
+        .replace(/\[Download[^]]*\]\([^)]+\)/gi, '') // Remove all [Download...] markdown links
+        .replace(/\[Link\]\([^)]+\)/gi, '') // Remove [Link] markdown
+        .replace(/\*\*/g, '') // Remove bold markdown
+        .replace(/https?:\/\/[^\s]+/gi, '') // Remove any remaining URLs
+        .replace(/I've captured the following.*$/i, '') // Remove capture message and everything after
+        .replace(/Could you please confirm.*$/i, '') // Remove confirmation request
+        .replace(/- Screenshot:.*$/i, '') // Remove screenshot line
+        .replace(/- Favicon:.*$/i, '') // Remove favicon line
+        .replace(/\n+/g, ' ') // Replace multiple newlines with space
+        .replace(/\s+/g, ' '); // Normalize whitespace
+      
+      // Look for company description
+      const companyMatch = cleanedResponse.match(/company name:\s*([^|.]+?)(?:\.|$)/i) || 
+                          cleanedResponse.match(/description:\s*([^|.]+?)(?:\.|$)/i) ||
+                          cleanedResponse.match(/what.*company.*does[:\s]*([^|.]+?)(?:\.|$)/i);
+      
+      // Look for value proposition/takeaways
+      const valueMatch = cleanedResponse.match(/takeaways:\s*([^|.]+?)(?:\.|$)/i) ||
+                        cleanedResponse.match(/value proposition[:\s]*([^|.]+?)(?:\.|$)/i);
+      
+      // Look for business niche - extract only until period or end of line
+      const nicheMatch = cleanedResponse.match(/niche:\s*([^|.]+?)(?:\.|$)/i) ||
+                        cleanedResponse.match(/market[:\s]*([^|.]+?)(?:\.|$)/i);
+      
+      // Look for tags and limit to top 5
+      const tagsMatch = cleanedResponse.match(/tags:\s*([^|.]+?)(?:\.|$)/i);
+      let extractedTags: string[] = [];
+      if (tagsMatch && tagsMatch[1]) {
+        const allTags = tagsMatch[1].split(/[,]/).map(tag => tag.trim()).filter(tag => tag.length > 0);
+        // Limit to top 5 tags only
+        extractedTags = allTags.slice(0, 5);
+      }
+      
+      // Helper to clean extracted values
+      const cleanExtractedValue = (value: string | null) => {
+        if (!value) return null;
+        return value
+          .replace(/\s+/g, ' ') // Normalize whitespace
+          .trim();
+      };
+      
       return {
-        companyDescription: companyMatch ? companyMatch[1].trim() : null,
-        valueProposition: valueMatch ? valueMatch[1].trim() : null,
-        businessNiche: nicheMatch ? nicheMatch[1].trim() : null,
+        companyDescription: cleanExtractedValue(companyMatch ? companyMatch[1] : null),
+        valueProposition: cleanExtractedValue(valueMatch ? valueMatch[1] : null),
+        businessNiche: cleanExtractedValue(nicheMatch ? nicheMatch[1] : null),
         tags: extractedTags.length > 0 ? extractedTags : null,
-        screenshotUrl: screenshotMatch ? screenshotMatch[0] : null,
-        faviconUrl: faviconMatch ? faviconMatch[0] : null
+        screenshotUrl: screenshotMatch ? screenshotMatch[0].replace(/\)$/, '') : null,
+        faviconUrl: faviconMatch ? faviconMatch[0].replace(/\)$/, '') : null
       };
     } catch (error) {
       console.error('Error parsing agent response:', error);
