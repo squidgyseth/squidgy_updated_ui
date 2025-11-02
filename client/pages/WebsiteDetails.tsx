@@ -35,11 +35,11 @@ export default function WebsiteDetails() {
   const { userId, sessionId, agentId, isReady, user, profile } = useUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [websiteUrl, setWebsiteUrl] = useState("https://theai.team/");
-  const [companyDescription, setCompanyDescription] = useState("TheAI.Team provides cutting-edge AI solutions and development services for businesses looking to integrate artificial intelligence into their operations.");
-  const [valueProposition, setValueProposition] = useState("Expert AI development team delivering custom AI solutions, from machine learning models to AI-powered applications, helping businesses automate processes and gain competitive advantages through intelligent technology.");
-  const [businessNiche, setBusinessNiche] = useState("AI development services, machine learning consulting, and custom AI solution implementation for enterprises and startups.");
-  const [tags, setTags] = useState<string[]>(["AI Development", "Machine Learning", "Custom AI Solutions", "AI Consulting", "Technology Services"]);
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [companyDescription, setCompanyDescription] = useState("");
+  const [valueProposition, setValueProposition] = useState("");
+  const [businessNiche, setBusinessNiche] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const [dataLoaded, setDataLoaded] = useState(false);
   const [screenshotUrl, setScreenshotUrl] = useState("");
@@ -118,9 +118,9 @@ export default function WebsiteDetails() {
       let cleanedResponse = agentResponse
         .replace(/<a[^>]*>.*?<\/a>/gi, '') // Remove all HTML anchor tags and their content
         .replace(/<[^>]*>/g, '') // Remove any other HTML tags
-        .replace(/\[View[^]]*\]\([^)]+\)/gi, '') // Remove all [View...] markdown links
-        .replace(/\[Download[^]]*\]\([^)]+\)/gi, '') // Remove all [Download...] markdown links
-        .replace(/\[Link\]\([^)]+\)/gi, '') // Remove [Link] markdown
+        .replace(/\[View[^\]]*\]\([^)]*\)/gi, '') // Remove all [View...] markdown links (including empty parentheses)
+        .replace(/\[Download[^\]]*\]\([^)]*\)/gi, '') // Remove all [Download...] markdown links (including empty parentheses)
+        .replace(/\[Link\]\([^)]*\)/gi, '') // Remove [Link] markdown (including empty parentheses)
         .replace(/\*\*/g, '') // Remove bold markdown
         .replace(/https?:\/\/[^\s]+/gi, '') // Remove any remaining URLs
         .replace(/I've captured the following.*$/i, '') // Remove capture message and everything after
@@ -511,21 +511,50 @@ export default function WebsiteDetails() {
                     )}
                   </div>
                 )}
-                <img 
-                  src={screenshotUrl || "/theaiteam.png"}
-                  alt={websiteUrl ? `${websiteUrl} website screenshot` : "TheAITeam website screenshot"}
-                  className="w-full h-64 object-cover"
-                  onLoad={() => setScreenshotLoading(false)}
-                  onError={(e) => {
-                    setScreenshotLoading(false);
-                    // Fallback to placeholder if screenshot fails to load
-                    const target = e.target as HTMLImageElement;
-                    if (target.src !== "/theaiteam.png") {
-                      target.src = "/theaiteam.png";
-                      console.log('⚠️ Screenshot failed to load, using TheAITeam fallback');
-                    }
-                  }}
-                />
+                
+                {/* Screenshot Loading Placeholder */}
+                {loading && !screenshotUrl && (
+                  <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                    <div className="text-center">
+                      <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <svg className="w-8 h-8 text-gray-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div className="text-sm text-gray-500 mb-1">Capturing screenshot...</div>
+                      <div className="text-xs text-gray-400">This may take a few seconds</div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Screenshot Image */}
+                {(!loading && screenshotUrl) && (
+                  <img 
+                    src={screenshotUrl}
+                    alt={`${websiteUrl} website screenshot`}
+                    className="w-full h-64 object-cover rounded-lg"
+                    onLoad={() => setScreenshotLoading(false)}
+                    onError={(e) => {
+                      setScreenshotLoading(false);
+                      console.log('⚠️ Screenshot failed to load');
+                    }}
+                  />
+                )}
+                
+                {/* Screenshot Placeholder */}
+                {(!loading && !screenshotUrl) && (
+                  <div className="w-full h-64 bg-gray-50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                    <div className="text-center">
+                      <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div className="text-sm text-gray-500 mb-1">Screenshot will be displayed here</div>
+                      <div className="text-xs text-gray-400">Click "Analyze Website" to capture</div>
+                    </div>
+                  </div>
+                )}
               </div>
               {!screenshotUrl && (
                 <p className="text-xs text-gray-500 mt-1">
@@ -620,6 +649,43 @@ export default function WebsiteDetails() {
                 className="w-full h-32 p-3 border border-grey-500 rounded-md text-text-primary text-base resize-none focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
               />
             </div>
+
+            {/* Captured Content Section */}
+            {(screenshotUrl || faviconUrl) && (
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-text-primary mb-2">Captured Content</label>
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex flex-wrap gap-4">
+                    {screenshotUrl && (
+                      <a 
+                        href={screenshotUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-squidgy-purple text-white rounded-lg hover:bg-squidgy-purple/90 transition-colors"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        View Screenshot
+                      </a>
+                    )}
+                    {faviconUrl && (
+                      <a 
+                        href={faviconUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
+                        </svg>
+                        View Logo
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Tags Section */}
             <div className="mb-6">

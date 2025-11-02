@@ -7,7 +7,8 @@ import { sendToN8nWorkflow, generateRequestId, generateSessionId } from '../../l
 import { ChatHistoryService } from '../../services/chatHistoryService';
 import { FileUploadService } from '../../services/fileUploadService';
 import { supabase } from '../../lib/supabase';
-import { maskStorageUrlsInText, createProxyUrl } from '../../utils/urlMasking';
+import { createProxyUrl } from '../../utils/urlMasking';
+import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -442,9 +443,9 @@ export default function N8nChatInterface({
                     ) : (
                       // Regular message display
                       <div className="bg-gray-100 text-gray-800 rounded-lg px-4 py-2">
-                        <div 
+                        <LinkDetectingTextArea 
+                          content={message.content}
                           className="whitespace-pre-wrap"
-                          dangerouslySetInnerHTML={{ __html: maskStorageUrlsInText(message.content) }}
                         />
                       </div>
                     )}

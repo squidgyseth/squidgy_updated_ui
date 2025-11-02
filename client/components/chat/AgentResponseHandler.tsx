@@ -3,6 +3,7 @@ import type { N8nResponse } from '../../types/n8n.types';
 import HTMLPreview from './HTMLPreview';
 import QuestionPrompt from './QuestionPrompt';
 import SocialMediaLink from './SocialMediaLink';
+import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 
 interface AgentResponseHandlerProps {
   response: N8nResponse;
@@ -87,7 +88,10 @@ export default function AgentResponseHandler({
       return (
         <div className={`agent-response default-state ${className}`}>
           <div className="p-3 bg-gray-50 rounded-lg">
-            <p className="text-gray-700">{response.agent_response}</p>
+            <LinkDetectingTextArea 
+              content={response.agent_response}
+              className="text-gray-700"
+            />
           </div>
         </div>
       );

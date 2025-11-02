@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Send, Mic, Paperclip } from 'lucide-react';
-import { createProxyUrl, maskStorageUrlsInText } from '../../utils/urlMasking';
+import { createProxyUrl } from '../../utils/urlMasking';
+import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 
 interface Message {
   id: string;
@@ -99,9 +100,9 @@ export default function CleanChatInterface({
                   ? 'bg-blue-600 text-white' 
                   : 'bg-gray-100 text-gray-900'
               }`}>
-                <div 
-                  className="text-sm leading-relaxed" 
-                  dangerouslySetInnerHTML={{ __html: maskStorageUrlsInText(msg.content) }}
+                <LinkDetectingTextArea 
+                  content={msg.content}
+                  className="text-sm leading-relaxed"
                 />
                 <span className={`text-xs mt-1 block ${
                   msg.sender === 'user' ? 'text-blue-200' : 'text-gray-500'

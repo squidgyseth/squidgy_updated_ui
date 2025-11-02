@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { sendToSethAgent } from "../lib/n8nService";
+import LinkDetectingTextArea from "./ui/LinkDetectingTextArea";
 
 interface Message {
   type: 'user' | 'bot';
@@ -297,9 +298,10 @@ export function ChatInterface({
                   ? 'bg-gray-100 rounded-xl p-3 max-w-[80%]' 
                   : 'bg-gray-50 rounded-lg p-3'
               }`}>
-                <p className="text-text-primary text-sm leading-relaxed whitespace-pre-line">
-                  {message.content}
-                </p>
+                <LinkDetectingTextArea 
+                  content={message.content}
+                  className="text-text-primary text-sm leading-relaxed whitespace-pre-line"
+                />
               </div>
               <p className={`text-text-subtle text-xs mt-1 ${
                 message.type === 'user' ? 'text-right' : 'text-left'

@@ -44,12 +44,41 @@ export const maskUrlsInText = (text: string): string => {
 };
 
 /**
+ * Converts markdown-style links to HTML anchor tags
+ * Handles both complete [text](url) and incomplete [text]() formats
+ */
+export const convertMarkdownLinksToHtml = (text: string): string => {
+  if (!text) return text;
+
+  let result = text;
+
+  // First handle complete markdown links [text](url)
+  result = result.replace(
+    /\[([^\]]+)\]\(([^)\s]+)\)/g,
+    (match, linkText, url) => {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">${linkText}</a>`;
+    }
+  );
+
+  // Then handle incomplete markdown links [text]() - just return the text without brackets
+  result = result.replace(
+    /\[([^\]]+)\]\(\s*\)/g,
+    (match, linkText) => {
+      return linkText;
+    }
+  );
+
+  return result;
+};
+
+/**
  * Replaces any storage URLs in text with appropriate clickable link text
  */
 export const maskStorageUrlsInText = (text: string): string => {
   if (!text) return text;
 
-  let maskedText = text;
+  // First, handle markdown-style links
+  let maskedText = convertMarkdownLinksToHtml(text);
   
   // Replace different types of storage URLs with appropriate clickable labels
   // Handle both full URLs (with https://) and partial URLs (without protocol)
@@ -90,7 +119,7 @@ export const maskStorageUrlsInText = (text: string): string => {
     /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/static\/favicons\/[^\s]*)/g,
     (match, urlPart) => {
       const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
-      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Favicon</a>`;
+      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Logo</a>`;
     }
   );
   
