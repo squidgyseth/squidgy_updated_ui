@@ -475,3 +475,93 @@ export const businessDetailsApi = {
   upsert: (data: any, authToken?: string) =>
     supabaseApi.upsert('business_details', data, { onConflict: 'firm_user_id,agent_id', authToken })
 };
+
+// History Newsletters API
+export const newslettersApi = {
+  getById: (id: string, authToken?: string) => 
+    supabaseApi.select('history_newsletters', '*', { id }, { single: true, authToken }),
+  
+  getByUserId: (user_id: string, authToken?: string) => 
+    supabaseApi.select('history_newsletters', '*', { user_id }, { order: 'updated_at.desc', authToken }),
+  
+  getBySessionId: (session_id: string, authToken?: string) => 
+    supabaseApi.select('history_newsletters', '*', { session_id }, { order: 'updated_at.desc', authToken }),
+    
+  getByAgentId: (user_id: string, agent_id: string, authToken?: string) => 
+    supabaseApi.select('history_newsletters', '*', { user_id, agent_id }, { order: 'updated_at.desc', authToken }),
+    
+  getByChatHistoryId: (chat_history_id: string, authToken?: string) => 
+    supabaseApi.select('history_newsletters', '*', { chat_history_id }, { single: true, authToken }),
+  
+  create: (data: any, authToken?: string) =>
+    supabaseApi.insert('history_newsletters', data, { authToken }),
+  
+  updateById: (id: string, updateData: any, authToken?: string) =>
+    supabaseApi.update('history_newsletters', updateData, { id }, { authToken }),
+    
+  deleteById: (id: string, authToken?: string) =>
+    supabaseApi.delete('history_newsletters', { id }, { authToken }),
+    
+  // Get recent newsletters for user
+  getRecent: (user_id: string, limit: number = 10, authToken?: string) => 
+    supabaseApi.select('history_newsletters', '*', { user_id }, { order: 'updated_at.desc', limit, authToken }),
+    
+  // Create newsletter from chat history
+  createFromChatHistory: (data: {
+    user_id: string;
+    session_id?: string;
+    chat_history_id?: string;
+    agent_id?: string;
+    title: string;
+    content: string;
+    call_to_actions?: any[];
+  }, authToken?: string) =>
+    supabaseApi.insert('history_newsletters', {
+      ...data,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }, { authToken }),
+    
+  // Find newsletter by unique combination (avoid duplicates)
+  findByUniqueCombination: async (user_id: string, session_id?: string, chat_history_id?: string, authToken?: string) => {
+    const filters: any = { user_id };
+    if (session_id) filters.session_id = session_id;
+    if (chat_history_id) filters.chat_history_id = chat_history_id;
+    
+    return supabaseApi.select('history_newsletters', '*', filters, { single: true, authToken });
+  },
+  
+  // Update or create (upsert) based on unique combination
+  upsertByChat: async (data: {
+    user_id: string;
+    session_id?: string;
+    chat_history_id?: string;
+    agent_id?: string;
+    title: string;
+    content: string;
+    call_to_actions?: any[];
+  }, authToken?: string) => {
+    // First try to find existing
+    const existing = await newslettersApi.findByUniqueCombination(
+      data.user_id, 
+      data.session_id, 
+      data.chat_history_id, 
+      authToken
+    );
+    
+    if (existing.data && !existing.error) {
+      // Update existing
+      return newslettersApi.updateById(existing.data.id, {
+        ...data,
+        updated_at: new Date().toISOString()
+      }, authToken);
+    } else {
+      // Create new
+      return newslettersApi.create({
+        ...data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, authToken);
+    }
+  }
+};

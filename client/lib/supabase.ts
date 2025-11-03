@@ -60,4 +60,24 @@ export interface ForgotPassword {
   used_at?: string;
 }
 
+export interface CallToAction {
+  id: string;
+  text: string;
+  href: string;
+  type: 'button' | 'link';
+}
+
+export interface Newsletter {
+  id: string;
+  user_id: string;
+  session_id?: string;
+  chat_history_id?: string;
+  agent_id?: string;
+  title: string;
+  content: string;
+  call_to_actions?: CallToAction[];
+  created_at: string;
+  updated_at: string;
+}
+
 export default supabase;

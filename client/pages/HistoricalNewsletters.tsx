@@ -47,17 +47,57 @@ export default function HistoricalNewsletters() {
     setSelectedNewsletter(null);
   };
 
-  const handlePreviewNewsletter = (newsletter: NewsletterHistory) => {
-    // Save to localStorage for preview page
-    localStorage.setItem('newsletterPreview', newsletter.message);
-    window.open('/newsletter-preview', '_blank');
+  const handlePreviewNewsletter = async (newsletter: NewsletterHistory) => {
+    try {
+      // First check if there's a saved version in history_newsletters database
+      const { newslettersApi } = await import('../lib/supabase-api');
+      const { data: savedNewsletter, error } = await newslettersApi.getByChatHistoryId(newsletter.id);
+      
+      let contentToPreview = newsletter.message; // Fallback to original
+      
+      if (savedNewsletter && !error) {
+        // Use the latest saved version
+        console.log('Using latest saved version');
+        contentToPreview = savedNewsletter.content;
+      } else {
+        // Use original content from chat history
+        console.log('Using original content from chat history');
+        contentToPreview = newsletter.message;
+      }
+      
+      // Open in new window for full preview
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write(contentToPreview);
+        newWindow.document.close();
+      }
+    } catch (error) {
+      console.error('Error loading newsletter for preview:', error);
+      // Fallback to original content
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write(newsletter.message);
+        newWindow.document.close();
+      }
+    }
   };
 
   const handleEditNewsletter = (newsletter: NewsletterHistory) => {
-    // Save content to localStorage for editor
+    // Save content to localStorage for editor (fallback)
     localStorage.setItem('newsletterEditorContent', newsletter.message);
-    // Navigate to newsletter editor
-    navigate('/newsletter-editor');
+    
+    // Create URL with chat context parameters for proper linking
+    const params = new URLSearchParams();
+    params.set('chat_history_id', newsletter.id);
+    params.set('session_id', newsletter.session_id);
+    
+    // Only add agent_id if it exists and is not undefined
+    if (newsletter.agent_id && newsletter.agent_id !== 'undefined') {
+      params.set('agent_id', newsletter.agent_id);
+    }
+    
+    // Navigate to newsletter editor with chat context
+    navigate(`/newsletter-editor?${params.toString()}`);
   };
 
   const getPreviewText = (htmlContent: string): string => {
@@ -253,7 +293,7 @@ export default function HistoricalNewsletters() {
                       className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm"
                     >
                       <ExternalLink className="w-3 h-3" />
-                      Preview
+                      Full Preview
                     </button>
                   </div>
                 </div>

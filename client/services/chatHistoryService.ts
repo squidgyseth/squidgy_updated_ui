@@ -30,6 +30,7 @@ export interface ChatSession {
 export interface NewsletterHistory {
   id: string;
   session_id: string;
+  agent_id: string;
   message: string;
   timestamp: string;
   created_at: string;
@@ -366,6 +367,7 @@ export class ChatHistoryService {
       return uniqueNewsletters.map(record => ({
         id: record.id || crypto.randomUUID(),
         session_id: record.session_id,
+        agent_id: record.agent_id,
         message: record.message,
         timestamp: record.timestamp || record.created_at || new Date().toISOString(),
         created_at: record.created_at || new Date().toISOString()
