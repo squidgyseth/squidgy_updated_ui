@@ -492,7 +492,13 @@ export default function NewsletterEditor() {
         if (chatMessage && !chatError) {
           console.log('Found chat message, loading content');
           setCurrentNewsletterId(null); // This will be a new newsletter
-          setNewsletterTitle('Newsletter from Chat');
+          
+          // Generate newsletter title with number and date
+          const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+          const newsletterNumber = Math.floor(Math.random() * 9999) + 1; // Random number 1-9999
+          const generatedTitle = `Newsletter_${newsletterNumber}_${currentDate}`;
+          
+          setNewsletterTitle(generatedTitle);
           setNewsletterContent(chatMessage.message || '');
         } else {
           console.error('Failed to load chat message:', chatError);
