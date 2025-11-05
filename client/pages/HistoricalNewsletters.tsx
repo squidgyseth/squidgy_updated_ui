@@ -15,23 +15,43 @@ export default function HistoricalNewsletters() {
     loadNewsletters();
   }, []);
 
-  const loadNewsletters = () => {
+  const loadNewsletters = async () => {
     try {
-      const storedNewsletters = localStorage.getItem('historicalNewsletters');
-      if (storedNewsletters) {
-        const parsedNewsletters: NewsletterHistory[] = JSON.parse(storedNewsletters);
-        setNewsletters(parsedNewsletters);
-        
-        // Group by date
-        const grouped = ChatHistoryService.groupContentByDate(parsedNewsletters);
-        setGroupedNewsletters(grouped);
-        
-        // Set first date as active tab
-        const dates = Object.keys(grouped).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-        if (dates.length > 0) {
-          setActiveTab(dates[0]);
-        }
+      // Get current user
+      const userId = localStorage.getItem('squidgy_user_id');
+      if (!userId) {
+        console.error('No user ID found in localStorage');
+        setLoading(false);
+        return;
       }
+
+      console.log('📰 Loading newsletters from history_newsletters table for user:', userId);
+      
+      // Load newsletters directly from database
+      const chatService = new ChatHistoryService();
+      console.log('📰 Calling getPreviousNewsletters with userId:', userId);
+      
+      const newsletterData = await chatService.getPreviousNewsletters(userId);
+      
+      console.log('📰 Raw newsletter data received:', newsletterData);
+      console.log('📰 Newsletter data length:', newsletterData.length);
+      
+      setNewsletters(newsletterData);
+      
+      // Group by date
+      const grouped = ChatHistoryService.groupContentByDate(newsletterData);
+      console.log('📰 Grouped newsletters:', grouped);
+      setGroupedNewsletters(grouped);
+      
+      // Set first date as active tab
+      const dates = Object.keys(grouped).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      console.log('📰 Available dates:', dates);
+      if (dates.length > 0) {
+        setActiveTab(dates[0]);
+        console.log('📰 Set active tab to:', dates[0]);
+      }
+      
+      console.log(`✅ Loaded ${newsletterData.length} newsletters from database`);
     } catch (error) {
       console.error('Error loading newsletters:', error);
     } finally {

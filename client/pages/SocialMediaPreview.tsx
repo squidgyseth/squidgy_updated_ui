@@ -4,6 +4,7 @@ import { useCompanyBranding } from '../hooks/useCompanyBranding';
 import { useUser } from '../hooks/useUser';
 import ImageService, { ImageRecord } from '../services/imageService';
 import { AgentConfigService } from '../services/agentConfigService';
+import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, 
@@ -29,6 +30,7 @@ interface SocialPost {
   imagePrompt?: string;
   videoConcept?: string;
   script?: string;
+  historyContentRepurposerId?: string;  // Add this to track the parent record
 }
 
 interface SocialMediaContent {
@@ -90,66 +92,99 @@ export default function SocialMediaPreview() {
   }, [agentId, searchParams, configService]);
 
   useEffect(() => {
-    // Load content from localStorage
-    const storedContent = localStorage.getItem('socialMediaContent');
-    if (storedContent) {
-      try {
-        const rawContent = JSON.parse(storedContent);
-        let socialMediaContent: SocialMediaContent;
+    console.log('🔄 SocialMediaPreview useEffect triggered:', { userId, searchParamsChanged: !!searchParams.get('session_id') });
+    loadSocialContent();
+  }, [userId, searchParams]);
 
-        // Handle different content structures
-        if (Array.isArray(rawContent)) {
-          // Check if first element has ContentRepurposerPosts
-          if (rawContent[0] && rawContent[0].ContentRepurposerPosts) {
-            socialMediaContent = rawContent[0].ContentRepurposerPosts;
-          } else {
-            socialMediaContent = rawContent[0] || {};
-          }
-        } else if (rawContent && typeof rawContent === 'object') {
-          // Check for ContentRepurposerPosts wrapper
-          if (rawContent.ContentRepurposerPosts) {
-            socialMediaContent = rawContent.ContentRepurposerPosts;
-          } else if (rawContent.LinkedIn || rawContent.InstagramFacebook || rawContent.TikTokReels) {
-            // Direct social media content
-            socialMediaContent = rawContent;
-          } else {
-            // Look for social media content in nested objects
-            socialMediaContent = {};
-            for (const [key, value] of Object.entries(rawContent)) {
-              if (value && typeof value === 'object' && !Array.isArray(value)) {
-                if (value.LinkedIn || value.InstagramFacebook || value.TikTokReels) {
-                  socialMediaContent = value;
-                  break;
-                }
-              }
-              // Also check if the current object has social media keys
-              if (['LinkedIn', 'InstagramFacebook', 'TikTokReels', 'GeneralAssets'].includes(key)) {
-                socialMediaContent[key] = value;
-              }
-            }
-          }
-        } else {
-          socialMediaContent = {};
-        }
-
-        console.log('Parsed social media content:', socialMediaContent);
-        const parsedPosts = parseSocialMediaContent(socialMediaContent);
-        console.log('Generated posts:', parsedPosts);
-        setPosts(parsedPosts);
-        
-        // Set the first platform with posts as active tab
-        const platforms = [...new Set(parsedPosts.map(post => post.platform))];
-        if (platforms.length > 0) {
-          setActiveTab(platforms[0]);
-        }
-        
-        // Load existing images for all posts
-        loadPostImages(parsedPosts);
-      } catch (error) {
-        console.error('Error parsing social media content:', error);
-      }
+  const loadSocialContent = async () => {
+    if (!userId) {
+      console.log('❌ SocialMediaPreview: No userId available');
+      return;
     }
-  }, []);
+
+    try {
+      // Get session_id from URL params if available
+      const sessionId = searchParams.get('session_id');
+      
+      console.log('🔍 SocialMediaPreview: Loading social content from database');
+      console.log('🔍 SocialMediaPreview: userId:', userId);
+      console.log('🔍 SocialMediaPreview: sessionId:', sessionId);
+      console.log('🔍 SocialMediaPreview: localStorage squidgy_user_id:', localStorage.getItem('squidgy_user_id'));
+      
+      // Build query to load from content_repurposer_images table
+      let query = supabase
+        .from('content_repurposer_images')
+        .select(`
+          *,
+          history_content_repurposer:history_content_repurposer_id (
+            title,
+            content,
+            session_id
+          )
+        `)
+        .eq('user_id', userId);
+
+      // Filter by session if provided
+      if (sessionId) {
+        query = query.eq('session_id', sessionId);
+      }
+
+      const { data, error } = await query.order('created_date', { ascending: false });
+
+      if (error) {
+        console.error('Error loading social content from database:', error);
+        return;
+      }
+
+      console.log('📱 SocialMediaPreview: Raw social content from database:', data);
+      console.log('📱 SocialMediaPreview: First record fields:', Object.keys(data[0] || {}));
+      console.log('📱 SocialMediaPreview: First record data:', data[0]);
+      console.log('📱 SocialMediaPreview: Query executed:', {
+        table: 'content_repurposer_images',
+        userId: userId,
+        sessionId: sessionId || 'all sessions',
+        resultCount: data?.length || 0
+      });
+
+      if (!data || data.length === 0) {
+        console.log('❌ SocialMediaPreview: No social content found in database');
+        console.log('❌ SocialMediaPreview: This means either:');
+        console.log('   1. No posts exist for this user/session combination');
+        console.log('   2. The query filters are too restrictive');
+        console.log('   3. The data was not properly migrated');
+        setPosts([]);
+        return;
+      }
+
+      // Convert database records to SocialPost format
+      const parsedPosts: SocialPost[] = data.map((record, index) => ({
+        id: record.post_id || `${record.platform}-${record.id}`,  // Use existing post_id if available
+        platform: record.platform.charAt(0).toUpperCase() + record.platform.slice(1), // Capitalize first letter
+        type: 'post',
+        caption: record.content || '',  // Use 'content' field from database
+        imagePrompt: record.prompt || '',  // Use 'prompt' field from database
+        historyContentRepurposerId: record.history_content_repurposer_id || record.history_content_repurposer?.id
+      }));
+
+      console.log('📱 Converted posts:', parsedPosts);
+      console.log('📱 Sample post structure:', parsedPosts[0]);
+      console.log('📱 Platforms found:', [...new Set(parsedPosts.map(post => post.platform))]);
+      
+      setPosts(parsedPosts);
+      
+      // Set the first platform with posts as active tab
+      const platforms = [...new Set(parsedPosts.map(post => post.platform))];
+      console.log('📱 Setting active tab to:', platforms[0]);
+      if (platforms.length > 0) {
+        setActiveTab(platforms[0]);
+      }
+      
+      // Load existing images for all posts
+      loadPostImages(parsedPosts);
+    } catch (error) {
+      console.error('Error loading social content:', error);
+    }
+  };
 
   const parseSocialMediaContent = (content: SocialMediaContent): SocialPost[] => {
     const posts: SocialPost[] = [];
@@ -272,6 +307,9 @@ export default function SocialMediaPreview() {
     setGeneratingImage(true);
     
     try {
+      // Get session_id from URL params
+      const sessionId = searchParams.get('session_id');
+      
       // Generate and save image using existing prompt
       const imageRecord = await imageService.generateAndSaveImage(
         post.imagePrompt,
@@ -281,7 +319,9 @@ export default function SocialMediaPreview() {
         post.id,
         post.caption,
         'auto',
-        agentConfig?.n8n?.image_generator_url
+        agentConfig?.n8n?.image_generator_url,
+        sessionId, // Pass session_id to link properly
+        post.historyContentRepurposerId // Pass history_content_repurposer_id
       );
 
       // Update local state
@@ -324,6 +364,9 @@ export default function SocialMediaPreview() {
         const post = posts.find(p => p.id === postId);
         if (!post) return;
 
+        // Get session_id from URL params
+        const sessionId = searchParams.get('session_id');
+        
         // Upload and save image
         const imageRecord = await imageService.uploadAndSaveImage(
           file,
@@ -331,7 +374,9 @@ export default function SocialMediaPreview() {
           agentId,
           post.platform,
           post.id,
-          post.caption
+          post.caption,
+          sessionId, // Pass session_id to link properly
+          post.historyContentRepurposerId // Pass history_content_repurposer_id
         );
 
         // Update local state
@@ -393,6 +438,9 @@ export default function SocialMediaPreview() {
       const post = posts.find(p => p.id === currentPostId);
       if (!post) return;
 
+      // Get session_id from URL params
+      const sessionId = searchParams.get('session_id');
+      
       // Generate and save image
       const imageRecord = await imageService.generateAndSaveImage(
         customPrompt,
@@ -402,7 +450,9 @@ export default function SocialMediaPreview() {
         post.id,
         post.caption,
         'custom',
-        agentConfig?.n8n?.image_generator_url
+        agentConfig?.n8n?.image_generator_url,
+        sessionId, // Pass session_id to link properly
+        post.historyContentRepurposerId // Pass history_content_repurposer_id
       );
 
       // Update local state
@@ -484,6 +534,14 @@ export default function SocialMediaPreview() {
 
   const platforms = Object.keys(groupedPosts);
   const activePosts = groupedPosts[activeTab] || [];
+
+  console.log('🎯 Render debug:', {
+    postsLength: posts.length,
+    platforms: platforms,
+    activeTab: activeTab,
+    activePostsLength: activePosts.length,
+    groupedPosts: groupedPosts
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">

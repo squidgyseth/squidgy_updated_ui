@@ -69,20 +69,14 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
   const handleNewsletterClick = () => {
     if (newsletters.length === 0) return;
     
-    // Store newsletters in localStorage for the historical page
-    localStorage.setItem('historicalNewsletters', JSON.stringify(newsletters));
-    
-    // Open in new tab
+    // No need to store in localStorage anymore - historical page loads directly from database
     window.open('/historical-newsletters', '_blank');
   };
 
   const handleSocialContentClick = () => {
     if (socialContent.length === 0) return;
     
-    // Store social content in localStorage for the historical page
-    localStorage.setItem('historicalSocialContent', JSON.stringify(socialContent));
-    
-    // Open in new tab
+    // No need to store in localStorage anymore - historical page loads directly from database  
     window.open('/historical-social-posts', '_blank');
   };
 

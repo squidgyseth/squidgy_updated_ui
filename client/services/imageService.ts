@@ -330,7 +330,9 @@ class ImageService {
     postId: string,
     content?: string,
     generationType: 'custom' | 'auto' = 'custom',
-    imageGeneratorUrl?: string
+    imageGeneratorUrl?: string,
+    sessionId?: string,
+    historyContentRepurposerId?: string
   ): Promise<ImageRecord> {
     try {
       // 1. Generate image
@@ -349,7 +351,9 @@ class ImageService {
         content,
         image_url: imageUrl,
         prompt,
-        generation_type: generationType
+        generation_type: generationType,
+        session_id: sessionId,
+        history_content_repurposer_id: historyContentRepurposerId
       });
 
       return imageRecord;
@@ -368,7 +372,9 @@ class ImageService {
     agentId: string,
     platform: string,
     postId: string,
-    content?: string
+    content?: string,
+    sessionId?: string,
+    historyContentRepurposerId?: string
   ): Promise<ImageRecord> {
     try {
       // 1. Upload file to storage
@@ -382,7 +388,9 @@ class ImageService {
         post_id: postId,
         content,
         image_url: imageUrl,
-        generation_type: 'upload'
+        generation_type: 'upload',
+        session_id: sessionId,
+        history_content_repurposer_id: historyContentRepurposerId
       });
 
       return imageRecord;

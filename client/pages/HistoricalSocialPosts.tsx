@@ -36,23 +36,35 @@ export default function HistoricalSocialPosts() {
     loadSocialContent();
   }, []);
 
-  const loadSocialContent = () => {
+  const loadSocialContent = async () => {
     try {
-      const storedContent = localStorage.getItem('historicalSocialContent');
-      if (storedContent) {
-        const parsedContent: SocialContentHistory[] = JSON.parse(storedContent);
-        setSocialContent(parsedContent);
-        
-        // Group by date
-        const grouped = ChatHistoryService.groupContentByDate(parsedContent);
-        setGroupedContent(grouped);
-        
-        // Set first date as active tab
-        const dates = Object.keys(grouped).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-        if (dates.length > 0) {
-          setActiveTab(dates[0]);
-        }
+      // Get current user
+      const userId = localStorage.getItem('squidgy_user_id');
+      if (!userId) {
+        console.error('No user ID found in localStorage');
+        setLoading(false);
+        return;
       }
+
+      console.log('📱 Loading social content from content_repurposer_images table for user:', userId);
+      
+      // Load social content directly from database
+      const chatService = new ChatHistoryService();
+      const socialData = await chatService.getPreviousSocialContent(userId);
+      
+      setSocialContent(socialData);
+      
+      // Group by date
+      const grouped = ChatHistoryService.groupContentByDate(socialData);
+      setGroupedContent(grouped);
+      
+      // Set first date as active tab
+      const dates = Object.keys(grouped).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      if (dates.length > 0) {
+        setActiveTab(dates[0]);
+      }
+      
+      console.log(`✅ Loaded ${socialData.length} social content sessions from database`);
     } catch (error) {
       console.error('Error loading social content:', error);
     } finally {
@@ -133,9 +145,10 @@ export default function HistoricalSocialPosts() {
   };
 
   const handlePreviewContent = (content: SocialContentHistory) => {
-    // Save to localStorage for preview page
-    localStorage.setItem('socialMediaContent', content.message);
-    window.open('/social-preview', '_blank');
+    // Open preview page with session_id parameter
+    const params = new URLSearchParams();
+    params.set('session_id', content.session_id);
+    window.open(`/social-preview?${params.toString()}`, '_blank');
   };
 
   const getPlatformColor = (platform: string) => {

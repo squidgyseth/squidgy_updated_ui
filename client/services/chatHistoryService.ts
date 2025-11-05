@@ -383,46 +383,36 @@ export class ChatHistoryService {
    */
   async getPreviousNewsletters(userId: string): Promise<NewsletterHistory[]> {
     try {
-      console.log('🔍 QUERY: Fetching newsletters for user:', userId);
+      console.log('🔍 QUERY: Fetching newsletters from history_newsletters for user:', userId);
+      console.log('🔍 User ID type:', typeof userId);
       
-      // Get newsletters with optimized query - filter for HTML content
+      // Get newsletters from dedicated history_newsletters table
       const { data, error } = await supabase
-        .from('chat_history')
+        .from('history_newsletters')
         .select('*')
         .eq('user_id', userId)
-        .eq('agent_id', 'newsletter')
-        .eq('sender', 'Agent')
-        .like('message', '%<!DOCTYPE html>%')
-        .order('timestamp', { ascending: false });
+        .order('updated_at', { ascending: false })
+        .limit(50);
 
-      console.log('📰 QUERY RESULT: newsletters raw data count:', data?.length || 0);
+      console.log('📰 QUERY RESULT: newsletters from history_newsletters count:', data?.length || 0);
+      console.log('📰 QUERY ERROR:', error);
+      console.log('📰 QUERY DATA:', data);
 
       if (error) {
-        console.error('Error fetching newsletter history:', error);
+        console.error('Error fetching newsletter history from history_newsletters:', error);
         return [];
       }
 
-      // Deduplicate by created_date + message_hash - keep only the most recent for each unique combination
-      const seenCombinations = new Set<string>();
-      const uniqueNewsletters = (data || []).filter(record => {
-        const createdDate = record.created_at ? new Date(record.created_at).toISOString().split('T')[0] : 'unknown';
-        const messageHash = record.message_hash || 'no-hash';
-        const combinationKey = `${createdDate}_${messageHash}`;
-        
-        if (seenCombinations.has(combinationKey)) {
-          return false;
-        }
-        seenCombinations.add(combinationKey);
-        return true;
-      });
-
-      return uniqueNewsletters.map(record => ({
-        id: record.id || crypto.randomUUID(),
+      // Map to NewsletterHistory format
+      return (data || []).map(record => ({
+        id: record.chat_history_id || record.id, // Use chat_history_id for compatibility with existing code
         session_id: record.session_id,
-        agent_id: record.agent_id,
-        message: record.message,
-        timestamp: record.timestamp || record.created_at || new Date().toISOString(),
-        created_at: record.created_at || new Date().toISOString()
+        agent_id: record.agent_id || 'newsletter',
+        message: record.content, // Use content field instead of message
+        timestamp: record.updated_at,
+        created_at: record.created_at,
+        title: record.title, // Additional field from history table
+        call_to_actions: record.call_to_actions // Additional field from history table
       }));
     } catch (error) {
       console.error('Error getting previous newsletters:', error);
@@ -431,54 +421,82 @@ export class ChatHistoryService {
   }
 
   /**
-   * Get previous social media content (JSON content)
+   * Get previous social media content from content_repurposer_images table
    */
   async getPreviousSocialContent(userId: string): Promise<SocialContentHistory[]> {
     try {
-      console.log('🔍 QUERY: Fetching social content for user:', userId);
+      console.log('🔍 QUERY: Fetching social content from content_repurposer_images for user:', userId);
       
-      // Get social media content with optimized query - filter for JSON content
+      // Get social media content from content_repurposer_images table grouped by session
+      // Only get records that have a valid session_id (exclude orphaned records)
       const { data, error } = await supabase
-        .from('chat_history')
-        .select('*')
+        .from('content_repurposer_images')
+        .select(`
+          *,
+          history_content_repurposer:history_content_repurposer_id (
+            title,
+            content,
+            created_at,
+            session_id,
+            chat_history_id
+          )
+        `)
         .eq('user_id', userId)
-        .eq('agent_id', 'content_repurposer')
-        .eq('sender', 'Agent')
-        .like('message', '%Post1%')
-        .order('timestamp', { ascending: false });
+        .not('session_id', 'is', null)  // Exclude records with null session_id
+        .order('created_date', { ascending: false })
+        .limit(100);
 
-      console.log('📱 QUERY RESULT: social content raw data count:', data?.length || 0);
+      console.log('📱 QUERY RESULT: social content from content_repurposer_images count:', data?.length || 0);
 
       if (error) {
-        console.error('Error fetching social content history:', error);
+        console.error('Error fetching social content from content_repurposer_images:', error);
         return [];
       }
 
-      // Deduplicate by created_date + message_hash - keep only the most recent for each unique combination
-      const seenCombinations = new Set<string>();
-      const uniqueSocialContent = (data || []).filter(record => {
-        const createdDate = record.created_at ? new Date(record.created_at).toISOString().split('T')[0] : 'unknown';
-        const messageHash = record.message_hash || 'no-hash';
-        const combinationKey = `${createdDate}_${messageHash}`;
+      // Get the most recent record for each session_id based on created_date
+      const sessionGroups = new Map<string, any>();
+      
+      (data || []).forEach(record => {
+        const sessionId = record.session_id || 'unknown';
+        const existing = sessionGroups.get(sessionId);
         
-        if (seenCombinations.has(combinationKey)) {
-          return false;
+        // Only keep the record with the latest created_date for each session
+        if (!existing || new Date(record.created_date) > new Date(existing.created_date)) {
+          const historyData = record.history_content_repurposer;
+          
+          sessionGroups.set(sessionId, {
+            id: historyData?.chat_history_id || record.id,
+            session_id: sessionId,
+            message: this.createSocialContentSummary(data?.filter(d => d.session_id === sessionId) || []),
+            timestamp: record.created_date,
+            created_at: record.created_date,
+            title: historyData?.title || `Social Content ${sessionId}`,
+            platform_count: data?.filter(d => d.session_id === sessionId).length || 0
+          });
         }
-        seenCombinations.add(combinationKey);
-        return true;
       });
 
-      return uniqueSocialContent.map(record => ({
-        id: record.id || crypto.randomUUID(),
-        session_id: record.session_id,
-        message: record.message,
-        timestamp: record.timestamp || record.created_at || new Date().toISOString(),
-        created_at: record.created_at || new Date().toISOString()
-      }));
+      return Array.from(sessionGroups.values());
     } catch (error) {
       console.error('Error getting previous social content:', error);
       return [];
     }
+  }
+
+  /**
+   * Create a summary of social content for display
+   */
+  private createSocialContentSummary(posts: any[]): string {
+    const platformCounts = posts.reduce((acc, post) => {
+      acc[post.platform] = (acc[post.platform] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const summary = Object.entries(platformCounts)
+      .map(([platform, count]) => `${platform}: ${count} post${(count as number) > 1 ? 's' : ''}`)
+      .join(', ');
+
+    return `Social media content generated: ${summary}`;
   }
 
   /**
@@ -508,12 +526,25 @@ export class ChatHistoryService {
    * Format date for display
    */
   static formatDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    // Handle timezone issues by parsing date components directly
+    if (dateStr.includes('T')) {
+      // Full timestamp - use regular parsing
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } else {
+      // Date-only string - parse as local date to avoid timezone shift
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const date = new Date(year, month - 1, day); // month is 0-indexed
+      return date.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
   }
 
   /**
