@@ -565,3 +565,118 @@ export const newslettersApi = {
     }
   }
 };
+
+// Content Repurposer API
+export const contentRepurposerApi = {
+  // Get content repurposer by ID
+  getById: (id: string, authToken?: string) =>
+    supabaseApi.select('history_content_repurposer', '*', { id }, { single: true, authToken }),
+    
+  // Get all content repurposers for a user
+  getByUserId: (user_id: string, authToken?: string) =>
+    supabaseApi.select('history_content_repurposer', '*', { user_id }, { order: 'updated_at.desc', authToken }),
+    
+  // Get content repurposers by session
+  getBySessionId: (session_id: string, authToken?: string) =>
+    supabaseApi.select('history_content_repurposer', '*', { session_id }, { order: 'updated_at.desc', authToken }),
+    
+  // Get content repurposer by agent ID
+  getByAgentId: (agent_id: string, authToken?: string) =>
+    supabaseApi.select('history_content_repurposer', '*', { agent_id }, { order: 'updated_at.desc', authToken }),
+    
+  // Get content repurposer by chat history ID
+  getByChatHistoryId: (chat_history_id: string, authToken?: string) =>
+    supabaseApi.select('history_content_repurposer', '*', { chat_history_id }, { single: true, authToken }),
+    
+  // Create new content repurposer
+  create: (data: {
+    user_id: string;
+    title: string;
+    content: string;
+    session_id?: string;
+    chat_history_id?: string;
+    agent_id?: string;
+    repurposed_content?: any[];
+    source_type?: string;
+    target_formats?: string[];
+    created_at?: string;
+    updated_at?: string;
+  }, authToken?: string) =>
+    supabaseApi.insert('history_content_repurposer', data, { authToken }),
+    
+  // Update content repurposer
+  updateById: (id: string, updateData: any, authToken?: string) =>
+    supabaseApi.update('history_content_repurposer', updateData, { id }, { authToken }),
+    
+  deleteById: (id: string, authToken?: string) =>
+    supabaseApi.delete('history_content_repurposer', { id }, { authToken }),
+    
+  // Get recent content repurposers for user
+  getRecent: (user_id: string, limit: number = 10, authToken?: string) => 
+    supabaseApi.select('history_content_repurposer', '*', { user_id }, { order: 'updated_at.desc', limit, authToken }),
+    
+  // Create content repurposer from chat history
+  createFromChatHistory: (data: {
+    user_id: string;
+    session_id?: string;
+    chat_history_id?: string;
+    agent_id?: string;
+    title: string;
+    content: string;
+    repurposed_content?: any[];
+    source_type?: string;
+    target_formats?: string[];
+  }, authToken?: string) =>
+    supabaseApi.insert('history_content_repurposer', {
+      ...data,
+      agent_id: data.agent_id || 'content_repurposer',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }, { authToken }),
+    
+  // Find content repurposer by unique combination (avoid duplicates)
+  findByUniqueCombination: async (user_id: string, session_id?: string, chat_history_id?: string, authToken?: string) => {
+    const filters: any = { user_id };
+    if (session_id) filters.session_id = session_id;
+    if (chat_history_id) filters.chat_history_id = chat_history_id;
+    
+    return supabaseApi.select('history_content_repurposer', '*', filters, { single: true, authToken });
+  },
+  
+  // Update or create (upsert) based on unique combination
+  upsertByChat: async (data: {
+    user_id: string;
+    session_id?: string;
+    chat_history_id?: string;
+    agent_id?: string;
+    title: string;
+    content: string;
+    repurposed_content?: any[];
+    source_type?: string;
+    target_formats?: string[];
+  }, authToken?: string) => {
+    // First try to find existing
+    const existing = await contentRepurposerApi.findByUniqueCombination(
+      data.user_id, 
+      data.session_id, 
+      data.chat_history_id, 
+      authToken
+    );
+    
+    if (existing.data && !existing.error) {
+      // Update existing
+      return contentRepurposerApi.updateById(existing.data.id, {
+        ...data,
+        updated_at: new Date().toISOString()
+      }, authToken);
+    } else {
+      // Create new
+      return contentRepurposerApi.create({
+        ...data,
+        agent_id: data.agent_id || 'content_repurposer',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, authToken);
+    }
+  }
+};

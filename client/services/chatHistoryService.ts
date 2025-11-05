@@ -69,10 +69,12 @@ export class ChatHistoryService {
         record.sender
       );
 
+      const chatHistoryId = crypto.randomUUID();
+      
       const { error } = await supabase
         .from('chat_history')
         .insert({
-          id: crypto.randomUUID(),
+          id: chatHistoryId,
           user_id: record.user_id,
           session_id: record.session_id,
           sender: record.sender,
@@ -86,6 +88,56 @@ export class ChatHistoryService {
       if (error) {
         console.error('Error saving chat message:', error);
         return false;
+      }
+
+      // If this is a content_repurposer agent response, save to history_content_repurposer table
+      if (record.agent_id === 'content_repurposer' && record.sender === 'Agent') {
+        try {
+          const { contentRepurposerApi } = await import('../lib/supabase-api');
+          
+          // Generate title with format
+          const currentDate = new Date().toISOString().split('T')[0];
+          const contentNumber = Math.floor(Math.random() * 9999) + 1;
+          const generatedTitle = `ContentRepurpose_${contentNumber}_${currentDate}`;
+          
+          await contentRepurposerApi.upsertByChat({
+            user_id: record.user_id,
+            session_id: record.session_id,
+            chat_history_id: chatHistoryId,
+            agent_id: 'content_repurposer',
+            title: generatedTitle,
+            content: record.message,
+            source_type: 'chat',
+            target_formats: ['twitter', 'linkedin', 'instagram'] // Default formats
+          });
+        } catch (err) {
+          console.error('Error saving to history_content_repurposer:', err);
+          // Don't fail the main save if this fails
+        }
+      }
+
+      // If this is a newsletter agent response, save to history_newsletters table
+      if (record.agent_id === 'newsletter' && record.sender === 'Agent') {
+        try {
+          const { newslettersApi } = await import('../lib/supabase-api');
+          
+          // Generate title with format
+          const currentDate = new Date().toISOString().split('T')[0];
+          const newsletterNumber = Math.floor(Math.random() * 9999) + 1;
+          const generatedTitle = `Newsletter_${newsletterNumber}_${currentDate}`;
+          
+          await newslettersApi.upsertByChat({
+            user_id: record.user_id,
+            session_id: record.session_id,
+            chat_history_id: chatHistoryId,
+            agent_id: 'newsletter',
+            title: generatedTitle,
+            content: record.message
+          });
+        } catch (err) {
+          console.error('Error saving to history_newsletters:', err);
+          // Don't fail the main save if this fails
+        }
       }
 
       return true;

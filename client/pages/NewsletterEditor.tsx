@@ -636,7 +636,7 @@ export default function NewsletterEditor() {
           updated_at: new Date().toISOString(),
           ...(sessionId && { session_id: sessionId }),
           ...(chatHistoryId && { chat_history_id: chatHistoryId }),
-          ...(agentId && { agent_id: agentId })
+          agent_id: agentId || 'newsletter' // Default to 'newsletter' if no agent_id
         };
         
         console.log('Saving newsletter with data:', {

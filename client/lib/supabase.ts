@@ -80,4 +80,20 @@ export interface Newsletter {
   updated_at: string;
 }
 
+export interface ContentRepurposer {
+  id: string;
+  user_id: string;
+  session_id?: string;
+  chat_history_id?: string;
+  agent_id?: string;
+  title: string;
+  content: string;
+  repurposed_content?: any[];
+  source_type?: string;
+  target_formats?: string[];
+  created_at: string;
+  updated_at: string;
+  content_repurposer_questions?: string;
+}
+
 export default supabase;
