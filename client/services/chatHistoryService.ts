@@ -15,6 +15,7 @@ export interface ChatHistoryRecord {
   created_at?: string;
   agent_name: string;
   agent_id: string;
+  agent_status?: string;
   message_hash?: string;
 }
 
@@ -92,51 +93,65 @@ export class ChatHistoryService {
 
       // If this is a content_repurposer agent response, save to history_content_repurposer table
       if (record.agent_id === 'content_repurposer' && record.sender === 'Agent') {
-        try {
-          const { contentRepurposerApi } = await import('../lib/supabase-api');
-          
-          // Generate title with format
-          const currentDate = new Date().toISOString().split('T')[0];
-          const contentNumber = Math.floor(Math.random() * 9999) + 1;
-          const generatedTitle = `ContentRepurpose_${contentNumber}_${currentDate}`;
-          
-          await contentRepurposerApi.upsertByChat({
-            user_id: record.user_id,
-            session_id: record.session_id,
-            chat_history_id: chatHistoryId,
-            agent_id: 'content_repurposer',
-            title: generatedTitle,
-            content: record.message,
-            source_type: 'chat',
-            target_formats: ['twitter', 'linkedin', 'instagram'] // Default formats
-          });
-        } catch (err) {
-          console.error('Error saving to history_content_repurposer:', err);
-          // Don't fail the main save if this fails
+        // For content_repurposer agent, only save if agent_status is 'Ready' (case-insensitive)
+        // If agent_status is undefined/null, skip (could be error or partial response)
+        if (record.agent_status?.toLowerCase() === 'ready') {
+          try {
+            const { contentRepurposerApi } = await import('../lib/supabase-api');
+            
+            // Generate title with format
+            const currentDate = new Date().toISOString().split('T')[0];
+            const contentNumber = Math.floor(Math.random() * 9999) + 1;
+            const generatedTitle = `ContentRepurpose_${contentNumber}_${currentDate}`;
+            
+            console.log('✅ Saving content repurposer with Ready status to history_content_repurposer');
+            await contentRepurposerApi.upsertByChat({
+              user_id: record.user_id,
+              session_id: record.session_id,
+              chat_history_id: chatHistoryId,
+              agent_id: 'content_repurposer',
+              title: generatedTitle,
+              content: record.message,
+              source_type: 'chat',
+              target_formats: ['twitter', 'linkedin', 'instagram'] // Default formats
+            });
+          } catch (err) {
+            console.error('Error saving to history_content_repurposer:', err);
+            // Don't fail the main save if this fails
+          }
+        } else {
+          console.log(`⚠️ Skipping content repurposer save - agent_status: ${record.agent_status || 'undefined'}`);
         }
       }
 
       // If this is a newsletter agent response, save to history_newsletters table
       if (record.agent_id === 'newsletter' && record.sender === 'Agent') {
-        try {
-          const { newslettersApi } = await import('../lib/supabase-api');
-          
-          // Generate title with format
-          const currentDate = new Date().toISOString().split('T')[0];
-          const newsletterNumber = Math.floor(Math.random() * 9999) + 1;
-          const generatedTitle = `Newsletter_${newsletterNumber}_${currentDate}`;
-          
-          await newslettersApi.upsertByChat({
-            user_id: record.user_id,
-            session_id: record.session_id,
-            chat_history_id: chatHistoryId,
-            agent_id: 'newsletter',
-            title: generatedTitle,
-            content: record.message
-          });
-        } catch (err) {
-          console.error('Error saving to history_newsletters:', err);
-          // Don't fail the main save if this fails
+        // For newsletter agent, only save if agent_status is 'Ready' (case-insensitive)
+        // If agent_status is undefined/null, skip (could be error or partial response)
+        if (record.agent_status?.toLowerCase() === 'ready') {
+          try {
+            const { newslettersApi } = await import('../lib/supabase-api');
+            
+            // Generate title with format
+            const currentDate = new Date().toISOString().split('T')[0];
+            const newsletterNumber = Math.floor(Math.random() * 9999) + 1;
+            const generatedTitle = `Newsletter_${newsletterNumber}_${currentDate}`;
+            
+            console.log('✅ Saving newsletter with Ready status to history_newsletters');
+            await newslettersApi.upsertByChat({
+              user_id: record.user_id,
+              session_id: record.session_id,
+              chat_history_id: chatHistoryId,
+              agent_id: 'newsletter',
+              title: generatedTitle,
+              content: record.message
+            });
+          } catch (err) {
+            console.error('Error saving to history_newsletters:', err);
+            // Don't fail the main save if this fails
+          }
+        } else {
+          console.log(`⚠️ Skipping newsletter save - agent_status: ${record.agent_status || 'undefined'}`);
         }
       }
 

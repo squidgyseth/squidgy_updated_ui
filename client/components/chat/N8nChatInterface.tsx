@@ -62,7 +62,8 @@ export default function N8nChatInterface({
   const saveMessageToHistory = async (
     message: string,
     sender: 'User' | 'Agent',
-    timestamp?: Date
+    timestamp?: Date,
+    agentStatus?: string
   ) => {
     try {
       await chatHistoryService.saveMessage({
@@ -72,7 +73,8 @@ export default function N8nChatInterface({
         message,
         timestamp: (timestamp || new Date()).toISOString(),
         agent_name: agent.name,
-        agent_id: agent.id
+        agent_id: agent.id,
+        agent_status: agentStatus
       });
     } catch (error) {
       console.error('Error saving message to history:', error);
@@ -135,7 +137,8 @@ export default function N8nChatInterface({
         await saveMessageToHistory(
           response.agent_response, 
           'Agent', 
-          new Date(response.timestamp_of_call_made)
+          new Date(response.timestamp_of_call_made),
+          response.agent_status  // Pass agent_status
         );
       } else {
         // Handle error case
