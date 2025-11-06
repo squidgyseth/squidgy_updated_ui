@@ -9,6 +9,7 @@ import { FileUploadService } from '../../services/fileUploadService';
 import { supabase } from '../../lib/supabase';
 import { createProxyUrl } from '../../utils/urlMasking';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
+import NewsletterSelector from './NewsletterSelector';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -37,6 +38,8 @@ export default function N8nChatInterface({
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(initialSessionId || generateSessionId(userId, agent.id));
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, { name: string; status: string }>>(new Map());
+  const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null);
+  const [showNewsletterSelector, setShowNewsletterSelector] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatHistoryService = ChatHistoryService.getInstance();
   const fileUploadService = FileUploadService.getInstance();
@@ -46,7 +49,7 @@ export default function N8nChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Add intro message on mount
+  // Add intro message on mount and show newsletter selector for content_repurposer
   useEffect(() => {
     if (agent.introMessage) {
       setMessages([{
@@ -56,7 +59,12 @@ export default function N8nChatInterface({
         timestamp: new Date()
       }]);
     }
-  }, [agent.introMessage]);
+    
+    // Show newsletter selector for content_repurposer agent
+    if (agent.id === 'content_repurposer') {
+      setShowNewsletterSelector(true);
+    }
+  }, [agent.introMessage, agent.id]);
 
   // Helper function to save messages to database
   const saveMessageToHistory = async (
@@ -111,14 +119,15 @@ export default function N8nChatInterface({
     await saveMessageToHistory(messageContent, 'User', userMessage.timestamp);
 
     try {
-      // Send to n8n workflow with agent-specific webhook URL
+      // Send to n8n workflow with agent-specific webhook URL and newsletter_id if applicable
       const response = await sendToN8nWorkflow(
         userId,
         messageContent, // Send the full message content including file info
         agent.id,
         sessionId,
         userMessage.id,
-        webhookUrl // Pass the webhook URL from agent config
+        webhookUrl, // Pass the webhook URL from agent config
+        agent.id === 'content_repurposer' ? selectedNewsletterId || undefined : undefined // Include newsletter_id for content_repurposer
       );
 
       if (response) {
@@ -411,6 +420,21 @@ export default function N8nChatInterface({
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
+      {/* Newsletter Selector for content_repurposer agent */}
+      {showNewsletterSelector && agent.id === 'content_repurposer' && (
+        <div className="p-4 border-b">
+          <NewsletterSelector
+            onNewsletterSelect={(newsletterId) => {
+              setSelectedNewsletterId(newsletterId);
+              if (newsletterId) {
+                console.log('Newsletter selected:', newsletterId);
+              }
+            }}
+            selectedNewsletterId={selectedNewsletterId}
+          />
+        </div>
+      )}
+      
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message, index) => (

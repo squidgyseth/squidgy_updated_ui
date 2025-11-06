@@ -13,7 +13,7 @@ export interface ImageRecord {
   platform: string;
   post_id: string;
   content?: string;
-  image_url: string;
+  image_url: string | null; // Can be null when image is deleted but record preserved
   prompt?: string;
   generation_type: 'custom' | 'auto' | 'upload';
   created_date?: string;
@@ -249,7 +249,7 @@ class ImageService {
   }
 
   /**
-   * Get images for a specific post
+   * Get images for a specific post - only returns records with valid image URLs
    */
   async getPostImages(
     userId: string,
@@ -263,6 +263,7 @@ class ImageService {
         .eq('user_id', userId)
         .eq('agent_id', agentId)
         .eq('post_id', postId)
+        .not('image_url', 'is', null) // Only get records with valid image URLs
         .order('created_date', { ascending: true });
 
       if (error) {
@@ -277,7 +278,7 @@ class ImageService {
   }
 
   /**
-   * Delete image
+   * Delete image - removes file from storage and sets image_url to NULL, preserving the record
    */
   async deleteImage(imageId: string, userId: string): Promise<void> {
     try {
@@ -293,26 +294,38 @@ class ImageService {
         throw fetchError;
       }
 
-      // Delete from storage
+      // Delete from storage bucket
       if (imageRecord?.image_url) {
         const urlParts = imageRecord.image_url.split('/');
         const fileName = urlParts.slice(-2).join('/'); // Get last two parts: userId/filename
         
-        await supabase.storage
+        console.log('🗑️ Deleting image from storage:', fileName);
+        
+        const { error: storageError } = await supabase.storage
           .from('content_repurposer')
           .remove([fileName]);
+          
+        if (storageError) {
+          console.error('Storage deletion error:', storageError);
+          // Continue with database update even if storage deletion fails
+        }
       }
 
-      // Delete from database
+      // Update database record to set image_url to NULL (preserve the row and metadata)
       const { error } = await supabase
         .from('content_repurposer_images')
-        .delete()
+        .update({ 
+          image_url: null,
+          updated_date: new Date().toISOString()
+        })
         .eq('id', imageId)
         .eq('user_id', userId);
 
       if (error) {
         throw error;
       }
+      
+      console.log('✅ Image deleted from storage, database record preserved with image_url set to NULL');
     } catch (error) {
       console.error('Error deleting image:', error);
       throw error;

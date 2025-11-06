@@ -13,6 +13,7 @@ export interface N8nRequest {
   agent_name: string;
   timestamp_of_call_made: string;
   request_id: string;
+  newsletter_id?: string; // Optional newsletter ID for content_repurposer agent
 }
 
 /**

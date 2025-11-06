@@ -31,6 +31,8 @@ interface SocialPost {
   videoConcept?: string;
   script?: string;
   historyContentRepurposerId?: string;  // Add this to track the parent record
+  originalPostId?: string; // Original post_id from database
+  databaseRecordId?: string; // Database record ID for reference
 }
 
 interface SocialMediaContent {
@@ -158,12 +160,14 @@ export default function SocialMediaPreview() {
 
       // Convert database records to SocialPost format
       const parsedPosts: SocialPost[] = data.map((record, index) => ({
-        id: record.post_id || `${record.platform}-${record.id}`,  // Use existing post_id if available
+        id: record.post_id ? `${record.post_id}-${record.id}` : `${record.platform}-${record.id}`,  // Ensure unique keys by combining post_id with record.id
         platform: record.platform.charAt(0).toUpperCase() + record.platform.slice(1), // Capitalize first letter
         type: 'post',
         caption: record.content || '',  // Use 'content' field from database
         imagePrompt: record.prompt || '',  // Use 'prompt' field from database
-        historyContentRepurposerId: record.history_content_repurposer_id || record.history_content_repurposer?.id
+        historyContentRepurposerId: record.history_content_repurposer_id || record.history_content_repurposer?.id,
+        originalPostId: record.post_id, // Keep original post_id for reference
+        databaseRecordId: record.id // Keep database record ID for reference
       }));
 
       console.log('📱 Converted posts:', parsedPosts);
@@ -373,7 +377,7 @@ export default function SocialMediaPreview() {
           userId,
           agentId,
           post.platform,
-          post.id,
+          post.originalPostId || post.id, // Use originalPostId for database operations
           post.caption,
           sessionId, // Pass session_id to link properly
           post.historyContentRepurposerId // Pass history_content_repurposer_id
@@ -418,9 +422,9 @@ export default function SocialMediaPreview() {
         const images = await imageService.getPostImages(
           userId,
           agentId,
-          post.id
+          post.originalPostId || post.id // Use originalPostId for database queries
         );
-        imagesMap[post.id] = images;
+        imagesMap[post.id] = images; // Still use composite ID for React state
       }
       
       setPostImages(imagesMap);
@@ -447,7 +451,7 @@ export default function SocialMediaPreview() {
         userId,
         agentId,
         post.platform,
-        post.id,
+        post.originalPostId || post.id, // Use originalPostId for database operations
         post.caption,
         'custom',
         agentConfig?.n8n?.image_generator_url,
@@ -674,8 +678,8 @@ export default function SocialMediaPreview() {
                                         ...prev,
                                         [post.id]: prev[post.id].filter(img => img.id !== image.id)
                                       }));
-                                      toast.success('🗑️ Image deleted successfully!', {
-                                        description: `Image removed from ${post.platform} post`
+                                      toast.success('🗑️ Image removed successfully!', {
+                                        description: `Image file deleted, record preserved with metadata`
                                       });
                                     }).catch((error) => {
                                       console.error(error);
