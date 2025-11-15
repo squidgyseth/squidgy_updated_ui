@@ -62,6 +62,7 @@ export interface AssistantOption {
   isRecommended?: boolean;
   isPopular?: boolean;
   keyCapabilities: AssistantCapability[];
+  agentConfig?: string | null; // Link to actual agent config file
 }
 
 export interface AssistantPersonalization {

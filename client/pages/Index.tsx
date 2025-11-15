@@ -45,13 +45,10 @@ export default function Index() {
           {/* Close Button */}
           <button
             onClick={() => {
-              // Check if user has completed onboarding
-              const onboardingCompleted = localStorage.getItem('onboarding_completed');
-              if (onboardingCompleted === 'true') {
-                navigate('/dashboard');
-              } else {
-                navigate('/ai-onboarding/business-type');
-              }
+              // FOR TESTING: Always force onboarding flow
+              localStorage.removeItem('onboarding_completed');
+              localStorage.removeItem('onboarding_state');
+              navigate('/ai-onboarding/business-type');
             }}
             className="absolute top-4 right-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"
           >
@@ -86,13 +83,10 @@ export default function Index() {
             {/* Primary Gradient Button */}
             <button 
               onClick={() => {
-                // For new users, start onboarding instead of going directly to website-details
-                const onboardingCompleted = localStorage.getItem('onboarding_completed');
-                if (onboardingCompleted === 'true') {
-                  navigate('/website-details');
-                } else {
-                  navigate('/ai-onboarding/business-type');
-                }
+                // FOR TESTING: Always force onboarding flow
+                localStorage.removeItem('onboarding_completed');
+                localStorage.removeItem('onboarding_state');
+                navigate('/ai-onboarding/business-type');
               }}
               className="w-full py-3 px-5 bg-squidgy-gradient text-white font-bold text-[15px] leading-6 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
             >
@@ -102,13 +96,10 @@ export default function Index() {
             {/* Secondary Button */}
             <button 
               onClick={() => {
-                // Check if user has completed onboarding
-                const onboardingCompleted = localStorage.getItem('onboarding_completed');
-                if (onboardingCompleted === 'true') {
-                  navigate('/dashboard');
-                } else {
-                  navigate('/ai-onboarding/business-type');
-                }
+                // FOR TESTING: Always force onboarding flow
+                localStorage.removeItem('onboarding_completed');
+                localStorage.removeItem('onboarding_state');
+                navigate('/ai-onboarding/business-type');
               }}
               className="w-full py-3 px-5 text-squidgy-primary font-bold text-[15px] leading-6 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
             >

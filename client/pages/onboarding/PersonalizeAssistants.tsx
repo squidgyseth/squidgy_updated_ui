@@ -12,73 +12,113 @@ import {
   CommunicationTone 
 } from '@/types/onboarding.types';
 import { toast } from 'sonner';
+import BusinessFlowLoader, { AgentConfig } from '@/services/businessFlowLoader';
 
-// Mock assistant data - in a real app this would come from the previous step
-const mockSelectedAssistants = [
-  { id: 'onboarding_specialist', name: 'Onboarding Specialist', icon: '🎯', iconColor: '#28A745' },
-  { id: 'proposal_writer', name: 'Proposal Writer', icon: '📄', iconColor: '#28A745' },
-  { id: 'crm_assistant', name: 'CRM Assistant', icon: '📊', iconColor: '#6017E8' },
-  { id: 'social_media_manager', name: 'Social Media Manager', icon: '📱', iconColor: '#FB252A' },
-  { id: 'content_strategist', name: 'Content Strategist', icon: '✍️', iconColor: '#6017E8' }
-];
-
-const avatarStyleOptions: { value: AvatarStyle; label: string; description: string }[] = [
-  { value: 'professional', label: 'Professional', description: 'Formal business style' },
-  { value: 'friendly', label: 'Friendly', description: 'Approachable and warm' },
-  { value: 'corporate', label: 'Corporate', description: 'Traditional corporate style' },
-  { value: 'creative', label: 'Creative', description: 'Modern and innovative' }
-];
-
-const communicationToneOptions: { value: CommunicationTone; label: string; description: string }[] = [
-  { value: 'professional', label: 'Professional', description: 'Formal and business-focused' },
-  { value: 'friendly', label: 'Friendly', description: 'Warm and approachable' },
-  { value: 'casual', label: 'Casual', description: 'Relaxed and conversational' },
-  { value: 'formal', label: 'Formal', description: 'Traditional and structured' }
-];
+interface SelectedAssistant {
+  id: string;
+  name: string;
+  icon: string;
+  iconColor: string;
+  agentConfig?: string | null;
+}
 
 export default function PersonalizeAssistants() {
   const navigate = useNavigate();
   const [personalizations, setPersonalizations] = useState<AssistantPersonalization[]>([]);
-  const [selectedAssistants, setSelectedAssistants] = useState<typeof mockSelectedAssistants>([]);
-
-  const progress: OnboardingProgress = {
+  const [selectedAssistants, setSelectedAssistants] = useState<SelectedAssistant[]>([]);
+  const [avatarStyleOptions, setAvatarStyleOptions] = useState<Array<{ value: string; label: string; description: string }>>([]);
+  const [communicationToneOptions, setCommunicationToneOptions] = useState<Array<{ value: string; label: string; description: string }>>([]);
+  const [progress, setProgress] = useState<OnboardingProgress>({
     currentStep: 4,
     totalSteps: 6,
     stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Personalize', 'Company Details', 'Welcome']
-  };
+  });
+  const [loading, setLoading] = useState(true);
+
+  const flowLoader = BusinessFlowLoader.getInstance();
 
   useEffect(() => {
-    // Load existing onboarding state
-    const savedState = localStorage.getItem('onboarding_state');
-    if (savedState) {
+    const loadConfiguration = async () => {
       try {
-        const state = JSON.parse(savedState);
-        // In a real app, we'd fetch assistant details based on selectedAssistants IDs
-        // For now, use mock data filtered by selected IDs
-        if (state.selectedAssistants) {
-          const filteredAssistants = mockSelectedAssistants.filter(assistant =>
-            state.selectedAssistants.includes(assistant.id)
-          );
-          setSelectedAssistants(filteredAssistants);
-          
-          // Initialize personalizations with defaults
-          const initialPersonalizations: AssistantPersonalization[] = filteredAssistants.map(assistant => ({
-            assistantId: assistant.id,
-            customName: '',
-            avatarStyle: 'professional',
-            communicationTone: 'professional'
-          }));
-          setPersonalizations(initialPersonalizations);
-        }
+        // Load configuration from YAML files
+        const [personalizationConfig, flowConfig] = await Promise.all([
+          flowLoader.getPersonalizationOptions(),
+          flowLoader.getFlowConfig()
+        ]);
 
-        // Load existing personalizations if any
-        if (state.personalizations) {
-          setPersonalizations(state.personalizations);
+        setAvatarStyleOptions(personalizationConfig.avatar_styles);
+        setCommunicationToneOptions(personalizationConfig.communication_tones);
+        setProgress({
+          currentStep: 4,
+          totalSteps: flowConfig.total_steps,
+          stepTitles: flowConfig.step_titles
+        });
+
+        // Load existing onboarding state
+        const savedState = localStorage.getItem('onboarding_state');
+        if (savedState) {
+          try {
+            const state = JSON.parse(savedState);
+            
+            if (state.selectedAssistants && state.selectedAssistants.length > 0 && state.selectedDepartments) {
+              // Find assistant details using the hierarchical flow
+              const selectedAssistantDetails: SelectedAssistant[] = [];
+              
+              // Get all agents for the selected departments
+              const agentsByDepartment = await flowLoader.getAgentsByDepartment(state.selectedDepartments);
+              
+              // Search through all departments to find the selected assistants
+              Object.values(agentsByDepartment).forEach(departmentAgents => {
+                departmentAgents.forEach((agent: {id: string} & AgentConfig) => {
+                  if (state.selectedAssistants.includes(agent.id)) {
+                    selectedAssistantDetails.push({
+                      id: agent.id,
+                      name: agent.name,
+                      icon: agent.icon,
+                      iconColor: agent.icon_color,
+                      agentConfig: agent.agent_config_file
+                    });
+                  }
+                });
+              });
+
+              console.log('Found selected assistants:', selectedAssistantDetails);
+              setSelectedAssistants(selectedAssistantDetails);
+              
+              // Initialize personalizations with defaults
+              const defaultAvatarStyle = personalizationConfig.avatar_styles[0]?.value || 'professional';
+              const defaultCommunicationTone = personalizationConfig.communication_tones[0]?.value || 'professional';
+              
+              const initialPersonalizations: AssistantPersonalization[] = selectedAssistantDetails.map(assistant => ({
+                assistantId: assistant.id,
+                customName: '',
+                avatarStyle: defaultAvatarStyle as AvatarStyle,
+                communicationTone: defaultCommunicationTone as CommunicationTone
+              }));
+              setPersonalizations(initialPersonalizations);
+            } else {
+              console.log('No selected assistants found in onboarding state');
+            }
+
+            // Load existing personalizations if any
+            if (state.personalizations) {
+              setPersonalizations(state.personalizations);
+            }
+          } catch (error) {
+            console.error('Error loading onboarding state:', error);
+          }
+        } else {
+          console.log('No onboarding state found in localStorage');
         }
       } catch (error) {
-        console.error('Error loading onboarding state:', error);
+        console.error('Error loading personalization configuration:', error);
+        toast.error('Failed to load personalization options');
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    loadConfiguration();
   }, []);
 
   const updatePersonalization = (assistantId: string, field: keyof AssistantPersonalization, value: any) => {
@@ -135,15 +175,37 @@ export default function PersonalizeAssistants() {
 
   const getPersonalization = (assistantId: string): AssistantPersonalization => {
     const found = personalizations.find(p => p.assistantId === assistantId);
+    const defaultAvatarStyle = avatarStyleOptions[0]?.value || 'professional';
+    const defaultCommunicationTone = communicationToneOptions[0]?.value || 'professional';
+    
     const defaultPersonalization = {
       assistantId,
       customName: '',
-      avatarStyle: 'professional' as AvatarStyle,
-      communicationTone: 'professional' as CommunicationTone
+      avatarStyle: defaultAvatarStyle as AvatarStyle,
+      communicationTone: defaultCommunicationTone as CommunicationTone
     };
     
     return found || defaultPersonalization;
   };
+
+  if (loading) {
+    return (
+      <OnboardingLayout
+        progress={progress}
+        stepTitle="Personalize your assistants"
+        stepDescription="Make your AI team truly yours by customizing their names, appearance, and communication style.\n\nThis step is optional - you can always personalize later."
+        onBack={() => navigate('/ai-onboarding/choose-assistants')}
+        onContinue={() => {}}
+        onSkip={() => {}}
+        continueText="Continue"
+      >
+        <div className="flex items-center justify-center mt-8 py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading personalization options...</span>
+        </div>
+      </OnboardingLayout>
+    );
+  }
 
   return (
     <OnboardingLayout
@@ -155,8 +217,27 @@ export default function PersonalizeAssistants() {
       onSkip={handleSkip}
       continueText="Continue"
     >
-      <div className="max-w-4xl mx-auto space-y-6">
-        {selectedAssistants.map((assistant) => {
+      {selectedAssistants.length === 0 ? (
+        <div className="max-w-2xl mx-auto text-center py-12">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl text-gray-400">🤖</span>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 font-['Open_Sans'] mb-2">
+            No assistants selected yet
+          </h3>
+          <p className="text-gray-600 font-['Open_Sans'] mb-6">
+            You haven't selected any assistants in the previous step. You can go back to choose some assistants to personalize.
+          </p>
+          <button
+            onClick={() => navigate('/ai-onboarding/choose-assistants')}
+            className="px-6 py-3 bg-[#6017E8] text-white font-semibold rounded-lg hover:bg-[#5015d6] transition-colors font-['Open_Sans']"
+          >
+            Go Back to Choose Assistants
+          </button>
+        </div>
+      ) : (
+        <div className="max-w-4xl mx-auto space-y-6">
+          {selectedAssistants.map((assistant) => {
           const personalization = getPersonalization(assistant.id);
           
           return (
@@ -255,7 +336,8 @@ export default function PersonalizeAssistants() {
             </Card>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {/* Pro Tip */}
       <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">

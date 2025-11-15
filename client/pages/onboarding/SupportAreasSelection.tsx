@@ -4,121 +4,91 @@ import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
 import { SelectableCard } from '@/components/onboarding/SelectableCard';
 import { Badge } from '@/components/ui/badge';
 import { DepartmentType, DepartmentOption, OnboardingProgress, BusinessType } from '@/types/onboarding.types';
+import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
-
-// Department options data
-const departmentOptions: DepartmentOption[] = [
-  {
-    id: 'marketing',
-    title: 'Marketing',
-    description: 'Social media, campaigns, content creation, SEO',
-    icon: '📈',
-    iconColor: '#6017E8',
-    isRecommended: true
-  },
-  {
-    id: 'sales',
-    title: 'Sales',
-    description: 'Lead generation, CRM, proposals, customer outreach',
-    icon: '📊',
-    iconColor: '#FB252A',
-    isRecommended: true
-  },
-  {
-    id: 'management_strategy',
-    title: 'Management & Strategy',
-    description: 'Planning, analytics, reporting, decision support',
-    icon: '⚙️',
-    iconColor: '#51A2FF',
-    isPopular: true
-  },
-  {
-    id: 'hr_people',
-    title: 'HR & People Ops',
-    description: 'Recruiting, onboarding, employee engagement, policies',
-    icon: '👥',
-    iconColor: '#FB7A2A'
-  },
-  {
-    id: 'personal_assistant',
-    title: 'Personal Assistant',
-    description: 'Scheduling, reminders, email management, research',
-    icon: '👤',
-    iconColor: '#28A745'
-  },
-  {
-    id: 'customer_support',
-    title: 'Customer Support',
-    description: 'Help desk, ticket management, customer communication',
-    icon: '🎧',
-    iconColor: '#51A2FF',
-    isRecommended: true
-  },
-  {
-    id: 'finance',
-    title: 'Finance',
-    description: 'Budgeting, expense tracking, financial analysis, invoicing',
-    icon: '💰',
-    iconColor: '#FFC107'
-  },
-  {
-    id: 'product_dev',
-    title: 'Product / Dev',
-    description: 'Feature planning, user research, development support',
-    icon: '💻',
-    iconColor: '#6017E8',
-    isRecommended: true
-  }
-];
-
-// Function to get recommended departments based on business type
-function getRecommendedDepartments(businessType: BusinessType): DepartmentType[] {
-  const recommendationMap: Record<BusinessType, DepartmentType[]> = {
-    'ecommerce': ['marketing', 'sales', 'customer_support', 'finance'],
-    'agency_creative': ['marketing', 'sales', 'management_strategy', 'hr_people'],
-    'saas_tech': ['marketing', 'sales', 'product_dev', 'customer_support'],
-    'consultant_freelancer': ['sales', 'personal_assistant', 'finance', 'marketing'],
-    'education': ['marketing', 'hr_people', 'management_strategy', 'customer_support'],
-    'enterprise_corporate': ['hr_people', 'management_strategy', 'finance', 'customer_support'],
-    'other': ['marketing', 'sales', 'personal_assistant', 'customer_support']
-  };
-  
-  return recommendationMap[businessType] || ['marketing', 'sales', 'customer_support', 'personal_assistant'];
-}
+import BusinessFlowLoader, { DepartmentConfig } from '@/services/businessFlowLoader';
 
 export default function SupportAreasSelection() {
   const navigate = useNavigate();
+  const { isReady } = useUser();
   const [selectedDepartments, setSelectedDepartments] = useState<DepartmentType[]>([]);
   const [businessType, setBusinessType] = useState<BusinessType>('saas_tech');
-  const [recommendedDepartments, setRecommendedDepartments] = useState<DepartmentType[]>([]);
-
-  const progress: OnboardingProgress = {
+  const [recommendedDepartments, setRecommendedDepartments] = useState<string[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<Array<{id: string} & DepartmentConfig>>([]);
+  const [progress, setProgress] = useState<OnboardingProgress>({
     currentStep: 2,
     totalSteps: 6,
     stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Personalize', 'Company Details', 'Welcome']
+  });
+  const [loading, setLoading] = useState(true);
+
+  const flowLoader = BusinessFlowLoader.getInstance();
+
+  // Function to get recommended departments based on business type
+  const getRecommendedDepartments = (businessType: BusinessType): DepartmentType[] => {
+    const recommendationMap: Record<BusinessType, DepartmentType[]> = {
+      'ecommerce': ['marketing', 'sales', 'customer_support', 'finance'],
+      'agency_creative': ['marketing', 'sales', 'management_strategy', 'hr_people'],
+      'saas_tech': ['marketing', 'sales', 'product_dev', 'customer_support'],
+      'consultant_freelancer': ['sales', 'personal_assistant', 'finance', 'marketing'],
+      'education': ['marketing', 'hr_people', 'management_strategy', 'customer_support'],
+      'enterprise_corporate': ['hr_people', 'management_strategy', 'finance', 'customer_support'],
+      'other': ['marketing', 'sales', 'personal_assistant', 'customer_support']
+    };
+    
+    return recommendationMap[businessType] || ['marketing', 'sales', 'customer_support', 'personal_assistant'];
   };
 
   useEffect(() => {
-    // Load existing onboarding state
-    const savedState = localStorage.getItem('onboarding_state');
-    if (savedState) {
+    const loadConfiguration = async () => {
+      // Wait for authentication to be ready before loading configuration
+      if (!isReady) {
+        return;
+      }
+      
       try {
-        const state = JSON.parse(savedState);
-        if (state.businessType) {
-          setBusinessType(state.businessType);
-          const recommended = getRecommendedDepartments(state.businessType);
-          setRecommendedDepartments(recommended);
-          // Auto-select recommended departments
-          setSelectedDepartments(recommended);
-        }
-        if (state.selectedDepartments) {
-          setSelectedDepartments(state.selectedDepartments);
+        // Load configuration from YAML file
+        const [departments, flowConfig] = await Promise.all([
+          flowLoader.getDepartments(),
+          flowLoader.getFlowConfig()
+        ]);
+
+        setDepartmentOptions(departments);
+        setProgress({
+          currentStep: 2,
+          totalSteps: flowConfig.total_steps,
+          stepTitles: flowConfig.step_titles
+        });
+
+        // Load existing onboarding state
+        const savedState = localStorage.getItem('onboarding_state');
+        if (savedState) {
+          try {
+            const state = JSON.parse(savedState);
+            if (state.businessType) {
+              setBusinessType(state.businessType);
+              const recommended = getRecommendedDepartments(state.businessType);
+              setRecommendedDepartments(recommended);
+              // Auto-select recommended departments
+              setSelectedDepartments(recommended);
+            }
+            if (state.selectedDepartments) {
+              setSelectedDepartments(state.selectedDepartments);
+            }
+          } catch (error) {
+            console.error('Error loading onboarding state:', error);
+          }
         }
       } catch (error) {
-        console.error('Error loading onboarding state:', error);
+        console.error('Error loading onboarding configuration:', error);
+        toast.error('Failed to load departments configuration');
+      } finally {
+        setLoading(false);
       }
-    }
-  }, []);
+    };
+
+    loadConfiguration();
+  }, [isReady]);
 
   const handleDepartmentSelect = (id: string) => {
     const departmentId = id as DepartmentType;
@@ -164,8 +134,32 @@ export default function SupportAreasSelection() {
   // Update department options with dynamic recommendations
   const updatedDepartmentOptions = departmentOptions.map(dept => ({
     ...dept,
-    isRecommended: recommendedDepartments.includes(dept.id)
+    isRecommended: recommendedDepartments.includes(dept.id as DepartmentType),
+    isPopular: false, // Can be added to config if needed
+    iconColor: dept.icon_color
   }));
+
+  if (loading || !isReady) {
+    return (
+      <OnboardingLayout
+        progress={progress}
+        stepTitle="Which areas need AI support?"
+        stepDescription="Select all departments where you'd like AI support. You can always add more later."
+        onBack={() => navigate('/ai-onboarding/business-type')}
+        onContinue={() => {}}
+        onSkip={() => {}}
+        continueDisabled={true}
+        continueText="Continue"
+      >
+        <div className="flex items-center justify-center mt-8 py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">
+            {!isReady ? 'Initializing...' : 'Loading departments...'}
+          </span>
+        </div>
+      </OnboardingLayout>
+    );
+  }
 
   return (
     <OnboardingLayout
@@ -219,7 +213,7 @@ export default function SupportAreasSelection() {
             description={option.description}
             icon={option.icon}
             iconColor={option.iconColor}
-            isSelected={selectedDepartments.includes(option.id)}
+            isSelected={selectedDepartments.includes(option.id as DepartmentType)}
             isRecommended={option.isRecommended}
             isPopular={option.isPopular}
             onClick={handleDepartmentSelect}

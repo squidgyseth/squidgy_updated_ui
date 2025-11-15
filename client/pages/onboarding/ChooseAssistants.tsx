@@ -4,354 +4,107 @@ import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
 import { AssistantCard } from '@/components/onboarding/AssistantCard';
 import { DepartmentType, AssistantOption, OnboardingProgress } from '@/types/onboarding.types';
 import { toast } from 'sonner';
-
-// AI Assistants data organized by department
-const assistantsByDepartment: Record<DepartmentType, AssistantOption[]> = {
-  hr_people: [
-    {
-      id: 'recruiting_assistant',
-      name: 'Recruiting Assistant',
-      department: 'hr_people',
-      description: 'Sources candidates, screens resumes, schedules interviews',
-      icon: '👥',
-      iconColor: '#FB7A2A',
-      isRecommended: true,
-      keyCapabilities: [
-        { name: 'Candidate sourcing' },
-        { name: 'Resume screening' },
-        { name: 'Interview scheduling' },
-        { name: 'Pipeline management' }
-      ]
-    },
-    {
-      id: 'onboarding_specialist',
-      name: 'Onboarding Specialist',
-      department: 'hr_people',
-      description: 'Guides new hires through onboarding process',
-      icon: '🎯',
-      iconColor: '#28A745',
-      keyCapabilities: [
-        { name: 'Onboarding workflow' },
-        { name: 'Documentation' },
-        { name: 'Training coordination' },
-        { name: 'Progress tracking' }
-      ]
-    },
-    {
-      id: 'policy_advisor',
-      name: 'Policy Advisor',
-      department: 'hr_people',
-      description: 'Helps with HR policies, compliance, and employee questions',
-      icon: '📋',
-      iconColor: '#6017E8',
-      keyCapabilities: [
-        { name: 'Policy guidance' },
-        { name: 'Compliance checks' },
-        { name: 'Employee support' },
-        { name: 'Documentation' }
-      ]
-    }
-  ],
-  marketing: [
-    {
-      id: 'social_media_manager',
-      name: 'Social Media Manager',
-      department: 'marketing',
-      description: 'Creates posts, schedules content, analyzes engagement',
-      icon: '📱',
-      iconColor: '#FB252A',
-      isRecommended: true,
-      keyCapabilities: [
-        { name: 'Content creation' },
-        { name: 'Scheduling' },
-        { name: 'Analytics' },
-        { name: 'Engagement tracking' }
-      ]
-    },
-    {
-      id: 'content_strategist',
-      name: 'Content Strategist',
-      department: 'marketing',
-      description: 'Develops content plans, SEO optimization, blog writing',
-      icon: '✍️',
-      iconColor: '#6017E8',
-      isRecommended: true,
-      keyCapabilities: [
-        { name: 'SEO optimization' },
-        { name: 'Blog writing' },
-        { name: 'Content planning' },
-        { name: 'Keyword research' }
-      ]
-    },
-    {
-      id: 'campaign_manager',
-      name: 'Campaign Manager',
-      department: 'marketing',
-      description: 'Plans and executes marketing campaigns across channels',
-      icon: '🎯',
-      iconColor: '#51A2FF',
-      keyCapabilities: [
-        { name: 'Campaign planning' },
-        { name: 'Multi-channel execution' },
-        { name: 'Performance tracking' },
-        { name: 'Budget optimization' }
-      ]
-    }
-  ],
-  sales: [
-    {
-      id: 'lead_qualifier',
-      name: 'Lead Qualifier',
-      department: 'sales',
-      description: 'Scores leads, prioritizes prospects, generates insights',
-      icon: '🎯',
-      iconColor: '#FB252A',
-      isRecommended: true,
-      keyCapabilities: [
-        { name: 'Lead scoring' },
-        { name: 'Prospect research' },
-        { name: 'Pipeline management' },
-        { name: 'Data insights' }
-      ]
-    },
-    {
-      id: 'proposal_writer',
-      name: 'Proposal Writer',
-      department: 'sales',
-      description: 'Creates compelling proposals and sales materials',
-      icon: '📄',
-      iconColor: '#28A745',
-      keyCapabilities: [
-        { name: 'Proposal creation' },
-        { name: 'Sales collateral' },
-        { name: 'Pricing strategies' },
-        { name: 'Contract templates' }
-      ]
-    },
-    {
-      id: 'crm_assistant',
-      name: 'CRM Assistant',
-      department: 'sales',
-      description: 'Manages contacts, tracks interactions, updates records',
-      icon: '📊',
-      iconColor: '#6017E8',
-      keyCapabilities: [
-        { name: 'Contact management' },
-        { name: 'Activity tracking' },
-        { name: 'Data hygiene' },
-        { name: 'Reporting' }
-      ]
-    }
-  ],
-  management_strategy: [
-    {
-      id: 'strategy_advisor',
-      name: 'Strategy Advisor',
-      department: 'management_strategy',
-      description: 'Provides strategic insights and decision support',
-      icon: '🧠',
-      iconColor: '#6017E8',
-      isRecommended: true,
-      keyCapabilities: [
-        { name: 'Strategic planning' },
-        { name: 'Market analysis' },
-        { name: 'Decision support' },
-        { name: 'Risk assessment' }
-      ]
-    },
-    {
-      id: 'performance_analyst',
-      name: 'Performance Analyst',
-      department: 'management_strategy',
-      description: 'Tracks KPIs, generates reports, identifies trends',
-      icon: '📈',
-      iconColor: '#51A2FF',
-      keyCapabilities: [
-        { name: 'KPI tracking' },
-        { name: 'Report generation' },
-        { name: 'Trend analysis' },
-        { name: 'Performance insights' }
-      ]
-    },
-    {
-      id: 'project_coordinator',
-      name: 'Project Coordinator',
-      department: 'management_strategy',
-      description: 'Manages tasks, timelines, and team coordination',
-      icon: '📅',
-      iconColor: '#FB7A2A',
-      keyCapabilities: [
-        { name: 'Task management' },
-        { name: 'Timeline tracking' },
-        { name: 'Team coordination' },
-        { name: 'Resource planning' }
-      ]
-    }
-  ],
-  customer_support: [
-    {
-      id: 'help_desk_agent',
-      name: 'Help Desk Agent',
-      department: 'customer_support',
-      description: 'Handles customer inquiries and support tickets',
-      icon: '🎧',
-      iconColor: '#51A2FF',
-      isRecommended: true,
-      keyCapabilities: [
-        { name: 'Ticket management' },
-        { name: 'Customer communication' },
-        { name: 'Issue resolution' },
-        { name: 'Knowledge base' }
-      ]
-    },
-    {
-      id: 'knowledge_manager',
-      name: 'Knowledge Manager',
-      department: 'customer_support',
-      description: 'Maintains help articles and knowledge base',
-      icon: '📚',
-      iconColor: '#28A745',
-      keyCapabilities: [
-        { name: 'Knowledge base' },
-        { name: 'Documentation' },
-        { name: 'Self-service resources' },
-        { name: 'Content updates' }
-      ]
-    }
-  ],
-  personal_assistant: [
-    {
-      id: 'executive_assistant',
-      name: 'Executive Assistant',
-      department: 'personal_assistant',
-      description: 'Manages calendar, emails, and daily tasks',
-      icon: '👤',
-      iconColor: '#6017E8',
-      isRecommended: true,
-      keyCapabilities: [
-        { name: 'Calendar management' },
-        { name: 'Email organization' },
-        { name: 'Task prioritization' },
-        { name: 'Meeting coordination' }
-      ]
-    },
-    {
-      id: 'research_specialist',
-      name: 'Research Specialist',
-      department: 'personal_assistant',
-      description: 'Conducts research, compiles reports, fact checking',
-      icon: '🔍',
-      iconColor: '#51A2FF',
-      keyCapabilities: [
-        { name: 'Market research' },
-        { name: 'Competitive analysis' },
-        { name: 'Report compilation' },
-        { name: 'Fact verification' }
-      ]
-    }
-  ],
-  finance: [
-    {
-      id: 'budget_analyst',
-      name: 'Budget Analyst',
-      department: 'finance',
-      description: 'Tracks expenses, forecasts budgets, financial planning',
-      icon: '📊',
-      iconColor: '#FFC107',
-      isRecommended: true,
-      keyCapabilities: [
-        { name: 'Budget tracking' },
-        { name: 'Expense analysis' },
-        { name: 'Financial forecasting' },
-        { name: 'Cost optimization' }
-      ]
-    },
-    {
-      id: 'invoice_manager',
-      name: 'Invoice Manager',
-      department: 'finance',
-      description: 'Manages invoicing, payments, and financial records',
-      icon: '💰',
-      iconColor: '#28A745',
-      keyCapabilities: [
-        { name: 'Invoicing' },
-        { name: 'Payment tracking' },
-        { name: 'Financial records' },
-        { name: 'Collections' }
-      ]
-    }
-  ],
-  product_dev: [
-    {
-      id: 'product_strategist',
-      name: 'Product Strategist',
-      department: 'product_dev',
-      description: 'Helps with roadmaps, user research, feature planning',
-      icon: '💡',
-      iconColor: '#6017E8',
-      isRecommended: true,
-      keyCapabilities: [
-        { name: 'Product roadmaps' },
-        { name: 'User research' },
-        { name: 'Feature analysis' },
-        { name: 'Market validation' }
-      ]
-    },
-    {
-      id: 'development_assistant',
-      name: 'Development Assistant',
-      department: 'product_dev',
-      description: 'Code review, documentation, technical planning',
-      icon: '💻',
-      iconColor: '#51A2FF',
-      keyCapabilities: [
-        { name: 'Code reviews' },
-        { name: 'Documentation' },
-        { name: 'Technical planning' },
-        { name: 'Testing support' }
-      ]
-    }
-  ]
-};
+import BusinessFlowLoader, { AgentConfig } from '@/services/businessFlowLoader';
 
 export default function ChooseAssistants() {
   const navigate = useNavigate();
   const [selectedDepartments, setSelectedDepartments] = useState<DepartmentType[]>([]);
   const [selectedAssistants, setSelectedAssistants] = useState<string[]>([]);
-
-  const progress: OnboardingProgress = {
+  const [assistantsByDepartment, setAssistantsByDepartment] = useState<Record<DepartmentType, AssistantOption[]>>({} as Record<DepartmentType, AssistantOption[]>);
+  const [progress, setProgress] = useState<OnboardingProgress>({
     currentStep: 3,
     totalSteps: 6,
     stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Personalize', 'Company Details', 'Welcome']
-  };
+  });
+  const [loading, setLoading] = useState(true);
+
+  const flowLoader = BusinessFlowLoader.getInstance();
+
+  // Helper function to convert AgentConfig to AssistantOption
+  const convertAgentConfig = (config: {id: string} & AgentConfig, department: DepartmentType): AssistantOption => ({
+    id: config.id,
+    name: config.name,
+    department,
+    description: config.description,
+    icon: config.icon,
+    iconColor: config.icon_color,
+    isRecommended: config.is_recommended || false,
+    keyCapabilities: config.key_capabilities.map(cap => ({ name: cap })),
+    agentConfig: config.agent_config_file // Link to actual agent config file
+  });
 
   useEffect(() => {
-    // Load existing onboarding state
-    const savedState = localStorage.getItem('onboarding_state');
-    if (savedState) {
+    const loadConfiguration = async () => {
       try {
-        const state = JSON.parse(savedState);
-        if (state.selectedDepartments) {
-          setSelectedDepartments(state.selectedDepartments);
-          // Auto-select recommended assistants
-          const recommendedAssistants: string[] = [];
-          state.selectedDepartments.forEach((dept: DepartmentType) => {
-            const deptAssistants = assistantsByDepartment[dept] || [];
-            deptAssistants.forEach(assistant => {
-              if (assistant.isRecommended) {
-                recommendedAssistants.push(assistant.id);
-              }
-            });
-          });
-          setSelectedAssistants(recommendedAssistants);
+        // Load configuration from YAML files
+        const flowConfig = await flowLoader.getFlowConfig();
+
+        // Get agents organized by department based on saved departments
+        const savedState = localStorage.getItem('onboarding_state');
+        let departments: string[] = [];
+        if (savedState) {
+          try {
+            const state = JSON.parse(savedState);
+            departments = state.selectedDepartments || [];
+          } catch (error) {
+            console.error('Error loading onboarding state:', error);
+          }
         }
-        if (state.selectedAssistants) {
-          setSelectedAssistants(state.selectedAssistants);
+
+        let assistantsData: Record<DepartmentType, AssistantOption[]> = {} as Record<DepartmentType, AssistantOption[]>;
+        
+        if (departments.length > 0) {
+          const agentsByDepartment = await flowLoader.getAgentsByDepartment(departments);
+          
+          Object.entries(agentsByDepartment).forEach(([deptId, agents]) => {
+            assistantsData[deptId as DepartmentType] = agents.map(agent => 
+              convertAgentConfig(agent, deptId as DepartmentType)
+            );
+          });
+        }
+
+        setAssistantsByDepartment(assistantsData);
+        setProgress({
+          currentStep: 3,
+          totalSteps: flowConfig.total_steps,
+          stepTitles: flowConfig.step_titles
+        });
+
+        // Update state with loaded departments and assistants
+        if (savedState) {
+          try {
+            const state = JSON.parse(savedState);
+            if (state.selectedDepartments) {
+              setSelectedDepartments(state.selectedDepartments);
+              // Auto-select recommended assistants if none selected yet
+              if (!state.selectedAssistants) {
+                const recommendedAssistants: string[] = [];
+                state.selectedDepartments.forEach((dept: DepartmentType) => {
+                  const deptAssistants = assistantsData[dept] || [];
+                  deptAssistants.forEach(assistant => {
+                    if (assistant.isRecommended) {
+                      recommendedAssistants.push(assistant.id);
+                    }
+                  });
+                });
+                setSelectedAssistants(recommendedAssistants);
+              } else {
+                setSelectedAssistants(state.selectedAssistants);
+              }
+            }
+          } catch (error) {
+            console.error('Error loading onboarding state:', error);
+          }
         }
       } catch (error) {
-        console.error('Error loading onboarding state:', error);
+        console.error('Error loading assistants configuration:', error);
+        toast.error('Failed to load assistants configuration');
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    loadConfiguration();
   }, []);
 
   const handleAssistantSelect = (assistantId: string) => {
@@ -409,6 +162,26 @@ export default function ChooseAssistants() {
     finance: 'Finance',
     product_dev: 'Product / Dev'
   };
+
+  if (loading) {
+    return (
+      <OnboardingLayout
+        progress={progress}
+        stepTitle="Choose your AI assistants"
+        stepDescription="Based on your selected departments, here are the AI assistants we recommend. Select the ones that best fit your needs."
+        onBack={() => navigate('/ai-onboarding/support-areas')}
+        onContinue={() => {}}
+        onSkip={() => {}}
+        continueDisabled={true}
+        continueText="Continue"
+      >
+        <div className="flex items-center justify-center mt-8 py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading assistants...</span>
+        </div>
+      </OnboardingLayout>
+    );
+  }
 
   return (
     <OnboardingLayout

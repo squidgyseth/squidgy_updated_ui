@@ -5,89 +5,69 @@ import { SelectableCard } from '@/components/onboarding/SelectableCard';
 import { BusinessType, BusinessTypeOption, OnboardingProgress } from '@/types/onboarding.types';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
-
-// Business type options data
-const businessTypeOptions: BusinessTypeOption[] = [
-  {
-    id: 'ecommerce',
-    title: 'E-commerce',
-    description: 'Online retail, product sales, inventory management',
-    icon: '🛒',
-    iconColor: '#6017E8'
-  },
-  {
-    id: 'agency_creative',
-    title: 'Agency / Creative Studio',
-    description: 'Marketing, design, content creation, client services',
-    icon: '🎨',
-    iconColor: '#FB252A'
-  },
-  {
-    id: 'saas_tech',
-    title: 'SaaS / Tech Startup',
-    description: 'Software development, product management, growth',
-    icon: '🚀',
-    iconColor: '#51A2FF'
-  },
-  {
-    id: 'consultant_freelancer',
-    title: 'Consultant / Freelancer',
-    description: 'Professional services, client management, expertise',
-    icon: '👤',
-    iconColor: '#FB7A2A'
-  },
-  {
-    id: 'education',
-    title: 'Education',
-    description: 'Training, curriculum, student management, research',
-    icon: '🎓',
-    iconColor: '#28A745'
-  },
-  {
-    id: 'enterprise_corporate',
-    title: 'Enterprise / Corporate',
-    description: 'Large organization, multiple departments, compliance',
-    icon: '🏢',
-    iconColor: '#51A2FF'
-  },
-  {
-    id: 'other',
-    title: 'Other',
-    description: 'Tell us more about your unique business needs',
-    icon: '❓',
-    iconColor: '#6C757D'
-  }
-];
+import BusinessFlowLoader, { BusinessTypeConfig } from '@/services/businessFlowLoader';
 
 export default function BusinessTypeSelection() {
   const navigate = useNavigate();
-  const { userId } = useUser();
+  const { userId, isReady } = useUser();
   const [selectedBusinessType, setSelectedBusinessType] = useState<BusinessType | null>(null);
   const [userName, setUserName] = useState<string>('Aleksa Jagolnik');
-
-  const progress: OnboardingProgress = {
+  const [businessTypeOptions, setBusinessTypeOptions] = useState<Array<{id: string} & BusinessTypeConfig>>([]);
+  const [progress, setProgress] = useState<OnboardingProgress>({
     currentStep: 1,
     totalSteps: 6,
     stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Personalize', 'Company Details', 'Welcome']
-  };
+  });
+  const [loading, setLoading] = useState(true);
+
+  const flowLoader = BusinessFlowLoader.getInstance();
 
   useEffect(() => {
-    // Load any existing onboarding state from localStorage or API
-    const savedState = localStorage.getItem('onboarding_state');
-    if (savedState) {
+    const loadConfiguration = async () => {
+      // Wait for authentication to be ready before loading configuration
+      if (!isReady) {
+        return;
+      }
+      
       try {
-        const state = JSON.parse(savedState);
-        if (state.businessType) {
-          setSelectedBusinessType(state.businessType);
-        }
-        if (state.userName) {
-          setUserName(state.userName);
+        // Load configuration from YAML files
+        const [businessTypes, flowConfig] = await Promise.all([
+          flowLoader.getBusinessTypes(),
+          flowLoader.getFlowConfig()
+        ]);
+
+        setBusinessTypeOptions(businessTypes);
+        setProgress({
+          currentStep: 1,
+          totalSteps: flowConfig.total_steps,
+          stepTitles: flowConfig.step_titles
+        });
+
+        // Load any existing onboarding state from localStorage
+        const savedState = localStorage.getItem('onboarding_state');
+        if (savedState) {
+          try {
+            const state = JSON.parse(savedState);
+            if (state.businessType) {
+              setSelectedBusinessType(state.businessType);
+            }
+            if (state.userName) {
+              setUserName(state.userName);
+            }
+          } catch (error) {
+            console.error('Error loading onboarding state:', error);
+          }
         }
       } catch (error) {
-        console.error('Error loading onboarding state:', error);
+        console.error('Error loading onboarding configuration:', error);
+        toast.error('Failed to load onboarding configuration');
+      } finally {
+        setLoading(false);
       }
-    }
-  }, []);
+    };
+
+    loadConfiguration();
+  }, [isReady]);
 
   const handleBusinessTypeSelect = (id: string) => {
     setSelectedBusinessType(id as BusinessType);
@@ -126,6 +106,27 @@ export default function BusinessTypeSelection() {
     navigate('/ai-onboarding/support-areas');
   };
 
+  if (loading || !isReady) {
+    return (
+      <OnboardingLayout
+        progress={progress}
+        stepTitle="What's your business type?"
+        stepDescription={`Hi ${userName}! Let's set up your AI team\n\nTell us about your business so we can recommend the perfect AI assistants for your workflow.`}
+        onContinue={handleContinue}
+        onSkip={handleSkip}
+        continueDisabled={true}
+        continueText="Continue"
+      >
+        <div className="flex items-center justify-center mt-8 py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">
+            {!isReady ? 'Initializing...' : 'Loading business types...'}
+          </span>
+        </div>
+      </OnboardingLayout>
+    );
+  }
+
   return (
     <OnboardingLayout
       progress={progress}
@@ -145,7 +146,7 @@ export default function BusinessTypeSelection() {
             title={option.title}
             description={option.description}
             icon={option.icon}
-            iconColor={option.iconColor}
+            iconColor={option.icon_color}
             isSelected={selectedBusinessType === option.id}
             onClick={handleBusinessTypeSelect}
             className="h-full"

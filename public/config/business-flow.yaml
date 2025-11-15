@@ -1,0 +1,434 @@
+# ===========================================
+# BUSINESS FLOW CONFIGURATION
+# ===========================================
+# This file defines the hierarchical flow:
+# Business Type -> Departments -> Agents -> Agent Configs
+
+# Step 1: Business Types
+business_types:
+  ecommerce:
+    title: "E-commerce"
+    description: "Online retail, product sales, inventory management"
+    icon: "🛒"
+    icon_color: "#6017E8"
+    # Recommended departments for this business type
+    recommended_departments:
+      - marketing
+      - sales
+      - customer_support
+      - finance
+    
+  agency_creative:
+    title: "Agency / Creative Studio"
+    description: "Marketing, design, content creation, client services"
+    icon: "🎨"
+    icon_color: "#FB252A"
+    recommended_departments:
+      - marketing
+      - sales
+      - management_strategy
+      - hr_people
+    
+  saas_tech:
+    title: "SaaS / Tech Startup"
+    description: "Software development, product management, growth"
+    icon: "🚀"
+    icon_color: "#51A2FF"
+    recommended_departments:
+      - marketing
+      - sales
+      - product_dev
+      - customer_support
+    
+  consultant_freelancer:
+    title: "Consultant / Freelancer"
+    description: "Professional services, client management, expertise"
+    icon: "👤"
+    icon_color: "#FB7A2A"
+    recommended_departments:
+      - sales
+      - personal_assistant
+      - finance
+      - marketing
+    
+  education:
+    title: "Education"
+    description: "Training, curriculum, student management, research"
+    icon: "🎓"
+    icon_color: "#28A745"
+    recommended_departments:
+      - marketing
+      - hr_people
+      - management_strategy
+      - customer_support
+    
+  enterprise_corporate:
+    title: "Enterprise / Corporate"
+    description: "Large organization, multiple departments, compliance"
+    icon: "🏢"
+    icon_color: "#51A2FF"
+    recommended_departments:
+      - hr_people
+      - management_strategy
+      - finance
+      - customer_support
+    
+  other:
+    title: "Other"
+    description: "Tell us more about your unique business needs"
+    icon: "❓"
+    icon_color: "#6C757D"
+    recommended_departments:
+      - marketing
+      - sales
+      - personal_assistant
+      - customer_support
+
+# Step 2: Departments with their agents
+departments:
+  marketing:
+    title: "Marketing"
+    description: "Social media, campaigns, content creation, SEO"
+    icon: "📈"
+    icon_color: "#6017E8"
+    # Agents available in this department
+    agents:
+      - social_media_manager
+      - content_strategist
+      - campaign_manager
+    
+  sales:
+    title: "Sales"
+    description: "Lead generation, CRM, proposals, customer outreach"
+    icon: "📊"
+    icon_color: "#FB252A"
+    agents:
+      - lead_qualifier
+      - proposal_writer
+      - crm_assistant
+    
+  management_strategy:
+    title: "Management & Strategy"
+    description: "Planning, analytics, reporting, decision support"
+    icon: "⚙️"
+    icon_color: "#51A2FF"
+    agents:
+      - strategy_advisor
+      - performance_analyst
+      - project_coordinator
+    
+  hr_people:
+    title: "HR & People Ops"
+    description: "Recruiting, onboarding, employee engagement, policies"
+    icon: "👥"
+    icon_color: "#FB7A2A"
+    agents:
+      - recruiting_assistant
+      - onboarding_specialist
+      - policy_advisor
+    
+  personal_assistant:
+    title: "Personal Assistant"
+    description: "Scheduling, reminders, email management, research"
+    icon: "👤"
+    icon_color: "#28A745"
+    agents:
+      - executive_assistant
+      - research_specialist
+    
+  customer_support:
+    title: "Customer Support"
+    description: "Help desk, ticket management, customer communication"
+    icon: "🎧"
+    icon_color: "#51A2FF"
+    agents:
+      - help_desk_agent
+      - knowledge_manager
+    
+  finance:
+    title: "Finance"
+    description: "Budgeting, expense tracking, financial analysis, invoicing"
+    icon: "💰"
+    icon_color: "#FFC107"
+    agents:
+      - budget_analyst
+      - invoice_manager
+    
+  product_dev:
+    title: "Product / Dev"
+    description: "Feature planning, user research, development support"
+    icon: "💻"
+    icon_color: "#6017E8"
+    agents:
+      - product_strategist
+      - development_assistant
+
+# Step 3: Agent Definitions with links to actual configs
+agents:
+  # Marketing Agents
+  social_media_manager:
+    name: "Social Media Manager"
+    description: "Creates posts, schedules content, analyzes engagement"
+    icon: "📱"
+    icon_color: "#FB252A"
+    is_recommended: true
+    agent_config_file: "smm_assistant"  # Links to /agents/configs/smm_assistant.yaml
+    key_capabilities:
+      - "Content creation"
+      - "Scheduling"
+      - "Analytics"
+      - "Engagement tracking"
+      
+  content_strategist:
+    name: "Content Strategist"
+    description: "Develops content plans, SEO optimization, blog writing"
+    icon: "✍️"
+    icon_color: "#6017E8"
+    is_recommended: true
+    agent_config_file: "content_repurposer"  # Links to /agents/configs/content_repurposer.yaml
+    key_capabilities:
+      - "SEO optimization"
+      - "Blog writing"
+      - "Content planning"
+      - "Keyword research"
+      
+  campaign_manager:
+    name: "Campaign Manager"
+    description: "Plans and executes marketing campaigns across channels"
+    icon: "🎯"
+    icon_color: "#51A2FF"
+    is_recommended: false
+    agent_config_file: null  # No existing config yet
+    key_capabilities:
+      - "Campaign planning"
+      - "Multi-channel execution"
+      - "Performance tracking"
+      - "Budget optimization"
+
+  # Sales Agents
+  lead_qualifier:
+    name: "Lead Qualifier"
+    description: "Scores leads, prioritizes prospects, generates insights"
+    icon: "🎯"
+    icon_color: "#FB252A"
+    is_recommended: true
+    agent_config_file: null
+    key_capabilities:
+      - "Lead scoring"
+      - "Prospect research"
+      - "Pipeline management"
+      - "Data insights"
+      
+  proposal_writer:
+    name: "Proposal Writer"
+    description: "Creates compelling proposals and sales materials"
+    icon: "📄"
+    icon_color: "#28A745"
+    is_recommended: false
+    agent_config_file: null
+    key_capabilities:
+      - "Proposal creation"
+      - "Sales collateral"
+      - "Pricing strategies"
+      - "Contract templates"
+      
+  crm_assistant:
+    name: "CRM Assistant"
+    description: "Manages contacts, tracks interactions, updates records"
+    icon: "📊"
+    icon_color: "#6017E8"
+    is_recommended: false
+    agent_config_file: null
+    key_capabilities:
+      - "Contact management"
+      - "Activity tracking"
+      - "Data hygiene"
+      - "Reporting"
+
+  # Management & Strategy Agents
+  strategy_advisor:
+    name: "Strategy Advisor"
+    description: "Provides strategic insights and decision support"
+    icon: "🧠"
+    icon_color: "#6017E8"
+    is_recommended: true
+    agent_config_file: null
+    key_capabilities:
+      - "Strategic planning"
+      - "Market analysis"
+      - "Decision support"
+      - "Risk assessment"
+      
+  performance_analyst:
+    name: "Performance Analyst"
+    description: "Tracks KPIs, generates reports, identifies trends"
+    icon: "📈"
+    icon_color: "#51A2FF"
+    is_recommended: false
+    agent_config_file: null
+    key_capabilities:
+      - "KPI tracking"
+      - "Report generation"
+      - "Trend analysis"
+      - "Performance insights"
+      
+  project_coordinator:
+    name: "Project Coordinator"
+    description: "Manages tasks, timelines, and team coordination"
+    icon: "📅"
+    icon_color: "#FB7A2A"
+    is_recommended: false
+    agent_config_file: null
+    key_capabilities:
+      - "Task management"
+      - "Timeline tracking"
+      - "Team coordination"
+      - "Resource planning"
+
+  # HR & People Ops Agents
+  recruiting_assistant:
+    name: "Recruiting Assistant"
+    description: "Sources candidates, screens resumes, schedules interviews"
+    icon: "👥"
+    icon_color: "#FB7A2A"
+    is_recommended: true
+    agent_config_file: null
+    key_capabilities:
+      - "Candidate sourcing"
+      - "Resume screening"
+      - "Interview scheduling"
+      - "Pipeline management"
+      
+  onboarding_specialist:
+    name: "Onboarding Specialist"
+    description: "Guides new hires through onboarding process"
+    icon: "🎯"
+    icon_color: "#28A745"
+    is_recommended: false
+    agent_config_file: null
+    key_capabilities:
+      - "Onboarding workflow"
+      - "Documentation"
+      - "Training coordination"
+      - "Progress tracking"
+      
+  policy_advisor:
+    name: "Policy Advisor"
+    description: "Helps with HR policies, compliance, and employee questions"
+    icon: "📋"
+    icon_color: "#6017E8"
+    is_recommended: false
+    agent_config_file: null
+    key_capabilities:
+      - "Policy guidance"
+      - "Compliance checks"
+      - "Employee support"
+      - "Documentation"
+
+  # Personal Assistant Agents
+  executive_assistant:
+    name: "Executive Assistant"
+    description: "Manages calendar, emails, and daily tasks"
+    icon: "👤"
+    icon_color: "#6017E8"
+    is_recommended: true
+    agent_config_file: "personal_assistant"  # Links to /agents/configs/personal_assistant.yaml
+    key_capabilities:
+      - "Calendar management"
+      - "Email organization"
+      - "Task prioritization"
+      - "Meeting coordination"
+      
+  research_specialist:
+    name: "Research Specialist"
+    description: "Conducts research, compiles reports, fact checking"
+    icon: "🔍"
+    icon_color: "#51A2FF"
+    is_recommended: false
+    agent_config_file: null
+    key_capabilities:
+      - "Market research"
+      - "Competitive analysis"
+      - "Report compilation"
+      - "Fact verification"
+
+  # Customer Support Agents
+  help_desk_agent:
+    name: "Help Desk Agent"
+    description: "Handles customer inquiries and support tickets"
+    icon: "🎧"
+    icon_color: "#51A2FF"
+    is_recommended: true
+    agent_config_file: null
+    key_capabilities:
+      - "Ticket management"
+      - "Customer communication"
+      - "Issue resolution"
+      - "Knowledge base"
+      
+  knowledge_manager:
+    name: "Knowledge Manager"
+    description: "Maintains help articles and knowledge base"
+    icon: "📚"
+    icon_color: "#28A745"
+    is_recommended: false
+    agent_config_file: null
+    key_capabilities:
+      - "Knowledge base"
+      - "Documentation"
+      - "Self-service resources"
+      - "Content updates"
+
+  # Finance Agents
+  budget_analyst:
+    name: "Budget Analyst"
+    description: "Tracks expenses, forecasts budgets, financial planning"
+    icon: "📊"
+    icon_color: "#FFC107"
+    is_recommended: true
+    agent_config_file: null
+    key_capabilities:
+      - "Budget tracking"
+      - "Expense analysis"
+      - "Financial forecasting"
+      - "Cost optimization"
+      
+  invoice_manager:
+    name: "Invoice Manager"
+    description: "Manages invoicing, payments, and financial records"
+    icon: "💰"
+    icon_color: "#28A745"
+    is_recommended: false
+    agent_config_file: null
+    key_capabilities:
+      - "Invoicing"
+      - "Payment tracking"
+      - "Financial records"
+      - "Collections"
+
+  # Product Development Agents
+  product_strategist:
+    name: "Product Strategist"
+    description: "Helps with roadmaps, user research, feature planning"
+    icon: "💡"
+    icon_color: "#6017E8"
+    is_recommended: true
+    agent_config_file: null
+    key_capabilities:
+      - "Product roadmaps"
+      - "User research"
+      - "Feature analysis"
+      - "Market validation"
+      
+  development_assistant:
+    name: "Development Assistant"
+    description: "Code review, documentation, technical planning"
+    icon: "💻"
+    icon_color: "#51A2FF"
+    is_recommended: false
+    agent_config_file: null
+    key_capabilities:
+      - "Code reviews"
+      - "Documentation"
+      - "Technical planning"
+      - "Testing support"
