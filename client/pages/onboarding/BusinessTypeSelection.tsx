@@ -6,6 +6,7 @@ import { BusinessType, BusinessTypeOption, OnboardingProgress } from '@/types/on
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import BusinessFlowLoader, { BusinessTypeConfig } from '@/services/businessFlowLoader';
+import { onboardingRouter } from '@/services/onboardingRouter';
 
 export default function BusinessTypeSelection() {
   const navigate = useNavigate();
@@ -43,19 +44,27 @@ export default function BusinessTypeSelection() {
           stepTitles: flowConfig.step_titles
         });
 
-        // Load any existing onboarding state from localStorage
-        const savedState = localStorage.getItem('onboarding_state');
-        if (savedState) {
+        // Load existing onboarding data from database
+        if (userId) {
+          const savedData = await onboardingRouter.loadOnboardingDataForStep(userId, 1);
+          if (savedData?.businessType) {
+            setSelectedBusinessType(savedData.businessType);
+          }
+        }
+
+        // Fallback to localStorage for compatibility
+        const localState = localStorage.getItem('onboarding_state');
+        if (localState) {
           try {
-            const state = JSON.parse(savedState);
-            if (state.businessType) {
+            const state = JSON.parse(localState);
+            if (state.businessType && !selectedBusinessType) {
               setSelectedBusinessType(state.businessType);
             }
             if (state.userName) {
               setUserName(state.userName);
             }
           } catch (error) {
-            console.error('Error loading onboarding state:', error);
+            console.error('Error loading local onboarding state:', error);
           }
         }
       } catch (error) {
@@ -67,39 +76,60 @@ export default function BusinessTypeSelection() {
     };
 
     loadConfiguration();
-  }, [isReady]);
+  }, [isReady, userId]);
 
   const handleBusinessTypeSelect = (id: string) => {
     setSelectedBusinessType(id as BusinessType);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!selectedBusinessType) {
       toast.error('Please select a business type to continue');
       return;
     }
 
-    // Save state to localStorage
-    const onboardingState = {
-      currentStep: 1,
-      businessType: selectedBusinessType,
-      selectedDepartments: [],
-      selectedAssistants: [],
-      personalizations: [],
-      companyDetails: {},
-      userName: userName
-    };
-    
-    localStorage.setItem('onboarding_state', JSON.stringify(onboardingState));
-
-    // Show success message for selected business type
-    const selectedOption = businessTypeOptions.find(opt => opt.id === selectedBusinessType);
-    if (selectedOption) {
-      toast.success(`Great choice! We'll customize your AI assistants for ${selectedOption.title}.`);
+    if (!userId) {
+      toast.error('Authentication required. Please try logging in again.');
+      return;
     }
 
-    // Navigate to next step
-    navigate('/ai-onboarding/support-areas');
+    try {
+      // Save to database
+      const success = await onboardingRouter.saveStepProgress(userId, 1, {
+        businessType: selectedBusinessType
+      });
+
+      if (!success) {
+        toast.error('Failed to save progress. Please try again.');
+        return;
+      }
+
+      // Also save to localStorage for compatibility
+      const onboardingState = {
+        currentStep: 1,
+        businessType: selectedBusinessType,
+        selectedDepartments: [],
+        selectedAssistants: [],
+        personalizations: [],
+        companyDetails: {},
+        userName: userName
+      };
+      
+      localStorage.setItem('onboarding_state', JSON.stringify(onboardingState));
+
+      // Show success message for selected business type
+      const selectedOption = businessTypeOptions.find(opt => opt.id === selectedBusinessType);
+      if (selectedOption) {
+        toast.success(`Great choice! We'll customize your AI assistants for ${selectedOption.title}.`);
+      }
+
+      // Navigate to next step
+      navigate('/ai-onboarding/support-areas');
+
+    } catch (error) {
+      console.error('Error saving business type:', error);
+      toast.error('Failed to save progress. Please try again.');
+    }
   };
 
   const handleSkip = () => {

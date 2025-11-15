@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
 import { AssistantCard } from '@/components/onboarding/AssistantCard';
 import { DepartmentType, AssistantOption, OnboardingProgress } from '@/types/onboarding.types';
+import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import BusinessFlowLoader, { AgentConfig } from '@/services/businessFlowLoader';
+import { onboardingRouter } from '@/services/onboardingRouter';
 
 export default function ChooseAssistants() {
   const navigate = useNavigate();
+  const { isReady, userId } = useUser();
   const [selectedDepartments, setSelectedDepartments] = useState<DepartmentType[]>([]);
   const [selectedAssistants, setSelectedAssistants] = useState<string[]>([]);
   const [assistantsByDepartment, setAssistantsByDepartment] = useState<Record<DepartmentType, AssistantOption[]>>({} as Record<DepartmentType, AssistantOption[]>);
@@ -35,19 +38,40 @@ export default function ChooseAssistants() {
 
   useEffect(() => {
     const loadConfiguration = async () => {
+      // Wait for authentication to be ready before loading configuration
+      if (!isReady) {
+        return;
+      }
+      
       try {
         // Load configuration from YAML files
         const flowConfig = await flowLoader.getFlowConfig();
 
-        // Get agents organized by department based on saved departments
-        const savedState = localStorage.getItem('onboarding_state');
+        // Load existing onboarding data from database
         let departments: string[] = [];
-        if (savedState) {
-          try {
-            const state = JSON.parse(savedState);
-            departments = state.selectedDepartments || [];
-          } catch (error) {
-            console.error('Error loading onboarding state:', error);
+        if (userId) {
+          const savedData = await onboardingRouter.loadOnboardingDataForStep(userId, 3);
+          if (savedData) {
+            if (savedData.selectedDepartments) {
+              departments = savedData.selectedDepartments;
+              setSelectedDepartments(savedData.selectedDepartments);
+            }
+            if (savedData.selectedAssistants) {
+              setSelectedAssistants(savedData.selectedAssistants);
+            }
+          }
+        }
+        
+        // Fallback to localStorage for compatibility
+        if (!departments.length) {
+          const savedState = localStorage.getItem('onboarding_state');
+          if (savedState && !userId) {
+            try {
+              const state = JSON.parse(savedState);
+              departments = state.selectedDepartments || [];
+            } catch (error) {
+              console.error('Error loading onboarding state:', error);
+            }
           }
         }
 
@@ -70,30 +94,33 @@ export default function ChooseAssistants() {
           stepTitles: flowConfig.step_titles
         });
 
-        // Update state with loaded departments and assistants
-        if (savedState) {
+        // Auto-select recommended assistants if none selected yet (only for new users)
+        if (!selectedAssistants.length && departments.length > 0) {
+          const recommendedAssistants: string[] = [];
+          departments.forEach((dept: DepartmentType) => {
+            const deptAssistants = assistantsData[dept] || [];
+            deptAssistants.forEach(assistant => {
+              if (assistant.isRecommended) {
+                recommendedAssistants.push(assistant.id);
+              }
+            });
+          });
+          setSelectedAssistants(recommendedAssistants);
+        }
+
+        // Also fallback to localStorage for compatibility
+        const localState = localStorage.getItem('onboarding_state');
+        if (localState && !userId && !departments.length) {
           try {
-            const state = JSON.parse(savedState);
+            const state = JSON.parse(localState);
             if (state.selectedDepartments) {
               setSelectedDepartments(state.selectedDepartments);
-              // Auto-select recommended assistants if none selected yet
-              if (!state.selectedAssistants) {
-                const recommendedAssistants: string[] = [];
-                state.selectedDepartments.forEach((dept: DepartmentType) => {
-                  const deptAssistants = assistantsData[dept] || [];
-                  deptAssistants.forEach(assistant => {
-                    if (assistant.isRecommended) {
-                      recommendedAssistants.push(assistant.id);
-                    }
-                  });
-                });
-                setSelectedAssistants(recommendedAssistants);
-              } else {
+              if (state.selectedAssistants) {
                 setSelectedAssistants(state.selectedAssistants);
               }
             }
           } catch (error) {
-            console.error('Error loading onboarding state:', error);
+            console.error('Error loading local onboarding state:', error);
           }
         }
       } catch (error) {
@@ -105,7 +132,7 @@ export default function ChooseAssistants() {
     };
 
     loadConfiguration();
-  }, []);
+  }, [isReady, userId]);
 
   const handleAssistantSelect = (assistantId: string) => {
     setSelectedAssistants(prev => 
@@ -115,28 +142,49 @@ export default function ChooseAssistants() {
     );
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedAssistants.length === 0) {
       toast.error('Please select at least one AI assistant to continue');
       return;
     }
 
-    // Update state in localStorage
-    const savedState = localStorage.getItem('onboarding_state');
-    let onboardingState;
-    try {
-      onboardingState = savedState ? JSON.parse(savedState) : {};
-    } catch {
-      onboardingState = {};
+    if (!userId) {
+      toast.error('Authentication required. Please try logging in again.');
+      return;
     }
-    
-    onboardingState.currentStep = 3;
-    onboardingState.selectedAssistants = selectedAssistants;
-    
-    localStorage.setItem('onboarding_state', JSON.stringify(onboardingState));
 
-    toast.success(`Perfect! ${selectedAssistants.length} AI assistants will be pre-configured and ready to help.`);
-    navigate('/ai-onboarding/personalize');
+    try {
+      // Save to database
+      const success = await onboardingRouter.saveStepProgress(userId, 3, {
+        selectedAssistants
+      });
+
+      if (!success) {
+        toast.error('Failed to save progress. Please try again.');
+        return;
+      }
+
+      // Also save to localStorage for compatibility
+      const savedState = localStorage.getItem('onboarding_state');
+      let onboardingState;
+      try {
+        onboardingState = savedState ? JSON.parse(savedState) : {};
+      } catch {
+        onboardingState = {};
+      }
+      
+      onboardingState.currentStep = 3;
+      onboardingState.selectedAssistants = selectedAssistants;
+      
+      localStorage.setItem('onboarding_state', JSON.stringify(onboardingState));
+
+      toast.success(`Perfect! ${selectedAssistants.length} AI assistants will be pre-configured and ready to help.`);
+      navigate('/ai-onboarding/personalize');
+
+    } catch (error) {
+      console.error('Error saving assistants selection:', error);
+      toast.error('Failed to save progress. Please try again.');
+    }
   };
 
   const handleBack = () => {
@@ -163,7 +211,7 @@ export default function ChooseAssistants() {
     product_dev: 'Product / Dev'
   };
 
-  if (loading) {
+  if (loading || !isReady) {
     return (
       <OnboardingLayout
         progress={progress}
@@ -177,7 +225,9 @@ export default function ChooseAssistants() {
       >
         <div className="flex items-center justify-center mt-8 py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading assistants...</span>
+          <span className="ml-3 text-gray-600">
+            {!isReady ? 'Initializing...' : 'Loading assistants...'}
+          </span>
         </div>
       </OnboardingLayout>
     );

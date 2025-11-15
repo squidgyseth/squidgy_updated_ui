@@ -7,10 +7,11 @@ import { DepartmentType, DepartmentOption, OnboardingProgress, BusinessType } fr
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import BusinessFlowLoader, { DepartmentConfig } from '@/services/businessFlowLoader';
+import { onboardingRouter } from '@/services/onboardingRouter';
 
 export default function SupportAreasSelection() {
   const navigate = useNavigate();
-  const { isReady } = useUser();
+  const { isReady, userId } = useUser();
   const [selectedDepartments, setSelectedDepartments] = useState<DepartmentType[]>([]);
   const [businessType, setBusinessType] = useState<BusinessType>('saas_tech');
   const [recommendedDepartments, setRecommendedDepartments] = useState<string[]>([]);
@@ -60,23 +61,41 @@ export default function SupportAreasSelection() {
           stepTitles: flowConfig.step_titles
         });
 
-        // Load existing onboarding state
-        const savedState = localStorage.getItem('onboarding_state');
-        if (savedState) {
+        // Load existing onboarding data from database
+        if (userId) {
+          const savedData = await onboardingRouter.loadOnboardingDataForStep(userId, 2);
+          if (savedData) {
+            if (savedData.businessType) {
+              setBusinessType(savedData.businessType);
+              const recommended = getRecommendedDepartments(savedData.businessType);
+              setRecommendedDepartments(recommended);
+              // Auto-select recommended departments if no selection exists
+              if (!savedData.selectedDepartments?.length) {
+                setSelectedDepartments(recommended);
+              }
+            }
+            if (savedData.selectedDepartments) {
+              setSelectedDepartments(savedData.selectedDepartments);
+            }
+          }
+        }
+
+        // Fallback to localStorage for compatibility
+        const localState = localStorage.getItem('onboarding_state');
+        if (localState && !userId) {
           try {
-            const state = JSON.parse(savedState);
+            const state = JSON.parse(localState);
             if (state.businessType) {
               setBusinessType(state.businessType);
               const recommended = getRecommendedDepartments(state.businessType);
               setRecommendedDepartments(recommended);
-              // Auto-select recommended departments
               setSelectedDepartments(recommended);
             }
             if (state.selectedDepartments) {
               setSelectedDepartments(state.selectedDepartments);
             }
           } catch (error) {
-            console.error('Error loading onboarding state:', error);
+            console.error('Error loading local onboarding state:', error);
           }
         }
       } catch (error) {
@@ -88,7 +107,7 @@ export default function SupportAreasSelection() {
     };
 
     loadConfiguration();
-  }, [isReady]);
+  }, [isReady, userId]);
 
   const handleDepartmentSelect = (id: string) => {
     const departmentId = id as DepartmentType;
@@ -99,28 +118,49 @@ export default function SupportAreasSelection() {
     );
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedDepartments.length === 0) {
       toast.error('Please select at least one department to continue');
       return;
     }
 
-    // Update state in localStorage
-    const savedState = localStorage.getItem('onboarding_state');
-    let onboardingState;
-    try {
-      onboardingState = savedState ? JSON.parse(savedState) : {};
-    } catch {
-      onboardingState = {};
+    if (!userId) {
+      toast.error('Authentication required. Please try logging in again.');
+      return;
     }
-    
-    onboardingState.currentStep = 2;
-    onboardingState.selectedDepartments = selectedDepartments;
-    
-    localStorage.setItem('onboarding_state', JSON.stringify(onboardingState));
 
-    toast.success(`Great! We'll set up AI assistants for ${selectedDepartments.length} departments.`);
-    navigate('/ai-onboarding/choose-assistants');
+    try {
+      // Save to database
+      const success = await onboardingRouter.saveStepProgress(userId, 2, {
+        selectedDepartments
+      });
+
+      if (!success) {
+        toast.error('Failed to save progress. Please try again.');
+        return;
+      }
+
+      // Also save to localStorage for compatibility
+      const savedState = localStorage.getItem('onboarding_state');
+      let onboardingState;
+      try {
+        onboardingState = savedState ? JSON.parse(savedState) : {};
+      } catch {
+        onboardingState = {};
+      }
+      
+      onboardingState.currentStep = 2;
+      onboardingState.selectedDepartments = selectedDepartments;
+      
+      localStorage.setItem('onboarding_state', JSON.stringify(onboardingState));
+
+      toast.success(`Great! We'll set up AI assistants for ${selectedDepartments.length} departments.`);
+      navigate('/ai-onboarding/choose-assistants');
+
+    } catch (error) {
+      console.error('Error saving departments selection:', error);
+      toast.error('Failed to save progress. Please try again.');
+    }
   };
 
   const handleBack = () => {

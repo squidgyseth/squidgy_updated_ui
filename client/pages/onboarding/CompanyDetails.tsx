@@ -6,10 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { CompanyDetails as CompanyDetailsType, OnboardingProgress } from '@/types/onboarding.types';
+import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
+import BusinessFlowLoader from '@/services/businessFlowLoader';
+import { onboardingRouter } from '@/services/onboardingRouter';
+import { onboardingDataService } from '@/services/onboardingDataService';
 
 export default function CompanyDetails() {
   const navigate = useNavigate();
+  const { isReady, userId } = useUser();
   const [companyDetails, setCompanyDetails] = useState<CompanyDetailsType>({
     companyName: '',
     website: '',
@@ -19,27 +24,70 @@ export default function CompanyDetails() {
     phoneNumber: '',
     description: ''
   });
+  const [loading, setLoading] = useState(true);
 
-  const progress: OnboardingProgress = {
+  const flowLoader = BusinessFlowLoader.getInstance();
+
+  const [progress, setProgress] = useState<OnboardingProgress>({
     currentStep: 5,
     totalSteps: 6,
     stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Personalize', 'Company Details', 'Welcome']
-  };
+  });
 
   useEffect(() => {
-    // Load existing onboarding state
-    const savedState = localStorage.getItem('onboarding_state');
-    if (savedState) {
+    const loadConfiguration = async () => {
+      // Wait for authentication to be ready before loading configuration
+      if (!isReady) {
+        return;
+      }
+      
       try {
-        const state = JSON.parse(savedState);
-        if (state.companyDetails) {
-          setCompanyDetails(state.companyDetails);
+        // Load flow configuration
+        const flowConfig = await flowLoader.getFlowConfig();
+        setProgress({
+          currentStep: 5,
+          totalSteps: flowConfig.total_steps,
+          stepTitles: flowConfig.step_titles
+        });
+
+        // Load existing company details from database
+        if (userId) {
+          const existingDetails = await onboardingDataService.getCompanyDetails(userId);
+          if (existingDetails) {
+            setCompanyDetails({
+              companyName: existingDetails.company_name || '',
+              website: existingDetails.website_url || '',
+              specialty: existingDetails.industry || '',
+              teamSize: existingDetails.company_size || '',
+              primaryLocation: `${existingDetails.city || ''}, ${existingDetails.state || ''}, ${existingDetails.country || ''}`.replace(/^,\s*|,\s*$/g, '') || '',
+              phoneNumber: existingDetails.company_phone || '',
+              description: '' // We'll store this in a new field if needed
+            });
+          }
+        }
+        
+        // Fallback to localStorage for compatibility
+        const savedState = localStorage.getItem('onboarding_state');
+        if (savedState && !userId) {
+          try {
+            const state = JSON.parse(savedState);
+            if (state.companyDetails) {
+              setCompanyDetails(state.companyDetails);
+            }
+          } catch (error) {
+            console.error('Error loading local onboarding state:', error);
+          }
         }
       } catch (error) {
-        console.error('Error loading onboarding state:', error);
+        console.error('Error loading company details configuration:', error);
+        toast.error('Failed to load configuration');
+      } finally {
+        setLoading(false);
       }
-    }
-  }, []);
+    };
+
+    loadConfiguration();
+  }, [isReady, userId]);
 
   const updateCompanyDetail = (field: keyof CompanyDetailsType, value: string) => {
     setCompanyDetails(prev => ({
@@ -48,28 +96,69 @@ export default function CompanyDetails() {
     }));
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!companyDetails.companyName?.trim()) {
       toast.error('Please enter your company name to continue');
       return;
     }
 
-    // Update state in localStorage
-    const savedState = localStorage.getItem('onboarding_state');
-    let onboardingState;
-    try {
-      onboardingState = savedState ? JSON.parse(savedState) : {};
-    } catch {
-      onboardingState = {};
+    if (!userId) {
+      toast.error('Authentication required. Please try logging in again.');
+      return;
     }
-    
-    onboardingState.currentStep = 5;
-    onboardingState.companyDetails = companyDetails;
-    
-    localStorage.setItem('onboarding_state', JSON.stringify(onboardingState));
 
-    toast.success('Company details saved! Your AI assistants will now provide personalized support.');
-    navigate('/ai-onboarding/welcome');
+    try {
+      // Parse location into components
+      const locationParts = companyDetails.primaryLocation.split(',').map(part => part.trim());
+      const [city = '', state = '', country = 'US'] = locationParts;
+
+      // Convert to database format and save
+      const companyDetailsToSave = {
+        user_id: userId,
+        company_name: companyDetails.companyName,
+        company_email: '', // We'll need to get this from user profile or add a field
+        company_phone: companyDetails.phoneNumber || undefined,
+        website_url: companyDetails.website || undefined,
+        industry: companyDetails.specialty || undefined,
+        company_size: companyDetails.teamSize || undefined,
+        country: country || 'US',
+        city: city || undefined,
+        state: state || undefined,
+        time_zone: 'America/New_York', // Default timezone
+        ai_experience_level: 'intermediate' // Default level
+      };
+
+      const success = await onboardingDataService.saveCompanyDetails(companyDetailsToSave);
+      
+      if (!success) {
+        toast.error('Failed to save company details. Please try again.');
+        return;
+      }
+
+      // Also save step progress
+      await onboardingRouter.saveStepProgress(userId, 5, {});
+
+      // Update localStorage for compatibility
+      const savedState = localStorage.getItem('onboarding_state');
+      let onboardingState;
+      try {
+        onboardingState = savedState ? JSON.parse(savedState) : {};
+      } catch {
+        onboardingState = {};
+      }
+      
+      onboardingState.currentStep = 5;
+      onboardingState.companyDetails = companyDetails;
+      
+      localStorage.setItem('onboarding_state', JSON.stringify(onboardingState));
+
+      toast.success('Company details saved! Your AI assistants will now provide personalized support.');
+      navigate('/ai-onboarding/welcome');
+
+    } catch (error) {
+      console.error('Error saving company details:', error);
+      toast.error('Failed to save company details. Please try again.');
+    }
   };
 
   const handleBack = () => {
@@ -82,6 +171,29 @@ export default function CompanyDetails() {
 
   const descriptionCharCount = companyDetails.description?.length || 0;
   const maxDescriptionLength = 500;
+
+  if (loading || !isReady) {
+    return (
+      <OnboardingLayout
+        progress={progress}
+        stepTitle="Company details"
+        stepDescription="This information helps your AI assistants provide more personalized and relevant support for your solar business."
+        onBack={() => navigate('/ai-onboarding/personalize')}
+        onContinue={() => {}}
+        onSkip={() => {}}
+        continueDisabled={true}
+        continueText="Continue"
+        className="max-w-3xl mx-auto"
+      >
+        <div className="flex items-center justify-center mt-8 py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">
+            {!isReady ? 'Initializing...' : 'Loading company details...'}
+          </span>
+        </div>
+      </OnboardingLayout>
+    );
+  }
 
   return (
     <OnboardingLayout

@@ -11,8 +11,11 @@ import {
   AvatarStyle, 
   CommunicationTone 
 } from '@/types/onboarding.types';
+import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import BusinessFlowLoader, { AgentConfig } from '@/services/businessFlowLoader';
+import { onboardingRouter } from '@/services/onboardingRouter';
+import { onboardingDataService } from '@/services/onboardingDataService';
 
 interface SelectedAssistant {
   id: string;
@@ -24,6 +27,7 @@ interface SelectedAssistant {
 
 export default function PersonalizeAssistants() {
   const navigate = useNavigate();
+  const { isReady, userId } = useUser();
   const [personalizations, setPersonalizations] = useState<AssistantPersonalization[]>([]);
   const [selectedAssistants, setSelectedAssistants] = useState<SelectedAssistant[]>([]);
   const [avatarStyleOptions, setAvatarStyleOptions] = useState<Array<{ value: string; label: string; description: string }>>([]);
@@ -39,6 +43,11 @@ export default function PersonalizeAssistants() {
 
   useEffect(() => {
     const loadConfiguration = async () => {
+      // Wait for authentication to be ready before loading configuration
+      if (!isReady) {
+        return;
+      }
+      
       try {
         // Load configuration from YAML files
         const [personalizationConfig, flowConfig] = await Promise.all([
@@ -54,61 +63,91 @@ export default function PersonalizeAssistants() {
           stepTitles: flowConfig.step_titles
         });
 
-        // Load existing onboarding state
+        // Load existing onboarding data from database
+        let assistantData: { selectedAssistants?: string[]; selectedDepartments?: string[] } = {};
+        let existingPersonalizations: any[] = [];
+        
+        if (userId) {
+          const savedData = await onboardingRouter.loadOnboardingDataForStep(userId, 4);
+          if (savedData) {
+            assistantData = {
+              selectedAssistants: savedData.selectedAssistants,
+              selectedDepartments: savedData.selectedDepartments
+            };
+          }
+          
+          // Load existing personalizations
+          existingPersonalizations = await onboardingDataService.getAssistantPersonalizations(userId);
+        }
+        
+        // Fallback to localStorage for compatibility
         const savedState = localStorage.getItem('onboarding_state');
-        if (savedState) {
+        if (savedState && (!assistantData.selectedAssistants && !userId)) {
           try {
             const state = JSON.parse(savedState);
+            assistantData = {
+              selectedAssistants: state.selectedAssistants,
+              selectedDepartments: state.selectedDepartments
+            };
             
-            if (state.selectedAssistants && state.selectedAssistants.length > 0 && state.selectedDepartments) {
-              // Find assistant details using the hierarchical flow
-              const selectedAssistantDetails: SelectedAssistant[] = [];
-              
-              // Get all agents for the selected departments
-              const agentsByDepartment = await flowLoader.getAgentsByDepartment(state.selectedDepartments);
-              
-              // Search through all departments to find the selected assistants
-              Object.values(agentsByDepartment).forEach(departmentAgents => {
-                departmentAgents.forEach((agent: {id: string} & AgentConfig) => {
-                  if (state.selectedAssistants.includes(agent.id)) {
-                    selectedAssistantDetails.push({
-                      id: agent.id,
-                      name: agent.name,
-                      icon: agent.icon,
-                      iconColor: agent.icon_color,
-                      agentConfig: agent.agent_config_file
-                    });
-                  }
-                });
-              });
-
-              console.log('Found selected assistants:', selectedAssistantDetails);
-              setSelectedAssistants(selectedAssistantDetails);
-              
-              // Initialize personalizations with defaults
-              const defaultAvatarStyle = personalizationConfig.avatar_styles[0]?.value || 'professional';
-              const defaultCommunicationTone = personalizationConfig.communication_tones[0]?.value || 'professional';
-              
-              const initialPersonalizations: AssistantPersonalization[] = selectedAssistantDetails.map(assistant => ({
-                assistantId: assistant.id,
-                customName: '',
-                avatarStyle: defaultAvatarStyle as AvatarStyle,
-                communicationTone: defaultCommunicationTone as CommunicationTone
-              }));
-              setPersonalizations(initialPersonalizations);
-            } else {
-              console.log('No selected assistants found in onboarding state');
-            }
-
-            // Load existing personalizations if any
             if (state.personalizations) {
-              setPersonalizations(state.personalizations);
+              existingPersonalizations = state.personalizations;
             }
           } catch (error) {
-            console.error('Error loading onboarding state:', error);
+            console.error('Error loading local onboarding state:', error);
+          }
+        }
+        
+        // Process assistant data if available
+        if (assistantData.selectedAssistants && assistantData.selectedAssistants.length > 0 && assistantData.selectedDepartments) {
+          // Find assistant details using the hierarchical flow
+          const selectedAssistantDetails: SelectedAssistant[] = [];
+          
+          // Get all agents for the selected departments
+          const agentsByDepartment = await flowLoader.getAgentsByDepartment(assistantData.selectedDepartments);
+          
+          // Search through all departments to find the selected assistants
+          Object.values(agentsByDepartment).forEach(departmentAgents => {
+            departmentAgents.forEach((agent: {id: string} & AgentConfig) => {
+              if (assistantData.selectedAssistants!.includes(agent.id)) {
+                selectedAssistantDetails.push({
+                  id: agent.id,
+                  name: agent.name,
+                  icon: agent.icon,
+                  iconColor: agent.icon_color,
+                  agentConfig: agent.agent_config_file
+                });
+              }
+            });
+          });
+
+          console.log('Found selected assistants:', selectedAssistantDetails);
+          setSelectedAssistants(selectedAssistantDetails);
+          
+          // Convert existing personalizations to the expected format
+          if (existingPersonalizations.length > 0) {
+            const convertedPersonalizations: AssistantPersonalization[] = existingPersonalizations.map(p => ({
+              assistantId: p.assistant_id,
+              customName: p.custom_name || '',
+              avatarStyle: p.avatar_style as AvatarStyle,
+              communicationTone: p.communication_tone as CommunicationTone
+            }));
+            setPersonalizations(convertedPersonalizations);
+          } else {
+            // Initialize personalizations with defaults for new assistants
+            const defaultAvatarStyle = personalizationConfig.avatar_styles[0]?.value || 'professional';
+            const defaultCommunicationTone = personalizationConfig.communication_tones[0]?.value || 'professional';
+            
+            const initialPersonalizations: AssistantPersonalization[] = selectedAssistantDetails.map(assistant => ({
+              assistantId: assistant.id,
+              customName: '',
+              avatarStyle: defaultAvatarStyle as AvatarStyle,
+              communicationTone: defaultCommunicationTone as CommunicationTone
+            }));
+            setPersonalizations(initialPersonalizations);
           }
         } else {
-          console.log('No onboarding state found in localStorage');
+          console.log('No selected assistants found');
         }
       } catch (error) {
         console.error('Error loading personalization configuration:', error);
@@ -119,7 +158,7 @@ export default function PersonalizeAssistants() {
     };
 
     loadConfiguration();
-  }, []);
+  }, [isReady, userId]);
 
   const updatePersonalization = (assistantId: string, field: keyof AssistantPersonalization, value: any) => {
     setPersonalizations(prev => {
@@ -146,23 +185,54 @@ export default function PersonalizeAssistants() {
     });
   };
 
-  const handleContinue = () => {
-    // Update state in localStorage
-    const savedState = localStorage.getItem('onboarding_state');
-    let onboardingState;
-    try {
-      onboardingState = savedState ? JSON.parse(savedState) : {};
-    } catch {
-      onboardingState = {};
+  const handleContinue = async () => {
+    if (!userId) {
+      toast.error('Authentication required. Please try logging in again.');
+      return;
     }
-    
-    onboardingState.currentStep = 4;
-    onboardingState.personalizations = personalizations;
-    
-    localStorage.setItem('onboarding_state', JSON.stringify(onboardingState));
 
-    toast.success('Your AI assistants have been personalized and are ready to work!');
-    navigate('/ai-onboarding/company-details');
+    try {
+      // Convert personalizations to database format and save
+      const personalizationsToSave = personalizations.map(p => ({
+        user_id: userId,
+        assistant_id: p.assistantId,
+        custom_name: p.customName || null,
+        avatar_style: p.avatarStyle,
+        communication_tone: p.communicationTone,
+        is_enabled: true
+      }));
+
+      const success = await onboardingDataService.saveMultiplePersonalizations(personalizationsToSave);
+      
+      if (!success) {
+        toast.error('Failed to save personalization settings. Please try again.');
+        return;
+      }
+
+      // Also save step progress
+      await onboardingRouter.saveStepProgress(userId, 4, {});
+
+      // Update localStorage for compatibility
+      const savedState = localStorage.getItem('onboarding_state');
+      let onboardingState;
+      try {
+        onboardingState = savedState ? JSON.parse(savedState) : {};
+      } catch {
+        onboardingState = {};
+      }
+      
+      onboardingState.currentStep = 4;
+      onboardingState.personalizations = personalizations;
+      
+      localStorage.setItem('onboarding_state', JSON.stringify(onboardingState));
+
+      toast.success('Your AI assistants have been personalized and are ready to work!');
+      navigate('/ai-onboarding/company-details');
+
+    } catch (error) {
+      console.error('Error saving personalization settings:', error);
+      toast.error('Failed to save personalization settings. Please try again.');
+    }
   };
 
   const handleBack = () => {
@@ -188,7 +258,7 @@ export default function PersonalizeAssistants() {
     return found || defaultPersonalization;
   };
 
-  if (loading) {
+  if (loading || !isReady) {
     return (
       <OnboardingLayout
         progress={progress}
@@ -201,7 +271,9 @@ export default function PersonalizeAssistants() {
       >
         <div className="flex items-center justify-center mt-8 py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading personalization options...</span>
+          <span className="ml-3 text-gray-600">
+            {!isReady ? 'Initializing...' : 'Loading personalization options...'}
+          </span>
         </div>
       </OnboardingLayout>
     );

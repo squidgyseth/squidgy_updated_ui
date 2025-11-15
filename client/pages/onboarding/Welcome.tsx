@@ -4,52 +4,135 @@ import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { OnboardingProgress, OnboardingState } from '@/types/onboarding.types';
+import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
+import BusinessFlowLoader from '@/services/businessFlowLoader';
+import { onboardingRouter } from '@/services/onboardingRouter';
+import { onboardingDataService } from '@/services/onboardingDataService';
 
 export default function Welcome() {
   const navigate = useNavigate();
+  const { isReady, userId } = useUser();
   const [onboardingData, setOnboardingData] = useState<OnboardingState | null>(null);
-  const [userName, setUserName] = useState('Aleksa Jagolnik');
+  const [userName, setUserName] = useState('User');
+  const [loading, setLoading] = useState(true);
 
-  const progress: OnboardingProgress = {
+  const flowLoader = BusinessFlowLoader.getInstance();
+
+  const [progress, setProgress] = useState<OnboardingProgress>({
     currentStep: 6,
     totalSteps: 6,
     stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Personalize', 'Company Details', 'Welcome']
-  };
+  });
 
   useEffect(() => {
-    // Load the completed onboarding state
-    const savedState = localStorage.getItem('onboarding_state');
-    if (savedState) {
+    const loadConfiguration = async () => {
+      // Wait for authentication to be ready before loading configuration
+      if (!isReady) {
+        return;
+      }
+      
       try {
-        const state = JSON.parse(savedState);
-        setOnboardingData(state);
-        if (state.userName) {
-          setUserName(state.userName);
+        // Load flow configuration
+        const flowConfig = await flowLoader.getFlowConfig();
+        setProgress({
+          currentStep: 6,
+          totalSteps: flowConfig.total_steps,
+          stepTitles: flowConfig.step_titles
+        });
+
+        // Load onboarding data from database
+        if (userId) {
+          const progress = await onboardingDataService.getOnboardingProgress(userId);
+          if (progress) {
+            // Create onboarding data summary from database
+            const onboardingDataSummary: OnboardingState = {
+              currentStep: progress.current_step || 6,
+              businessType: progress.business_type || 'other',
+              selectedDepartments: progress.selected_departments || [],
+              selectedAssistants: progress.selected_assistants || [],
+              personalizations: [], // We could load this too if needed
+              companyDetails: null // We could load this too if needed
+            };
+            setOnboardingData(onboardingDataSummary);
+          }
+          
+          // Get user name from company details or profile
+          const companyDetails = await onboardingDataService.getCompanyDetails(userId);
+          if (companyDetails?.company_name) {
+            setUserName(companyDetails.company_name);
+          }
+        }
+        
+        // Fallback to localStorage for compatibility
+        if (!onboardingData) {
+          const savedState = localStorage.getItem('onboarding_state');
+          if (savedState) {
+            try {
+              const state = JSON.parse(savedState);
+              setOnboardingData(state);
+              if (state.userName || state.companyDetails?.companyName) {
+                setUserName(state.userName || state.companyDetails?.companyName || 'User');
+              }
+            } catch (error) {
+              console.error('Error loading local onboarding state:', error);
+            }
+          }
         }
       } catch (error) {
-        console.error('Error loading onboarding state:', error);
+        console.error('Error loading welcome configuration:', error);
+        toast.error('Failed to load onboarding summary');
+      } finally {
+        setLoading(false);
       }
-    }
-  }, []);
+    };
 
-  const handleGetStarted = () => {
-    // Clear onboarding state and redirect to dashboard
-    localStorage.removeItem('onboarding_state');
-    
-    // Save completion status (in a real app, this would go to the backend)
-    localStorage.setItem('onboarding_completed', 'true');
-    
-    toast.success('Welcome to Squidgy! Your AI team is ready to help.');
-    navigate('/dashboard');
+    loadConfiguration();
+  }, [isReady, userId, onboardingData]);
+
+  const handleGetStarted = async () => {
+    if (!userId) {
+      toast.error('Authentication required. Please try logging in again.');
+      return;
+    }
+
+    try {
+      // Mark onboarding as completed in the database
+      const success = await onboardingDataService.markOnboardingCompleted(userId);
+      
+      if (!success) {
+        toast.error('Failed to save completion status. Please try again.');
+        return;
+      }
+
+      // Clear onboarding state from localStorage
+      localStorage.removeItem('onboarding_state');
+      localStorage.setItem('onboarding_completed', 'true');
+      
+      toast.success('Welcome to Squidgy! Your AI team is ready to help.');
+      navigate('/dashboard');
+
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      toast.error('Failed to complete onboarding. Please try again.');
+    }
   };
 
   const handleBack = () => {
     navigate('/ai-onboarding/company-details');
   };
 
-  if (!onboardingData) {
-    return <div>Loading...</div>;
+  if (loading || !isReady || !onboardingData) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <span className="text-gray-600">
+            {!isReady ? 'Initializing...' : 'Loading onboarding summary...'}
+          </span>
+        </div>
+      </div>
+    );
   }
 
   const businessTypeLabels: Record<string, string> = {

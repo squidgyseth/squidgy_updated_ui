@@ -4,6 +4,7 @@ import { Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { signIn } from '../lib/api';
 import { useUser } from "@/hooks/useUser";
+import { onboardingRouter } from "@/services/onboardingRouter";
 
 // SVG Icons from the design
 const GoogleIcon = () => (
@@ -79,7 +80,7 @@ const carouselStates: CarouselState[] = [
 
 export default function Login() {
   const navigate = useNavigate();
-  const { setUserId } = useUser();
+  const { setUserId, userId } = useUser();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -121,13 +122,55 @@ export default function Login() {
       
       toast.success('Login successful!');
       
-      // FOR TESTING: Always force onboarding flow to test the new configuration-driven system
-      // Clear any existing flags to ensure we test the onboarding
-      localStorage.removeItem('onboarding_completed');
-      localStorage.removeItem('onboarding_state');
-      
-      // Navigate to onboarding immediately - the onboarding components will wait for auth to be ready
-      navigate('/ai-onboarding/business-type');
+      // Use smart onboarding router to determine where to go
+      // This will check completion status and route accordingly
+      try {
+        // Get user ID from response or auth service
+        // Note: We'll get the userId after auth is established
+        
+        // Wait for auth to settle, then use smart routing
+        const determineRoute = async () => {
+          // Wait up to 3 seconds for userId to be available
+          let attempts = 0;
+          const maxAttempts = 6; // 3 seconds with 500ms intervals
+          
+          const checkUserId = () => {
+            return new Promise((resolve) => {
+              const interval = setInterval(() => {
+                attempts++;
+                if (userId) {
+                  clearInterval(interval);
+                  resolve(userId);
+                } else if (attempts >= maxAttempts) {
+                  clearInterval(interval);
+                  resolve(null);
+                }
+              }, 500);
+            });
+          };
+          
+          const finalUserId = await checkUserId();
+          
+          if (finalUserId) {
+            const routeDecision = await onboardingRouter.determineLoginRoute(finalUserId as string);
+            console.log('🧭 Login: Route decision:', routeDecision);
+            
+            toast.success(routeDecision.reason);
+            navigate(routeDecision.redirectPath);
+          } else {
+            // Fallback to onboarding if no userId after waiting
+            console.log('⚠️ Login: No userId found after waiting, falling back to onboarding');
+            navigate('/ai-onboarding/business-type');
+          }
+        };
+        
+        determineRoute();
+        
+      } catch (error) {
+        console.error('❌ Login: Error determining route:', error);
+        // Fallback to onboarding on error
+        navigate('/ai-onboarding/business-type');
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       

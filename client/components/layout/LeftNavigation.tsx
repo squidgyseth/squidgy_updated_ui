@@ -1,6 +1,8 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { authService } from "../../lib/auth-service";
 import { useCompanyBranding } from "../../hooks/useCompanyBranding";
+import { useUser } from "../../hooks/useUser";
+import { onboardingRouter } from "../../services/onboardingRouter";
 
 interface LeftNavigationProps {
   currentPage?: 'chat' | 'dashboard' | 'home' | 'leads' | 'settings' | 'onboarding';
@@ -10,6 +12,7 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { companyName, faviconUrl, isLoading } = useCompanyBranding();
+  const { userId } = useUser();
 
   // Auto-detect current page if not provided
   const detectCurrentPage = () => {
@@ -46,8 +49,15 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
     navigate('/leads');
   };
 
-  const handleOnboardingClick = () => {
-    navigate('/ai-onboarding/business-type');
+  const handleOnboardingClick = async () => {
+    if (userId) {
+      // Use smart routing to determine where to go (editing mode)
+      const routeDecision = await onboardingRouter.handleOnboardingIconClick(userId);
+      navigate(routeDecision.redirectPath);
+    } else {
+      // No userId, start fresh onboarding
+      navigate('/ai-onboarding/business-type');
+    }
   };
 
   const handleSettingsClick = () => {
