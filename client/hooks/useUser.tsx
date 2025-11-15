@@ -527,6 +527,8 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     localStorage.removeItem('dev_user_id');
     localStorage.removeItem('dev_user_email');
     localStorage.removeItem('session_expiry_warning');
+    localStorage.removeItem('onboarding_completed');
+    localStorage.removeItem('onboarding_state');
     setIsReady(true); // Keep ready state true to prevent re-initialization
   };
 

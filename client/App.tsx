@@ -41,6 +41,14 @@ import SocialMediaPreview from "./pages/SocialMediaPreview";
 import HistoricalNewsletters from "./pages/HistoricalNewsletters";
 import HistoricalSocialPosts from "./pages/HistoricalSocialPosts";
 
+// AI Onboarding Pages
+import BusinessTypeSelection from "./pages/onboarding/BusinessTypeSelection";
+import SupportAreasSelection from "./pages/onboarding/SupportAreasSelection";
+import ChooseAssistants from "./pages/onboarding/ChooseAssistants";
+import PersonalizeAssistants from "./pages/onboarding/PersonalizeAssistants";
+import CompanyDetails from "./pages/onboarding/CompanyDetails";
+import Welcome from "./pages/onboarding/Welcome";
+
 const queryClient = new QueryClient();
 
 // Component to handle auth redirects
@@ -245,6 +253,39 @@ const App = () => (
               <HistoricalSocialPosts />
             </ProtectedRoute>
           } />
+          
+          {/* AI Onboarding Routes */}
+          <Route path="/ai-onboarding/business-type" element={
+            <ProtectedRoute>
+              <BusinessTypeSelection />
+            </ProtectedRoute>
+          } />
+          <Route path="/ai-onboarding/support-areas" element={
+            <ProtectedRoute>
+              <SupportAreasSelection />
+            </ProtectedRoute>
+          } />
+          <Route path="/ai-onboarding/choose-assistants" element={
+            <ProtectedRoute>
+              <ChooseAssistants />
+            </ProtectedRoute>
+          } />
+          <Route path="/ai-onboarding/personalize" element={
+            <ProtectedRoute>
+              <PersonalizeAssistants />
+            </ProtectedRoute>
+          } />
+          <Route path="/ai-onboarding/company-details" element={
+            <ProtectedRoute>
+              <CompanyDetails />
+            </ProtectedRoute>
+          } />
+          <Route path="/ai-onboarding/welcome" element={
+            <ProtectedRoute>
+              <Welcome />
+            </ProtectedRoute>
+          } />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

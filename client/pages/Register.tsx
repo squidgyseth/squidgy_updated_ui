@@ -152,7 +152,8 @@ export default function Register() {
       } else {
         console.log('🎉 REGISTER: Account created and verified, navigating to /welcome');
         toast.success('Account created successfully!');
-        navigate('/welcome');
+        // New users always go through onboarding
+        navigate('/ai-onboarding/business-type');
       }
     } catch (error: any) {
       console.error('❌ REGISTER: Error during signup:', error);

@@ -3,7 +3,7 @@ import { authService } from "../../lib/auth-service";
 import { useCompanyBranding } from "../../hooks/useCompanyBranding";
 
 interface LeftNavigationProps {
-  currentPage?: 'chat' | 'dashboard' | 'home' | 'leads' | 'settings';
+  currentPage?: 'chat' | 'dashboard' | 'home' | 'leads' | 'settings' | 'onboarding';
 }
 
 function LeftNavigation({ currentPage }: LeftNavigationProps) {
@@ -15,6 +15,7 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
   const detectCurrentPage = () => {
     if (currentPage) return currentPage;
     const path = location.pathname;
+    if (path.includes('/ai-onboarding')) return 'onboarding';
     if (path.includes('/settings') || path.includes('/account-settings') || path.includes('/business-settings') || path.includes('/team-settings') || path.includes('/personalisation-settings') || path.includes('/billing-settings')) return 'settings';
     if (path.includes('/leads')) return 'leads';
     if (path.includes('/chat')) return 'chat';
@@ -43,6 +44,10 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
 
   const handleLeadsClick = () => {
     navigate('/leads');
+  };
+
+  const handleOnboardingClick = () => {
+    navigate('/ai-onboarding/business-type');
   };
 
   const handleSettingsClick = () => {
@@ -167,6 +172,31 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
           </div>
           <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center">
             Leads
+          </span>
+        </button>
+        
+        {/* Onboarding Icon */}
+        <button 
+          onClick={handleOnboardingClick}
+          className={`flex flex-col items-center p-2 w-full hover:bg-gray-100 rounded-lg transition-colors ${
+            activePage === 'onboarding' ? 'bg-gray-50' : ''
+          }`}
+        >
+          <div className="flex justify-center items-center mb-1">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z" fill="url(#onboardingGradient)"/>
+              <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z" stroke="url(#onboardingGradient)" strokeWidth="0.5"/>
+              <defs>
+                <linearGradient id="onboardingGradient" x1="2" y1="2" x2="18.7851" y2="18.74" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#FB252A"/>
+                  <stop offset="0.5" stopColor="#A61D92"/>
+                  <stop offset="1" stopColor="#6017E8"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center w-[46px]">
+            Onboarding
           </span>
         </button>
         

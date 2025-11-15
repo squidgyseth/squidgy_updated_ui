@@ -44,7 +44,15 @@ export default function Index() {
         <div className="relative w-full max-w-[400px] bg-white rounded-2xl border border-squidgy-border p-6 flex flex-col items-center">
           {/* Close Button */}
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => {
+              // Check if user has completed onboarding
+              const onboardingCompleted = localStorage.getItem('onboarding_completed');
+              if (onboardingCompleted === 'true') {
+                navigate('/dashboard');
+              } else {
+                navigate('/ai-onboarding/business-type');
+              }
+            }}
             className="absolute top-4 right-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"
           >
             <X className="w-6 h-6 text-squidgy-text-primary" strokeWidth={1.5} />
@@ -77,7 +85,15 @@ export default function Index() {
           <div className="flex flex-col gap-2 w-full">
             {/* Primary Gradient Button */}
             <button 
-              onClick={() => navigate('/website-details')}
+              onClick={() => {
+                // For new users, start onboarding instead of going directly to website-details
+                const onboardingCompleted = localStorage.getItem('onboarding_completed');
+                if (onboardingCompleted === 'true') {
+                  navigate('/website-details');
+                } else {
+                  navigate('/ai-onboarding/business-type');
+                }
+              }}
               className="w-full py-3 px-5 bg-squidgy-gradient text-white font-bold text-[15px] leading-6 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
             >
               Create your agent
@@ -85,7 +101,15 @@ export default function Index() {
 
             {/* Secondary Button */}
             <button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => {
+                // Check if user has completed onboarding
+                const onboardingCompleted = localStorage.getItem('onboarding_completed');
+                if (onboardingCompleted === 'true') {
+                  navigate('/dashboard');
+                } else {
+                  navigate('/ai-onboarding/business-type');
+                }
+              }}
               className="w-full py-3 px-5 text-squidgy-primary font-bold text-[15px] leading-6 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
             >
               Go to dashboard

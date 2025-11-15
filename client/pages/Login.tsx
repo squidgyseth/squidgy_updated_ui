@@ -119,8 +119,17 @@ export default function Login() {
       // Don't set userId manually - let the auth state change listener handle it
       // The auth state change listener will do the email lookup to get correct user_id
       
+      // Check if user has completed onboarding
+      const onboardingCompleted = localStorage.getItem('onboarding_completed');
+      
       toast.success('Login successful!');
-      navigate('/dashboard');
+      
+      if (onboardingCompleted === 'true') {
+        navigate('/dashboard');
+      } else {
+        // First time user - start onboarding
+        navigate('/ai-onboarding/business-type');
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       
