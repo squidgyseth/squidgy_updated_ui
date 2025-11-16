@@ -172,18 +172,18 @@ export default function Welcome() {
           </div>
 
           {/* Welcome Message */}
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 font-['Open_Sans'] mb-4">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 font-['Open_Sans'] mb-3">
               Welcome to Squidgy, {userName}! 🎉
             </h1>
-            <p className="text-lg text-gray-600 font-['Open_Sans'] max-w-2xl mx-auto">
-              Your AI team is ready to transform how you work. Here's what we've set up for your{' '}
+            <p className="text-base text-gray-600 font-['Open_Sans'] max-w-xl mx-auto">
+              Here's what we've set up for your{' '}
               <span className="font-semibold text-gray-800">{businessTypeLabel}</span> business:
             </p>
           </div>
 
           {/* Setup Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Departments */}
             <div className="text-center">
               <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -191,14 +191,14 @@ export default function Welcome() {
                   <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#6017E8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 font-['Open_Sans'] mb-2">
+              <h3 className="text-xl font-bold text-gray-900 font-['Open_Sans'] mb-1">
                 {onboardingData.selectedDepartments.length}
               </h3>
-              <p className="text-gray-600 font-['Open_Sans']">
+              <p className="text-sm text-gray-600 font-['Open_Sans']">
                 {onboardingData.selectedDepartments.length === 1 ? 'Department' : 'Departments'}
               </p>
-              <p className="text-sm text-gray-500 font-['Open_Sans'] mt-1">
-                AI support across your key business areas
+              <p className="text-xs text-gray-500 font-['Open_Sans'] mt-1">
+                AI support across key areas
               </p>
             </div>
 
@@ -212,14 +212,14 @@ export default function Welcome() {
                   <path d="M16 12C13.7909 12 12 13.7909 12 16V20C12 20.5523 12.4477 21 13 21H19C19.5523 21 20 20.5523 20 20V16C20 13.7909 18.2091 12 16 12Z" stroke="#51A2FF" strokeWidth="2"/>
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 font-['Open_Sans'] mb-2">
+              <h3 className="text-xl font-bold text-gray-900 font-['Open_Sans'] mb-1">
                 {onboardingData.selectedAssistants.length}
               </h3>
-              <p className="text-gray-600 font-['Open_Sans']">
+              <p className="text-sm text-gray-600 font-['Open_Sans']">
                 AI Assistant{onboardingData.selectedAssistants.length === 1 ? '' : 's'}
               </p>
-              <p className="text-sm text-gray-500 font-['Open_Sans'] mt-1">
-                Specialized AI team members ready to help
+              <p className="text-xs text-gray-500 font-['Open_Sans'] mt-1">
+                Specialized team members
               </p>
             </div>
 
@@ -230,21 +230,21 @@ export default function Welcome() {
                   <path d="M12 2C13.1046 2 14 2.89543 14 4V5.26756C16.2596 6.01915 18 8.20034 18 10.8V14.8944L20.4472 17.3416C20.786 17.6805 20.786 18.2311 20.4472 18.5699C20.1084 18.9088 19.5578 18.9088 19.2189 18.5699L16.2 15.551C15.6 16.2 14.8 16.6 14 16.8V18C14 19.1046 13.1046 20 12 20C10.8954 20 10 19.1046 10 18V16.8C8.44772 16.4 7 15.2 7 13.5V10.8C7 8.20034 8.74036 6.01915 11 5.26756V4C11 2.89543 11.8954 2 12 2Z" stroke="#FB252A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 font-['Open_Sans'] mb-2">
+              <h3 className="text-xl font-bold text-gray-900 font-['Open_Sans'] mb-1">
                 Personalized Setup
               </h3>
-              <p className="text-gray-600 font-['Open_Sans']">
+              <p className="text-sm text-gray-600 font-['Open_Sans']">
                 Tailored Configuration
               </p>
-              <p className="text-sm text-gray-500 font-['Open_Sans'] mt-1">
-                Tailored for your {businessTypeLabel} workflow
+              <p className="text-xs text-gray-500 font-['Open_Sans'] mt-1">
+                Tailored for your workflow
               </p>
             </div>
           </div>
 
           {/* Next Steps */}
-          <div className="mb-10">
-            <h2 className="text-xl font-bold text-gray-900 font-['Open_Sans'] mb-4">
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-gray-900 font-['Open_Sans'] mb-3">
               Here's how to get started:
             </h2>
 
