@@ -243,27 +243,27 @@ export default function Welcome() {
           </div>
 
           {/* Next Steps */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 font-['Open_Sans'] mb-6">
+          <div className="mb-10">
+            <h2 className="text-xl font-bold text-gray-900 font-['Open_Sans'] mb-4">
               Here's how to get started:
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Start Conversation */}
               <Card 
-                className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => navigate('/chat')}
               >
                 <CardContent className="p-0 text-center">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M8 12H8.01M12 12H12.01M16 12H16.01M9 19C9 19 10 18 12 18C14 18 15 19 15 19M21 12C21 16.9706 16.9706 21 12 21C10.2 21 8.54639 20.4262 7.18179 19.4372L3 21L4.56275 16.8182C3.57379 15.4536 3 13.8 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#6017E8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 font-['Open_Sans'] mb-2">
+                  <h3 className="text-base font-semibold text-gray-900 font-['Open_Sans'] mb-1">
                     Start your first conversation
                   </h3>
-                  <p className="text-sm text-gray-600 font-['Open_Sans']">
+                  <p className="text-xs text-gray-600 font-['Open_Sans']">
                     Ask any of your AI assistants a question
                   </p>
                 </CardContent>
@@ -271,19 +271,19 @@ export default function Welcome() {
 
               {/* Invite Team */}
               <Card 
-                className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => navigate('/team-settings')}
               >
                 <CardContent className="p-0 text-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M16 21V19C16 16.7909 14.2091 15 12 15H6C3.79086 15 2 16.7909 2 19V21M22 21V19C22 16.7909 20.2091 15 18 15H17M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7ZM19 7C19 9.20914 17.2091 11 15 11C13.7909 11 12 9.20914 12 8" stroke="#51A2FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 font-['Open_Sans'] mb-2">
+                  <h3 className="text-base font-semibold text-gray-900 font-['Open_Sans'] mb-1">
                     Invite your team
                   </h3>
-                  <p className="text-sm text-gray-600 font-['Open_Sans']">
+                  <p className="text-xs text-gray-600 font-['Open_Sans']">
                     Collaborate with colleagues and AI together
                   </p>
                 </CardContent>
@@ -291,19 +291,19 @@ export default function Welcome() {
 
               {/* Add More Assistants */}
               <Card 
-                className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => navigate('/ai-onboarding/choose-assistants')}
               >
                 <CardContent className="p-0 text-center">
-                  <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M12 6V18M6 12H18" stroke="#FB252A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 font-['Open_Sans'] mb-2">
+                  <h3 className="text-base font-semibold text-gray-900 font-['Open_Sans'] mb-1">
                     Add more assistants
                   </h3>
-                  <p className="text-sm text-gray-600 font-['Open_Sans']">
+                  <p className="text-xs text-gray-600 font-['Open_Sans']">
                     Expand your AI team as your needs grow
                   </p>
                 </CardContent>
@@ -311,32 +311,31 @@ export default function Welcome() {
             </div>
           </div>
 
-          {/* Success Message */}
+          {/* Success Message with Next Steps */}
           <div className="mb-8 p-6 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center justify-center gap-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                 <span className="text-green-600 text-lg">🚀</span>
               </div>
-              <div>
-                <p className="text-green-800 font-semibold font-['Open_Sans']">
+              <div className="flex-1">
+                <p className="text-green-800 font-bold text-lg font-['Open_Sans'] mb-2">
                   You're all set!
                 </p>
-                <p className="text-green-600 text-sm font-['Open_Sans'] mt-1">
+                <p className="text-green-600 text-sm font-['Open_Sans'] mb-3">
                   Your AI assistants are pre-configured with knowledge about your business type and ready to help. 
                   They'll learn and adapt to your specific needs as you work together.
                 </p>
+                
+                <div className="border-t border-green-200 pt-3 mt-3 space-y-2">
+                  <p className="text-green-700 text-sm font-['Open_Sans']">
+                    <strong>Next steps:</strong> Start a conversation with any assistant, invite your team, or explore the features.
+                  </p>
+                  <p className="text-green-600 text-xs font-['Open_Sans']">
+                    <strong>Need help?</strong> Your Personal Assistant is always available for questions and guidance.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Next Steps Info */}
-          <div className="space-y-2 mt-8">
-            <p className="text-sm text-gray-500 font-['Open_Sans']">
-              <strong>Next steps:</strong> Start a conversation with any assistant, invite your team, or explore the features.
-            </p>
-            <p className="text-xs text-gray-400 font-['Open_Sans']">
-              <strong>Need help?</strong> Your Personal Assistant is always available for questions and guidance.
-            </p>
           </div>
       </div>
     </OnboardingLayout>
