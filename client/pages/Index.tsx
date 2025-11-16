@@ -1,23 +1,14 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useUser } from '@/hooks/useUser';
-import { onboardingRouter } from '@/services/onboardingRouter';
 
 export default function Index() {
   const [showModal, setShowModal] = useState(true);
   const navigate = useNavigate();
-  const { userId } = useUser();
 
-  const handleCreateAgentClick = async () => {
-    if (userId) {
-      // Use smart routing to determine where to go for onboarding/agent creation
-      const routeDecision = await onboardingRouter.handleOnboardingIconClick(userId);
-      navigate(routeDecision.redirectPath);
-    } else {
-      // No userId, start fresh onboarding
-      navigate('/ai-onboarding/business-type');
-    }
+  const handleCreateAgentClick = () => {
+    // Navigate to solar agent setup page
+    navigate('/solar-setup');
   };
 
   const handleDashboardClick = () => {
