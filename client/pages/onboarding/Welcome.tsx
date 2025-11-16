@@ -162,11 +162,11 @@ export default function Welcome() {
       showSkip={false}
     >
       <div className="max-w-4xl mx-auto text-center">
-          {/* Squidgy Star Icon */}
-          <div className="flex justify-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-[#FB252A] to-[#6017E8] rounded-2xl flex items-center justify-center">
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 2L24.47 13.53L36 18L24.47 22.47L20 34L15.53 22.47L4 18L15.53 13.53L20 2Z" fill="white"/>
+          {/* Squidgy Star Icon - Smaller and Round */}
+          <div className="flex justify-center mb-6">
+            <div className="w-14 h-14 bg-gradient-to-br from-[#FB252A] to-[#6017E8] rounded-full flex items-center justify-center">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 2L16.235 9.265L24 10L16.235 10.735L14 18L11.765 10.735L4 10L11.765 9.265L14 2Z" fill="white"/>
               </svg>
             </div>
           </div>
