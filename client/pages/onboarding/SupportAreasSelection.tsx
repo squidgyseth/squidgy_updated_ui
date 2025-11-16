@@ -13,7 +13,7 @@ export default function SupportAreasSelection() {
   const navigate = useNavigate();
   const { isReady, userId } = useUser();
   const [selectedDepartments, setSelectedDepartments] = useState<DepartmentType[]>([]);
-  const [businessType, setBusinessType] = useState<BusinessType>('saas_tech');
+  const [businessType, setBusinessType] = useState<BusinessType>('');
   const [recommendedDepartments, setRecommendedDepartments] = useState<string[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<Array<{id: string} & DepartmentConfig>>([]);
   const [progress, setProgress] = useState<OnboardingProgress>({

@@ -1,15 +1,8 @@
 // BusinessType is now a string to support dynamic values from YAML
 export type BusinessType = string;
 
-export type DepartmentType =
-  | 'marketing'
-  | 'sales'
-  | 'management_strategy'
-  | 'hr_people'
-  | 'personal_assistant'
-  | 'customer_support'
-  | 'finance'
-  | 'product_dev';
+// DepartmentType is now a string to support dynamic values from YAML
+export type DepartmentType = string;
 
 export type AvatarStyle = 
   | 'professional'
