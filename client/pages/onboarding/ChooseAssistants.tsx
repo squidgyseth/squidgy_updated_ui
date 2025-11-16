@@ -155,6 +155,7 @@ export default function ChooseAssistants() {
 
     try {
       // Save to database
+      console.log('🔍 ChooseAssistants: Saving selected assistants:', selectedAssistants);
       const success = await onboardingRouter.saveStepProgress(userId, 3, {
         selectedAssistants
       });

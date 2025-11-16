@@ -69,6 +69,7 @@ export default function PersonalizeAssistants() {
         
         if (userId) {
           const savedData = await onboardingRouter.loadOnboardingDataForStep(userId, 4);
+          console.log('🔍 PersonalizeAssistants: Loaded data from database:', savedData);
           if (savedData) {
             assistantData = {
               selectedAssistants: savedData.selectedAssistants,
@@ -80,25 +81,28 @@ export default function PersonalizeAssistants() {
           existingPersonalizations = await onboardingDataService.getAssistantPersonalizations(userId);
         }
         
-        // Fallback to localStorage for compatibility
-        const savedState = localStorage.getItem('onboarding_state');
-        if (savedState && (!assistantData.selectedAssistants && !userId)) {
-          try {
-            const state = JSON.parse(savedState);
-            assistantData = {
-              selectedAssistants: state.selectedAssistants,
-              selectedDepartments: state.selectedDepartments
-            };
-            
-            if (state.personalizations) {
-              existingPersonalizations = state.personalizations;
+        // Fallback to localStorage for compatibility if no database data loaded
+        if (!assistantData.selectedAssistants || !assistantData.selectedDepartments) {
+          const savedState = localStorage.getItem('onboarding_state');
+          if (savedState) {
+            try {
+              const state = JSON.parse(savedState);
+              assistantData = {
+                selectedAssistants: state.selectedAssistants || assistantData.selectedAssistants || [],
+                selectedDepartments: state.selectedDepartments || assistantData.selectedDepartments || []
+              };
+              
+              if (state.personalizations) {
+                existingPersonalizations = state.personalizations;
+              }
+            } catch (error) {
+              console.error('Error loading local onboarding state:', error);
             }
-          } catch (error) {
-            console.error('Error loading local onboarding state:', error);
           }
         }
         
         // Process assistant data if available
+        console.log('🔍 PersonalizeAssistants: Final assistantData:', assistantData);
         if (assistantData.selectedAssistants && assistantData.selectedAssistants.length > 0 && assistantData.selectedDepartments) {
           // Find assistant details using the hierarchical flow
           const selectedAssistantDetails: SelectedAssistant[] = [];

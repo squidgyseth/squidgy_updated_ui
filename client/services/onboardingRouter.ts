@@ -280,6 +280,7 @@ class OnboardingRouter {
         case 4: // Personalization
           const personalizations = await onboardingDataService.getAssistantPersonalizations(userId);
           return {
+            selectedDepartments: progress.selected_departments || [],
             selectedAssistants: progress.selected_assistants || [],
             personalizations,
             currentStep: progress.current_step,
