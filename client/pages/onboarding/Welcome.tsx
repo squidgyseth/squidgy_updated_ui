@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { OnboardingProgress, OnboardingState } from '@/types/onboarding.types';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
@@ -330,16 +329,8 @@ export default function Welcome() {
             </div>
           </div>
 
-          {/* Get Started Button */}
-          <div className="space-y-4">
-            <Button
-              onClick={handleGetStarted}
-              className="bg-gradient-to-r from-[#FB252A] to-[#6017E8] hover:opacity-90 text-white px-8 py-3 text-lg font-bold font-['Open_Sans']"
-              size="lg"
-            >
-              Get Started
-            </Button>
-            
+          {/* Next Steps Info */}
+          <div className="space-y-2 mt-8">
             <p className="text-sm text-gray-500 font-['Open_Sans']">
               <strong>Next steps:</strong> Start a conversation with any assistant, invite your team, or explore the features.
             </p>
