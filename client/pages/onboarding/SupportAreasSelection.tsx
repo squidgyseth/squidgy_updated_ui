@@ -29,10 +29,12 @@ export default function SupportAreasSelection() {
   const getRecommendedDepartmentsFromConfig = async (businessType: BusinessType): Promise<string[]> => {
     try {
       const recommended = await flowLoader.getRecommendedDepartments(businessType);
-      return recommended.length > 0 ? recommended : ['marketing', 'sales', 'customer_support', 'personal_assistant'];
+      // If no recommendations, return empty array - let user choose
+      return recommended.length > 0 ? recommended : [];
     } catch (error) {
       console.error('Error loading recommended departments:', error);
-      return ['marketing', 'sales', 'customer_support', 'personal_assistant'];
+      // Return empty array on error - don't assume defaults
+      return [];
     }
   };
 

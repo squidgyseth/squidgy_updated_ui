@@ -4,17 +4,11 @@ export type BusinessType = string;
 // DepartmentType is now a string to support dynamic values from YAML
 export type DepartmentType = string;
 
-export type AvatarStyle = 
-  | 'professional'
-  | 'friendly'
-  | 'corporate'
-  | 'creative';
+// AvatarStyle is now a string to support dynamic values from YAML
+export type AvatarStyle = string;
 
-export type CommunicationTone =
-  | 'professional'
-  | 'friendly'
-  | 'casual'
-  | 'formal';
+// CommunicationTone is now a string to support dynamic values from YAML
+export type CommunicationTone = string;
 
 export interface BusinessTypeOption {
   id: BusinessType;

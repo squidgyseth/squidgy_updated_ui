@@ -12,7 +12,7 @@ export default function BusinessTypeSelection() {
   const navigate = useNavigate();
   const { userId, isReady } = useUser();
   const [selectedBusinessType, setSelectedBusinessType] = useState<BusinessType | null>(null);
-  const [userName, setUserName] = useState<string>('Aleksa Jagolnik');
+  const [userName, setUserName] = useState<string>('User');
   const [businessTypeOptions, setBusinessTypeOptions] = useState<Array<{id: string} & BusinessTypeConfig>>([]);
   const [progress, setProgress] = useState<OnboardingProgress>({
     currentStep: 1,
