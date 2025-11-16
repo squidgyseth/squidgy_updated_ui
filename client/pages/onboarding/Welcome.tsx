@@ -12,7 +12,7 @@ import { onboardingDataService } from '@/services/onboardingDataService';
 
 export default function Welcome() {
   const navigate = useNavigate();
-  const { isReady, userId } = useUser();
+  const { isReady, userId, profile } = useUser();
   const [onboardingData, setOnboardingData] = useState<OnboardingState | null>(null);
   const [userName, setUserName] = useState('User');
   const [loading, setLoading] = useState(true);
@@ -57,10 +57,15 @@ export default function Welcome() {
             setOnboardingData(onboardingDataSummary);
           }
           
-          // Get user name from company details or profile
-          const companyDetails = await onboardingDataService.getCompanyDetails(userId);
-          if (companyDetails?.company_name) {
-            setUserName(companyDetails.company_name);
+          // Get user name from profile (full_name field)
+          if (profile?.full_name) {
+            setUserName(profile.full_name);
+          } else {
+            // Fallback to company name if no profile name
+            const companyDetails = await onboardingDataService.getCompanyDetails(userId);
+            if (companyDetails?.company_name) {
+              setUserName(companyDetails.company_name);
+            }
           }
         }
         
@@ -88,7 +93,7 @@ export default function Welcome() {
     };
 
     loadConfiguration();
-  }, [isReady, userId, onboardingData]);
+  }, [isReady, userId, profile, onboardingData]);
 
   const handleGetStarted = async () => {
     if (!userId) {
