@@ -7,8 +7,8 @@ export default function Index() {
   const navigate = useNavigate();
 
   const handleCreateAgentClick = () => {
-    // Navigate to solar agent setup page
-    navigate('/solar-setup');
+    // Navigate to website details page (first step in solar agent creation)
+    navigate('/website-details');
   };
 
   const handleDashboardClick = () => {
