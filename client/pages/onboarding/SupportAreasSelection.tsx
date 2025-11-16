@@ -25,19 +25,15 @@ export default function SupportAreasSelection() {
 
   const flowLoader = BusinessFlowLoader.getInstance();
 
-  // Function to get recommended departments based on business type
-  const getRecommendedDepartments = (businessType: BusinessType): DepartmentType[] => {
-    const recommendationMap: Record<BusinessType, DepartmentType[]> = {
-      'ecommerce': ['marketing', 'sales', 'customer_support', 'finance'],
-      'agency_creative': ['marketing', 'sales', 'management_strategy', 'hr_people'],
-      'saas_tech': ['marketing', 'sales', 'product_dev', 'customer_support'],
-      'consultant_freelancer': ['sales', 'personal_assistant', 'finance', 'marketing'],
-      'education': ['marketing', 'hr_people', 'management_strategy', 'customer_support'],
-      'enterprise_corporate': ['hr_people', 'management_strategy', 'finance', 'customer_support'],
-      'other': ['marketing', 'sales', 'personal_assistant', 'customer_support']
-    };
-    
-    return recommendationMap[businessType] || ['marketing', 'sales', 'customer_support', 'personal_assistant'];
+  // Function to get recommended departments based on business type from YAML
+  const getRecommendedDepartmentsFromConfig = async (businessType: BusinessType): Promise<string[]> => {
+    try {
+      const recommended = await flowLoader.getRecommendedDepartments(businessType);
+      return recommended.length > 0 ? recommended : ['marketing', 'sales', 'customer_support', 'personal_assistant'];
+    } catch (error) {
+      console.error('Error loading recommended departments:', error);
+      return ['marketing', 'sales', 'customer_support', 'personal_assistant'];
+    }
   };
 
   useEffect(() => {
@@ -67,11 +63,11 @@ export default function SupportAreasSelection() {
           if (savedData) {
             if (savedData.businessType) {
               setBusinessType(savedData.businessType);
-              const recommended = getRecommendedDepartments(savedData.businessType);
+              const recommended = await getRecommendedDepartmentsFromConfig(savedData.businessType);
               setRecommendedDepartments(recommended);
               // Auto-select recommended departments if no selection exists
               if (!savedData.selectedDepartments?.length) {
-                setSelectedDepartments(recommended);
+                setSelectedDepartments(recommended as DepartmentType[]);
               }
             }
             if (savedData.selectedDepartments) {
@@ -87,9 +83,9 @@ export default function SupportAreasSelection() {
             const state = JSON.parse(localState);
             if (state.businessType) {
               setBusinessType(state.businessType);
-              const recommended = getRecommendedDepartments(state.businessType);
+              const recommended = await getRecommendedDepartmentsFromConfig(state.businessType);
               setRecommendedDepartments(recommended);
-              setSelectedDepartments(recommended);
+              setSelectedDepartments(recommended as DepartmentType[]);
             }
             if (state.selectedDepartments) {
               setSelectedDepartments(state.selectedDepartments);

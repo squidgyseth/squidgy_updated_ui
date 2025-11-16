@@ -1,11 +1,5 @@
-export type BusinessType = 
-  | 'ecommerce'
-  | 'agency_creative'
-  | 'saas_tech'
-  | 'consultant_freelancer'
-  | 'education'
-  | 'enterprise_corporate'
-  | 'other';
+// BusinessType is now a string to support dynamic values from YAML
+export type BusinessType = string;
 
 export type DepartmentType =
   | 'marketing'

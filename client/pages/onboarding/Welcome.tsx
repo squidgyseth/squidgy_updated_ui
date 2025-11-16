@@ -15,6 +15,7 @@ export default function Welcome() {
   const [onboardingData, setOnboardingData] = useState<OnboardingState | null>(null);
   const [userName, setUserName] = useState('User');
   const [loading, setLoading] = useState(true);
+  const [businessTypeLabel, setBusinessTypeLabel] = useState('your business');
 
   const flowLoader = BusinessFlowLoader.getInstance();
 
@@ -94,6 +95,28 @@ export default function Welcome() {
     loadConfiguration();
   }, [isReady, userId, profile, onboardingData]);
 
+  // Load business type label dynamically from YAML
+  useEffect(() => {
+    const loadBusinessTypeLabel = async () => {
+      if (onboardingData?.businessType) {
+        try {
+          const businessTypes = await flowLoader.getBusinessTypes();
+          const businessType = businessTypes.find(bt => bt.id === onboardingData.businessType);
+          if (businessType) {
+            setBusinessTypeLabel(businessType.title);
+          } else {
+            setBusinessTypeLabel('your business');
+          }
+        } catch (error) {
+          console.error('Error loading business type label:', error);
+          setBusinessTypeLabel('your business');
+        }
+      }
+    };
+
+    loadBusinessTypeLabel();
+  }, [onboardingData?.businessType]);
+
   const handleGetStarted = async () => {
     if (!userId) {
       toast.error('Authentication required. Please try logging in again.');
@@ -138,18 +161,6 @@ export default function Welcome() {
       </div>
     );
   }
-
-  const businessTypeLabels: Record<string, string> = {
-    'ecommerce': 'E-commerce',
-    'agency_creative': 'Agency / Creative Studio',
-    'saas_tech': 'SaaS / Tech Startup',
-    'consultant_freelancer': 'Consultant / Freelancer',
-    'education': 'Education',
-    'enterprise_corporate': 'Enterprise / Corporate',
-    'other': 'Other'
-  };
-
-  const businessTypeLabel = businessTypeLabels[onboardingData.businessType || 'other'] || 'your business';
 
   return (
     <OnboardingLayout

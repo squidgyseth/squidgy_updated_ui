@@ -73,6 +73,17 @@ business_types:
       - finance
       - customer_support
     
+  real_estate:
+    title: "Real Estate"
+    description: "Property sales, client management, listings, market analysis"
+    icon: "🏠"
+    icon_color: "#28A745"
+    recommended_departments:
+      - sales
+      - marketing
+      - customer_support
+      - finance
+    
   other:
     title: "Other"
     description: "Tell us more about your unique business needs"
