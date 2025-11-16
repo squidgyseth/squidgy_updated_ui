@@ -5,7 +5,7 @@ import { useUser } from "../../hooks/useUser";
 import { onboardingRouter } from "../../services/onboardingRouter";
 
 interface LeftNavigationProps {
-  currentPage?: 'chat' | 'dashboard' | 'home' | 'leads' | 'settings' | 'onboarding';
+  currentPage?: 'chat' | 'dashboard' | 'home' | 'leads' | 'referrals' | 'settings' | 'onboarding';
 }
 
 function LeftNavigation({ currentPage }: LeftNavigationProps) {
@@ -20,6 +20,7 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
     const path = location.pathname;
     if (path.includes('/ai-onboarding')) return 'onboarding';
     if (path.includes('/settings') || path.includes('/account-settings') || path.includes('/business-settings') || path.includes('/team-settings') || path.includes('/personalisation-settings') || path.includes('/billing-settings')) return 'settings';
+    if (path.includes('/referrals') || path.includes('/referral')) return 'referrals';
     if (path.includes('/leads')) return 'leads';
     if (path.includes('/chat')) return 'chat';
     if (path.includes('/dashboard')) return 'dashboard';
@@ -47,6 +48,10 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
 
   const handleLeadsClick = () => {
     navigate('/leads');
+  };
+
+  const handleReferralClick = () => {
+    navigate('/referrals');
   };
 
   const handleOnboardingClick = async () => {
@@ -182,6 +187,34 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
           </div>
           <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center">
             Leads
+          </span>
+        </button>
+        
+        {/* Referrals Icon */}
+        <button 
+          onClick={handleReferralClick}
+          className={`flex flex-col items-center p-2 w-full hover:bg-gray-100 rounded-lg transition-colors ${
+            activePage === 'referrals' ? 'bg-gray-50' : ''
+          }`}
+        >
+          <div className="flex justify-center items-center mb-1">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 12.5C16.8284 12.5 17.5 11.8284 17.5 11C17.5 10.1716 16.8284 9.5 16 9.5C15.1716 9.5 14.5 10.1716 14.5 11C14.5 11.8284 15.1716 12.5 16 12.5Z" fill="url(#referralGradient)"/>
+              <path d="M8 12.5C8.82843 12.5 9.5 11.8284 9.5 11C9.5 10.1716 8.82843 9.5 8 9.5C7.17157 9.5 6.5 10.1716 6.5 11C6.5 11.8284 7.17157 12.5 8 12.5Z" fill="url(#referralGradient)"/>
+              <path d="M12 8.5C12.8284 8.5 13.5 7.82843 13.5 7C13.5 6.17157 12.8284 5.5 12 5.5C11.1716 5.5 10.5 6.17157 10.5 7C10.5 7.82843 11.1716 8.5 12 8.5Z" fill="url(#referralGradient)"/>
+              <path d="M12 20.5C12.8284 20.5 13.5 19.8284 13.5 19C13.5 18.1716 12.8284 17.5 12 17.5C11.1716 17.5 10.5 18.1716 10.5 19C10.5 19.8284 11.1716 20.5 12 20.5Z" fill="url(#referralGradient)"/>
+              <path d="M10.5 7L9 9.5M14.5 9.5L13 7M9.5 11L10.5 17.5M13.5 17.5L14.5 11" stroke="url(#referralGradient)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <defs>
+                <linearGradient id="referralGradient" x1="6.5" y1="5.5" x2="17.8" y2="18.9" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#FB252A"/>
+                  <stop offset="0.5" stopColor="#A61D92"/>
+                  <stop offset="1" stopColor="#6017E8"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center">
+            Referrals
           </span>
         </button>
         

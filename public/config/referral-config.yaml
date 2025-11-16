@@ -1,0 +1,337 @@
+# ===========================================
+# REFERRAL SYSTEM CONFIGURATION
+# ===========================================
+# This file defines all customizable aspects of the referral program
+# Modify values here without changing code
+
+# ===========================================
+# REFERRAL TIERS & REWARDS
+# ===========================================
+referral_tiers:
+  bronze:
+    name: "Bronze"
+    icon: "🥉"
+    min_referrals: 1
+    max_referrals: 3
+    rewards:
+      - type: "extra_assistants"
+        value: 1
+        duration: "monthly"
+        description: "1 extra AI assistant free per month"
+      - type: "credits"
+        value: 100
+        description: "100 credits for AI interactions"
+    color: "#CD7F32"
+    
+  silver:
+    name: "Silver" 
+    icon: "🥈"
+    min_referrals: 4
+    max_referrals: 6
+    rewards:
+      - type: "extra_assistants"
+        value: 2
+        duration: "monthly"
+        description: "2 extra AI assistants free per month"
+      - type: "priority_support"
+        value: true
+        description: "Priority customer support"
+      - type: "credits"
+        value: 250
+        description: "250 credits for AI interactions"
+    color: "#C0C0C0"
+    
+  gold:
+    name: "Gold"
+    icon: "🥇"
+    min_referrals: 7
+    max_referrals: 10
+    rewards:
+      - type: "unlimited_assistants"
+        duration: "3_months"
+        description: "Unlimited AI assistants for 3 months"
+      - type: "custom_training"
+        value: true
+        description: "Custom AI training for your use case"
+      - type: "credits"
+        value: 500
+        description: "500 credits monthly for 3 months"
+    color: "#FFD700"
+    
+  diamond:
+    name: "Diamond"
+    icon: "💎"
+    min_referrals: 11
+    max_referrals: null # No upper limit
+    rewards:
+      - type: "lifetime_premium"
+        value: true
+        description: "Lifetime premium features access"
+      - type: "white_label"
+        value: true
+        description: "White-label option for your team"
+      - type: "dedicated_success_manager"
+        value: true
+        description: "Dedicated customer success manager"
+      - type: "credits"
+        value: 1000
+        description: "1000 credits monthly forever"
+    color: "#B9F2FF"
+
+# ===========================================
+# REFERRAL BONUSES & INCENTIVES
+# ===========================================
+referral_bonuses:
+  referrer:
+    signup_bonus:
+      type: "credits"
+      value: 50
+      description: "50 credits when someone signs up with your code"
+    
+    activation_bonus:
+      type: "credits"
+      value: 100
+      description: "100 credits when referral completes onboarding"
+    
+    subscription_bonus:
+      type: "percentage_discount"
+      value: 10
+      duration: "3_months"
+      description: "10% off subscription for 3 months per active referral"
+      
+  referee:
+    welcome_offer:
+      - type: "trial_extension"
+        value: 30
+        unit: "days"
+        description: "30-day premium trial"
+      - type: "onboarding_credits"
+        value: 200
+        description: "200 credits to get started"
+      - type: "priority_onboarding"
+        value: true
+        description: "Skip the waitlist"
+
+# ===========================================
+# WAITLIST CONFIGURATION
+# ===========================================
+waitlist:
+  enabled: true
+  initial_position_range:
+    min: 500
+    max: 2000
+  
+  skip_mechanics:
+    per_referral: 100  # Spots to skip per referral
+    per_social_share: 25  # Spots for social sharing
+    per_profile_completion: 50  # Spots for completing profile
+    
+  fast_track_thresholds:
+    instant_access: 5  # Referrals needed for instant access
+    priority_queue: 3  # Referrals for priority queue
+    
+  messaging:
+    default_wait_time: "2-3 weeks"
+    priority_wait_time: "3-5 days"
+    vip_message: "Congratulations! You've earned instant access!"
+
+# ===========================================
+# SHARING & VIRALITY SETTINGS
+# ===========================================
+sharing:
+  code_format: "SQUID-{USERNAME}-{YEAR}"  # Template for referral codes
+  
+  channels:
+    email:
+      enabled: true
+      subject_template: "You're invited to join Squidgy AI"
+      preview_text: "Skip the waitlist with my exclusive code"
+      
+    instagram:
+      enabled: true
+      template: "I'm automating my workflow with Squidgy AI 🚀 Get 30 days free with my code: {CODE} {LINK} #SquidgyAI #AIAutomation #ProductivityHack"
+      
+    linkedin:
+      enabled: true
+      template: "Excited to share Squidgy AI with my network! This AI team has transformed how I work. Get exclusive access with my referral code: {CODE}"
+      
+    whatsapp:
+      enabled: true
+      template: "Hey! I've been using Squidgy AI and it's amazing. Use my code {CODE} for 30 days free: {LINK}"
+      
+    slack:
+      enabled: true
+      template: "Team, check out Squidgy AI - it's like having an entire AI department. My code {CODE} gets you premium access!"
+
+  qr_code:
+    enabled: true
+    size: 200
+    logo_enabled: true
+    
+# ===========================================
+# GAMIFICATION & ENGAGEMENT
+# ===========================================
+gamification:
+  achievements:
+    first_referral:
+      name: "First Steps"
+      description: "Made your first referral"
+      icon: "🎯"
+      reward_credits: 25
+      
+    streak_3_days:
+      name: "On Fire"
+      description: "Referred someone 3 days in a row"
+      icon: "🔥"
+      reward_credits: 100
+      
+    social_butterfly:
+      name: "Social Butterfly"
+      description: "Shared on 3+ social platforms"
+      icon: "🦋"
+      reward_credits: 50
+      
+    team_builder:
+      name: "Team Builder"
+      description: "Referred 5+ people from same company"
+      icon: "👥"
+      reward_credits: 200
+      
+    influencer:
+      name: "Influencer"
+      description: "Your referrals brought 10+ more users"
+      icon: "⭐"
+      reward_credits: 500
+      
+  leaderboard:
+    enabled: true
+    display_top: 10
+    refresh_interval: "hourly"
+    
+    time_periods:
+      - daily
+      - weekly
+      - monthly
+      - all_time
+      
+    prizes:
+      weekly_top:
+        position_1: "500 bonus credits"
+        position_2: "300 bonus credits"
+        position_3: "200 bonus credits"
+        
+      monthly_top:
+        position_1: "1 month free premium"
+        position_2: "2 weeks free premium"
+        position_3: "1 week free premium"
+
+# ===========================================
+# TRACKING & ANALYTICS
+# ===========================================
+analytics:
+  track_events:
+    - code_generated
+    - link_clicked
+    - code_used
+    - referral_completed
+    - reward_claimed
+    - tier_upgraded
+    
+  attribution_window: 30  # Days to attribute a signup to referral
+  
+  metrics:
+    - total_referrals
+    - conversion_rate
+    - viral_coefficient
+    - average_referrals_per_user
+    - time_to_first_referral
+    - referral_lifetime_value
+
+# ===========================================
+# CAMPAIGNS & PROMOTIONS
+# ===========================================
+campaigns:
+  double_rewards_weekend:
+    enabled: false
+    multiplier: 2
+    days: ["Saturday", "Sunday"]
+    message: "Double rewards this weekend only!"
+    
+  holiday_special:
+    enabled: false
+    bonus_credits: 500
+    dates:
+      start: "2024-12-20"
+      end: "2024-12-31"
+    message: "Holiday special: Extra 500 credits per referral!"
+    
+  industry_challenge:
+    enabled: true
+    industries:
+      - real_estate
+      - saas_tech
+      - agency_creative
+      - education
+    bonus_per_industry: 100
+    message: "Refer someone from your industry for bonus credits!"
+
+# ===========================================
+# UI CUSTOMIZATION
+# ===========================================
+ui_settings:
+  colors:
+    primary: "#6017E8"  # Squidgy purple
+    secondary: "#FB252A"  # Squidgy red
+    accent: "#51A2FF"  # Squidgy blue
+    success: "#10B981"
+    warning: "#F59E0B"
+    
+  animations:
+    confetti_on_tier_upgrade: true
+    progress_bar_animated: true
+    reward_claim_animation: true
+    
+  display:
+    show_leaderboard: true
+    show_achievements: true
+    show_progress_bars: true
+    show_tier_comparison: true
+    compact_mobile_view: true
+
+# ===========================================
+# NOTIFICATIONS & COMMUNICATIONS
+# ===========================================
+notifications:
+  email:
+    on_referral_signup: true
+    on_referral_activation: true
+    on_tier_upgrade: true
+    on_reward_available: true
+    weekly_summary: true
+    
+  in_app:
+    show_toast: true
+    toast_duration: 5000  # milliseconds
+    toast_position: "bottom-right"
+    
+  push:
+    enabled: false
+    
+# ===========================================
+# LIMITS & CONSTRAINTS
+# ===========================================
+limits:
+  max_referrals_per_day: 10  # Anti-spam measure
+  max_codes_per_user: 3  # Number of unique codes allowed
+  code_expiry_days: 90  # Days before unused code expires
+  minimum_account_age_hours: 24  # Hours before user can refer others
+  
+# ===========================================
+# LEGAL & COMPLIANCE
+# ===========================================
+compliance:
+  terms_acceptance_required: true
+  age_verification_required: true
+  minimum_age: 18
+  restricted_countries: []  # List of country codes where program is not available
+  tax_reporting_threshold: 600  # USD value requiring tax forms

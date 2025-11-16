@@ -49,6 +49,9 @@ import PersonalizeAssistants from "./pages/onboarding/PersonalizeAssistants";
 import CompanyDetails from "./pages/onboarding/CompanyDetails";
 import Welcome from "./pages/onboarding/Welcome";
 
+// Referral Pages  
+import ReferralHub from "./pages/referrals/ReferralHub";
+
 const queryClient = new QueryClient();
 
 // Component to handle auth redirects
@@ -283,6 +286,13 @@ const App = () => (
           <Route path="/ai-onboarding/welcome" element={
             <ProtectedRoute>
               <Welcome />
+            </ProtectedRoute>
+          } />
+          
+          {/* Referral Routes */}
+          <Route path="/referrals" element={
+            <ProtectedRoute>
+              <ReferralHub />
             </ProtectedRoute>
           } />
           
