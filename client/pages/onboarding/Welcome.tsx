@@ -153,17 +153,16 @@ export default function Welcome() {
   const businessTypeLabel = businessTypeLabels[onboardingData.businessType || 'other'] || 'your business';
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Progress Bar - Full */}
-      <div className="w-full bg-gray-200 h-1">
-        <div 
-          className="h-full bg-gradient-to-r from-[#FB252A] to-[#6017E8]"
-          style={{ width: '100%' }}
-        />
-      </div>
-
-      <div className="px-6 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 py-12">
-        <div className="max-w-4xl mx-auto text-center">
+    <OnboardingLayout
+      progress={progress}
+      stepTitle="Welcome to Squidgy!"
+      stepDescription={`Congratulations! Your AI team is ready to transform how you work.`}
+      onBack={() => navigate('/ai-onboarding/company-details')}
+      onContinue={handleGetStarted}
+      continueText="Get Started"
+      showSkip={false}
+    >
+      <div className="max-w-4xl mx-auto text-center">
           {/* Squidgy Star Icon */}
           <div className="flex justify-center mb-8">
             <div className="w-20 h-20 bg-gradient-to-br from-[#FB252A] to-[#6017E8] rounded-2xl flex items-center justify-center">
@@ -348,8 +347,7 @@ export default function Welcome() {
               <strong>Need help?</strong> Your Personal Assistant is always available for questions and guidance.
             </p>
           </div>
-        </div>
       </div>
-    </div>
+    </OnboardingLayout>
   );
 }
