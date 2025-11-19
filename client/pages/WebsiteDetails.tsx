@@ -10,6 +10,11 @@ import { ChatInterface } from '../components/ChatInterface';
 import { UserAccountDropdown } from '../components/UserAccountDropdown';
 import { SetupStepsSidebar } from '../components/SetupStepsSidebar';
 import { createProxyUrl, maskStorageUrlsInText } from '../utils/urlMasking';
+import newsletterWebhookService from '../services/newsletterWebhookService';
+// Import webhook debugger for development
+if (import.meta.env.DEV) {
+  import('../utils/webhookDebugger');
+}
 
 // Tag Chip Component
 function TagChip({ label, onRemove }: { label: string; onRemove: () => void }) {
@@ -396,10 +401,24 @@ export default function WebsiteDetails() {
         analysis_status: 'completed'
       };
 
-      await saveWebsiteAnalysis({
+      const savedData = await saveWebsiteAnalysis({
         ...websiteAnalysisData,
         isAnalyzeButton: true // Continue button includes screenshots/favicons
       });
+      
+      // Fire webhook asynchronously (doesn't block the UI)
+      // This runs in the background without delaying navigation
+      newsletterWebhookService.fireWebhookAsync({
+        firm_user_id: userId,
+        id: savedData?.id || sessionId || userId, // Use the saved record ID if available
+        ghl_location_id: profile?.ghl_location_id || '', // Get from profile if available
+        company_description: companyDescription.trim(),
+        value_proposition: valueProposition.trim(),
+        business_niche: businessNiche.trim(),
+        ghl_user_id: profile?.ghl_user_id || user?.id || '' // Get from profile/user if available
+      });
+      
+      console.log('[Newsletter] Webhook triggered in background for newsletter questions generation');
       
       toast({
         title: "Website analysis saved!",
