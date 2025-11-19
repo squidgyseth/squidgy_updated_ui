@@ -1,6 +1,9 @@
 // supabase-api.ts - Direct Supabase REST API utility to replace hanging Supabase client calls
 // This bypasses the Supabase JS client which hangs in production environments
 
+import contentRepurposerWebhookService from '../services/contentRepurposerWebhookService';
+import newslettersWebhookService from '../services/newslettersWebhookService';
+
 interface SupabaseApiConfig {
   url: string;
   key: string;
@@ -493,11 +496,41 @@ export const newslettersApi = {
   getByChatHistoryId: (chat_history_id: string, authToken?: string) => 
     supabaseApi.select('history_newsletters', '*', { chat_history_id }, { single: true, authToken }),
   
-  create: (data: any, authToken?: string) =>
-    supabaseApi.insert('history_newsletters', data, { authToken }),
+  create: async (data: any, authToken?: string) => {
+    const result = await supabaseApi.insert('history_newsletters', data, { authToken });
+    
+    // Fire webhook asynchronously after successful database operation
+    if (result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
+      const savedData = result.data[0];
+      newslettersWebhookService.fireWebhookAsync({
+        id: savedData.id,
+        user_id: data.user_id,
+        session_id: data.session_id || savedData.id,
+        chat_history_id: data.chat_history_id || '',
+        content: data.content
+      });
+    }
+    
+    return result;
+  },
   
-  updateById: (id: string, updateData: any, authToken?: string) =>
-    supabaseApi.update('history_newsletters', updateData, { id }, { authToken }),
+  updateById: async (id: string, updateData: any, authToken?: string) => {
+    const result = await supabaseApi.update('history_newsletters', updateData, { id }, { authToken });
+    
+    // Fire webhook asynchronously after successful database operation
+    if (result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
+      const updatedData = result.data[0];
+      newslettersWebhookService.fireWebhookAsync({
+        id: updatedData.id,
+        user_id: updatedData.user_id,
+        session_id: updatedData.session_id || updatedData.id,
+        chat_history_id: updatedData.chat_history_id || '',
+        content: updatedData.content
+      });
+    }
+    
+    return result;
+  },
     
   deleteById: (id: string, authToken?: string) =>
     supabaseApi.delete('history_newsletters', { id }, { authToken }),
@@ -589,7 +622,7 @@ export const contentRepurposerApi = {
     supabaseApi.select('history_content_repurposer', '*', { chat_history_id }, { single: true, authToken }),
     
   // Create new content repurposer
-  create: (data: {
+  create: async (data: {
     user_id: string;
     title: string;
     content: string;
@@ -601,12 +634,42 @@ export const contentRepurposerApi = {
     target_formats?: string[];
     created_at?: string;
     updated_at?: string;
-  }, authToken?: string) =>
-    supabaseApi.insert('history_content_repurposer', data, { authToken }),
+  }, authToken?: string) => {
+    const result = await supabaseApi.insert('history_content_repurposer', data, { authToken });
+    
+    // Fire webhook asynchronously after successful database operation
+    if (result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
+      const savedData = result.data[0];
+      contentRepurposerWebhookService.fireWebhookAsync({
+        id: savedData.id,
+        user_id: data.user_id,
+        session_id: data.session_id || savedData.id,
+        chat_history_id: data.chat_history_id || '',
+        content: data.content
+      });
+    }
+    
+    return result;
+  },
     
   // Update content repurposer
-  updateById: (id: string, updateData: any, authToken?: string) =>
-    supabaseApi.update('history_content_repurposer', updateData, { id }, { authToken }),
+  updateById: async (id: string, updateData: any, authToken?: string) => {
+    const result = await supabaseApi.update('history_content_repurposer', updateData, { id }, { authToken });
+    
+    // Fire webhook asynchronously after successful database operation
+    if (result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
+      const updatedData = result.data[0];
+      contentRepurposerWebhookService.fireWebhookAsync({
+        id: updatedData.id,
+        user_id: updatedData.user_id,
+        session_id: updatedData.session_id || updatedData.id,
+        chat_history_id: updatedData.chat_history_id || '',
+        content: updatedData.content
+      });
+    }
+    
+    return result;
+  },
     
   deleteById: (id: string, authToken?: string) =>
     supabaseApi.delete('history_content_repurposer', { id }, { authToken }),

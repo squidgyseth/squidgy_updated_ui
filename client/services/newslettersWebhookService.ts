@@ -1,16 +1,15 @@
 /**
- * Newsletter Webhook Service
- * Handles async webhook calls for newsletter questions generation
+ * Newsletters Webhook Service
+ * Handles async webhook calls for newsletter content repurpose questions generation
  * This runs independently of database operations to prevent blocking
  */
 
-interface WebhookPayload {
-  user_id: string;
+interface NewslettersWebhookPayload {
   id: string;
+  user_id: string;
   session_id: string;
-  ghl_location_id?: string;
-  combined_description: string;
-  ghl_user_id?: string;
+  chat_history_id?: string;
+  content: string;
   timestamp?: string;
 }
 
@@ -21,19 +20,19 @@ interface WebhookResponse {
   requestId?: string;
 }
 
-class NewsletterWebhookService {
-  private static instance: NewsletterWebhookService;
-  private webhookUrl = 'https://n8n.theaiteam.uk/webhook/newsletter_questions_new';
+class NewslettersWebhookService {
+  private static instance: NewslettersWebhookService;
+  private webhookUrl = 'https://n8n.theaiteam.uk/webhook/content_repurpose_questions_new';
   private retryAttempts = 1; // Only 1 retry (2 total attempts)
   private retryDelay = 2000; // 2 seconds
 
   private constructor() {}
 
-  static getInstance(): NewsletterWebhookService {
-    if (!NewsletterWebhookService.instance) {
-      NewsletterWebhookService.instance = new NewsletterWebhookService();
+  static getInstance(): NewslettersWebhookService {
+    if (!NewslettersWebhookService.instance) {
+      NewslettersWebhookService.instance = new NewslettersWebhookService();
     }
-    return NewsletterWebhookService.instance;
+    return NewslettersWebhookService.instance;
   }
 
   /**
@@ -41,43 +40,32 @@ class NewsletterWebhookService {
    * This method returns immediately and handles the webhook in the background
    */
   async fireWebhookAsync(
-    websiteData: {
-      firm_user_id: string;
+    newsletterData: {
       id: string;
-      ghl_location_id?: string;
-      company_description?: string;
-      value_proposition?: string;
-      business_niche?: string;
-      ghl_user_id?: string;
+      user_id: string;
+      session_id?: string;
+      chat_history_id?: string;
+      content: string;
     }
   ): Promise<void> {
-    // Combine descriptions
-    const combinedDescription = [
-      websiteData.company_description,
-      websiteData.value_proposition,
-      websiteData.business_niche
-    ].filter(Boolean).join(' | ');
-
-    const payload: WebhookPayload = {
-      user_id: websiteData.firm_user_id,
-      id: websiteData.id,
-      session_id: websiteData.id,
-      ghl_location_id: websiteData.ghl_location_id || '',
-      combined_description: combinedDescription,
-      ghl_user_id: websiteData.ghl_user_id || '',
+    const payload: NewslettersWebhookPayload = {
+      id: newsletterData.id,
+      user_id: newsletterData.user_id,
+      session_id: newsletterData.session_id || newsletterData.id,
+      chat_history_id: newsletterData.chat_history_id || '',
+      content: newsletterData.content,
       timestamp: new Date().toISOString()
     };
 
     // Fire and forget - don't await this
     this.sendWebhookWithRetry(payload).catch(error => {
       // Log error but don't throw - this is truly async
-      console.warn('[Newsletter Webhook] Background webhook failed:', error);
-      // You could also send this to an error tracking service
+      console.warn('[Newsletters Webhook] Background webhook failed:', error);
       this.logWebhookError(error, payload);
     });
 
     // Return immediately - don't wait for webhook
-    console.log('[Newsletter Webhook] Webhook queued for background processing');
+    console.log('[Newsletters Webhook] Webhook queued for background processing');
   }
 
   /**
@@ -85,11 +73,11 @@ class NewsletterWebhookService {
    * This runs in the background
    */
   private async sendWebhookWithRetry(
-    payload: WebhookPayload,
+    payload: NewslettersWebhookPayload,
     attempt: number = 1
   ): Promise<WebhookResponse> {
     try {
-      console.log(`[Newsletter Webhook] Sending webhook (attempt ${attempt}/${this.retryAttempts})`);
+      console.log(`[Newsletters Webhook] Sending webhook (attempt ${attempt}/${this.retryAttempts + 1})`);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
@@ -110,20 +98,19 @@ class NewsletterWebhookService {
       }
 
       const data = await response.json();
-      console.log('[Newsletter Webhook] Success:', data);
+      console.log('[Newsletters Webhook] Success:', data);
       
-      // Optionally store success in localStorage for debugging
       this.logWebhookSuccess(payload, data);
       
       return {
         success: true,
-        message: 'Webhook sent successfully',
+        message: 'Newsletters webhook sent successfully',
         requestId: data.requestId || data.id
       };
     } catch (error) {
-      console.error(`[Newsletter Webhook] Attempt ${attempt} failed:`, error);
+      console.error(`[Newsletters Webhook] Attempt ${attempt} failed:`, error);
       
-      if (attempt < this.retryAttempts) {
+      if (attempt <= this.retryAttempts) {
         // Wait before retrying
         await new Promise(resolve => setTimeout(resolve, this.retryDelay * attempt));
         return this.sendWebhookWithRetry(payload, attempt + 1);
@@ -138,31 +125,22 @@ class NewsletterWebhookService {
    * Use this if you want to show loading state but still non-blocking
    */
   async fireWebhookWithTracking(
-    websiteData: {
-      firm_user_id: string;
+    newsletterData: {
       id: string;
-      ghl_location_id?: string;
-      company_description?: string;
-      value_proposition?: string;
-      business_niche?: string;
-      ghl_user_id?: string;
+      user_id: string;
+      session_id?: string;
+      chat_history_id?: string;
+      content: string;
     }
   ): Promise<{ trackingId: string; promise: Promise<WebhookResponse> }> {
-    const trackingId = `webhook_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const trackingId = `newsletter_webhook_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    const combinedDescription = [
-      websiteData.company_description,
-      websiteData.value_proposition,
-      websiteData.business_niche
-    ].filter(Boolean).join(' | ');
-
-    const payload: WebhookPayload = {
-      user_id: websiteData.firm_user_id,
-      id: websiteData.id,
-      session_id: websiteData.id,
-      ghl_location_id: websiteData.ghl_location_id || '',
-      combined_description: combinedDescription,
-      ghl_user_id: websiteData.ghl_user_id || '',
+    const payload: NewslettersWebhookPayload = {
+      id: newsletterData.id,
+      user_id: newsletterData.user_id,
+      session_id: newsletterData.session_id || newsletterData.id,
+      chat_history_id: newsletterData.chat_history_id || '',
+      content: newsletterData.content,
       timestamp: new Date().toISOString()
     };
 
@@ -186,7 +164,7 @@ class NewsletterWebhookService {
    * Check webhook status (for tracking mode)
    */
   getWebhookStatus(trackingId: string): { status: string; data?: any } {
-    const stored = localStorage.getItem(`webhook_status_${trackingId}`);
+    const stored = localStorage.getItem(`newsletter_webhook_status_${trackingId}`);
     return stored ? JSON.parse(stored) : { status: 'unknown' };
   }
 
@@ -195,7 +173,7 @@ class NewsletterWebhookService {
    */
   private updateTrackingStatus(trackingId: string, status: string, data?: any): void {
     localStorage.setItem(
-      `webhook_status_${trackingId}`,
+      `newsletter_webhook_status_${trackingId}`,
       JSON.stringify({
         status,
         data,
@@ -203,15 +181,14 @@ class NewsletterWebhookService {
       })
     );
 
-    // Clean up old tracking data (older than 1 hour)
     this.cleanupOldTrackingData();
   }
 
   /**
    * Log successful webhook for debugging
    */
-  private logWebhookSuccess(payload: WebhookPayload, response: any): void {
-    const logs = JSON.parse(localStorage.getItem('webhook_success_logs') || '[]');
+  private logWebhookSuccess(payload: NewslettersWebhookPayload, response: any): void {
+    const logs = JSON.parse(localStorage.getItem('newsletter_webhook_success_logs') || '[]');
     logs.push({
       timestamp: new Date().toISOString(),
       payload,
@@ -224,14 +201,14 @@ class NewsletterWebhookService {
       logs.splice(0, logs.length - 50);
     }
     
-    localStorage.setItem('webhook_success_logs', JSON.stringify(logs));
+    localStorage.setItem('newsletter_webhook_success_logs', JSON.stringify(logs));
   }
 
   /**
    * Log webhook errors for debugging
    */
-  private logWebhookError(error: any, payload: WebhookPayload): void {
-    const logs = JSON.parse(localStorage.getItem('webhook_error_logs') || '[]');
+  private logWebhookError(error: any, payload: NewslettersWebhookPayload): void {
+    const logs = JSON.parse(localStorage.getItem('newsletter_webhook_error_logs') || '[]');
     logs.push({
       timestamp: new Date().toISOString(),
       payload,
@@ -244,7 +221,7 @@ class NewsletterWebhookService {
       logs.splice(0, logs.length - 50);
     }
     
-    localStorage.setItem('webhook_error_logs', JSON.stringify(logs));
+    localStorage.setItem('newsletter_webhook_error_logs', JSON.stringify(logs));
   }
 
   /**
@@ -255,7 +232,7 @@ class NewsletterWebhookService {
     const keys = Object.keys(localStorage);
     
     keys.forEach(key => {
-      if (key.startsWith('webhook_status_')) {
+      if (key.startsWith('newsletter_webhook_status_')) {
         try {
           const data = JSON.parse(localStorage.getItem(key) || '{}');
           const timestamp = new Date(data.timestamp).getTime();
@@ -263,7 +240,6 @@ class NewsletterWebhookService {
             localStorage.removeItem(key);
           }
         } catch {
-          // Invalid data, remove it
           localStorage.removeItem(key);
         }
       }
@@ -275,8 +251,8 @@ class NewsletterWebhookService {
    */
   getWebhookLogs(): { success: any[]; errors: any[] } {
     return {
-      success: JSON.parse(localStorage.getItem('webhook_success_logs') || '[]'),
-      errors: JSON.parse(localStorage.getItem('webhook_error_logs') || '[]')
+      success: JSON.parse(localStorage.getItem('newsletter_webhook_success_logs') || '[]'),
+      errors: JSON.parse(localStorage.getItem('newsletter_webhook_error_logs') || '[]')
     };
   }
 
@@ -284,9 +260,9 @@ class NewsletterWebhookService {
    * Clear webhook logs
    */
   clearWebhookLogs(): void {
-    localStorage.removeItem('webhook_success_logs');
-    localStorage.removeItem('webhook_error_logs');
+    localStorage.removeItem('newsletter_webhook_success_logs');
+    localStorage.removeItem('newsletter_webhook_error_logs');
   }
 }
 
-export default NewsletterWebhookService.getInstance();
+export default NewslettersWebhookService.getInstance();
