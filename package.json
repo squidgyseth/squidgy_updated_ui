@@ -31,6 +31,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/uuid": "^10.0.0",
     "axios": "^1.12.2",
+    "canvas-confetti": "^1.9.4",
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",

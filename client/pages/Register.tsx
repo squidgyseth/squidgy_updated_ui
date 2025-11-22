@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { signUp } from '../lib/api';
-import { useUser } from "@/hooks/useUser";
 
 // Google Icon from design
 const GoogleIcon = () => (
@@ -55,7 +54,6 @@ const InsightsIcon = () => (
 
 export default function Register() {
   const navigate = useNavigate();
-  const { setUserId } = useUser();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -150,10 +148,10 @@ export default function Register() {
           navigate('/login');
         }, 3000);
       } else {
-        console.log('🎉 REGISTER: Account created and verified, navigating to /welcome');
+        console.log('🎉 REGISTER: Account created and verified, navigating to waitlist welcome');
         toast.success('Account created successfully!');
-        // New users always go through onboarding
-        navigate('/ai-onboarding/business-type');
+        // New users go to waitlist welcome
+        navigate('/waitlist-welcome');
       }
     } catch (error: any) {
       console.error('❌ REGISTER: Error during signup:', error);

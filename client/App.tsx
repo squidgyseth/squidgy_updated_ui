@@ -51,6 +51,7 @@ import Welcome from "./pages/onboarding/Welcome";
 
 // Referral Pages  
 import ReferralHub from "./pages/referrals/ReferralHub";
+import WaitlistWelcome from "./pages/WaitlistWelcome";
 
 const queryClient = new QueryClient();
 
@@ -293,6 +294,13 @@ const App = () => (
           <Route path="/referrals" element={
             <ProtectedRoute>
               <ReferralHub />
+            </ProtectedRoute>
+          } />
+          
+          {/* Waitlist Welcome - shown after registration */}
+          <Route path="/waitlist-welcome" element={
+            <ProtectedRoute>
+              <WaitlistWelcome />
             </ProtectedRoute>
           } />
           
