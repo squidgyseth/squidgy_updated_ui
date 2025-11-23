@@ -140,13 +140,13 @@ export default function Register() {
       
       if (response.needsEmailConfirmation) {
         console.log('📧 REGISTER: Email confirmation required, showing success message');
-        toast.success('Account created! Please check your email and click the confirmation link to verify your account.');
+        toast.success('Account created! Please check your email to verify your account. Welcome to the waitlist!');
         
-        console.log('⏰ REGISTER: Setting 3-second timeout for navigation to /login');
+        console.log('⏰ REGISTER: Setting 2-second timeout for navigation to /waitlist-welcome');
         setTimeout(() => {
-          console.log('🔄 REGISTER: Navigating to /login after timeout');
-          navigate('/login');
-        }, 3000);
+          console.log('🔄 REGISTER: Navigating to /waitlist-welcome after timeout');
+          navigate('/waitlist-welcome');
+        }, 2000);
       } else {
         console.log('🎉 REGISTER: Account created and verified, navigating to waitlist welcome');
         toast.success('Account created successfully!');
