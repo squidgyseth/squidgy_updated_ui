@@ -6,8 +6,8 @@
 
 interface WebhookPayload {
   user_id: string;
-  id: string;
-  session_id: string;
+  id: string; // Website analysis record ID
+  session_id?: string;
   ghl_location_id?: string;
   combined_description: string;
   ghl_user_id?: string;
@@ -51,7 +51,7 @@ class NewsletterWebhookService {
       ghl_user_id?: string;
     }
   ): Promise<void> {
-    // Combine descriptions
+    // Combine descriptions - keep the full company data as before
     const combinedDescription = [
       websiteData.company_description,
       websiteData.value_proposition,
@@ -60,8 +60,8 @@ class NewsletterWebhookService {
 
     const payload: WebhookPayload = {
       user_id: websiteData.firm_user_id,
-      id: websiteData.id,
-      session_id: websiteData.id,
+      id: websiteData.id, // Website analysis record ID
+      session_id: `analysis_${websiteData.id}`, // Generate unique session for this analysis
       ghl_location_id: websiteData.ghl_location_id || '',
       combined_description: combinedDescription,
       ghl_user_id: websiteData.ghl_user_id || '',
@@ -158,8 +158,8 @@ class NewsletterWebhookService {
 
     const payload: WebhookPayload = {
       user_id: websiteData.firm_user_id,
-      id: websiteData.id,
-      session_id: websiteData.id,
+      id: websiteData.id, // Website analysis record ID
+      session_id: `analysis_${websiteData.id}`, // Generate unique session for this analysis
       ghl_location_id: websiteData.ghl_location_id || '',
       combined_description: combinedDescription,
       ghl_user_id: websiteData.ghl_user_id || '',

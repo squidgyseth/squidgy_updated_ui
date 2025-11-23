@@ -406,19 +406,28 @@ export default function WebsiteDetails() {
         isAnalyzeButton: true // Continue button includes screenshots/favicons
       });
       
+      console.log('[Newsletter] saveWebsiteAnalysis result:', savedData);
+      console.log('[Newsletter] savedData.id:', savedData?.id);
+      
       // Fire webhook asynchronously (doesn't block the UI)
       // This runs in the background without delaying navigation
-      newsletterWebhookService.fireWebhookAsync({
-        firm_user_id: userId,
-        id: savedData?.id || sessionId || userId, // Use the saved record ID if available
-        ghl_location_id: profile?.ghl_location_id || '', // Get from profile if available
-        company_description: companyDescription.trim(),
-        value_proposition: valueProposition.trim(),
-        business_niche: businessNiche.trim(),
-        ghl_user_id: profile?.ghl_user_id || user?.id || '' // Get from profile/user if available
-      });
-      
-      console.log('[Newsletter] Webhook triggered in background for newsletter questions generation');
+      if (savedData?.id) {
+        console.log('[Newsletter] Using saved website analysis ID for webhook:', savedData.id);
+        newsletterWebhookService.fireWebhookAsync({
+          firm_user_id: userId,
+          id: savedData.id, // Use the actual saved record ID
+          ghl_location_id: profile?.ghl_location_id || '', // Get from profile if available
+          company_description: companyDescription.trim(),
+          value_proposition: valueProposition.trim(),
+          business_niche: businessNiche.trim(),
+          ghl_user_id: profile?.ghl_user_id || user?.id || '' // Get from profile/user if available
+        });
+        
+        console.log('[Newsletter] Webhook triggered in background for newsletter questions generation');
+      } else {
+        console.error('[Newsletter] Cannot fire webhook - no saved website analysis ID available');
+        console.log('[Newsletter] savedData:', savedData);
+      }
       
       toast({
         title: "Website analysis saved!",

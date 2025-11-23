@@ -121,9 +121,33 @@ export default function HistoricalNewsletters() {
   };
 
   const getPreviewText = (htmlContent: string): string => {
-    // Remove HTML tags and get first 200 characters
-    const text = htmlContent.replace(/<[^>]*>/g, '').trim();
-    return text.length > 200 ? text.substring(0, 200) + '...' : text;
+    try {
+      // First, try to parse if it's JSON (some newsletters might be stored as JSON)
+      if (htmlContent.trim().startsWith('{')) {
+        const parsed = JSON.parse(htmlContent);
+        if (parsed.title || parsed.subject) {
+          return `Newsletter: ${parsed.title || parsed.subject}`;
+        }
+      }
+      
+      // Remove HTML tags, CSS blocks, and excessive whitespace
+      let text = htmlContent
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // Remove CSS blocks
+        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove CSS comments
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // Remove script blocks
+        .replace(/<[^>]*>/g, ' ') // Remove HTML tags
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .trim();
+      
+      // If the result is still mostly CSS/HTML code, show generic message
+      if (text.length < 50 || text.includes('font-family:') || text.includes('margin:') || text.includes('padding:')) {
+        return 'Newsletter content available - click "Full Preview" to view the formatted newsletter.';
+      }
+      
+      return text.length > 200 ? text.substring(0, 200) + '...' : text;
+    } catch (error) {
+      return 'Newsletter content available - click "Full Preview" to view the formatted newsletter.';
+    }
   };
 
   if (loading) {
