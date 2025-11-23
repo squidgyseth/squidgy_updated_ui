@@ -28,6 +28,7 @@ interface SocialPost {
   type: string;
   caption: string;
   imagePrompt?: string;
+  databaseRecordId?: string;
   videoConcept?: string;
   script?: string;
   historyContentRepurposerId?: string;  // Add this to track the parent record
@@ -40,6 +41,87 @@ interface SocialMediaContent {
   InstagramFacebook?: Record<string, any>;
   TikTokReels?: Record<string, any>;
   GeneralAssets?: Record<string, any>;
+}
+
+/**
+ * Converts localStorage content to SocialPost format
+ * Handles both array and direct object formats from the webhook response
+ */
+function convertLocalStorageContentToPosts(content: any): SocialPost[] {
+  const posts: SocialPost[] = [];
+  
+  try {
+    // Handle array format (when content is wrapped in array)
+    let socialMediaContent: SocialMediaContent;
+    
+    if (Array.isArray(content) && content[0] && content[0].ContentRepurposerPosts) {
+      socialMediaContent = content[0].ContentRepurposerPosts;
+    } else if (content && content.ContentRepurposerPosts) {
+      socialMediaContent = content.ContentRepurposerPosts;
+    } else if (content && (content.LinkedIn || content.InstagramFacebook || content.TikTokReels)) {
+      socialMediaContent = content;
+    } else {
+      console.warn('❌ Unknown content format:', content);
+      return posts;
+    }
+
+    console.log('📱 Processing social media content:', socialMediaContent);
+
+    // Process LinkedIn posts
+    if (socialMediaContent.LinkedIn) {
+      Object.entries(socialMediaContent.LinkedIn).forEach(([postKey, postData]: [string, any]) => {
+        if (postData && typeof postData === 'object') {
+          posts.push({
+            id: `linkedin-${postKey}-${Date.now()}`,
+            platform: 'LinkedIn',
+            type: postData.VideoConcept ? 'video' : 'post',
+            caption: postData.Caption || '',
+            imagePrompt: postData.ImagePrompt,
+            videoConcept: postData.VideoConcept,
+            script: postData.Script
+          });
+        }
+      });
+    }
+
+    // Process Instagram/Facebook posts
+    if (socialMediaContent.InstagramFacebook) {
+      Object.entries(socialMediaContent.InstagramFacebook).forEach(([postKey, postData]: [string, any]) => {
+        if (postData && typeof postData === 'object') {
+          posts.push({
+            id: `instagram-${postKey}-${Date.now()}`,
+            platform: 'Instagram/Facebook',
+            type: 'post',
+            caption: postData.Caption || '',
+            imagePrompt: postData.ImagePrompt
+          });
+        }
+      });
+    }
+
+    // Process TikTok/Reels posts
+    if (socialMediaContent.TikTokReels) {
+      Object.entries(socialMediaContent.TikTokReels).forEach(([postKey, postData]: [string, any]) => {
+        if (postData && typeof postData === 'object') {
+          posts.push({
+            id: `tiktok-${postKey}-${Date.now()}`,
+            platform: 'TikTok/Reels',
+            type: 'video',
+            caption: postData.Idea || '',
+            script: postData.Script,
+            videoConcept: postData.Idea
+          });
+        }
+      });
+    }
+
+    console.log('✅ Successfully converted to posts:', posts);
+    return posts;
+    
+  } catch (error) {
+    console.error('❌ Error converting localStorage content:', error);
+    return posts;
+  }
 }
 
 export default function SocialMediaPreview() {
@@ -105,12 +187,14 @@ export default function SocialMediaPreview() {
     }
 
     try {
-      // Get session_id from URL params if available
+      // Get parameters from URL
       const sessionId = searchParams.get('session_id');
+      const historyId = searchParams.get('history_id');
       
       console.log('🔍 SocialMediaPreview: Loading social content from database');
       console.log('🔍 SocialMediaPreview: userId:', userId);
       console.log('🔍 SocialMediaPreview: sessionId:', sessionId);
+      console.log('🔍 SocialMediaPreview: historyId:', historyId);
       console.log('🔍 SocialMediaPreview: localStorage squidgy_user_id:', localStorage.getItem('squidgy_user_id'));
       
       // Build query to load from content_repurposer_images table
@@ -121,14 +205,20 @@ export default function SocialMediaPreview() {
           history_content_repurposer:history_content_repurposer_id (
             title,
             content,
-            session_id
+            session_id,
+            created_at
           )
         `)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .eq('in_use', true); // Only show active records
 
-      // Filter by session if provided
-      if (sessionId) {
+      // Priority filtering: history_id takes precedence over session_id
+      if (historyId) {
+        query = query.eq('history_content_repurposer_id', historyId);
+        console.log('🔍 SocialMediaPreview: Filtering by history_content_repurposer_id:', historyId);
+      } else if (sessionId) {
         query = query.eq('session_id', sessionId);
+        console.log('🔍 SocialMediaPreview: Filtering by session_id:', sessionId);
       }
 
       const { data, error } = await query.order('created_date', { ascending: false });
@@ -144,22 +234,46 @@ export default function SocialMediaPreview() {
       console.log('📱 SocialMediaPreview: Query executed:', {
         table: 'content_repurposer_images',
         userId: userId,
-        sessionId: sessionId || 'all sessions',
+        sessionId: sessionId || 'none',
+        historyId: historyId || 'none',
+        filterUsed: historyId ? 'history_content_repurposer_id' : sessionId ? 'session_id' : 'user_id only',
         resultCount: data?.length || 0
       });
 
       if (!data || data.length === 0) {
         console.log('❌ SocialMediaPreview: No social content found in database');
-        console.log('❌ SocialMediaPreview: This means either:');
-        console.log('   1. No posts exist for this user/session combination');
-        console.log('   2. The query filters are too restrictive');
-        console.log('   3. The data was not properly migrated');
+        console.log('🔄 SocialMediaPreview: Attempting to load from localStorage as fallback');
+        
+        // Try to load from localStorage as fallback
+        const localStorageContent = localStorage.getItem('socialMediaContent');
+        if (localStorageContent) {
+          console.log('📱 SocialMediaPreview: Found content in localStorage:', localStorageContent);
+          try {
+            const parsedContent = JSON.parse(localStorageContent);
+            const convertedPosts = convertLocalStorageContentToPosts(parsedContent);
+            if (convertedPosts.length > 0) {
+              console.log('✅ SocialMediaPreview: Successfully converted localStorage content to posts:', convertedPosts);
+              setPosts(convertedPosts);
+              
+              // Set the first platform with posts as active tab
+              const platforms = [...new Set(convertedPosts.map(post => post.platform))];
+              if (platforms.length > 0) {
+                setActiveTab(platforms[0]);
+              }
+              return;
+            }
+          } catch (error) {
+            console.error('❌ SocialMediaPreview: Error parsing localStorage content:', error);
+          }
+        }
+        
+        console.log('❌ SocialMediaPreview: No content found in localStorage either');
         setPosts([]);
         return;
       }
 
-      // Convert database records to SocialPost format
-      const parsedPosts: SocialPost[] = data.map((record, index) => ({
+      // Convert database records to SocialPost format and deduplicate
+      const allParsedPosts: SocialPost[] = data.map((record, index) => ({
         id: record.post_id ? `${record.post_id}-${record.id}` : `${record.platform}-${record.id}`,  // Ensure unique keys by combining post_id with record.id
         platform: record.platform.charAt(0).toUpperCase() + record.platform.slice(1), // Capitalize first letter
         type: 'post',
@@ -169,6 +283,23 @@ export default function SocialMediaPreview() {
         originalPostId: record.post_id, // Keep original post_id for reference
         databaseRecordId: record.id // Keep database record ID for reference
       }));
+
+      // Deduplicate posts based on platform and content (keep the most recent one)
+      const seenPosts = new Map<string, SocialPost>();
+      allParsedPosts.forEach(post => {
+        const dedupeKey = `${post.platform}-${post.caption.trim()}`;
+        const existing = seenPosts.get(dedupeKey);
+        
+        // Keep the post with the higher database record ID (more recent)
+        if (!existing || post.databaseRecordId > existing.databaseRecordId) {
+          seenPosts.set(dedupeKey, post);
+        }
+      });
+      
+      const parsedPosts: SocialPost[] = Array.from(seenPosts.values());
+      
+      console.log('📱 Before deduplication:', allParsedPosts.length, 'posts');
+      console.log('📱 After deduplication:', parsedPosts.length, 'posts');
 
       console.log('📱 Converted posts:', parsedPosts);
       console.log('📱 Sample post structure:', parsedPosts[0]);
@@ -485,6 +616,7 @@ export default function SocialMediaPreview() {
   const getPlatformColor = (platform: string) => {
     switch (platform) {
       case 'LinkedIn': return 'bg-blue-600';
+      case 'Instagram/Facebook': 
       case 'Instagram': return 'bg-gradient-to-r from-purple-500 to-pink-500';
       case 'TikTok': return 'bg-black';
       case 'General': return 'bg-squidgy-gradient';
@@ -500,6 +632,7 @@ export default function SocialMediaPreview() {
             <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
           </svg>
         );
+      case 'Instagram/Facebook': 
       case 'Instagram': 
         return (
           <svg className={size} viewBox="0 0 24 24" fill="currentColor">
@@ -590,7 +723,7 @@ export default function SocialMediaPreview() {
                   if (platform === 'LinkedIn') {
                     borderColor = 'border-blue-500';
                     textColor = 'text-blue-600';
-                  } else if (platform === 'Instagram') {
+                  } else if (platform === 'Instagram/Facebook' || platform === 'Instagram') {
                     borderColor = 'border-pink-500';
                     textColor = 'text-pink-600';
                   } else if (platform === 'TikTok') {

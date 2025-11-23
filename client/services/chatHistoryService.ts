@@ -43,6 +43,7 @@ export interface SocialContentHistory {
   message: string;
   timestamp: string;
   created_at: string;
+  history_content_repurposer_id?: string; // Add this for history-based filtering
 }
 
 export class ChatHistoryService {
@@ -440,11 +441,10 @@ export class ChatHistoryService {
    */
   async getPreviousSocialContent(userId: string): Promise<SocialContentHistory[]> {
     try {
-      console.log('🔍 QUERY: Fetching social content from content_repurposer_images for user:', userId);
+      console.log('🔍 QUERY: Fetching social content from content_repurposer_images ONLY for user:', userId);
       
-      // Get social media content from content_repurposer_images table grouped by session
-      // Only get records that have a valid session_id (exclude orphaned records)
-      const { data, error } = await supabase
+      // Get social media content from content_repurposer_images table with history data
+      const { data: imageData, error: imageError } = await supabase
         .from('content_repurposer_images')
         .select(`
           *,
@@ -457,41 +457,50 @@ export class ChatHistoryService {
           )
         `)
         .eq('user_id', userId)
+        .eq('in_use', true)  // Only show active records
         .not('session_id', 'is', null)  // Exclude records with null session_id
         .order('created_date', { ascending: false })
         .limit(100);
 
-      console.log('📱 QUERY RESULT: social content from content_repurposer_images count:', data?.length || 0);
+      console.log('📱 IMAGES ONLY: found', imageData?.length || 0, 'image records');
 
-      if (error) {
-        console.error('Error fetching social content from content_repurposer_images:', error);
+      if (imageError) {
+        console.error('Error fetching social content from content_repurposer_images:', imageError);
+        return [];
+      }
+      
+      if (!imageData || imageData.length === 0) {
+        console.log('📱 No image records found - this is expected until webhook populates the table');
         return [];
       }
 
-      // Get the most recent record for each session_id based on created_date
-      const sessionGroups = new Map<string, any>();
+      // Group by history_content_repurposer_id (parent history record)
+      const contentGroups = new Map<string, any>();
       
-      (data || []).forEach(record => {
-        const sessionId = record.session_id || 'unknown';
-        const existing = sessionGroups.get(sessionId);
+      imageData.forEach(record => {
+        const contentId = record.history_content_repurposer_id || record.id;
+        const existing = contentGroups.get(contentId);
         
-        // Only keep the record with the latest created_date for each session
+        // Only keep the record with the latest created_date for each content generation
         if (!existing || new Date(record.created_date) > new Date(existing.created_date)) {
           const historyData = record.history_content_repurposer;
           
-          sessionGroups.set(sessionId, {
-            id: historyData?.chat_history_id || record.id,
-            session_id: sessionId,
-            message: this.createSocialContentSummary(data?.filter(d => d.session_id === sessionId) || []),
+          contentGroups.set(contentId, {
+            id: historyData?.chat_history_id || contentId,
+            session_id: record.session_id || contentId,
+            message: this.createSocialContentSummary(imageData?.filter(d => d.history_content_repurposer_id === contentId) || []),
             timestamp: record.created_date,
             created_at: record.created_date,
-            title: historyData?.title || `Social Content ${sessionId}`,
-            platform_count: data?.filter(d => d.session_id === sessionId).length || 0
+            title: historyData?.title || `Social Content ${contentId}`,
+            platform_count: imageData?.filter(d => d.history_content_repurposer_id === contentId).length || 0,
+            history_content_repurposer_id: contentId // Add this for filtering
           });
         }
       });
-
-      return Array.from(sessionGroups.values());
+      
+      console.log('📱 IMAGES ONLY: Grouped by history_content_repurposer_id, found groups:', contentGroups.size);
+      return Array.from(contentGroups.values());
+      
     } catch (error) {
       console.error('Error getting previous social content:', error);
       return [];

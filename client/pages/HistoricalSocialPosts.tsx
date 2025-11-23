@@ -52,6 +52,17 @@ export default function HistoricalSocialPosts() {
       const chatService = new ChatHistoryService();
       const socialData = await chatService.getPreviousSocialContent(userId);
       
+      console.log('🔍 HistoricalSocialPosts DEBUG: Raw socialData from service:', socialData);
+      console.log('🔍 HistoricalSocialPosts DEBUG: socialData length:', socialData?.length || 0);
+      console.log('🔍 HistoricalSocialPosts DEBUG: socialData details:', 
+        socialData?.map(item => ({
+          id: item.id,
+          session_id: item.session_id,
+          timestamp: item.timestamp,
+          title: item.title
+        }))
+      );
+      
       setSocialContent(socialData);
       
       // Group by date
@@ -145,9 +156,17 @@ export default function HistoricalSocialPosts() {
   };
 
   const handlePreviewContent = (content: SocialContentHistory) => {
-    // Open preview page with session_id parameter
+    // Open preview page with history_id parameter for date-specific filtering
     const params = new URLSearchParams();
-    params.set('session_id', content.session_id);
+    
+    // Use history_content_repurposer_id for precise date filtering
+    if (content.history_content_repurposer_id) {
+      params.set('history_id', content.history_content_repurposer_id);
+    } else {
+      // Fallback to session_id if history_id not available
+      params.set('session_id', content.session_id);
+    }
+    
     window.open(`/social-preview?${params.toString()}`, '_blank');
   };
 

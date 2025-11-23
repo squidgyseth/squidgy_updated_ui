@@ -92,6 +92,12 @@ export default function N8nChatInterface({
   const handleSendMessage = async (message: string, fileUrl?: string, fileName?: string) => {
     if (!message.trim() || isLoading) return;
 
+    // For content_repurposer agent, enforce newsletter selection
+    if (agent.id === 'content_repurposer' && !selectedNewsletterId) {
+      alert('📰 Please select a newsletter from the dropdown above before sending a message.');
+      return;
+    }
+
     // If there's a file URL, include it in the message content
     const messageContent = fileUrl ? `${message}\n\nFile: ${fileName}\nURL: ${fileUrl}` : message;
 
