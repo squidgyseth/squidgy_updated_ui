@@ -499,16 +499,22 @@ export const newslettersApi = {
   create: async (data: any, authToken?: string, options?: { triggerWebhook?: boolean }) => {
     const result = await supabaseApi.insert('history_newsletters', data, { authToken });
     
-    // Fire webhook only if explicitly requested (e.g., from newsletter editor)
-    if (options?.triggerWebhook && result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
+    // Fire webhook for newsletter content repurposer questions generation
+    // This triggers for both: 1) Agent-generated newsletters, 2) User-saved newsletters
+    if (result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
       const savedData = result.data[0];
-      newslettersWebhookService.fireWebhookAsync({
-        id: savedData.id,
-        user_id: data.user_id,
-        session_id: data.session_id || savedData.id,
-        chat_history_id: data.chat_history_id || '',
-        content: data.content
-      });
+      
+      // Always trigger webhook for newsletter operations to generate content_repurposer_questions
+      // unless explicitly disabled (options.triggerWebhook === false)
+      if (options?.triggerWebhook !== false) {
+        newslettersWebhookService.fireWebhookAsync({
+          id: savedData.id,
+          user_id: data.user_id,
+          session_id: data.session_id || savedData.id,
+          chat_history_id: data.chat_history_id || '',
+          content: data.content
+        });
+      }
     }
     
     return result;
@@ -517,16 +523,21 @@ export const newslettersApi = {
   updateById: async (id: string, updateData: any, authToken?: string, options?: { triggerWebhook?: boolean }) => {
     const result = await supabaseApi.update('history_newsletters', updateData, { id }, { authToken });
     
-    // Fire webhook only if explicitly requested (e.g., from newsletter editor)
-    if (options?.triggerWebhook && result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
+    // Fire webhook for newsletter content repurposer questions generation when content changes
+    if (result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
       const updatedData = result.data[0];
-      newslettersWebhookService.fireWebhookAsync({
-        id: updatedData.id,
-        user_id: updatedData.user_id,
-        session_id: updatedData.session_id || updatedData.id,
-        chat_history_id: updatedData.chat_history_id || '',
-        content: updatedData.content
-      });
+      
+      // Always trigger webhook for newsletter updates to regenerate content_repurposer_questions
+      // unless explicitly disabled (options.triggerWebhook === false)
+      if (options?.triggerWebhook !== false) {
+        newslettersWebhookService.fireWebhookAsync({
+          id: updatedData.id,
+          user_id: updatedData.user_id,
+          session_id: updatedData.session_id || updatedData.id,
+          chat_history_id: updatedData.chat_history_id || '',
+          content: updatedData.content
+        });
+      }
     }
     
     return result;
@@ -583,13 +594,13 @@ export const newslettersApi = {
     );
     
     if (existing.data && !existing.error) {
-      // Update existing
+      // Update existing - webhook will trigger unless explicitly disabled
       return newslettersApi.updateById(existing.data.id, {
         ...data,
         updated_at: new Date().toISOString()
       }, authToken, options);
     } else {
-      // Create new
+      // Create new - webhook will trigger unless explicitly disabled
       return newslettersApi.create({
         ...data,
         created_at: new Date().toISOString(),
