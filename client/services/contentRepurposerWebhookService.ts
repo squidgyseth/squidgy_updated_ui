@@ -2,7 +2,10 @@
  * Content Repurposer Webhook Service
  * Handles async webhook calls for content repurpose questions generation
  * This runs independently of database operations to prevent blocking
+ * Also handles creating content_repurposer_images records from webhook response
  */
+
+import { supabase } from '../lib/supabase';
 
 interface ContentRepurposerWebhookPayload {
   id: string;
@@ -18,6 +21,14 @@ interface WebhookResponse {
   message?: string;
   error?: string;
   requestId?: string;
+  data?: any; // Webhook response data containing social media posts
+}
+
+interface SocialMediaPost {
+  platform: string;
+  content: string;
+  image_prompt?: string;
+  hashtags?: string[];
 }
 
 class ContentRepurposerWebhookService {
@@ -100,12 +111,16 @@ class ContentRepurposerWebhookService {
       const data = await response.json();
       console.log('[Content Repurposer Webhook] Success:', data);
       
+      // Process webhook response and create image records
+      await this.processWebhookResponse(payload, data);
+      
       this.logWebhookSuccess(payload, data);
       
       return {
         success: true,
         message: 'Content repurposer webhook sent successfully',
-        requestId: data.requestId || data.id
+        requestId: data.requestId || data.id,
+        data: data
       };
     } catch (error) {
       console.error(`[Content Repurposer Webhook] Attempt ${attempt} failed:`, error);
@@ -117,6 +132,209 @@ class ContentRepurposerWebhookService {
       }
       
       throw error;
+    }
+  }
+
+  /**
+   * Process webhook response and create content_repurposer_images records
+   * This extracts individual posts from the webhook response and stores them
+   */
+  private async processWebhookResponse(
+    payload: ContentRepurposerWebhookPayload,
+    webhookData: any
+  ): Promise<void> {
+    try {
+      console.log('[Content Repurposer Webhook] Processing webhook response:', webhookData);
+      
+      // Extract social media posts from webhook response
+      const posts = this.extractSocialMediaPosts(webhookData);
+      
+      if (posts.length === 0) {
+        console.log('[Content Repurposer Webhook] No social media posts found in response');
+        return;
+      }
+
+      // Create content_repurposer_images records for each post with new schema
+      const imageRecords = posts.map((post, index) => ({
+        user_id: payload.user_id,
+        agent_id: 'content_repurposer',
+        platform: post.platform,
+        post_id: `${payload.session_id}_${post.platform.toLowerCase()}_${index + 1}`,
+        content: post.content,
+        image_url: null, // Will be generated on-demand
+        prompt: post.image_prompt || '',
+        generation_type: 'webhook',
+        session_id: payload.session_id,
+        history_content_repurposer_id: payload.id, // Link to parent history_content_repurposer record
+        created_date: new Date().toISOString(),
+        updated_date: new Date().toISOString(),
+        in_use: true
+      }));
+
+      // Insert into Supabase
+      const { data: insertedRecords, error } = await supabase
+        .from('content_repurposer_images')
+        .insert(imageRecords)
+        .select();
+
+      if (error) {
+        console.error('[Content Repurposer Webhook] Failed to insert image records:', error);
+        throw error;
+      }
+
+      console.log(`[Content Repurposer Webhook] Successfully created ${insertedRecords?.length || 0} image records`);
+      
+      // Update repurposed_content in history_content_repurposer table
+      await this.syncRepurposedContentToHistory(payload.id, webhookData);
+    } catch (error) {
+      console.error('[Content Repurposer Webhook] Error processing webhook response:', error);
+      // Don't throw - this shouldn't break the main webhook flow
+    }
+  }
+
+  /**
+   * Extract social media posts from webhook response
+   * Handles different response formats from the webhook
+   */
+  private extractSocialMediaPosts(webhookData: any): SocialMediaPost[] {
+    const posts: SocialMediaPost[] = [];
+
+    try {
+      // Handle different response formats
+      let contentData = webhookData;
+      
+      // If webhook data has a data property, use that
+      if (webhookData.data) {
+        contentData = webhookData.data;
+      }
+
+      // If it's a string, parse it as JSON
+      if (typeof contentData === 'string') {
+        contentData = JSON.parse(contentData);
+      }
+
+      // Handle array format
+      if (Array.isArray(contentData)) {
+        contentData.forEach((item: any) => {
+          if (item.ContentRepurposerPosts) {
+            this.extractPostsFromContentRepurposer(item.ContentRepurposerPosts, posts);
+          }
+        });
+      } 
+      // Handle object format
+      else if (contentData.ContentRepurposerPosts) {
+        this.extractPostsFromContentRepurposer(contentData.ContentRepurposerPosts, posts);
+      }
+      // Handle direct posts format
+      else if (contentData.posts) {
+        this.extractPostsFromDirectFormat(contentData.posts, posts);
+      }
+
+      console.log(`[Content Repurposer Webhook] Extracted ${posts.length} social media posts`);
+    } catch (error) {
+      console.error('[Content Repurposer Webhook] Error extracting social media posts:', error);
+    }
+
+    return posts;
+  }
+
+  /**
+   * Extract posts from ContentRepurposerPosts format
+   */
+  private extractPostsFromContentRepurposer(contentRepurposerPosts: any, posts: SocialMediaPost[]): void {
+    // LinkedIn Posts
+    if (contentRepurposerPosts.LinkedInPost1) {
+      posts.push({
+        platform: 'LinkedIn',
+        content: contentRepurposerPosts.LinkedInPost1,
+        image_prompt: contentRepurposerPosts.LinkedInImagePrompt1 || ''
+      });
+    }
+    if (contentRepurposerPosts.LinkedInPost2) {
+      posts.push({
+        platform: 'LinkedIn',
+        content: contentRepurposerPosts.LinkedInPost2,
+        image_prompt: contentRepurposerPosts.LinkedInImagePrompt2 || ''
+      });
+    }
+
+    // Instagram/Facebook Posts
+    if (contentRepurposerPosts.InstagramFacebookPost1) {
+      posts.push({
+        platform: 'Instagram/Facebook',
+        content: contentRepurposerPosts.InstagramFacebookPost1,
+        image_prompt: contentRepurposerPosts.InstagramFacebookImagePrompt1 || '',
+        hashtags: contentRepurposerPosts.InstagramFacebookHashtags1 || []
+      });
+    }
+    if (contentRepurposerPosts.InstagramFacebookPost2) {
+      posts.push({
+        platform: 'Instagram/Facebook',
+        content: contentRepurposerPosts.InstagramFacebookPost2,
+        image_prompt: contentRepurposerPosts.InstagramFacebookImagePrompt2 || '',
+        hashtags: contentRepurposerPosts.InstagramFacebookHashtags2 || []
+      });
+    }
+
+    // TikTok/Reels Posts
+    if (contentRepurposerPosts.TikTokReelsPost1) {
+      posts.push({
+        platform: 'TikTok/Reels',
+        content: contentRepurposerPosts.TikTokReelsPost1,
+        image_prompt: contentRepurposerPosts.TikTokReelsImagePrompt1 || '',
+        hashtags: contentRepurposerPosts.TikTokReelsHashtags1 || []
+      });
+    }
+    if (contentRepurposerPosts.TikTokReelsPost2) {
+      posts.push({
+        platform: 'TikTok/Reels',
+        content: contentRepurposerPosts.TikTokReelsPost2,
+        image_prompt: contentRepurposerPosts.TikTokReelsImagePrompt2 || '',
+        hashtags: contentRepurposerPosts.TikTokReelsHashtags2 || []
+      });
+    }
+  }
+
+  /**
+   * Extract posts from direct posts format
+   */
+  private extractPostsFromDirectFormat(posts: any[], postArray: SocialMediaPost[]): void {
+    posts.forEach((post: any) => {
+      postArray.push({
+        platform: post.platform || 'Unknown',
+        content: post.content || '',
+        image_prompt: post.image_prompt || post.imagePrompt || '',
+        hashtags: post.hashtags || []
+      });
+    });
+  }
+
+  /**
+   * Sync repurposed content back to history table
+   * This ensures both tables stay in sync when webhook completes
+   */
+  private async syncRepurposedContentToHistory(historyRecordId: string, webhookData: any): Promise<void> {
+    try {
+      console.log('[Content Repurposer Webhook] Syncing repurposed content to history table');
+      
+      // Update the repurposed_content column with the webhook response
+      const { error } = await supabase
+        .from('history_content_repurposer')
+        .update({
+          repurposed_content: webhookData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', historyRecordId);
+
+      if (error) {
+        console.error('[Content Repurposer Webhook] Failed to sync repurposed content:', error);
+        throw error;
+      }
+
+      console.log('[Content Repurposer Webhook] Successfully synced repurposed content to history table');
+    } catch (error) {
+      console.error('[Content Repurposer Webhook] Error syncing repurposed content:', error);
+      // Don't throw - this is supplementary sync, shouldn't break main flow
     }
   }
 
