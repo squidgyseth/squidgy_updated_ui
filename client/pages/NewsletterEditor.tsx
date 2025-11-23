@@ -648,20 +648,20 @@ export default function NewsletterEditor() {
 
         let result;
         if (currentNewsletterId) {
-          // Update existing newsletter
-          result = await newslettersApi.updateById(currentNewsletterId, newsletterData);
+          // Update existing newsletter with webhook trigger
+          result = await newslettersApi.updateById(currentNewsletterId, newsletterData, undefined, { triggerWebhook: true });
         } else if (sessionId || chatHistoryId) {
-          // Use smart upsert based on user_id + session_id + chat_history_id combination
-          result = await newslettersApi.upsertByChat(newsletterData);
+          // Use smart upsert based on user_id + session_id + chat_history_id combination with webhook trigger
+          result = await newslettersApi.upsertByChat(newsletterData, undefined, { triggerWebhook: true });
           if (result.data && Array.isArray(result.data) && result.data.length > 0) {
             setCurrentNewsletterId(result.data[0].id);
           } else if (result.data && result.data.id) {
             setCurrentNewsletterId(result.data.id);
           }
         } else {
-          // Create new newsletter (no chat context)
+          // Create new newsletter (no chat context) with webhook trigger
           newsletterData.created_at = new Date().toISOString();
-          result = await newslettersApi.create(newsletterData);
+          result = await newslettersApi.create(newsletterData, undefined, { triggerWebhook: true });
           if (result.data && Array.isArray(result.data) && result.data.length > 0) {
             setCurrentNewsletterId(result.data[0].id);
           } else if (result.data && result.data.id) {

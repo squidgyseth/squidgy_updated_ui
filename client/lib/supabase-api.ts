@@ -1,7 +1,7 @@
 // supabase-api.ts - Direct Supabase REST API utility to replace hanging Supabase client calls
 // This bypasses the Supabase JS client which hangs in production environments
 
-import contentRepurposerWebhookService from '../services/contentRepurposerWebhookService';
+// Import newsletter webhook service for editor save operations  
 import newslettersWebhookService from '../services/newslettersWebhookService';
 
 interface SupabaseApiConfig {
@@ -496,11 +496,11 @@ export const newslettersApi = {
   getByChatHistoryId: (chat_history_id: string, authToken?: string) => 
     supabaseApi.select('history_newsletters', '*', { chat_history_id }, { single: true, authToken }),
   
-  create: async (data: any, authToken?: string) => {
+  create: async (data: any, authToken?: string, options?: { triggerWebhook?: boolean }) => {
     const result = await supabaseApi.insert('history_newsletters', data, { authToken });
     
-    // Fire webhook asynchronously after successful database operation
-    if (result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
+    // Fire webhook only if explicitly requested (e.g., from newsletter editor)
+    if (options?.triggerWebhook && result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
       const savedData = result.data[0];
       newslettersWebhookService.fireWebhookAsync({
         id: savedData.id,
@@ -514,11 +514,11 @@ export const newslettersApi = {
     return result;
   },
   
-  updateById: async (id: string, updateData: any, authToken?: string) => {
+  updateById: async (id: string, updateData: any, authToken?: string, options?: { triggerWebhook?: boolean }) => {
     const result = await supabaseApi.update('history_newsletters', updateData, { id }, { authToken });
     
-    // Fire webhook asynchronously after successful database operation
-    if (result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
+    // Fire webhook only if explicitly requested (e.g., from newsletter editor)
+    if (options?.triggerWebhook && result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
       const updatedData = result.data[0];
       newslettersWebhookService.fireWebhookAsync({
         id: updatedData.id,
@@ -573,7 +573,7 @@ export const newslettersApi = {
     title: string;
     content: string;
     call_to_actions?: any[];
-  }, authToken?: string) => {
+  }, authToken?: string, options?: { triggerWebhook?: boolean }) => {
     // First try to find existing
     const existing = await newslettersApi.findByUniqueCombination(
       data.user_id, 
@@ -587,14 +587,14 @@ export const newslettersApi = {
       return newslettersApi.updateById(existing.data.id, {
         ...data,
         updated_at: new Date().toISOString()
-      }, authToken);
+      }, authToken, options);
     } else {
       // Create new
       return newslettersApi.create({
         ...data,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      }, authToken);
+      }, authToken, options);
     }
   }
 };
@@ -637,17 +637,8 @@ export const contentRepurposerApi = {
   }, authToken?: string) => {
     const result = await supabaseApi.insert('history_content_repurposer', data, { authToken });
     
-    // Fire webhook asynchronously after successful database operation
-    if (result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
-      const savedData = result.data[0];
-      contentRepurposerWebhookService.fireWebhookAsync({
-        id: savedData.id,
-        user_id: data.user_id,
-        session_id: data.session_id || savedData.id,
-        chat_history_id: data.chat_history_id || '',
-        content: data.content
-      });
-    }
+    // Note: No webhook trigger needed for content repurposer database operations
+    // Webhooks are handled by the bi-directional sync system in contentRepurposerWebhookService
     
     return result;
   },
@@ -656,17 +647,8 @@ export const contentRepurposerApi = {
   updateById: async (id: string, updateData: any, authToken?: string) => {
     const result = await supabaseApi.update('history_content_repurposer', updateData, { id }, { authToken });
     
-    // Fire webhook asynchronously after successful database operation
-    if (result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
-      const updatedData = result.data[0];
-      contentRepurposerWebhookService.fireWebhookAsync({
-        id: updatedData.id,
-        user_id: updatedData.user_id,
-        session_id: updatedData.session_id || updatedData.id,
-        chat_history_id: updatedData.chat_history_id || '',
-        content: updatedData.content
-      });
-    }
+    // Note: No webhook trigger needed for content repurposer database operations
+    // Webhooks are handled by the bi-directional sync system in contentRepurposerWebhookService
     
     return result;
   },
