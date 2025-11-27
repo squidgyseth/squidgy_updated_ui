@@ -266,8 +266,8 @@ export default function PersonalizeAssistants() {
     return (
       <OnboardingLayout
         progress={progress}
-        stepTitle="Personalize your assistants"
-        stepDescription="Make your AI team truly yours by customizing their names, appearance, and communication style.\n\nThis step is optional - you can always personalize later."
+        stepTitle="Configure your AI assistants"
+        stepDescription="Set custom names and communication preferences for your selected AI assistants. Each assistant has their own unique personality and expertise.\n\nThis step is optional - you can always configure these settings later."
         onBack={() => navigate('/ai-onboarding/choose-assistants')}
         onContinue={() => {}}
         onSkip={() => {}}
@@ -286,8 +286,8 @@ export default function PersonalizeAssistants() {
   return (
     <OnboardingLayout
       progress={progress}
-      stepTitle="Personalize your assistants"
-      stepDescription="Make your AI team truly yours by customizing their names, appearance, and communication style.\n\nThis step is optional - you can always personalize later."
+      stepTitle="Configure your AI assistants"
+      stepDescription="Set custom names and communication preferences for your selected AI assistants. Each assistant has their own unique personality and expertise.\n\nThis step is optional - you can always configure these settings later."
       onBack={handleBack}
       onContinue={handleContinue}
       onSkip={handleSkip}
@@ -321,24 +321,34 @@ export default function PersonalizeAssistants() {
               <CardContent className="p-0">
                 {/* Assistant Header */}
                 <div className="flex items-center gap-4 mb-6">
-                  <div 
-                    className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-2xl"
-                    style={{ backgroundColor: assistant.iconColor }}
-                  >
-                    {assistant.icon}
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden">
+                    {assistant.icon.startsWith('http') ? (
+                      <img 
+                        src={assistant.icon} 
+                        alt={assistant.name}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div 
+                        className="w-full h-full flex items-center justify-center text-white text-2xl"
+                        style={{ backgroundColor: assistant.iconColor }}
+                      >
+                        {assistant.icon}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 font-['Open_Sans']">
                       {assistant.name}
                     </h3>
                     <p className="text-sm text-gray-600 font-['Open_Sans']">
-                      Customize this assistant's personality
+                      Configure name and communication preferences
                     </p>
                   </div>
                 </div>
 
                 {/* Personalization Controls */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Custom Name */}
                   <div className="space-y-2">
                     <Label htmlFor={`name-${assistant.id}`} className="text-sm font-semibold text-gray-700 font-['Open_Sans']">
@@ -353,32 +363,6 @@ export default function PersonalizeAssistants() {
                     />
                     <p className="text-xs text-gray-500 font-['Open_Sans']">
                       Give your assistant a personal name
-                    </p>
-                  </div>
-
-                  {/* Avatar Style */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-gray-700 font-['Open_Sans']">
-                      Avatar Style
-                    </Label>
-                    <Select
-                      key={`${assistant.id}-avatar-${personalization.avatarStyle}`}
-                      value={personalization.avatarStyle}
-                      onValueChange={(value) => updatePersonalization(assistant.id, 'avatarStyle', value as AvatarStyle)}
-                    >
-                      <SelectTrigger className="font-['Open_Sans']">
-                        <SelectValue placeholder="Choose avatar style" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {avatarStyleOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value} className="font-['Open_Sans']">
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-gray-500 font-['Open_Sans']">
-                      Visual style for your assistant
                     </p>
                   </div>
 
