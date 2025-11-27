@@ -196,6 +196,8 @@
         "tagline": "Illuminate. Calculate. Convert.",
         "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
         "pinned": true,
+        "presetup_required": true,
+        "presetup_page": "/solar-config",
         "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-config\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your solar offer details.",
         "capabilities": [
           "Solar panel system sizing and design",
@@ -757,6 +759,8 @@
         "tagline": "Illuminate. Calculate. Convert.",
         "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
         "pinned": true,
+        "presetup_required": true,
+        "presetup_page": "/solar-config",
         "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-config\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your solar offer details.",
         "capabilities": [
           "Solar panel system sizing and design",
@@ -1187,6 +1191,8 @@
           "tagline": "Illuminate. Calculate. Convert.",
           "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
           "pinned": true,
+          "presetup_required": true,
+          "presetup_page": "/solar-config",
           "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-config\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your solar offer details.",
           "capabilities": [
             "Solar panel system sizing and design",
@@ -1488,6 +1494,6 @@
   },
   "meta": {
     "total": 7,
-    "buildTime": "2025-11-23T16:40:35.996Z"
+    "buildTime": "2025-11-27T19:34:34.320Z"
   }
 }

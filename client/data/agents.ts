@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2025-11-23T16:40:35.992Z
+// Generated on: 2025-11-27T19:34:34.317Z
 
 export interface AgentConfig {
   agent: {
@@ -237,6 +237,8 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tagline": "Illuminate. Calculate. Convert.",
       "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
       "pinned": true,
+      "presetup_required": true,
+      "presetup_page": "/solar-config",
       "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-config\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your solar offer details.",
       "capabilities": [
         "Solar panel system sizing and design",
@@ -800,6 +802,8 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tagline": "Illuminate. Calculate. Convert.",
       "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
       "pinned": true,
+      "presetup_required": true,
+      "presetup_page": "/solar-config",
       "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-config\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your solar offer details.",
       "capabilities": [
         "Solar panel system sizing and design",
@@ -1232,6 +1236,8 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "tagline": "Illuminate. Calculate. Convert.",
         "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
         "pinned": true,
+        "presetup_required": true,
+        "presetup_page": "/solar-config",
         "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-config\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your solar offer details.",
         "capabilities": [
           "Solar panel system sizing and design",

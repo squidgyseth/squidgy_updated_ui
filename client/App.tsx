@@ -51,6 +51,7 @@ import ChooseAssistants from "./pages/onboarding/ChooseAssistants";
 import PersonalizeAssistants from "./pages/onboarding/PersonalizeAssistants";
 import CompanyDetails from "./pages/onboarding/CompanyDetails";
 import Welcome from "./pages/onboarding/Welcome";
+import ComprehensiveOnboarding from "./components/onboarding/ComprehensiveOnboarding";
 
 // Referral Pages  
 import ReferralHub from "./pages/referrals/ReferralHub";
@@ -152,6 +153,11 @@ const App = () => (
           <Route path="/welcome" element={
             <ProtectedRoute>
               <Index />
+            </ProtectedRoute>
+          } />
+          <Route path="/comprehensive-onboarding" element={
+            <ProtectedRoute>
+              <ComprehensiveOnboarding />
             </ProtectedRoute>
           } />
           <Route path="/website-details" element={
@@ -298,7 +304,7 @@ const App = () => (
           } />
           <Route path="/ai-onboarding/company-details" element={
             <ProtectedRoute>
-              <CompanyDetails />
+              <ComprehensiveOnboarding />
             </ProtectedRoute>
           } />
           <Route path="/ai-onboarding/welcome" element={
