@@ -267,7 +267,7 @@ export default function PersonalizeAssistants() {
       <OnboardingLayout
         progress={progress}
         stepTitle="Configure your AI assistants"
-        stepDescription="Set custom names and communication preferences for your selected AI assistants. Each assistant has their own unique personality and expertise.\n\nThis step is optional - you can always configure these settings later."
+        stepDescription="Set custom names and communication preferences for your selected AI assistants. Each assistant has their own unique personality and expertise. This step is optional - you can always configure these settings later."
         onBack={() => navigate('/ai-onboarding/choose-assistants')}
         onContinue={() => {}}
         onSkip={() => {}}
@@ -287,7 +287,7 @@ export default function PersonalizeAssistants() {
     <OnboardingLayout
       progress={progress}
       stepTitle="Configure your AI assistants"
-      stepDescription="Set custom names and communication preferences for your selected AI assistants. Each assistant has their own unique personality and expertise.\n\nThis step is optional - you can always configure these settings later."
+      stepDescription="Set custom names and communication preferences for your selected AI assistants. Each assistant has their own unique personality and expertise. This step is optional - you can always configure these settings later."
       onBack={handleBack}
       onContinue={handleContinue}
       onSkip={handleSkip}
