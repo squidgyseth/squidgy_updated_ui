@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { authService } from "@/lib/auth-service";
 import LeftNavigation from "../components/layout/LeftNavigation";
 import NotificationBell from "../components/NotificationBell";
+import { ResponsiveLayout } from "../components/mobile";
+import { MobileDashboard } from "../components/mobile/dashboard/MobileDashboard";
 import { 
   MessageCircle, 
   Home, 
@@ -39,7 +41,7 @@ export default function Index() {
   const { companyName, faviconUrl, isLoading } = useCompanyBranding();
   const { user } = useUser();
 
-  return (
+  const desktopLayout = (
     <div className="min-h-screen bg-white">
       {/* Reusable Left Navigation */}
       <LeftNavigation currentPage="dashboard" />
@@ -827,5 +829,14 @@ export default function Index() {
         </div>
       </div>
     </div>
+  );
+
+  return (
+    <ResponsiveLayout
+      desktopLayout={desktopLayout}
+      showBottomNav={true}
+    >
+      <MobileDashboard />
+    </ResponsiveLayout>
   );
 }

@@ -9,6 +9,8 @@ import ReferralFlowLoader from '@/services/referralFlowLoader';
 import { ReferralStats, WaitlistPosition, ShareStats, ReferredUser, Achievement, LeaderboardEntry } from '@/types/referral.types';
 import { toast } from 'sonner';
 import ReferralService from '@/services/referralService';
+import { ResponsiveLayout } from '../../components/mobile/layout/ResponsiveLayout';
+import { MobileReferralHub } from '../../components/mobile/referrals/MobileReferralHub';
 
 // Import components (will create these next)
 import { MyReferralStats } from '@/components/referrals/MyReferralStats';
@@ -173,7 +175,26 @@ export default function ReferralHub() {
     );
   }
 
-  return (
+  // Convert data for mobile component
+  const mobileStats = referralStats ? {
+    totalReferrals: referralStats.total_referrals,
+    successfulReferrals: referralStats.successful_referrals,
+    creditsBalance: referralStats.credits_balance,
+    conversionRate: referralStats.conversion_rate,
+    currentTier: currentTier?.name || 'Bronze',
+    nextTierProgress: currentTier && nextTier ? 
+      (referralStats.successful_referrals / nextTier.minReferrals) * 100 : 0
+  } : undefined;
+
+  const mobileLeaderboard = leaderboardEntries.map(entry => ({
+    id: entry.user_id?.toString() || entry.id?.toString() || 'unknown',
+    name: entry.display_name || entry.name || 'User',
+    referrals: entry.total_referrals || entry.referrals || 0,
+    tier: entry.current_tier || entry.tier || 'Bronze',
+    isCurrentUser: entry.is_current_user || false
+  }));
+
+  const desktopLayout = (
     <div className="flex min-h-screen bg-gray-50">
       <LeftNavigation currentPage="referrals" />
       
@@ -341,5 +362,18 @@ export default function ReferralHub() {
         </div>
       </div>
     </div>
+  );
+
+  return (
+    <ResponsiveLayout
+      desktopLayout={desktopLayout}
+      showBottomNav={true}
+    >
+      <MobileReferralHub 
+        stats={mobileStats}
+        leaderboard={mobileLeaderboard}
+        referralCode={referralCode}
+      />
+    </ResponsiveLayout>
   );
 }

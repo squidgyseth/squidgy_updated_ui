@@ -17,6 +17,8 @@ import NotificationBell from '../components/NotificationBell';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { LeadService, type Lead } from '../services/leadService';
+import { ResponsiveLayout } from '../components/mobile/layout/ResponsiveLayout';
+import { MobileLeads } from '../components/mobile/leads/MobileLeads';
 
 // Lead interface is now imported from LeadService
 
@@ -192,7 +194,23 @@ export default function Leads() {
     return names[source] || source;
   };
 
-  return (
+  // Convert leads data for mobile component
+  const mobileLeads = leads.map(lead => ({
+    id: lead.id,
+    name: lead.name,
+    company: lead.company || 'Residential',
+    status: lead.status as 'new' | 'qualified' | 'survey_booked' | 'won' | 'lost',
+    value: `${lead.currency === 'GBP' ? '£' : '$'}${(lead.estimated_value || 0).toLocaleString()}`,
+    score: lead.qualification_score || 0,
+    source: getSourceDisplayName(lead.lead_source),
+    phone: lead.phone,
+    email: lead.email,
+    location: lead.location,
+    lastContact: 'Recently',
+    assignedTo: 'Unassigned',
+  }));
+
+  const desktopLayout = (
     <div className="min-h-screen bg-white">
       {/* Reusable Left Navigation */}
       <LeftNavigation currentPage="leads" />
@@ -471,5 +489,24 @@ export default function Leads() {
         />
       )}
     </div>
+  );
+
+  return (
+    <ResponsiveLayout
+      desktopLayout={desktopLayout}
+      showBottomNav={true}
+    >
+      <MobileLeads 
+        leads={mobileLeads}
+        onLeadSelect={(lead) => {
+          // Find the original lead by ID for mobile selection
+          const originalLead = leads.find(l => l.id === lead.id);
+          if (originalLead) {
+            handleLeadClick(originalLead);
+          }
+        }}
+        onCreateLead={handleAddLead}
+      />
+    </ResponsiveLayout>
   );
 }

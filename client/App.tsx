@@ -1,4 +1,5 @@
 import "./global.css";
+import "./styles/mobile/mobile.css";
 
 import { Toaster } from "./components/ui/toaster";
 import { createRoot } from "react-dom/client";
@@ -9,6 +10,7 @@ import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-ro
 import { UserProvider } from "./hooks/useUser";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import GlobalNotificationBell from "./components/GlobalNotificationBell";
+import { MobileProvider } from "./components/mobile";
 import { useEffect } from "react";
 import { supabase } from "./lib/supabase";
 import Index from "./pages/Index";
@@ -26,6 +28,7 @@ import FacebookConnect from "./pages/FacebookConnect";
 import SetupComplete from "./pages/SetupComplete";
 import Dashboard from "./pages/Dashboard";
 import AccountSettings from "./pages/AccountSettings";
+import AccountPage from "./pages/AccountPage";
 import BusinessSettings from "./pages/BusinessSettings";
 import TeamSettings from "./pages/TeamSettings";
 import PersonalisationSettings from "./pages/PersonalisationSettings";
@@ -52,6 +55,9 @@ import Welcome from "./pages/onboarding/Welcome";
 // Referral Pages  
 import ReferralHub from "./pages/referrals/ReferralHub";
 import WaitlistWelcome from "./pages/WaitlistWelcome";
+
+// Mobile Pages
+import MobileChats from "./pages/mobile/chats";
 
 const queryClient = new QueryClient();
 
@@ -129,7 +135,8 @@ const AuthHandler = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <UserProvider>
-      <TooltipProvider>
+      <MobileProvider>
+        <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -197,6 +204,11 @@ const App = () => (
               <AccountSettings />
             </ProtectedRoute>
           } />
+          <Route path="/account" element={
+            <ProtectedRoute>
+              <AccountPage />
+            </ProtectedRoute>
+          } />
           <Route path="/business-settings" element={
             <ProtectedRoute>
               <BusinessSettings />
@@ -223,6 +235,11 @@ const App = () => (
             </ProtectedRoute>
           } />
           <Route path="/chat/*" element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/chats" element={
             <ProtectedRoute>
               <ChatPage />
             </ProtectedRoute>
@@ -304,11 +321,19 @@ const App = () => (
             </ProtectedRoute>
           } />
           
+          {/* Mobile Pages */}
+          <Route path="/mobile/chats" element={
+            <ProtectedRoute>
+              <MobileChats />
+            </ProtectedRoute>
+          } />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </MobileProvider>
     </UserProvider>
   </QueryClientProvider>
 );
