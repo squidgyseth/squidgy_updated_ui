@@ -38,11 +38,21 @@ export function AssistantCard({
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             {/* Icon */}
-            <div 
-              className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-2xl"
-              style={{ backgroundColor: assistant.iconColor || '#6017E8' }}
-            >
-              {assistant.icon}
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden">
+              {assistant.icon.startsWith('http') ? (
+                <img 
+                  src={assistant.icon} 
+                  alt={assistant.name}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                <div 
+                  className="w-full h-full flex items-center justify-center text-white text-2xl"
+                  style={{ backgroundColor: assistant.iconColor || '#6017E8' }}
+                >
+                  {assistant.icon}
+                </div>
+              )}
             </div>
             
             {/* Selection checkbox */}

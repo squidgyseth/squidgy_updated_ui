@@ -195,21 +195,77 @@ class BusinessFlowLoader {
   }
 
   /**
+   * Load agent details from actual config file
+   */
+  async loadAgentFromConfigFile(configFileName: string): Promise<any> {
+    try {
+      const response = await fetch(`/agents-compiled.json`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch agents-compiled.json: ${response.status}`);
+      }
+      
+      const agentsData = await response.json();
+      const agentData = agentsData.agents?.find((a: any) => 
+        a.agent?.id === configFileName
+      );
+      
+      if (agentData?.agent) {
+        // Transform to expected format
+        return {
+          id: agentData.agent.id,
+          name: agentData.agent.name,
+          description: agentData.agent.description,
+          icon: agentData.agent.avatar || agentData.agent.icon || '🤖',
+          icon_color: agentData.agent.icon_color || '#6017E8',
+          key_capabilities: agentData.agent.capabilities || [],
+          specialization: agentData.agent.specialization,
+          tagline: agentData.agent.tagline
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Failed to load agent config for ${configFileName}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * Get all agents organized by department (for Step 3 display)
+   * Now loads actual agent details from config files
    */
   async getAgentsByDepartment(departmentIds: string[]): Promise<Record<string, Array<{id: string} & AgentConfig>>> {
     const config = await this.loadBusinessFlow();
     const result: Record<string, Array<{id: string} & AgentConfig>> = {};
 
-    departmentIds.forEach(deptId => {
+    for (const deptId of departmentIds) {
       const department = config.departments[deptId];
       if (department) {
-        result[deptId] = department.agents.map(agentId => {
-          const agent = config.agents[agentId];
-          return agent ? { id: agentId, ...agent } : null;
-        }).filter(Boolean) as Array<{id: string} & AgentConfig>;
+        const agents: Array<{id: string} & AgentConfig> = [];
+        
+        for (const agentId of department.agents) {
+          const agentRef = config.agents[agentId];
+          if (agentRef?.config_file) {
+            // Load actual agent details from config file
+            const agentDetails = await this.loadAgentFromConfigFile(agentRef.config_file);
+            if (agentDetails) {
+              agents.push({
+                id: agentId,
+                name: agentDetails.name || agentId,
+                description: agentDetails.description || '',
+                icon: agentDetails.icon || '🤖',
+                icon_color: agentDetails.icon_color || '#6017E8',
+                is_recommended: true, // Can be configured in business-flow if needed
+                agent_config_file: agentRef.config_file,
+                key_capabilities: agentDetails.key_capabilities || []
+              });
+            }
+          }
+        }
+        
+        result[deptId] = agents;
       }
-    });
+    }
 
     return result;
   }
