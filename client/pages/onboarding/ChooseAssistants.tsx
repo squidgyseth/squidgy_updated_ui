@@ -32,7 +32,7 @@ export default function ChooseAssistants() {
     icon: config.icon,
     iconColor: config.icon_color,
     isRecommended: config.is_recommended || false,
-    keyCapabilities: config.key_capabilities.map(cap => ({ name: cap })),
+    keyCapabilities: (config.key_capabilities || []).map(cap => ({ name: cap })),
     agentConfig: config.agent_config_file // Link to actual agent config file
   });
 
