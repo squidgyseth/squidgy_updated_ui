@@ -475,10 +475,10 @@ export default function N8nChatInterface({
                       />
                     ) : (
                       // Regular message display
-                      <div className="bg-gray-100 text-gray-800 rounded-lg px-4 py-2">
+                      <div className="bg-gray-100 rounded-lg px-4 py-2">
                         <LinkDetectingTextArea 
                           content={message.content}
-                          className="whitespace-pre-wrap"
+                          className="text-text-primary whitespace-pre-wrap"
                         />
                       </div>
                     )}
