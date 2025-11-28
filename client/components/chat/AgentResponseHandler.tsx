@@ -64,10 +64,12 @@ export default function AgentResponseHandler({
       // The user will respond using the regular chat input
       return (
         <div className={`agent-response waiting-state ${className}`}>
-          <LinkDetectingTextArea 
-            content={response.agent_response}
-            className="text-text-primary text-sm leading-relaxed whitespace-pre-line"
-          />
+          <div className="bg-gray-100 rounded-lg px-4 py-2">
+            <LinkDetectingTextArea 
+              content={response.agent_response}
+              className="text-text-primary whitespace-pre-wrap"
+            />
+          </div>
         </div>
       );
       
