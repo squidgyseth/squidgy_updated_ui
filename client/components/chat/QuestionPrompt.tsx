@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Send, HelpCircle } from 'lucide-react';
 
 interface QuestionPromptProps {
   question: string;
@@ -37,52 +36,38 @@ export default function QuestionPrompt({
 
   return (
     <div className={`question-prompt ${className}`}>
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-        {/* Question Header */}
-        <div className="flex items-start gap-3 mb-4">
-          <div className="p-2 bg-amber-100 rounded-full">
-            <HelpCircle size={20} className="text-amber-600" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-amber-800 mb-1">
-              Agent is waiting for your response
-            </p>
-            <p className="text-gray-700">{question}</p>
-          </div>
-        </div>
-
-        {/* Answer Input */}
-        <form onSubmit={handleSubmit} className="mt-4">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              placeholder="Type your answer here..."
-              disabled={isSubmitting}
-              className="flex-1 px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-              autoFocus
-            />
-            <button
-              type="submit"
-              disabled={!answer.trim() || isSubmitting}
-              className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Send size={16} />
-              )}
-              <span>{isSubmitting ? 'Sending...' : 'Send'}</span>
-            </button>
-          </div>
-        </form>
-
-        {/* Helper Text */}
-        <p className="text-xs text-gray-500 mt-2">
-          The agent needs this information to continue processing your request.
-        </p>
+      {/* Question Content */}
+      <div className="mb-4">
+        <p className="text-text-primary leading-relaxed whitespace-pre-line">{question}</p>
       </div>
+
+      {/* Chat-style Input */}
+      <form onSubmit={handleSubmit}>
+        <div className="flex items-center gap-2 border border-grey-500 rounded-xl p-2">
+          <input 
+            type="text"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            placeholder="Type your answer here..."
+            disabled={isSubmitting}
+            className="flex-1 bg-transparent border-none outline-none text-text-primary placeholder-text-subtle text-sm"
+            autoFocus
+          />
+          <button 
+            type="submit"
+            disabled={!answer.trim() || isSubmitting}
+            className="p-2 rounded-lg bg-squidgy-purple hover:bg-squidgy-purple/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 16 16">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.25 5.75L5.75 12.25M12.25 5.75L8.5 5.75M12.25 5.75L12.25 9.5" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
