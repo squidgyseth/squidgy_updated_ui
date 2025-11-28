@@ -529,14 +529,30 @@ export default function N8nChatInterface({
 
       {/* Input Area */}
       <form onSubmit={handleSubmit} className="border-t border-gray-200 p-4">
-        <div className="flex gap-3 items-center">
-          <input
-            type="text"
+        <div className="flex gap-3 items-end">
+          <textarea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={`Message ${agent.name}...`}
             disabled={isLoading}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 text-gray-800"
+            rows={1}
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 text-gray-800 resize-none min-h-[48px] max-h-[120px] overflow-y-auto"
+            style={{
+              height: 'auto'
+            }}
+            onInput={(e) => {
+              const target = e.target as HTMLTextAreaElement;
+              target.style.height = 'auto';
+              target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (inputValue.trim() && !isLoading) {
+                  handleSendMessage(inputValue);
+                }
+              }
+            }}
           />
           
           {/* Attachment Button */}
