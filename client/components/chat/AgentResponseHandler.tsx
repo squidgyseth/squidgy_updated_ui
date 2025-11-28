@@ -1,25 +1,22 @@
 import React from 'react';
 import type { N8nResponse } from '../../types/n8n.types';
 import HTMLPreview from './HTMLPreview';
-import QuestionPrompt from './QuestionPrompt';
 import SocialMediaLink from './SocialMediaLink';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 
 interface AgentResponseHandlerProps {
   response: N8nResponse;
-  onAnswerQuestion?: (answer: string) => void;
   className?: string;
 }
 
 /**
  * Handles different agent response types based on agent_status
  * - Ready: Shows HTML preview for generated content
- * - Waiting: Shows question prompt for user input
+ * - Waiting: Shows agent's question as a regular message
  * - Nothing: Shows idle state
  */
 export default function AgentResponseHandler({ 
   response, 
-  onAnswerQuestion,
   className = ''
 }: AgentResponseHandlerProps) {
   
@@ -63,12 +60,13 @@ export default function AgentResponseHandler({
       );
       
     case 'Waiting':
-      // For Waiting status, agent_response contains a question
+      // For Waiting status, display the question as a normal message
+      // The user will respond using the regular chat input
       return (
         <div className={`agent-response waiting-state ${className}`}>
-          <QuestionPrompt 
-            question={response.agent_response}
-            onAnswer={onAnswerQuestion}
+          <LinkDetectingTextArea 
+            content={response.agent_response}
+            className="text-text-primary text-sm leading-relaxed whitespace-pre-line"
           />
         </div>
       );
