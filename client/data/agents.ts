@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2025-11-27T20:39:22.724Z
+// Generated on: 2025-11-28T01:12:36.732Z
 
 export interface AgentConfig {
   agent: {
@@ -113,7 +113,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tagline": "Content. Create. Distribute.",
       "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
       "pinned": true,
-      "initial_message": "Hi! I'm your Newsletter Agent. Content. Create. Distribute.<br><br>📋 **Quick Setup Required:** <a href=\"/agent-settings/newsletter\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Onboarding</a> - You can come back and change if needed.",
+      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
         "Content creation and optimization for newsletters",
         "PDF document processing and analysis",
@@ -616,7 +616,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tagline": "Content. Create. Distribute.",
       "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
       "pinned": true,
-      "initial_message": "Hi! I'm your Newsletter Agent. Content. Create. Distribute.<br><br>📋 **Quick Setup Required:** <a href=\"/agent-settings/newsletter\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Onboarding</a> - You can come back and change if needed.",
+      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
         "Content creation and optimization for newsletters",
         "PDF document processing and analysis",
@@ -1110,7 +1110,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "tagline": "Content. Create. Distribute.",
         "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
         "pinned": true,
-        "initial_message": "Hi! I'm your Newsletter Agent. Content. Create. Distribute.<br><br>📋 **Quick Setup Required:** <a href=\"/agent-settings/newsletter\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Onboarding</a> - You can come back and change if needed.",
+        "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
         "capabilities": [
           "Content creation and optimization for newsletters",
           "PDF document processing and analysis",
