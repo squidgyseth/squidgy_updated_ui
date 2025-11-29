@@ -257,7 +257,10 @@ class ImageService {
     postId: string
   ): Promise<ImageRecord[]> {
     try {
-      const { data, error } = await supabase
+      console.log(`🔍 ImageService: Searching for post_id: "${postId}"`);
+      
+      // Try exact match first
+      let { data, error } = await supabase
         .from('content_repurposer_images')
         .select('*')
         .eq('user_id', userId)
@@ -268,6 +271,51 @@ class ImageService {
 
       if (error) {
         throw error;
+      }
+
+      console.log(`🔍 ImageService: Exact match found ${data?.length || 0} images`);
+
+      // If no exact match and postId contains UUID, try without UUID
+      if ((!data || data.length === 0) && postId.includes('-') && postId.split('-').length > 3) {
+        const shortPostId = postId.split('-').slice(0, 3).join('-');
+        console.log(`🔍 ImageService: Trying shortened post_id: "${shortPostId}"`);
+        
+        const { data: shortData, error: shortError } = await supabase
+          .from('content_repurposer_images')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('agent_id', agentId)
+          .eq('post_id', shortPostId)
+          .not('image_url', 'is', null)
+          .order('created_date', { ascending: true });
+
+        if (shortError) {
+          throw shortError;
+        }
+        
+        console.log(`🔍 ImageService: Shortened match found ${shortData?.length || 0} images`);
+        data = shortData;
+      }
+      
+      // If still no match and postId is short, try with wildcard pattern
+      if ((!data || data.length === 0) && !postId.includes('-', postId.lastIndexOf('_') + 1)) {
+        console.log(`🔍 ImageService: Trying wildcard pattern for post_id starting with: "${postId}"`);
+        
+        const { data: wildcardData, error: wildcardError } = await supabase
+          .from('content_repurposer_images')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('agent_id', agentId)
+          .like('post_id', `${postId}%`)
+          .not('image_url', 'is', null)
+          .order('created_date', { ascending: true });
+
+        if (wildcardError) {
+          throw wildcardError;
+        }
+        
+        console.log(`🔍 ImageService: Wildcard match found ${wildcardData?.length || 0} images`);
+        data = wildcardData;
       }
 
       return data || [];

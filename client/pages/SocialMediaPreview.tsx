@@ -180,6 +180,9 @@ export default function SocialMediaPreview() {
     loadSocialContent();
   }, [userId, searchParams]);
 
+  // State for GeneralAssets
+  const [generalAssets, setGeneralAssets] = useState<any>(null);
+
   const loadSocialContent = async () => {
     if (!userId) {
       console.log('❌ SocialMediaPreview: No userId available');
@@ -197,6 +200,18 @@ export default function SocialMediaPreview() {
       console.log('🔍 SocialMediaPreview: historyId:', historyId);
       console.log('🔍 SocialMediaPreview: localStorage squidgy_user_id:', localStorage.getItem('squidgy_user_id'));
       
+      // Also load the history record to get GeneralAssets from the original content
+      let historyQuery = supabase
+        .from('history_content_repurposer')
+        .select('content, repurposed_content')
+        .eq('user_id', userId);
+
+      if (historyId) {
+        historyQuery = historyQuery.eq('id', historyId);
+      } else if (sessionId) {
+        historyQuery = historyQuery.eq('session_id', sessionId);
+      }
+
       // Build query to load from content_repurposer_images table
       let query = supabase
         .from('content_repurposer_images')
@@ -221,11 +236,35 @@ export default function SocialMediaPreview() {
         console.log('🔍 SocialMediaPreview: Filtering by session_id:', sessionId);
       }
 
-      const { data, error } = await query.order('created_date', { ascending: false });
+      // Execute both queries
+      const [{ data, error }, { data: historyData, error: historyError }] = await Promise.all([
+        query.order('created_date', { ascending: false }),
+        historyQuery.limit(1)
+      ]);
 
       if (error) {
         console.error('Error loading social content from database:', error);
         return;
+      }
+
+      if (historyError) {
+        console.error('Error loading history content:', historyError);
+      }
+
+      // Extract GeneralAssets from history data
+      if (historyData && historyData.length > 0) {
+        try {
+          const historyContent = typeof historyData[0].content === 'string' 
+            ? JSON.parse(historyData[0].content) 
+            : historyData[0].content;
+          
+          if (historyContent && historyContent.GeneralAssets) {
+            console.log('📋 Found GeneralAssets:', historyContent.GeneralAssets);
+            setGeneralAssets(historyContent.GeneralAssets);
+          }
+        } catch (error) {
+          console.error('Error parsing history content for GeneralAssets:', error);
+        }
       }
 
       console.log('📱 SocialMediaPreview: Raw social content from database:', data);
@@ -548,16 +587,29 @@ export default function SocialMediaPreview() {
     try {
       const imagesMap: Record<string, ImageRecord[]> = {};
       
+      console.log('🖼️ Loading images for posts:', postsToLoad.map(p => ({
+        id: p.id,
+        platform: p.platform,
+        originalPostId: p.originalPostId,
+        searchPostId: p.originalPostId || p.id
+      })));
+      
       // Load images for each post
       for (const post of postsToLoad) {
+        const searchPostId = post.originalPostId || post.id;
+        console.log(`🔍 Searching for images with post_id: "${searchPostId}" for platform: ${post.platform}`);
+        
         const images = await imageService.getPostImages(
           userId,
           agentId,
-          post.originalPostId || post.id // Use originalPostId for database queries
+          searchPostId // Use originalPostId for database queries
         );
+        
+        console.log(`📷 Found ${images.length} images for post ${post.platform} (${searchPostId}):`, images);
         imagesMap[post.id] = images; // Still use composite ID for React state
       }
       
+      console.log('🖼️ Final images map:', imagesMap);
       setPostImages(imagesMap);
     } catch (error) {
       console.error('Error loading post images:', error);
@@ -651,6 +703,12 @@ export default function SocialMediaPreview() {
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
           </svg>
         );
+      case 'Additional Assets':
+        return (
+          <svg className={size} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+          </svg>
+        );
       default: 
         return (
           <svg className={size} viewBox="0 0 24 24" fill="currentColor">
@@ -669,8 +727,13 @@ export default function SocialMediaPreview() {
     return acc;
   }, {} as Record<string, SocialPost[]>);
 
+  // Add GeneralAssets as a platform if it exists
   const platforms = Object.keys(groupedPosts);
-  const activePosts = groupedPosts[activeTab] || [];
+  if (generalAssets && (generalAssets.Quotes?.length > 0 || generalAssets.DataPoints?.length > 0 || generalAssets.Questions?.length > 0)) {
+    platforms.push('Additional Assets');
+  }
+  
+  const activePosts = activeTab === 'Additional Assets' ? [] : (groupedPosts[activeTab] || []);
 
   console.log('🎯 Render debug:', {
     postsLength: posts.length,
@@ -732,6 +795,9 @@ export default function SocialMediaPreview() {
                   } else if (platform === 'General') {
                     borderColor = 'border-squidgy-purple';
                     textColor = 'text-squidgy-purple';
+                  } else if (platform === 'Additional Assets') {
+                    borderColor = 'border-orange-500';
+                    textColor = 'text-orange-600';
                   }
                 }
                 
@@ -745,7 +811,10 @@ export default function SocialMediaPreview() {
                     {getPlatformIcon(platform, 'w-5 h-5')}
                     <span>{platform}</span>
                     <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
-                      {groupedPosts[platform].length}
+                      {platform === 'Additional Assets' 
+                        ? ((generalAssets?.Quotes?.length || 0) + (generalAssets?.DataPoints?.length || 0) + (generalAssets?.Questions?.length || 0))
+                        : groupedPosts[platform].length
+                      }
                     </span>
                     </div>
                   </button>
@@ -758,7 +827,95 @@ export default function SocialMediaPreview() {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {posts.length === 0 ? (
+        {activeTab === 'Additional Assets' ? (
+          /* Show GeneralAssets when Additional Assets tab is selected */
+          generalAssets && (
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Quotes */}
+                {generalAssets.Quotes && generalAssets.Quotes.length > 0 && (
+                  <div className="bg-blue-50 rounded-lg p-6">
+                    <h3 className="font-medium text-blue-900 mb-4 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Quotes ({generalAssets.Quotes.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {generalAssets.Quotes.map((quote: string, index: number) => (
+                        <div key={index} className="bg-white rounded-lg p-4 shadow-sm">
+                          <p className="text-blue-800 italic border-l-4 border-blue-300 pl-3">
+                            {quote.replace(/^"/, '').replace(/"$/, '')}
+                          </p>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(quote)}
+                            className="mt-2 text-xs text-blue-600 hover:text-blue-800 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* DataPoints */}
+                {generalAssets.DataPoints && generalAssets.DataPoints.length > 0 && (
+                  <div className="bg-green-50 rounded-lg p-6">
+                    <h3 className="font-medium text-green-900 mb-4 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Data Points ({generalAssets.DataPoints.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {generalAssets.DataPoints.map((dataPoint: string, index: number) => (
+                        <div key={index} className="bg-white rounded-lg p-4 shadow-sm">
+                          <p className="text-green-800 font-medium">
+                            📊 {dataPoint}
+                          </p>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(dataPoint)}
+                            className="mt-2 text-xs text-green-600 hover:text-green-800 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Questions */}
+                {generalAssets.Questions && generalAssets.Questions.length > 0 && (
+                  <div className="bg-purple-50 rounded-lg p-6">
+                    <h3 className="font-medium text-purple-900 mb-4 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                      </svg>
+                      Questions ({generalAssets.Questions.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {generalAssets.Questions.map((question: string, index: number) => (
+                        <div key={index} className="bg-white rounded-lg p-4 shadow-sm">
+                          <p className="text-purple-800">
+                            ❓ {question}
+                          </p>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(question)}
+                            className="mt-2 text-xs text-purple-600 hover:text-purple-800 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        ) : posts.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500">No social media content found. Generate content first in the chat.</p>
           </div>
