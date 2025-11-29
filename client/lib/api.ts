@@ -959,7 +959,7 @@ interface WebsiteAnalysisData {
   analysis_status?: string;
 }
 
-export const saveWebsiteAnalysis = async (data: WebsiteAnalysisData & { isAnalyzeButton?: boolean }): Promise<{ success: boolean; message: string }> => {
+export const saveWebsiteAnalysis = async (data: WebsiteAnalysisData & { isAnalyzeButton?: boolean }): Promise<{ success: boolean; message: string; id?: string; data?: any }> => {
   try {
     console.log('🔍 Debugging website analysis save:', {
       firm_user_id: data.firm_user_id,
@@ -1069,7 +1069,9 @@ export const saveWebsiteAnalysis = async (data: WebsiteAnalysisData & { isAnalyz
 
     return {
       success: true,
-      message: 'Website analysis saved successfully'
+      message: 'Website analysis saved successfully',
+      id: result?.id || result?.[0]?.id, // Handle both single object and array response
+      data: result // Include full data for debugging
     };
   } catch (error) {
     console.error('Save website analysis error:', error);

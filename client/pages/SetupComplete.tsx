@@ -24,7 +24,7 @@ export default function SetupComplete() {
   };
 
   const handleGoToDashboard = () => {
-    navigate('/');
+    navigate('/dashboard');
   };
 
   const handleClose = () => {

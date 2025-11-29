@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peritus Newsletter</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Peritus Newsletter</h1>
+            <div class="header-actions">
+                <button id="main-editor-btn" class="main-editor-btn">OPEN NEWSLETTER EDITOR</button>
+            </div>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="chat">Chat</button>
+            <button class="tab-btn" data-tab="settings">Settings</button>
+            <button id="open-editor-btn" class="special-tab-btn">OPEN EDITOR</button>
+        </div>
+        
+        <div class="tab-content active" id="chat">
+            <div class="chat-container">
+                <div class="mode-toggle-container">
+                    <div class="session-controls">
+                        <span id="session-id" class="session-id">Session ID: Loading...</span>
+                        <button id="reset-session-btn" class="reset-session-btn" title="Start a new session">
+                            <i class="fas fa-sync-alt"></i> New Session
+                        </button>
+                    </div>
+                    <div class="mode-toggle">
+                        <input type="checkbox" id="voice-mode-toggle" class="toggle-checkbox">
+                        <label for="voice-mode-toggle" class="toggle-label">
+                            <span class="toggle-inner"></span>
+                            <span class="toggle-switch"></span>
+                        </label>
+                        <span class="toggle-text">Voice Conversation Mode</span>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message system">
+                        <div class="message-content">
+                            <p>Welcome to the Peritus Newsletter assistant. Your session is being tracked to maintain conversation context. Please provide this week's guidelines to generate the newsletter.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Text Input Mode -->
+                <div class="chat-input-container" id="text-input-container">
+                    <textarea id="user-input" placeholder="Type your message here..."></textarea>
+                    <div class="input-buttons">
+                        <button id="voice-input-btn" title="Voice Input">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button id="send-btn" title="Send Message">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Voice Conversation Mode -->
+                <div class="voice-control-container hidden" id="voice-control-container">
+                    <div class="voice-controls">
+                        <button id="start-voice-btn" class="voice-btn">
+                            <i class="fas fa-microphone"></i>
+                            <span>Start Speaking</span>
+                        </button>
+                        <button id="stop-voice-btn" class="voice-btn hidden">
+                            <i class="fas fa-stop-circle"></i>
+                            <span>Stop</span>
+                        </button>
+                    </div>
+                    <div class="voice-status" id="voice-status">
+                        Ready to listen
+                    </div>
+                </div>
+                
+                <!-- Recording Indicators -->
+                <div id="recording-indicator" class="hidden">
+                    <span class="pulse"></span> Recording... <button id="stop-recording-btn">Stop</button>
+                </div>
+                
+                <!-- Voice Transcript Review -->
+                <div class="voice-transcript-container hidden" id="voice-transcript-container">
+                    <h3>Your message:</h3>
+                    <div class="voice-transcript" id="voice-transcript"></div>
+                    <div class="transcript-controls">
+                        <button id="send-transcript-btn">Send</button>
+                        <button id="cancel-transcript-btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="settings">
+            <div class="settings-container">
+                <h2>Newsletter Settings</h2>
+                <form id="settings-form" class="settings-form">
+                    <div class="form-group">
+                        <label for="template-id">Template ID:</label>
+                        <select id="template-id" name="template-id">
+                            <option value="1" selected>Template 1 - Standard Newsletter</option>
+                            <option value="2">Template 2 - Modern Layout</option>
+                            <option value="3">Template 3 - Minimalist Design</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="image-count">Number of Images:</label>
+                        <input type="number" id="image-count" name="image-count" min="0" max="10" value="3">
+                        <span class="form-help">How many images to include in the newsletter</span>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" id="save-settings-btn">Save Settings</button>
+                    </div>
+                </form>
+                
+                <div class="settings-info">
+                    <h3>About Templates</h3>
+                    <p>Different templates provide various layouts and styles for your newsletter. Choose the one that best fits your content and branding needs.</p>
+                    
+                    <h3>Image Guidelines</h3>
+                    <p>For best results, prepare images with the following specifications:</p>
+                    <ul>
+                        <li>Format: JPG or PNG</li>
+                        <li>Resolution: At least 800px wide</li>
+                        <li>Aspect ratio: 16:9 for hero images, 4:3 for content images</li>
+                        <li>File size: Under 1MB per image</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instructions and Knowledge Base tabs removed -->
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

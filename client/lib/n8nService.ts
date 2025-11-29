@@ -3,6 +3,8 @@
  * Service for communicating with n8n workflows
  */
 
+import type { N8nRequest, N8nResponse } from '../types/n8n.types';
+
 // Base URL for n8n webhook
 const N8N_WEBHOOK_BASE = import.meta.env.VITE_N8N_WEBHOOK_URL;
 
@@ -52,44 +54,67 @@ const generateSessionId = (userId: string, agentName: string): string => {
 };
 
 /**
- * Send a message to n8n workflow using the exact format from BoilerplateV1
+ * Send a message to n8n workflow with proper typing
  * @param userId - The user ID
  * @param userMessage - The user message content
- * @param agentName - The agent name (e.g., 'PersonalAssistant', 'Seth')
+ * @param agentName - The agent name from YAML (e.g., 'newsletter', 'personal_assistant')
  * @param sessionId - Optional session ID, will be generated if not provided
  * @param requestId - Optional request ID, will be generated if not provided
+ * @param webhookUrl - Optional webhook URL from agent config, defaults to env variable
+ * @param newsletterId - Optional newsletter ID for content_repurposer agent
+ * @returns Promise<N8nResponse | null>
  */
 export const sendToN8nWorkflow = async (
   userId: string,
   userMessage: string,
   agentName: string,
   sessionId?: string,
-  requestId?: string
-) => {
-  if (!N8N_WEBHOOK_BASE || N8N_WEBHOOK_BASE === 'https://your-n8n-webhook-url') {
+  requestId?: string,
+  webhookUrl?: string,
+  newsletterId?: string
+): Promise<N8nResponse | null> => {
+  // Use the provided webhook URL or fall back to the environment variable for Personal Assistant
+  const n8nWebhookUrl = webhookUrl || N8N_WEBHOOK_BASE;
+  
+  if (!n8nWebhookUrl || n8nWebhookUrl === 'https://your-n8n-webhook-url') {
     console.warn('N8N webhook URL not configured, using development simulation');
     
     // Development mode simulation
     return new Promise((resolve) => {
       setTimeout(() => {
-        const responses = [
-          "Hello! I'm Seth, your AI assistant. How can I help you today?",
-          "I understand you're looking for assistance. What specific area would you like help with?",
-          "That's a great question! Let me help you with that.",
-          "I'm here to assist you with your business setup. What would you like to know?",
-          "Thanks for reaching out! I can help you with various aspects of your business."
-        ];
+        const simulatedResponses: Record<string, { response: string; status: 'Ready' | 'Waiting' | 'Nothing' }> = {
+          newsletter: {
+            response: userMessage.toLowerCase().includes('create') 
+              ? '<h2>Newsletter Template</h2><p>Your newsletter content would appear here...</p>'
+              : 'What type of newsletter would you like to create?',
+            status: userMessage.toLowerCase().includes('create') ? 'Ready' : 'Waiting'
+          },
+          personal_assistant: {
+            response: "I'm your personal assistant. How can I help you today?",
+            status: 'Waiting'
+          },
+          smm_assistant: {
+            response: "Ready to help with your social media marketing!",
+            status: 'Waiting'
+          }
+        };
         
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+        const agentSimulation = simulatedResponses[agentName] || {
+          response: `Hello from ${agentName}!`,
+          status: 'Waiting' as const
+        };
         
-        resolve({
-          response: randomResponse,
-          status: 'success',
-          agent: agentName,
+        const response: N8nResponse = {
           user_id: userId,
-          session_id: sessionId,
-          timestamp: new Date().toISOString()
-        });
+          session_id: sessionId || generateSessionId(userId, agentName),
+          agent_name: agentName,
+          timestamp_of_call_made: new Date().toISOString(),
+          request_id: requestId || generateRequestId(),
+          agent_response: agentSimulation.response,
+          agent_status: agentSimulation.status
+        };
+        
+        resolve(response);
       }, 1000 + Math.random() * 2000); // 1-3 second delay to simulate real response
     });
   }
@@ -98,18 +123,20 @@ export const sendToN8nWorkflow = async (
   const finalSessionId = sessionId || generateSessionId(userId, agentName);
   const finalRequestId = requestId || generateRequestId();
   
-  // Create the exact payload structure from BoilerplateV1
-  const payload = {
+  // Create the exact payload structure
+  const payload: N8nRequest = {
     user_id: userId,
     user_mssg: userMessage,
     session_id: finalSessionId,
     agent_name: agentName,
     timestamp_of_call_made: new Date().toISOString(),
-    request_id: finalRequestId
+    request_id: finalRequestId,
+    ...(newsletterId && { newsletter_id: newsletterId }) // Include newsletter_id only if provided
   };
   
   try {
-    const result = await fetch(N8N_WEBHOOK_BASE, {
+    console.log(`Sending to n8n webhook for ${agentName}:`, n8nWebhookUrl);
+    const result = await fetch(n8nWebhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -138,6 +165,9 @@ export const sendToN8nWorkflow = async (
     return null;
   }
 };
+
+// Export individual functions
+export { generateRequestId, generateSessionId };
 
 const n8nService = {
   sendToN8nWorkflow,

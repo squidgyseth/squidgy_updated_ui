@@ -1,6 +1,9 @@
 // supabase-api.ts - Direct Supabase REST API utility to replace hanging Supabase client calls
 // This bypasses the Supabase JS client which hangs in production environments
 
+// Import newsletter webhook service for editor save operations  
+import newslettersWebhookService from '../services/newslettersWebhookService';
+
 interface SupabaseApiConfig {
   url: string;
   key: string;
@@ -474,4 +477,262 @@ export const businessDetailsApi = {
     
   upsert: (data: any, authToken?: string) =>
     supabaseApi.upsert('business_details', data, { onConflict: 'firm_user_id,agent_id', authToken })
+};
+
+// History Newsletters API
+export const newslettersApi = {
+  getById: (id: string, authToken?: string) => 
+    supabaseApi.select('history_newsletters', '*', { id }, { single: true, authToken }),
+  
+  getByUserId: (user_id: string, authToken?: string) => 
+    supabaseApi.select('history_newsletters', '*', { user_id }, { order: 'updated_at.desc', authToken }),
+  
+  getBySessionId: (session_id: string, authToken?: string) => 
+    supabaseApi.select('history_newsletters', '*', { session_id }, { order: 'updated_at.desc', authToken }),
+    
+  getByAgentId: (user_id: string, agent_id: string, authToken?: string) => 
+    supabaseApi.select('history_newsletters', '*', { user_id, agent_id }, { order: 'updated_at.desc', authToken }),
+    
+  getByChatHistoryId: (chat_history_id: string, authToken?: string) => 
+    supabaseApi.select('history_newsletters', '*', { chat_history_id }, { single: true, authToken }),
+  
+  create: async (data: any, authToken?: string, options?: { triggerWebhook?: boolean }) => {
+    const result = await supabaseApi.insert('history_newsletters', data, { authToken });
+    
+    // Fire webhook for newsletter content repurposer questions generation
+    // This triggers for both: 1) Agent-generated newsletters, 2) User-saved newsletters
+    if (result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
+      const savedData = result.data[0];
+      
+      // Always trigger webhook for newsletter operations to generate content_repurposer_questions
+      // unless explicitly disabled (options.triggerWebhook === false)
+      if (options?.triggerWebhook !== false) {
+        newslettersWebhookService.fireWebhookAsync({
+          id: savedData.id,
+          user_id: data.user_id,
+          session_id: data.session_id || savedData.id,
+          chat_history_id: data.chat_history_id || '',
+          content: data.content
+        });
+      }
+    }
+    
+    return result;
+  },
+  
+  updateById: async (id: string, updateData: any, authToken?: string, options?: { triggerWebhook?: boolean }) => {
+    const result = await supabaseApi.update('history_newsletters', updateData, { id }, { authToken });
+    
+    // Fire webhook for newsletter content repurposer questions generation when content changes
+    if (result.data && !result.error && Array.isArray(result.data) && result.data.length > 0) {
+      const updatedData = result.data[0];
+      
+      // Always trigger webhook for newsletter updates to regenerate content_repurposer_questions
+      // unless explicitly disabled (options.triggerWebhook === false)
+      if (options?.triggerWebhook !== false) {
+        newslettersWebhookService.fireWebhookAsync({
+          id: updatedData.id,
+          user_id: updatedData.user_id,
+          session_id: updatedData.session_id || updatedData.id,
+          chat_history_id: updatedData.chat_history_id || '',
+          content: updatedData.content
+        });
+      }
+    }
+    
+    return result;
+  },
+    
+  deleteById: (id: string, authToken?: string) =>
+    supabaseApi.delete('history_newsletters', { id }, { authToken }),
+    
+  // Get recent newsletters for user
+  getRecent: (user_id: string, limit: number = 10, authToken?: string) => 
+    supabaseApi.select('history_newsletters', '*', { user_id }, { order: 'updated_at.desc', limit, authToken }),
+    
+  // Create newsletter from chat history
+  createFromChatHistory: (data: {
+    user_id: string;
+    session_id?: string;
+    chat_history_id?: string;
+    agent_id?: string;
+    title: string;
+    content: string;
+    call_to_actions?: any[];
+  }, authToken?: string) =>
+    supabaseApi.insert('history_newsletters', {
+      ...data,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }, { authToken }),
+    
+  // Find newsletter by unique combination (avoid duplicates)
+  findByUniqueCombination: async (user_id: string, session_id?: string, chat_history_id?: string, authToken?: string) => {
+    const filters: any = { user_id };
+    if (session_id) filters.session_id = session_id;
+    if (chat_history_id) filters.chat_history_id = chat_history_id;
+    
+    return supabaseApi.select('history_newsletters', '*', filters, { single: true, authToken });
+  },
+  
+  // Update or create (upsert) based on unique combination
+  upsertByChat: async (data: {
+    user_id: string;
+    session_id?: string;
+    chat_history_id?: string;
+    agent_id?: string;
+    title: string;
+    content: string;
+    call_to_actions?: any[];
+  }, authToken?: string, options?: { triggerWebhook?: boolean }) => {
+    // First try to find existing
+    const existing = await newslettersApi.findByUniqueCombination(
+      data.user_id, 
+      data.session_id, 
+      data.chat_history_id, 
+      authToken
+    );
+    
+    if (existing.data && !existing.error) {
+      // Update existing - webhook will trigger unless explicitly disabled
+      return newslettersApi.updateById(existing.data.id, {
+        ...data,
+        updated_at: new Date().toISOString()
+      }, authToken, options);
+    } else {
+      // Create new - webhook will trigger unless explicitly disabled
+      return newslettersApi.create({
+        ...data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, authToken, options);
+    }
+  }
+};
+
+// Content Repurposer API
+export const contentRepurposerApi = {
+  // Get content repurposer by ID
+  getById: (id: string, authToken?: string) =>
+    supabaseApi.select('history_content_repurposer', '*', { id }, { single: true, authToken }),
+    
+  // Get all content repurposers for a user
+  getByUserId: (user_id: string, authToken?: string) =>
+    supabaseApi.select('history_content_repurposer', '*', { user_id }, { order: 'updated_at.desc', authToken }),
+    
+  // Get content repurposers by session
+  getBySessionId: (session_id: string, authToken?: string) =>
+    supabaseApi.select('history_content_repurposer', '*', { session_id }, { order: 'updated_at.desc', authToken }),
+    
+  // Get content repurposer by agent ID
+  getByAgentId: (agent_id: string, authToken?: string) =>
+    supabaseApi.select('history_content_repurposer', '*', { agent_id }, { order: 'updated_at.desc', authToken }),
+    
+  // Get content repurposer by chat history ID
+  getByChatHistoryId: (chat_history_id: string, authToken?: string) =>
+    supabaseApi.select('history_content_repurposer', '*', { chat_history_id }, { single: true, authToken }),
+    
+  // Create new content repurposer
+  create: async (data: {
+    user_id: string;
+    title: string;
+    content: string;
+    session_id?: string;
+    chat_history_id?: string;
+    agent_id?: string;
+    repurposed_content?: any[];
+    source_type?: string;
+    target_formats?: string[];
+    created_at?: string;
+    updated_at?: string;
+  }, authToken?: string) => {
+    const result = await supabaseApi.insert('history_content_repurposer', data, { authToken });
+    
+    // Note: No webhook trigger needed for content repurposer database operations
+    // Webhooks are handled by the bi-directional sync system in contentRepurposerWebhookService
+    
+    return result;
+  },
+    
+  // Update content repurposer
+  updateById: async (id: string, updateData: any, authToken?: string) => {
+    const result = await supabaseApi.update('history_content_repurposer', updateData, { id }, { authToken });
+    
+    // Note: No webhook trigger needed for content repurposer database operations
+    // Webhooks are handled by the bi-directional sync system in contentRepurposerWebhookService
+    
+    return result;
+  },
+    
+  deleteById: (id: string, authToken?: string) =>
+    supabaseApi.delete('history_content_repurposer', { id }, { authToken }),
+    
+  // Get recent content repurposers for user
+  getRecent: (user_id: string, limit: number = 10, authToken?: string) => 
+    supabaseApi.select('history_content_repurposer', '*', { user_id }, { order: 'updated_at.desc', limit, authToken }),
+    
+  // Create content repurposer from chat history
+  createFromChatHistory: (data: {
+    user_id: string;
+    session_id?: string;
+    chat_history_id?: string;
+    agent_id?: string;
+    title: string;
+    content: string;
+    repurposed_content?: any[];
+    source_type?: string;
+    target_formats?: string[];
+  }, authToken?: string) =>
+    supabaseApi.insert('history_content_repurposer', {
+      ...data,
+      agent_id: data.agent_id || 'content_repurposer',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }, { authToken }),
+    
+  // Find content repurposer by unique combination (avoid duplicates)
+  findByUniqueCombination: async (user_id: string, session_id?: string, chat_history_id?: string, authToken?: string) => {
+    const filters: any = { user_id };
+    if (session_id) filters.session_id = session_id;
+    if (chat_history_id) filters.chat_history_id = chat_history_id;
+    
+    return supabaseApi.select('history_content_repurposer', '*', filters, { single: true, authToken });
+  },
+  
+  // Update or create (upsert) based on unique combination
+  upsertByChat: async (data: {
+    user_id: string;
+    session_id?: string;
+    chat_history_id?: string;
+    agent_id?: string;
+    title: string;
+    content: string;
+    repurposed_content?: any[];
+    source_type?: string;
+    target_formats?: string[];
+  }, authToken?: string) => {
+    // First try to find existing
+    const existing = await contentRepurposerApi.findByUniqueCombination(
+      data.user_id, 
+      data.session_id, 
+      data.chat_history_id, 
+      authToken
+    );
+    
+    if (existing.data && !existing.error) {
+      // Update existing
+      return contentRepurposerApi.updateById(existing.data.id, {
+        ...data,
+        updated_at: new Date().toISOString()
+      }, authToken);
+    } else {
+      // Create new
+      return contentRepurposerApi.create({
+        ...data,
+        agent_id: data.agent_id || 'content_repurposer',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, authToken);
+    }
+  }
 };

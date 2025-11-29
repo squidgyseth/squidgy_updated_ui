@@ -4,6 +4,7 @@ import { MessageCircle, Layers, ArrowLeft, Settings } from 'lucide-react';
 import AgentPageCarousel from '../AgentPageCarousel';
 import { AgentConfigService } from '../../services/agentConfigService';
 import type { AgentCarouselConfig } from '../../types/carouselTypes';
+import DynamicAgentDashboard from '../../pages/DynamicAgentDashboard';
 
 interface EnhancedChatAreaProps {
   className?: string;
@@ -135,97 +136,20 @@ export default function EnhancedChatArea({ className = '' }: EnhancedChatAreaPro
     );
   }
 
-  // Show carousel for multi-page agents
+  // Show carousel for multi-page agents - but bypass for clean chat interface
   if (viewMode === 'carousel' && carouselConfig.pages.length > 0) {
+    // Use DynamicAgentDashboard for ALL agents - no hardcoding!
     return (
-      <div className={`h-full flex flex-col ${className}`}>
-        {/* Top Controls */}
-        <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
-          <button
-            onClick={handleGoBack}
-            className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Back to Agents</span>
-          </button>
-
-          <div className="flex items-center gap-2">
-            {/* View Mode Toggle */}
-            <button
-              onClick={toggleViewMode}
-              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span className="text-sm">Chat Mode</span>
-            </button>
-            
-            <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
-              <Settings className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Carousel Component */}
-        <div className="flex-1">
-          <AgentPageCarousel config={carouselConfig} />
-        </div>
+      <div className={`h-full ${className}`}>
+        <DynamicAgentDashboard />
       </div>
     );
   }
-
-  // Fallback to traditional chat interface
+    
+  // Fallback - also use DynamicAgentDashboard for consistency
   return (
-    <div className={`h-full flex flex-col ${className}`}>
-      {/* Chat Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleGoBack}
-              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-            <div>
-              <h2 className="text-xl font-semibold">{carouselConfig.agentName}</h2>
-              <p className="text-sm text-gray-500">{carouselConfig.category}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {carouselConfig.pages.length > 0 && (
-              <button
-                onClick={toggleViewMode}
-                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <Layers className="w-4 h-4" />
-                <span className="text-sm">Page View</span>
-              </button>
-            )}
-            
-            <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
-              <Settings className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Traditional Chat Area */}
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Chat Mode</h3>
-          <p className="text-gray-500 mb-4">Traditional chat interface with {carouselConfig.agentName}</p>
-          {carouselConfig.pages.length > 0 && (
-            <button
-              onClick={toggleViewMode}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              Switch to Page View
-            </button>
-          )}
-        </div>
-      </div>
+    <div className={`h-full ${className}`}>
+      <DynamicAgentDashboard />
     </div>
   );
 }

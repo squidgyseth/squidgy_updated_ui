@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import DynamicAgentPage from "../DynamicAgentPage";
+import { createProxyUrl } from "../../utils/urlMasking";
 
 interface ChatAreaProps {
   selectedAssistant: string;
@@ -88,7 +89,7 @@ export default function ChatAreaV2({
           <div className="flex items-center gap-3">
             {currentAgent.avatar_url && (
               <img 
-                src={currentAgent.avatar_url} 
+                src={createProxyUrl(currentAgent.avatar_url, 'avatar')} 
                 alt={currentAgent.name}
                 className="w-10 h-10 rounded-full"
               />

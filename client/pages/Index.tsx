@@ -6,6 +6,16 @@ export default function Index() {
   const [showModal, setShowModal] = useState(true);
   const navigate = useNavigate();
 
+  const handleCreateAgentClick = () => {
+    // Navigate to website details page (first step in solar agent creation)
+    navigate('/website-details');
+  };
+
+  const handleDashboardClick = () => {
+    // Go directly to dashboard
+    navigate('/dashboard');
+  };
+
   if (!showModal) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -44,7 +54,7 @@ export default function Index() {
         <div className="relative w-full max-w-[400px] bg-white rounded-2xl border border-squidgy-border p-6 flex flex-col items-center">
           {/* Close Button */}
           <button
-            onClick={() => setShowModal(false)}
+            onClick={handleDashboardClick}
             className="absolute top-4 right-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"
           >
             <X className="w-6 h-6 text-squidgy-text-primary" strokeWidth={1.5} />
@@ -77,7 +87,7 @@ export default function Index() {
           <div className="flex flex-col gap-2 w-full">
             {/* Primary Gradient Button */}
             <button 
-              onClick={() => navigate('/website-details')}
+              onClick={handleCreateAgentClick}
               className="w-full py-3 px-5 bg-squidgy-gradient text-white font-bold text-[15px] leading-6 rounded-lg flex items-center justify-center hover:opacity-90 transition-opacity"
             >
               Create your agent
@@ -85,7 +95,7 @@ export default function Index() {
 
             {/* Secondary Button */}
             <button 
-              onClick={() => navigate('/dashboard')}
+              onClick={handleDashboardClick}
               className="w-full py-3 px-5 text-squidgy-primary font-bold text-[15px] leading-6 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
             >
               Go to dashboard

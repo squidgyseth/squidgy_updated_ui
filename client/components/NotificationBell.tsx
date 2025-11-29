@@ -35,7 +35,7 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Setup WebSocket and load initial notifications
+  // Setup notification listeners and load initial notifications
   useEffect(() => {
     if (!userId) {
       console.log('⚠️ No userId available for NotificationBell');
@@ -49,11 +49,7 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
     console.log('📊 Loading initial notifications...');
     loadNotifications();
 
-    // Connect to WebSocket for real-time notifications
-    console.log('🔌 Connecting WebSocket for user:', userId);
-    notificationsService.connectWebSocket(userId);
-
-    // Listen for new notifications
+    // Listen for new notifications (WebSocket managed by GlobalNotificationBell)
     const unsubscribe = notificationsService.onNotification((notification) => {
       console.log('🎉 NOTIFICATION BELL: New notification received!');
       console.log('   From:', notification.sender_name);
@@ -65,28 +61,13 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
       setUnreadCount(prev => prev + 1);
       setHasNewNotification(true);
       
-      // Play sound
-      console.log('🔊 Playing notification sound...');
-      notificationsService.playNotificationSound();
-      
-      // Show toast
-      console.log('🍞 Showing toast notification...');
-      toast.success(`New message from ${notification.sender_name || 'Unknown'}`, {
-        description: notification.message_content.slice(0, 100) + '...',
-        duration: 4000,
-      });
-
       // Reset animation after a short delay
       console.log('✨ Setting bell animation...');
       setTimeout(() => setHasNewNotification(false), 2000);
     });
 
-    // Request notification permission
-    notificationsService.requestNotificationPermission();
-
     return () => {
       unsubscribe();
-      notificationsService.disconnectWebSocket();
     };
   }, [userId]);
 

@@ -1,0 +1,182 @@
+# ===========================================
+# BUSINESS FLOW CONFIGURATION
+# ===========================================
+# This file defines the hierarchical flow:
+# Business Type -> Departments -> Agents -> Agent Configs
+
+# Step 1: Business Types
+business_types:
+  ecommerce:
+    title: "E-commerce"
+    description: "Online retail, product sales, inventory management"
+    icon: "🛒"
+    icon_color: "#6017E8"
+    # Recommended departments for this business type
+    recommended_departments:
+      - marketing
+      - sales
+      - customer_support
+      - finance
+    
+  agency_creative:
+    title: "Agency / Creative Studio"
+    description: "Marketing, design, content creation, client services"
+    icon: "🎨"
+    icon_color: "#FB252A"
+    recommended_departments:
+      - marketing
+      - sales
+      - management_strategy
+      - hr_people
+    
+  saas_tech:
+    title: "SaaS / Tech Startup"
+    description: "Software development, product management, growth"
+    icon: "🚀"
+    icon_color: "#51A2FF"
+    recommended_departments:
+      - marketing
+      - sales
+      - product_dev
+      - customer_support
+    
+  consultant_freelancer:
+    title: "Consultant / Freelancer"
+    description: "Professional services, client management, expertise"
+    icon: "👤"
+    icon_color: "#FB7A2A"
+    recommended_departments:
+      - sales
+      - finance
+      - marketing
+    
+  education:
+    title: "Education"
+    description: "Training, curriculum, student management, research"
+    icon: "🎓"
+    icon_color: "#28A745"
+    recommended_departments:
+      - marketing
+      - hr_people
+      - management_strategy
+      - customer_support
+    
+  enterprise_corporate:
+    title: "Enterprise / Corporate"
+    description: "Large organization, multiple departments, compliance"
+    icon: "🏢"
+    icon_color: "#51A2FF"
+    recommended_departments:
+      - hr_people
+      - management_strategy
+      - finance
+      - customer_support
+    
+  real_estate:
+    title: "Real Estate"
+    description: "Property sales, client management, listings, market analysis"
+    icon: "🏠"
+    icon_color: "#28A745"
+    recommended_departments:
+      - sales
+      - marketing
+      - customer_support
+      - finance
+    
+  other:
+    title: "Other"
+    description: "Tell us more about your unique business needs"
+    icon: "❓"
+    icon_color: "#6C757D"
+    recommended_departments:
+      - marketing
+      - sales
+      - customer_support
+
+# Step 2: Departments with their agents
+departments:
+  marketing:
+    title: "Marketing"
+    description: "Social media, campaigns, content creation, SEO"
+    icon: "📈"
+    icon_color: "#6017E8"
+    # Agents available in this department (reference actual config files)
+    agents:
+      - smm_assistant
+      - content_repurposer
+      - newsletter
+    
+  sales:
+    title: "Sales"
+    description: "Lead generation, CRM, proposals, customer outreach"
+    icon: "📊"
+    icon_color: "#FB252A"
+    agents:
+      - sol_bot
+    
+  management_strategy:
+    title: "Management & Strategy"
+    description: "Planning, analytics, reporting, decision support"
+    icon: "⚙️"
+    icon_color: "#51A2FF"
+    agents:
+      - content_repurposer
+    
+  hr_people:
+    title: "HR & People Ops"
+    description: "Recruiting, onboarding, employee engagement, policies"
+    icon: "👥"
+    icon_color: "#FB7A2A"
+    agents:
+      - newsletter
+    
+  customer_support:
+    title: "Customer Support"
+    description: "Help desk, ticket management, customer communication"
+    icon: "🎧"
+    icon_color: "#51A2FF"
+    agents:
+      - sol_bot
+    
+  finance:
+    title: "Finance"
+    description: "Budgeting, expense tracking, financial analysis, invoicing"
+    icon: "💰"
+    icon_color: "#FFC107"
+    agents:
+      - content_repurposer
+    
+  product_dev:
+    title: "Product / Dev"
+    description: "Feature planning, user research, development support"
+    icon: "💻"
+    icon_color: "#6017E8"
+    agents:
+      - content_repurposer
+      - newsletter
+
+# Step 3: Agent References - Just paths to config files
+# All details (name, description, icon, etc.) are pulled from the actual agent YAML files
+agents:
+  # References to actual agent config files in /agents/configs/
+  content_repurposer:
+    config_file: "content_repurposer"
+    
+  newsletter:
+    config_file: "newsletter"
+    
+  smm_assistant:
+    config_file: "smm_assistant"
+    
+  sol_bot:
+    config_file: "sol_bot"
+    
+  # Test/Template agents (usually not shown in production)
+  agent_template:
+    config_file: "agent_template"
+    
+  test_multi_agent:
+    config_file: "test_multi_agent"
+    
+  test_multi_page_agent:
+    config_file: "test_multi_page_agent"
