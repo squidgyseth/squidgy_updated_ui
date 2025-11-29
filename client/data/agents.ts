@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2025-11-28T01:12:36.732Z
+// Generated on: 2025-11-29T16:32:40.076Z
 
 export interface AgentConfig {
   agent: {
@@ -351,7 +351,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "specialization": "Content Repurposer",
       "tagline": "Repurpose. Convert. Deliver.",
       "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
-      "initial_message": "Hi! I'm Content Repurposer. Ready to help you today!<br><br>📋 <a href=\"/agent-settings/content_repurposer\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Setup</a> - You can come back and change if needed.",
+      "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
         "Primary capability or main function",
         "Secondary feature or service provided",
@@ -547,7 +547,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "specialization": "Content Repurposer",
       "tagline": "Repurpose. Convert. Deliver.",
       "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
-      "initial_message": "Hi! I'm Content Repurposer. Ready to help you today!<br><br>📋 <a href=\"/agent-settings/content_repurposer\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Setup</a> - You can come back and change if needed.",
+      "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
         "Primary capability or main function",
         "Secondary feature or service provided",
@@ -1350,7 +1350,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "specialization": "Content Repurposer",
         "tagline": "Repurpose. Convert. Deliver.",
         "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
-        "initial_message": "Hi! I'm Content Repurposer. Ready to help you today!<br><br>📋 <a href=\"/agent-settings/content_repurposer\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Setup</a> - You can come back and change if needed.",
+        "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
         "capabilities": [
           "Primary capability or main function",
           "Secondary feature or service provided",

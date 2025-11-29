@@ -40,7 +40,7 @@ agent:
   # Use <br> for line breaks (not \n), supports HTML links and formatting
   # Include onboarding link for setup: <a href="/agent-settings/YOUR_AGENT_ID" target="_blank" style="color: #7c3aed; text-decoration: underline;">Complete Onboarding</a>
   # Example: 'Hi! I''m your Agent Name. Ready to help!<br><br>📋 <a href="/agent-settings/your_agent_id" target="_blank" style="color: #7c3aed; text-decoration: underline;">Complete Setup</a>'
-  initial_message: 'Hi! I''m Content Repurposer. Ready to help you today!<br><br>📋 <a href="/agent-settings/content_repurposer" target="_blank" style="color: #7c3aed; text-decoration: underline;">Complete Setup</a> - You can come back and change if needed.'
+  initial_message: 'Hey there! 🎨 I''m your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I''ll help you generate engaging social media posts based on that content!'
   
   # Agent capabilities shown in right panel (list your agent's main features)
   capabilities:
