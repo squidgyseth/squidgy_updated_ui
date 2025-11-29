@@ -2,6 +2,7 @@ import React from 'react';
 import type { N8nResponse } from '../../types/n8n.types';
 import HTMLPreview from './HTMLPreview';
 import SocialMediaLink from './SocialMediaLink';
+import SocialMediaPreview from './SocialMediaPreview';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 
 interface AgentResponseHandlerProps {
@@ -44,7 +45,18 @@ export default function AgentResponseHandler({
   // Handle different agent statuses
   switch (response.agent_status) {
     case 'Ready':
-      // Check if it's social media content
+      // Check if it's social media content from content repurposer
+      if (isSocialMediaContent() && response.agent_name === 'content_repurposer') {
+        return (
+          <div className={`agent-response ready-state ${className}`}>
+            <SocialMediaPreview 
+              content={response.agent_response} 
+              historyId={response.request_id}
+            />
+          </div>
+        );
+      }
+      // Check if it's legacy social media content
       if (isSocialMediaContent()) {
         return (
           <div className={`agent-response ready-state ${className}`}>

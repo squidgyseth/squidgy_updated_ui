@@ -213,11 +213,19 @@ class ContentRepurposerWebhookService {
         contentData = JSON.parse(contentData);
       }
 
+      // Handle new platform-based format (LinkedIn, InstagramFacebook, TikTokReels)
+      if (contentData.LinkedIn || contentData.InstagramFacebook || contentData.TikTokReels) {
+        this.extractPostsFromNewFormat(contentData, posts);
+      }
       // Handle array format
-      if (Array.isArray(contentData)) {
+      else if (Array.isArray(contentData)) {
         contentData.forEach((item: any) => {
           if (item.ContentRepurposerPosts) {
             this.extractPostsFromContentRepurposer(item.ContentRepurposerPosts, posts);
+          }
+          // Also check for new format in array items
+          if (item.LinkedIn || item.InstagramFacebook || item.TikTokReels) {
+            this.extractPostsFromNewFormat(item, posts);
           }
         });
       } 
@@ -239,7 +247,52 @@ class ContentRepurposerWebhookService {
   }
 
   /**
-   * Extract posts from ContentRepurposerPosts format
+   * Extract posts from new platform-based format
+   * Format: { LinkedIn: { Post1: { Caption: "...", ImagePrompt: "..." } }, InstagramFacebook: {...}, TikTokReels: {...} }
+   */
+  private extractPostsFromNewFormat(contentData: any, posts: SocialMediaPost[]): void {
+    // Process LinkedIn posts
+    if (contentData.LinkedIn) {
+      Object.entries(contentData.LinkedIn).forEach(([postKey, postData]: [string, any]) => {
+        if (postData && (postData.Caption || postData.Script)) {
+          posts.push({
+            platform: 'LinkedIn',
+            content: postData.Caption || postData.Script || '',
+            image_prompt: postData.ImagePrompt || ''
+          });
+        }
+      });
+    }
+
+    // Process Instagram/Facebook posts
+    if (contentData.InstagramFacebook) {
+      Object.entries(contentData.InstagramFacebook).forEach(([postKey, postData]: [string, any]) => {
+        if (postData && (postData.Caption || postData.Script)) {
+          posts.push({
+            platform: 'Instagram',
+            content: postData.Caption || postData.Script || '',
+            image_prompt: postData.ImagePrompt || ''
+          });
+        }
+      });
+    }
+
+    // Process TikTok/Reels posts
+    if (contentData.TikTokReels) {
+      Object.entries(contentData.TikTokReels).forEach(([postKey, postData]: [string, any]) => {
+        if (postData && (postData.Script || postData.Idea)) {
+          posts.push({
+            platform: 'TikTok',
+            content: postData.Script || postData.Idea || '',
+            image_prompt: postData.ImagePrompt || ''
+          });
+        }
+      });
+    }
+  }
+
+  /**
+   * Extract posts from ContentRepurposerPosts format (legacy)
    */
   private extractPostsFromContentRepurposer(contentRepurposerPosts: any, posts: SocialMediaPost[]): void {
     // LinkedIn Posts
