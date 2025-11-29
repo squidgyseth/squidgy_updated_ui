@@ -1,4 +1,6 @@
 import type { AgentCarouselConfig, AgentPage } from '../types/carouselTypes';
+import OptimizedAgentService from './optimizedAgentService';
+import { type AgentConfig as OptimizedAgentConfig } from '../data/agents';
 
 export interface AgentConfig {
   agent: {
@@ -6,8 +8,12 @@ export interface AgentConfig {
     name: string;
     category: string;
     description: string;
+    specialization?: string;
+    tagline?: string;
     avatar?: string;
     pinned?: boolean;
+    capabilities?: string[];
+    recent_actions?: string[];
   };
   n8n: {
     webhook_url: string;
@@ -42,19 +48,18 @@ export class AgentConfigService {
    */
   async loadAgentConfig(agentId: string): Promise<AgentConfig | null> {
     try {
-      // Try to load from API first
-      const response = await fetch(`/api/agents/${agentId}/config`);
-      if (response.ok) {
-        const config = await response.json();
-        this.agentConfigs.set(agentId, config);
-        return config;
+      const agentService = OptimizedAgentService.getInstance();
+      const config = agentService.getAgentById(agentId);
+      
+      if (config) {
+        this.agentConfigs.set(agentId, config as AgentConfig);
+        return config as AgentConfig;
       }
+      return null;
     } catch (error) {
-      console.error(`Could not load config for agent ${agentId} from API:`, error);
+      console.error(`Could not load config for agent ${agentId}:`, error);
+      return null;
     }
-
-    // No fallback - return null if API fails
-    return null;
   }
 
   /**
@@ -120,167 +125,16 @@ export class AgentConfigService {
    */
   async getAllAgents(): Promise<AgentConfig[]> {
     try {
-      const response = await fetch('/api/agents/list');
-      if (response.ok) {
-        const agents = await response.json();
-        console.log('Loaded agents from API:', agents);
-        return agents;
-      }
+      const agentService = OptimizedAgentService.getInstance();
+      const agents = agentService.getAllAgents();
+      console.log('Loaded agents (optimized):', agents);
+      return agents as AgentConfig[];
     } catch (error) {
-      console.error('Could not load agents from API:', error);
+      console.error('Could not load agents:', error);
+      return [];
     }
-
-    // No fallback - return empty array if API fails
-    return [];
   }
 
-  /**
-   * Mock agent configuration for development
-   */
-  private getMockAgentConfig(agentId: string): AgentConfig | null {
-    const mockConfigs: Record<string, AgentConfig> = {
-      'newsletter': {
-        agent: {
-          id: 'newsletter',
-          name: 'Newsletter Agent',
-          category: 'MARKETING',
-          description: 'Create and manage newsletters',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter',
-          pinned: true
-        },
-        n8n: {
-          webhook_url: 'https://n8n.theaiteam.uk/webhook/newsletter'
-        },
-        ui: {
-          page_type: 'standard'
-        },
-        ui_use: {
-          pages: [
-            {
-              name: 'Newsletter Page',
-              path: '/agents/newsletter/newsletter_liquid_blanch_17032840_page1',
-              order: 1,
-              validated: true
-            }
-          ],
-          default_page: '/agents/newsletter/newsletter_liquid_blanch_17032840_page1',
-          navigation_type: 'none'
-        }
-      },
-      'smm_assistant': {
-        agent: {
-          id: 'smm_assistant',
-          name: 'SMM Assistant',
-          category: 'MARKETING',
-          description: 'Social media marketing specialist',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=smm'
-        },
-        n8n: {
-          webhook_url: 'https://n8n.example.com/webhook/smm'
-        },
-        ui: {
-          page_type: 'multi_page'
-        },
-        ui_use: {
-          pages: [
-            {
-              name: 'Dashboard',
-              path: '/agents/smm_assistant/dashboard',
-              order: 1,
-              validated: true
-            },
-            {
-              name: 'Analytics',
-              path: '/agents/smm_assistant/analytics',
-              order: 2,
-              validated: true
-            },
-            {
-              name: 'Content Creator',
-              path: '/agents/smm_assistant/content',
-              order: 3,
-              validated: true
-            },
-            {
-              name: 'Reports',
-              path: '/agents/smm_assistant/reports',
-              order: 4,
-              validated: false
-            }
-          ],
-          default_page: '/agents/smm_assistant/dashboard',
-          navigation_type: 'tabs'
-        }
-      },
-      'test_multiagent': {
-        agent: {
-          id: 'test_multiagent',
-          name: 'Test Multi-Agent',
-          category: 'MARKETING',
-          description: 'Testing multi-agent functionality'
-        },
-        n8n: {
-          webhook_url: 'https://n8n.example.com/webhook/test'
-        },
-        ui: {
-          page_type: 'multi_page'
-        },
-        ui_use: {
-          pages: [
-            {
-              name: 'Main Page',
-              path: '/agents/test_multiagent/main',
-              order: 1,
-              validated: true
-            }
-          ],
-          default_page: '/agents/test_multiagent/main',
-          navigation_type: 'none'
-        }
-      }
-    };
-
-    return mockConfigs[agentId] || null;
-  }
-
-  /**
-   * Mock agents list for development
-   */
-  private getMockAgentsList(): AgentConfig[] {
-    return [
-      this.getMockAgentConfig('newsletter')!,
-      this.getMockAgentConfig('smm_assistant')!,
-      this.getMockAgentConfig('test_multiagent')!,
-      {
-        agent: {
-          id: 'lead_generator',
-          name: 'Lead Generator',
-          category: 'SALES',
-          description: 'Find leads fast'
-        },
-        n8n: {
-          webhook_url: 'https://n8n.example.com/webhook/leads'
-        },
-        ui: {
-          page_type: 'standard'
-        }
-      },
-      {
-        agent: {
-          id: 'crm_updater',
-          name: 'CRM Updater',
-          category: 'SALES',
-          description: 'Keep data clean'
-        },
-        n8n: {
-          webhook_url: 'https://n8n.example.com/webhook/crm'
-        },
-        ui: {
-          page_type: 'standard'
-        }
-      }
-    ];
-  }
 
   /**
    * Clear cached configurations

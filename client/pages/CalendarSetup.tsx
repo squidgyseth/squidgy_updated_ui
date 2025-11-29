@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ChatInterface } from "../components/ChatInterface";
 import { UserAccountDropdown } from "../components/UserAccountDropdown";
 import { SetupStepsSidebar } from "../components/SetupStepsSidebar";
+import { GoogleCalendarIntegration } from "../components/GoogleCalendarIntegration";
 import { useUser } from "../hooks/useUser";
 import { saveCalendarSetup, getCalendarSetup } from "../lib/api";
 import { toast } from "sonner";
@@ -191,6 +192,9 @@ export default function CalendarSetup() {
   const [autoConfirm, setAutoConfirm] = useState(true);
   const [allowRescheduling, setAllowRescheduling] = useState(true);
   const [allowCancellations, setAllowCancellations] = useState(true);
+  const [enableCallbackRequests, setEnableCallbackRequests] = useState(true);
+  const [callbackResponseTime, setCallbackResponseTime] = useState(24);
+  const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
   const [businessHours, setBusinessHours] = useState({
     monday: { enabled: true, start: '09:00', end: '17:00' },
     tuesday: { enabled: true, start: '09:00', end: '17:00' },
@@ -216,6 +220,8 @@ export default function CalendarSetup() {
           setAutoConfirm(existingData.auto_confirm ?? true);
           setAllowRescheduling(existingData.allow_rescheduling ?? true);
           setAllowCancellations(existingData.allow_cancellations ?? true);
+          setEnableCallbackRequests(existingData.enable_callback_requests ?? true);
+          setCallbackResponseTime(existingData.callback_response_time || 24);
           if (existingData.business_hours) {
             setBusinessHours(existingData.business_hours);
           }
@@ -261,6 +267,9 @@ export default function CalendarSetup() {
         auto_confirm: autoConfirm,
         allow_rescheduling: allowRescheduling,
         allow_cancellations: allowCancellations,
+        enable_callback_requests: enableCallbackRequests,
+        callback_response_time: callbackResponseTime,
+        google_calendar_connected: googleCalendarConnected,
         business_hours: businessHours,
         setup_status: 'completed'
       };
@@ -360,6 +369,13 @@ export default function CalendarSetup() {
               />
             </div>
 
+            {/* Google Calendar Integration */}
+            <div className="mb-6">
+              <GoogleCalendarIntegration 
+                onIntegrationChange={setGoogleCalendarConnected}
+              />
+            </div>
+
             {/* Call Duration and Max Calls */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
@@ -454,6 +470,63 @@ export default function CalendarSetup() {
                   />
                   <span className="text-text-primary">Allow cancellations</span>
                 </label>
+              </div>
+            </div>
+
+            {/* Callback Options */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-text-primary mb-4">Callback Options</h3>
+              
+              <div className="space-y-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={enableCallbackRequests}
+                    onChange={(e) => setEnableCallbackRequests(e.target.checked)}
+                    className="w-5 h-5 text-squidgy-purple border-gray-300 rounded focus:ring-squidgy-purple"
+                  />
+                  <span className="text-text-primary">Enable callback requests</span>
+                </label>
+                
+                {enableCallbackRequests && (
+                  <div className="ml-8">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-start gap-3">
+                        <HelpCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm text-amber-800 font-medium mb-1">How callback requests work</p>
+                          <p className="text-xs text-amber-700">
+                            When customers request a callback, the AI will collect their details and preferences. 
+                            The request will be passed to your team, but it's not 100% confirmed until manual follow-up.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-text-primary mb-2">
+                        Target response time (hours)
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={callbackResponseTime}
+                          onChange={(e) => setCallbackResponseTime(parseInt(e.target.value))}
+                          className="w-full p-3 pr-10 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent appearance-none"
+                        >
+                          <option value="2">2 hours</option>
+                          <option value="4">4 hours</option>
+                          <option value="8">8 hours</option>
+                          <option value="24">24 hours</option>
+                          <option value="48">48 hours</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      </div>
+                      <p className="text-xs text-text-secondary mt-1">
+                        This is the timeframe the AI will communicate to customers for callback expectations
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -1,0 +1,213 @@
+/* Mobile-specific styles */
+
+/* Touch-friendly minimum sizes */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.touch-target-small {
+  min-height: 36px;
+  min-width: 36px;
+}
+
+/* Hide scrollbars on mobile */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area handling for devices with notches/home indicators */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Mobile-optimized spacing */
+.mobile-padding {
+  @apply px-4 py-3;
+}
+
+.mobile-gap {
+  @apply gap-3;
+}
+
+.mobile-gap-sm {
+  @apply gap-2;
+}
+
+.mobile-gap-lg {
+  @apply gap-4;
+}
+
+/* Mobile typography */
+.mobile-heading {
+  @apply text-xl font-semibold leading-tight;
+}
+
+.mobile-subheading {
+  @apply text-lg font-medium leading-snug;
+}
+
+.mobile-body {
+  @apply text-base leading-relaxed;
+}
+
+.mobile-caption {
+  @apply text-sm text-muted-foreground;
+}
+
+/* Mobile card styles */
+.mobile-card {
+  @apply bg-card border border-border rounded-lg p-4 shadow-sm;
+}
+
+.mobile-card-interactive {
+  @apply mobile-card cursor-pointer transition-all duration-200 hover:shadow-md active:scale-[0.98] active:shadow-sm;
+}
+
+/* Gradient backgrounds matching mobile design */
+.gradient-primary {
+  background: linear-gradient(135deg, #ef4444 0%, #8b5cf6 100%);
+}
+
+.gradient-primary-light {
+  background: linear-gradient(135deg, #fca5a5 0%, #c4b5fd 100%);
+}
+
+/* Mobile button variants */
+.mobile-button-gradient {
+  @apply bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700;
+  @apply text-white border-none shadow-lg hover:shadow-xl;
+  @apply disabled:from-gray-400 disabled:to-gray-500;
+}
+
+/* Mobile form elements */
+.mobile-input {
+  @apply h-11 px-3 py-2 text-base;
+}
+
+.mobile-select {
+  @apply h-11 px-3 py-2 text-base;
+}
+
+.mobile-textarea {
+  @apply p-3 text-base min-h-[88px];
+}
+
+/* Mobile modal/dialog styles */
+.mobile-modal {
+  @apply fixed inset-0 z-50 bg-background;
+}
+
+.mobile-modal-header {
+  @apply flex items-center justify-between h-14 px-4 border-b border-border;
+}
+
+.mobile-modal-content {
+  @apply flex-1 overflow-y-auto p-4;
+}
+
+/* Mobile list styles */
+.mobile-list-item {
+  @apply flex items-center p-4 border-b border-border last:border-b-0;
+  @apply min-h-[60px] cursor-pointer hover:bg-muted/50;
+  @apply transition-colors duration-200;
+}
+
+/* Mobile avatar sizes */
+.mobile-avatar-sm {
+  @apply h-8 w-8;
+}
+
+.mobile-avatar-md {
+  @apply h-10 w-10;
+}
+
+.mobile-avatar-lg {
+  @apply h-12 w-12;
+}
+
+/* Mobile badge styles */
+.mobile-badge {
+  @apply px-2 py-1 text-xs font-medium rounded-md;
+}
+
+/* Pull-to-refresh indicator */
+.pull-to-refresh {
+  @apply relative;
+}
+
+.pull-to-refresh::before {
+  content: '';
+  @apply absolute top-0 left-1/2 transform -translate-x-1/2 w-8 h-1;
+  @apply bg-muted-foreground/20 rounded-full transition-all duration-300;
+}
+
+/* Mobile skeleton loading */
+.mobile-skeleton {
+  @apply animate-pulse bg-muted rounded;
+}
+
+.mobile-skeleton-text {
+  @apply mobile-skeleton h-4;
+}
+
+.mobile-skeleton-heading {
+  @apply mobile-skeleton h-6;
+}
+
+.mobile-skeleton-button {
+  @apply mobile-skeleton h-11 rounded-md;
+}
+
+/* Mobile focus states */
+.mobile-focus {
+  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .mobile-card {
+    @apply border-2;
+  }
+  
+  .mobile-button-gradient {
+    @apply border-2 border-foreground;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark mode adjustments for mobile */
+@media (prefers-color-scheme: dark) {
+  .mobile-card {
+    @apply shadow-lg shadow-black/20;
+  }
+  
+  .gradient-primary {
+    background: linear-gradient(135deg, #dc2626 0%, #7c3aed 100%);
+  }
+}

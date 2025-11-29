@@ -1,0 +1,51 @@
+# ===========================================
+# UI SETTINGS CONFIGURATION
+# ===========================================
+# This file contains UI-specific settings for the onboarding flow
+
+# Step 4: Personalization Options
+personalization:
+  avatar_styles:
+    - value: professional
+      label: "Professional"
+      description: "Formal business style"
+      
+    - value: friendly
+      label: "Friendly" 
+      description: "Approachable and warm"
+      
+    - value: corporate
+      label: "Corporate"
+      description: "Traditional corporate style"
+      
+    - value: creative
+      label: "Creative"
+      description: "Modern and innovative"
+  
+  communication_tones:
+    - value: professional
+      label: "Professional"
+      description: "Formal and business-focused"
+      
+    - value: friendly
+      label: "Friendly"
+      description: "Warm and approachable"
+      
+    - value: casual
+      label: "Casual"
+      description: "Relaxed and conversational"
+      
+    - value: formal
+      label: "Formal"
+      description: "Traditional and structured"
+
+# Flow Configuration
+flow:
+  total_steps: 6
+  step_titles:
+    - "Business Type"
+    - "Support Areas" 
+    - "Choose Assistants"
+    - "Personalize"
+    - "Company Details"
+    - "Welcome"

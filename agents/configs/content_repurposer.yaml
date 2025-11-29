@@ -1,0 +1,135 @@
+# ===========================================
+# AGENT CONFIGURATION TEMPLATE
+# ===========================================
+# Instructions:
+# 1. Copy this file and rename it to: your_agent_id.yaml
+# 2. Fill in all the fields below
+# 3. Run: node scripts/import-multipage-agent.js agents/configs/your_agent_id.yaml
+# 4. Restart dev server: npm run dev
+# ===========================================
+
+agent:
+  # Unique identifier (no spaces, lowercase, use underscores)
+  # Example: "newsletter_agent", "crm_manager", "lead_generator"
+  id: content_repurposer
+  
+  # Display name shown in the sidebar
+  # Example: "Newsletter Agent", "CRM Manager", "Lead Generator"
+  name: Content Repurposer
+  
+  # Category - Choose ONE from: MARKETING, SALES, HR, SUPPORT, OPERATIONS
+  category: SALES
+  
+  # Short description for the sidebar (keep it brief)
+  # Example: "Create and manage newsletters", "Track customer interactions"
+  description: "Repurpose content for different platforms and audiences"
+  
+  # Specialization badge shown in chat header and right panel (optional)
+  # Example: "Creative & Trendy", "Data Expert", "Lead Specialist"
+  specialization: "Content Repurposer"
+  
+  # Tagline shown under agent name in right panel (optional)
+  # Example: "Create. Design. Deliver.", "Track. Analyze. Convert."
+  tagline: "Repurpose. Convert. Deliver."
+  
+  # Avatar URL (optional - you can use dicebear API with any seed word)
+  # Just change the seed= parameter to any word
+  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer"
+  
+  # Custom initial welcome message (REQUIRED - supports HTML)
+  # Use <br> for line breaks (not \n), supports HTML links and formatting
+  # Include onboarding link for setup: <a href="/agent-settings/YOUR_AGENT_ID" target="_blank" style="color: #7c3aed; text-decoration: underline;">Complete Onboarding</a>
+  # Example: 'Hi! I''m your Agent Name. Ready to help!<br><br>📋 <a href="/agent-settings/your_agent_id" target="_blank" style="color: #7c3aed; text-decoration: underline;">Complete Setup</a>'
+  initial_message: 'Hey there! 🎨 I''m your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I''ll help you generate engaging social media posts based on that content!'
+  
+  # Agent capabilities shown in right panel (list your agent's main features)
+  capabilities:
+    - "Primary capability or main function"
+    - "Secondary feature or service provided"
+    - "Integration or special functionality"
+    - "Advanced feature or automation"
+    - "Additional service or tool"
+  
+  # Recent actions shown in right panel (can be examples or dynamic)
+  # These help users understand what the agent has done recently
+  recent_actions:
+    - "Completed a recent task or project"
+    - "Generated content or performed analysis"
+    - "Processed user request or data"
+    - "Automated workflow or integration"
+
+# N8N Webhook Configuration
+n8n:
+  # Your N8N webhook URL - replace with your specific webhook
+  webhook_url: https://n8n.theaiteam.uk/webhook/content_repurposer
+  image_generator_url: https://n8n.theaiteam.uk/webhook/image_generator
+
+# UI Configuration - FIGMA SOURCE (for generating custom interfaces)
+# This section is used by the import script to generate React components from Figma
+ui:
+  # Page type - Choose ONE:
+  # - "multi_page" = Creates carousel with multiple pages from Figma
+  # - "standard" = Creates single chat interface (no Figma needed)
+  page_type: "standard"
+  
+  # ===== OPTION 1: Figma API URLs =====
+  # Get these from Figma: File menu > Share > Copy link
+  # For multiple pages, separate with commas
+  # Leave empty if using deployed URLs instead
+  figma_url: ''
+  
+  # ===== OPTION 2: Deployed Figma URLs =====
+  # Get these from Figma prototype or deployed sites
+  # For multiple pages, separate with commas
+  # Make sure each URL ends with /
+  # Example format:
+  # figma_deployed_url: >
+  #   https://your-design-12345.figma.site/,
+  #   https://another-page-67890.figma.site/,
+  #   https://third-page-11111.figma.site/
+  figma_deployed_url: ''
+  
+  # Figma access token - KEEP THIS AS IS (uses environment variable)
+  figma_token: figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd
+
+# ===========================================
+# AUTO-GENERATED SECTION - DO NOT EDIT MANUALLY
+# ===========================================
+# This section is automatically generated when you run:
+# node scripts/import-multipage-agent.js agents/configs/your_agent_id.yaml
+# 
+# UI Configuration - GENERATED OUTPUT (automatically created from ui section above)
+ui_use:
+  page_type: single_page
+  pages:
+    - name: Your Agent Dashboard
+      path: your-agent-dashboard
+      order: 1
+      validated: true
+
+# Interface Configuration
+interface:
+  type: chat
+  features:
+    - text_input
+    - file_upload
+    - voice_input
+    - suggestion_buttons
+
+# Suggestion buttons shown in chat interface
+suggestions:
+  - "First suggested action"
+  - "Second helpful prompt"
+  - "Third common task"
+  - "Fourth useful command"
+  - "Fifth popular request"
+  - "Sixth frequent operation"
+
+# Agent personality configuration
+personality:
+  # Communication tone: creative, professional, casual, friendly, formal, enthusiastic
+  tone: professional
+  # Interaction style: helpful, trendy, concise, detailed, supportive, direct
+  style: helpful
+  # Response approach: proactive, reactive, consultative, solution_focused, data_driven
+  approach: proactive
