@@ -112,7 +112,7 @@ departments:
     icon: "📊"
     icon_color: "#FB252A"
     agents:
-      - sol_bot
+      - SOL
     
   management_strategy:
     title: "Management & Strategy"
@@ -136,7 +136,7 @@ departments:
     icon: "🎧"
     icon_color: "#51A2FF"
     agents:
-      - sol_bot
+      - SOL
     
   finance:
     title: "Finance"
@@ -168,7 +168,7 @@ agents:
   smm_assistant:
     config_file: "smm_assistant"
     
-  sol_bot:
+  SOL:
     config_file: "sol_bot"
     
   # Test/Template agents (usually not shown in production)

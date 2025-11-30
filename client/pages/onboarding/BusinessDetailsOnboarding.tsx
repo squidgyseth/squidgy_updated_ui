@@ -57,9 +57,9 @@ export default function BusinessDetailsOnboarding() {
 
         // Load existing onboarding data
         if (userId) {
-          const existingData = await onboardingDataService.getOnboardingData(userId);
-          if (!existingData || !existingData.websiteDetailsCompleted) {
-            // If they haven't completed previous steps, redirect back
+          const existingData = await onboardingDataService.getOnboardingProgress(userId);
+          if (!existingData || !existingData.completed_steps?.includes(5)) {
+            // If they haven't completed website details step, redirect back
             navigate('/onboarding/website-details');
           }
 
@@ -174,18 +174,17 @@ export default function BusinessDetailsOnboarding() {
       });
 
       // Update onboarding progress and mark as complete
-      const existingData = await onboardingDataService.getOnboardingData(userId) || {};
-      await onboardingDataService.updateOnboardingData(userId, {
+      const existingData = await onboardingDataService.getOnboardingProgress(userId) || {};
+      await onboardingDataService.saveOnboardingProgress({
         ...existingData,
-        businessDetailsCompleted: true,
-        businessName: businessName.trim(),
-        businessEmail: businessEmail.trim(),
-        completedAt: new Date().toISOString(),
-        currentStep: 7
+        user_id: userId,
+        current_step: 7,
+        completed_steps: [...(existingData.completed_steps || []), 6],
+        last_updated: new Date().toISOString()
       });
 
       // Mark onboarding as complete
-      await onboardingDataService.markOnboardingComplete(userId);
+      await onboardingDataService.markOnboardingCompleted(userId);
 
       toast.success('Business details saved successfully');
       navigate('/onboarding/welcome');
