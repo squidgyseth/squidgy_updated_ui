@@ -111,9 +111,11 @@ export default function PersonalizeAssistants() {
           const agentsByDepartment = await flowLoader.getAgentsByDepartment(assistantData.selectedDepartments);
           
           // Search through all departments to find the selected assistants
+          const addedAgentIds = new Set<string>(); // Track added agents to prevent duplicates
+          
           Object.values(agentsByDepartment).forEach(departmentAgents => {
             departmentAgents.forEach((agent: {id: string} & AgentConfig) => {
-              if (assistantData.selectedAssistants!.includes(agent.id)) {
+              if (assistantData.selectedAssistants!.includes(agent.id) && !addedAgentIds.has(agent.id)) {
                 selectedAssistantDetails.push({
                   id: agent.id,
                   name: agent.name,
@@ -121,6 +123,7 @@ export default function PersonalizeAssistants() {
                   iconColor: agent.icon_color,
                   agentConfig: agent.agent_config_file
                 });
+                addedAgentIds.add(agent.id); // Mark this agent as added
               }
             });
           });
