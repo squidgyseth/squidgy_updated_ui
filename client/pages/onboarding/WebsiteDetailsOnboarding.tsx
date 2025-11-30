@@ -69,8 +69,8 @@ export default function WebsiteDetailsOnboarding() {
 
         // Load existing onboarding data
         if (userId) {
-          const existingData = await onboardingDataService.getOnboardingData(userId);
-          if (!existingData || !existingData.personalizedAssistants) {
+          const existingData = await onboardingDataService.getOnboardingProgress(userId);
+          if (!existingData || !existingData.selected_assistants) {
             // If they haven't completed previous steps, redirect back
             navigate('/onboarding/personalize');
           }
@@ -162,13 +162,13 @@ export default function WebsiteDetailsOnboarding() {
       );
 
       // Update onboarding progress
-      const existingData = await onboardingDataService.getOnboardingData(userId) || {};
-      await onboardingDataService.updateOnboardingData(userId, {
+      const existingData = await onboardingDataService.getOnboardingProgress(userId) || {};
+      await onboardingDataService.saveOnboardingProgress({
         ...existingData,
-        websiteDetailsCompleted: true,
-        websiteUrl,
-        companyDescription,
-        currentStep: 6
+        user_id: userId,
+        current_step: 6,
+        completed_steps: [...(existingData.completed_steps || []), 5],
+        last_updated: new Date().toISOString()
       });
 
       toast.success('Website details saved successfully');
