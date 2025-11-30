@@ -49,7 +49,8 @@ import BusinessTypeSelection from "./pages/onboarding/BusinessTypeSelection";
 import SupportAreasSelection from "./pages/onboarding/SupportAreasSelection";
 import ChooseAssistants from "./pages/onboarding/ChooseAssistants";
 import PersonalizeAssistants from "./pages/onboarding/PersonalizeAssistants";
-import CompanyDetails from "./pages/onboarding/CompanyDetails";
+import WebsiteDetailsOnboarding from "./pages/onboarding/WebsiteDetailsOnboarding";
+import BusinessDetailsOnboarding from "./pages/onboarding/BusinessDetailsOnboarding";
 import Welcome from "./pages/onboarding/Welcome";
 import ComprehensiveOnboarding from "./components/onboarding/ComprehensiveOnboarding";
 
@@ -302,9 +303,14 @@ const App = () => (
               <PersonalizeAssistants />
             </ProtectedRoute>
           } />
-          <Route path="/ai-onboarding/company-details" element={
+          <Route path="/onboarding/website-details" element={
             <ProtectedRoute>
-              <ComprehensiveOnboarding />
+              <WebsiteDetailsOnboarding />
+            </ProtectedRoute>
+          } />
+          <Route path="/onboarding/business-details" element={
+            <ProtectedRoute>
+              <BusinessDetailsOnboarding />
             </ProtectedRoute>
           } />
           <Route path="/ai-onboarding/welcome" element={

@@ -34,8 +34,8 @@ export default function PersonalizeAssistants() {
   const [communicationToneOptions, setCommunicationToneOptions] = useState<Array<{ value: string; label: string; description: string }>>([]);
   const [progress, setProgress] = useState<OnboardingProgress>({
     currentStep: 4,
-    totalSteps: 6,
-    stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Personalize', 'Company Details', 'Welcome']
+    totalSteps: 8,
+    stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Configure Assistants', 'Website Details', 'Business Details', 'Welcome']
   });
   const [loading, setLoading] = useState(true);
 
@@ -231,7 +231,7 @@ export default function PersonalizeAssistants() {
       localStorage.setItem('onboarding_state', JSON.stringify(onboardingState));
 
       toast.success('Your AI assistants have been personalized and are ready to work!');
-      navigate('/ai-onboarding/company-details');
+      navigate('/onboarding/website-details');
 
     } catch (error) {
       console.error('Error saving personalization settings:', error);
@@ -244,7 +244,7 @@ export default function PersonalizeAssistants() {
   };
 
   const handleSkip = () => {
-    navigate('/ai-onboarding/company-details');
+    navigate('/onboarding/website-details');
   };
 
   const getPersonalization = (assistantId: string): AssistantPersonalization => {

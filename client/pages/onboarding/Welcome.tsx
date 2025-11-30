@@ -20,8 +20,8 @@ export default function Welcome() {
   const flowLoader = BusinessFlowLoader.getInstance();
 
   const [progress, setProgress] = useState<OnboardingProgress>({
-    currentStep: 6,
-    totalSteps: 6,
+    currentStep: 8,
+    totalSteps: 8,
     stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Personalize', 'Company Details', 'Welcome']
   });
 
@@ -36,7 +36,7 @@ export default function Welcome() {
         // Load flow configuration
         const flowConfig = await flowLoader.getFlowConfig();
         setProgress({
-          currentStep: 6,
+          currentStep: 8,
           totalSteps: flowConfig.total_steps,
           stepTitles: flowConfig.step_titles
         });

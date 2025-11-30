@@ -41,11 +41,13 @@ personalization:
 
 # Flow Configuration
 flow:
-  total_steps: 6
+  total_steps: 8
   step_titles:
     - "Business Type"
     - "Support Areas" 
     - "Choose Assistants"
-    - "Personalize"
-    - "Company Details"
+    - "Configure Assistants"
+    - "Website Details"
+    - "Business Details"
     - "Welcome"
+    - "Setup Complete"
