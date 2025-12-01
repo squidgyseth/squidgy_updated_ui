@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
+import { useCompanyBranding } from '../hooks/useCompanyBranding';
 import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
 
@@ -21,6 +22,7 @@ interface TeamMember {
 export default function TeamSettings() {
   const navigate = useNavigate();
   const { user, profile, isReady, isAuthenticated } = useUser();
+  const { faviconUrl } = useCompanyBranding();
   const [loading, setLoading] = useState(false);
   const [inviting, setInviting] = useState(false);
   
@@ -301,10 +303,38 @@ export default function TeamSettings() {
                   <tr key={member.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 ${member.avatarColor} rounded-full flex items-center justify-center`}>
-                          <span className="text-sm font-medium text-gray-700">
-                            {member.avatarText}
-                          </span>
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-gray-100">
+                          {faviconUrl ? (
+                            <img 
+                              src={faviconUrl} 
+                              alt="Company favicon" 
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                // Hide company favicon and show Squidgy logo
+                                e.currentTarget.style.display = 'none';
+                                const container = e.currentTarget.parentElement;
+                                const squidgyImg = container?.querySelector('.squidgy-fallback') as HTMLElement;
+                                if (squidgyImg) squidgyImg.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <img 
+                            src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64" 
+                            alt="Squidgy logo" 
+                            className={`w-6 h-6 squidgy-fallback ${faviconUrl ? 'hidden' : ''}`}
+                            onError={(e) => {
+                              // Hide Squidgy logo and show text initials
+                              e.currentTarget.style.display = 'none';
+                              const container = e.currentTarget.parentElement;
+                              const textDiv = container?.querySelector('.text-fallback') as HTMLElement;
+                              if (textDiv) textDiv.classList.remove('hidden');
+                            }}
+                          />
+                          <div className={`${member.avatarColor} w-full h-full flex items-center justify-center text-fallback hidden`}>
+                            <span className="text-sm font-medium text-gray-700">
+                              {member.avatarText}
+                            </span>
+                          </div>
                         </div>
                         <div>
                           <div className="text-sm font-medium text-gray-900">{member.name}</div>

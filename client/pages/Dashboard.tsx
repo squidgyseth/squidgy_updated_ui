@@ -75,26 +75,38 @@ export default function Index() {
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900">
-                    {isLoading ? 'Loading...' : `${companyName} Team`}
+                    {isLoading ? 'Loading...' : (companyName && companyName.trim() !== '' ? `${companyName} Team` : 'Team')}
                   </p>
                   <p className="text-xs text-gray-500">
                     {user?.email || 'admin@example.com'}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center overflow-hidden">
-                  {!isLoading && faviconUrl ? (
+                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+                  {!isLoading && faviconUrl && faviconUrl.trim() !== '' ? (
                     <img 
                       src={faviconUrl} 
                       alt={`${companyName} logo`} 
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        // Fallback to checkmark icon if favicon fails to load
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling.style.display = 'block';
+                        // Fallback to Squidgy logo if company favicon fails to load
+                        e.currentTarget.src = "https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64";
                       }}
                     />
-                  ) : null}
-                  <CheckCircle className="w-6 h-6 text-white" style={{display: faviconUrl ? 'none' : 'block'}} />
+                  ) : (
+                    <img 
+                      src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64" 
+                      alt="Squidgy logo" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // If Squidgy logo fails, show checkmark fallback
+                        e.currentTarget.style.display = 'none';
+                        const container = e.currentTarget.parentElement;
+                        if (container) {
+                          container.innerHTML = '<div class="w-full h-full bg-green-600 rounded-full flex items-center justify-center"><svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></div>';
+                        }
+                      }}
+                    />
+                  )}
                 </div>
               </div>
             </div>
