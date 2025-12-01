@@ -98,11 +98,38 @@ export default function BusinessDetailsOnboarding() {
           } else {
             // Try to pre-populate from website analysis
             const websiteData = await getWebsiteAnalysis(userId);
-            if (websiteData?.website_url) {
-              const detectedCountry = detectCountryFromWebsite(websiteData.website_url);
-              if (detectedCountry) {
-                setCountry(detectedCountry);
+            if (websiteData) {
+              // Extract business name from company description
+              let extractedBusinessName = "";
+              if (websiteData.company_description) {
+                // Try to extract business name from various patterns
+                const nameMatch = websiteData.company_description.match(/^([^-|*•]+)/);
+                if (nameMatch) {
+                  extractedBusinessName = nameMatch[1].trim();
+                  // Remove common prefixes/suffixes
+                  extractedBusinessName = extractedBusinessName.replace(/^(company name:|name:)/i, '').trim();
+                }
               }
+              
+              // Detect country from website URL
+              const detectedCountry = detectCountryFromWebsite(
+                websiteData.website_url || "", 
+                websiteData.company_description
+              );
+              
+              // Populate form with website analysis data
+              setBusinessName(extractedBusinessName || "");
+              setCountry(detectedCountry);
+              setDataLoaded(true);
+              
+              console.log('🔄 BusinessDetails: Populated from website analysis data:', {
+                extractedBusinessName,
+                detectedCountry,
+                websiteUrl: websiteData.website_url,
+                originalDescription: websiteData.company_description
+              });
+            } else {
+              setDataLoaded(true);
             }
           }
         }
