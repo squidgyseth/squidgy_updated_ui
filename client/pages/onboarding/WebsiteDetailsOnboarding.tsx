@@ -13,6 +13,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { websiteApi, callN8NWebhook, saveWebsiteAnalysis, getWebsiteAnalysis } from '@/lib/api';
 import { createProxyUrl, maskStorageUrlsInText } from '@/utils/urlMasking';
 import newsletterWebhookService from '@/services/newsletterWebhookService';
+// Import webhook debugger for development
+if (import.meta.env.DEV) {
+  import('../../utils/webhookDebugger');
+}
 
 // Tag Chip Component
 function TagChip({ label, onRemove }: { label: string; onRemove: () => void }) {
@@ -879,7 +883,7 @@ export default function WebsiteDetailsOnboarding() {
           )}
           
           <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200 mt-2">
-            💡 <strong>Tip:</strong> You can analyze your website using the button above OR by pasting the URL in the chat on the right - Seth will automatically extract your business information!
+            💡 <strong>Tip:</strong> Click "Analyze Website" to automatically extract your business information from your website!
           </div>
         </div>
 

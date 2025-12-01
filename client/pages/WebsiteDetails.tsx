@@ -79,7 +79,16 @@ export default function WebsiteDetails() {
           setBusinessNiche(existingData.business_niche || "");
           setTags(existingData.tags || []);
           setScreenshotUrl(existingData.screenshot_url || "");
-          setFaviconUrl(existingData.favicon_url || "");
+          
+          // Handle favicon URL and clean up any trailing characters
+          if (existingData.favicon_url) {
+            let cleanFaviconUrl = existingData.favicon_url;
+            if (cleanFaviconUrl.endsWith('?)')) {
+              cleanFaviconUrl = cleanFaviconUrl.slice(0, -2);
+            }
+            setFaviconUrl(cleanFaviconUrl);
+          }
+          
           setDataLoaded(true);
         } else {
           console.log('🔍 WebsiteDetails: No existing data found');
