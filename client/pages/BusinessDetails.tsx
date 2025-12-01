@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { X, Menu, Building2, Building, HelpCircle, Trash2, Plus, ChevronDown } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, Menu, Building2, Building, HelpCircle, Trash2, Plus, ChevronDown, Upload, File } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ChatInterface } from "../components/ChatInterface";
 import { UserAccountDropdown } from "../components/UserAccountDropdown";
@@ -9,8 +9,15 @@ import { saveBusinessDetails, getBusinessDetails, getWebsiteAnalysis } from "../
 import { useUser } from "../hooks/useUser";
 import { useToast } from "../hooks/use-toast";
 import { COUNTRIES, getCountryByCode, formatPhoneNumber, detectCountryFromWebsite, getPhoneNumberPlaceholder } from "../utils/phoneNumberUtils";
+import { supabase } from "../lib/supabase";
 
-
+interface CompanyMaterial {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  file: File;
+}
 
 // Main Business Details Page Component
 export default function BusinessDetails() {
@@ -22,6 +29,12 @@ export default function BusinessDetails() {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [emergencyNumbers, setEmergencyNumbers] = useState(['']);
   const [addressMethod, setAddressMethod] = useState('lookup'); // 'lookup' or 'manual'
+  
+  // File upload state variables
+  const [uploadedMaterials, setUploadedMaterials] = useState<CompanyMaterial[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form state variables
   const [businessName, setBusinessName] = useState('');
@@ -139,6 +152,140 @@ export default function BusinessDetails() {
     const updated = [...emergencyNumbers];
     updated[index] = value;
     setEmergencyNumbers(updated);
+  };
+
+  // Backend integration for company materials
+  const saveCompanyMaterial = async (file: File, fileUrl: string) => {
+    try {
+      const formData = new FormData();
+      formData.append('firm_user_id', userId);
+      formData.append('file_name', file.name);
+      formData.append('file_url', fileUrl);
+      formData.append('agent_id', 'personal_assistant'); // Use personal_assistant for company materials
+      formData.append('agent_name', 'Personal Assistant');
+
+      const response = await fetch('http://localhost:8000/api/knowledge-base/file', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save company material');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error saving company material:', error);
+      throw error;
+    }
+  };
+
+  // File upload handlers
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    processFiles(files);
+  };
+
+  const processFiles = async (files: File[]) => {
+    if (!userId) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to upload files.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    
+    const newMaterials: CompanyMaterial[] = [];
+    
+    for (const file of files) {
+      try {
+        // Upload to Supabase storage first
+        const timestamp = Date.now();
+        const fileName = `${userId}_${timestamp}_${file.name}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('company')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          console.error('Supabase upload error:', uploadError);
+          toast({
+            title: "Upload Failed",
+            description: `Failed to upload ${file.name}`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('company')
+          .getPublicUrl(fileName);
+
+        // Save to knowledge base using the same API as agent-settings
+        const result = await saveCompanyMaterial(file, publicUrl);
+        
+        if (result.success) {
+          newMaterials.push({
+            id: result.file_id || `${timestamp}-${Math.random()}`,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            file
+          });
+          
+          console.log('Company material saved successfully:', result.file_id);
+        } else {
+          throw new Error('Failed to save to knowledge base');
+        }
+        
+      } catch (error) {
+        console.error('Error processing file:', error);
+        toast({
+          title: "Upload Failed",
+          description: `Failed to process ${file.name}`,
+          variant: "destructive",
+        });
+      }
+    }
+    
+    if (newMaterials.length > 0) {
+      setUploadedMaterials(prev => [...prev, ...newMaterials]);
+      toast({
+        title: "Files Uploaded",
+        description: `Successfully uploaded ${newMaterials.length} file(s)`,
+      });
+    }
+    
+    setUploading(false);
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragging(false);
+    
+    const files = Array.from(event.dataTransfer.files);
+    processFiles(files);
+  };
+
+  const removeUploadedFile = (id: string) => {
+    setUploadedMaterials(prev => prev.filter(material => material.id !== id));
+    toast({
+      title: "File Removed",
+      description: "File has been removed from upload queue",
+    });
   };
 
   const handleContinue = async () => {
@@ -465,6 +612,132 @@ export default function BusinessDetails() {
                 placeholder={addressMethod === 'lookup' ? 'Will be auto-filled' : 'Enter postal code'}
                 readOnly={addressMethod === 'lookup'}
               />
+            </div>
+
+            {/* Upload Company Materials Section */}
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Upload className="h-6 w-6 text-purple-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Upload company materials</h2>
+                <p className="text-sm text-gray-600 max-w-xs mx-auto">
+                  Share promotional materials, logos, brochures, or any documents that help explain your business and services.
+                </p>
+              </div>
+
+              <div 
+                className={`border-2 border-dashed rounded-lg p-8 transition-all ${
+                  isDragging 
+                    ? 'border-blue-400 bg-blue-50 scale-105' 
+                    : uploading
+                    ? 'border-green-400 bg-green-50'
+                    : 'border-gray-300 bg-gray-50'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <div className="text-center">
+                  <div className={`w-12 h-12 bg-white rounded-lg flex items-center justify-center mx-auto mb-4 shadow-sm transition-colors ${
+                    uploading ? 'bg-green-100' : isDragging ? 'bg-blue-100' : 'bg-white'
+                  }`}>
+                    {uploading ? (
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+                    ) : (
+                      <Upload className={`h-6 w-6 transition-colors ${
+                        isDragging ? 'text-blue-600' : 'text-blue-500'
+                      }`} />
+                    )}
+                  </div>
+                  <div className="mb-3">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="text-blue-600 hover:text-blue-700 font-medium underline disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {uploading ? 'Uploading...' : 'Click to upload'}
+                    </button>
+                    <span className="text-gray-600"> or drag and drop</span>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    PDF, PNG, JPG, SVG (max. 10MB each)
+                  </p>
+                  {isDragging && !uploading && (
+                    <p className="text-sm text-blue-600 font-medium mt-2">
+                      Drop your files here!
+                    </p>
+                  )}
+                  {uploading && (
+                    <p className="text-sm text-green-600 font-medium mt-2">
+                      Processing files...
+                    </p>
+                  )}
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.png,.jpg,.jpeg,.svg,.doc,.docx"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </div>
+
+              {/* Suggested Documents */}
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mt-4">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <div className="w-5 h-5 bg-blue-400 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">i</span>
+                    </div>
+                  </div>
+                  <div className="ml-3">
+                    <h4 className="text-sm font-medium text-blue-800 mb-2">
+                      Suggested documents to upload
+                    </h4>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• Company logos and brand assets</li>
+                      <li>• Promotional brochures or flyers</li>
+                      <li>• Service catalogs or product sheets</li>
+                      <li>• Case studies or project portfolios</li>
+                      <li>• Certifications or accreditations</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Uploaded Files List */}
+              {uploadedMaterials.length > 0 && (
+                <div className="mt-6 bg-white border border-gray-200 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                    Uploaded Files ({uploadedMaterials.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {uploadedMaterials.map((material) => (
+                      <div key={material.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border">
+                        <div className="flex items-center space-x-3">
+                          <File className="h-4 w-4 text-blue-500" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{material.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {(material.size / 1024 / 1024).toFixed(1)} MB
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeUploadedFile(material.id)}
+                          className="text-red-500 hover:text-red-700 p-1"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Continue Button */}
