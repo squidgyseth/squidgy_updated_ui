@@ -1080,12 +1080,18 @@ export default function SocialMediaPreview() {
                       {!isLoading && faviconUrl ? (
                         <img 
                           src={faviconUrl} 
-                          alt={`${companyName} logo`} 
+                          alt={`${companyName || 'Company'} logo`} 
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            // Fallback to company initials if favicon fails to load
-                            e.currentTarget.style.display = 'none';
-                            (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                            // Fallback to Squidgy logo if favicon fails to load
+                            const squidgyLogoUrl = 'https://lirp.cdn-website.com/d8120025/dms3rep/multi/opt/social-image-88w.png';
+                            if (e.currentTarget.src !== squidgyLogoUrl) {
+                              e.currentTarget.src = squidgyLogoUrl;
+                            } else {
+                              // If Squidgy logo also fails, hide image and show initials
+                              e.currentTarget.style.display = 'none';
+                              (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                            }
                           }}
                         />
                       ) : null}
@@ -1093,12 +1099,20 @@ export default function SocialMediaPreview() {
                         className="text-sm font-semibold text-gray-600" 
                         style={{ display: (!isLoading && faviconUrl) ? 'none' : 'flex' }}
                       >
-                        {isLoading ? '...' : (companyName ? companyName.substring(0, 2).toUpperCase() : 'YC')}
+                        {isLoading ? '...' : (
+                          companyName && companyName !== 'Squidgy' 
+                            ? companyName.substring(0, 2).toUpperCase() 
+                            : 'SQ'
+                        )}
                       </span>
                     </div>
                     <div>
                       <p className="font-semibold text-sm">
-                        {isLoading ? 'Loading...' : (companyName || 'Your Company')}
+                        {isLoading ? 'Loading...' : (
+                          companyName && companyName !== 'Squidgy' 
+                            ? companyName 
+                            : 'Squidgy AI'
+                        )}
                       </p>
                       <p className="text-xs text-gray-500">2 hours ago</p>
                     </div>

@@ -26,55 +26,69 @@ export function useCompanyBranding(): CompanyBranding {
       }
 
       try {
-        // Fetch the most recent website analysis for this user
-        const { data: websiteAnalysisArray, error } = await supabase
-          .from('website_analysis')
-          .select('website_url, favicon_url, business_domain')
-          .eq('firm_user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(1);
+        // Fetch both website analysis and business details in parallel
+        const [websiteResult, businessResult] = await Promise.all([
+          supabase
+            .from('website_analysis')
+            .select('website_url, favicon_url, business_domain, company_description')
+            .eq('firm_user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1),
+          supabase
+            .from('business_details')
+            .select('business_name')
+            .eq('firm_user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+        ]);
 
-        if (error) {
-          console.log('Error fetching website analysis:', error);
-          setBranding(prev => ({ ...prev, isLoading: false }));
-          return;
-        }
+        const websiteAnalysis = websiteResult.data && websiteResult.data.length > 0 ? websiteResult.data[0] : null;
+        const businessDetails = businessResult.data && businessResult.data.length > 0 ? businessResult.data[0] : null;
 
-        // Check if we have any results
-        const websiteAnalysis = websiteAnalysisArray && websiteAnalysisArray.length > 0 ? websiteAnalysisArray[0] : null;
-
-        if (websiteAnalysis) {
-          // Clean up favicon URL by removing any trailing "?)"
-          let cleanFaviconUrl = websiteAnalysis.favicon_url || '';
+        // Clean up favicon URL by removing any trailing "?)"
+        let cleanFaviconUrl = '';
+        if (websiteAnalysis?.favicon_url) {
+          cleanFaviconUrl = websiteAnalysis.favicon_url;
           if (cleanFaviconUrl.endsWith('?)')) {
             cleanFaviconUrl = cleanFaviconUrl.slice(0, -2);
           }
-
-          // Extract company name from business domain or website URL
-          let companyName = 'Squidgy';
-          if (websiteAnalysis.business_domain) {
-            companyName = websiteAnalysis.business_domain;
-          } else if (websiteAnalysis.website_url) {
-            try {
-              const url = new URL(websiteAnalysis.website_url);
-              const domain = url.hostname.replace('www.', '');
-              companyName = domain.split('.')[0];
-              // Capitalize first letter
-              companyName = companyName.charAt(0).toUpperCase() + companyName.slice(1);
-            } catch (e) {
-              console.log('Error parsing website URL:', e);
-            }
-          }
-
-          setBranding({
-            companyName,
-            faviconUrl: cleanFaviconUrl,
-            websiteUrl: websiteAnalysis.website_url || '',
-            isLoading: false
-          });
-        } else {
-          setBranding(prev => ({ ...prev, isLoading: false }));
         }
+
+        // Extract company name with priority: business_name > business_domain > company_description > website_url
+        let companyName = 'Squidgy';
+        
+        if (businessDetails?.business_name) {
+          // First priority: business_name from business_details table
+          companyName = businessDetails.business_name;
+        } else if (websiteAnalysis?.business_domain) {
+          // Second priority: business_domain from website_analysis
+          companyName = websiteAnalysis.business_domain;
+        } else if (websiteAnalysis?.company_description) {
+          // Third priority: extract from company_description
+          const nameMatch = websiteAnalysis.company_description.match(/^([^-|*•]+)/);
+          if (nameMatch) {
+            companyName = nameMatch[1].trim();
+            companyName = companyName.replace(/^(company name:|name:)/i, '').trim();
+          }
+        } else if (websiteAnalysis?.website_url) {
+          // Last resort: extract from website URL
+          try {
+            const url = new URL(websiteAnalysis.website_url);
+            const domain = url.hostname.replace('www.', '');
+            companyName = domain.split('.')[0];
+            // Capitalize first letter
+            companyName = companyName.charAt(0).toUpperCase() + companyName.slice(1);
+          } catch (e) {
+            console.log('Error parsing website URL:', e);
+          }
+        }
+
+        setBranding({
+          companyName,
+          faviconUrl: cleanFaviconUrl,
+          websiteUrl: websiteAnalysis?.website_url || '',
+          isLoading: false
+        });
       } catch (error) {
         console.error('Error fetching company branding:', error);
         setBranding(prev => ({ ...prev, isLoading: false }));
