@@ -125,6 +125,38 @@ export default function WebsiteDetailsOnboarding() {
     loadConfiguration();
   }, [isReady, userId, navigate, flowLoader]);
 
+  // Listen for website analysis completion from chat
+  useEffect(() => {
+    const handleWebsiteAnalysisComplete = (event: CustomEvent) => {
+      const { url, result } = event.detail;
+      
+      // Update URL field if it matches
+      if (url) {
+        setWebsiteUrl(url);
+      }
+      
+      // Update form fields with analysis results if available
+      if (result.company_description) setCompanyDescription(result.company_description);
+      if (result.value_proposition) setValueProposition(result.value_proposition);
+      if (result.business_niche) setBusinessNiche(result.business_niche);
+      if (result.tags && Array.isArray(result.tags)) setTags(result.tags);
+      
+      // Update screenshot URL state if provided
+      if (result.screenshot_url) {
+        setScreenshotUrl(result.screenshot_url);
+        console.log('✅ Screenshot URL updated from WebSocket event:', result.screenshot_url);
+      }
+      
+      toast.success("Website analyzed successfully from chat");
+    };
+
+    window.addEventListener('websiteAnalysisComplete', handleWebsiteAnalysisComplete as EventListener);
+    
+    return () => {
+      window.removeEventListener('websiteAnalysisComplete', handleWebsiteAnalysisComplete as EventListener);
+    };
+  }, []);
+
   // Helper function to parse agent response and extract business information
   const parseAgentResponse = (agentResponse: string) => {
     try {
@@ -353,10 +385,231 @@ export default function WebsiteDetailsOnboarding() {
     }
   };
 
+  // Helper function to parse agent response and extract business information
+  const parseAgentResponse = (agentResponse: string) => {
+    try {
+      console.log('🔍 Parsing agent response:', agentResponse);
+      
+      // First extract URLs before cleaning
+      // Extract screenshot URL from the original response (before cleaning)
+      const screenshotMatch = agentResponse.match(/https?:\/\/[^\s]*supabase[^\s]*\/screenshots\/[^\s)]*/i) ||
+                             agentResponse.match(/(https?:\/\/[^\s]+\.(png|jpg|jpeg|webp))/i);
+      
+      // Extract favicon URL from the original response (before cleaning) 
+      const faviconMatch = agentResponse.match(/https?:\/\/[^\s]*supabase[^\s]*\/favicons\/[^\s)]*/i) ||
+                          agentResponse.match(/https?:\/\/[^\s]*favicon[^\s)]*/i);
+      
+      console.log('🔍 Screenshot match result:', screenshotMatch);
+      console.log('🔍 Favicon match result:', faviconMatch);
+      
+      // Clean the response by removing ALL HTML and markdown links first
+      let cleanedResponse = agentResponse
+        .replace(/<a[^>]*>.*?<\/a>/gi, '') // Remove all HTML anchor tags and their content
+        .replace(/<[^>]*>/g, '') // Remove any other HTML tags
+        .replace(/\[View[^\]]*\]\([^)]*\)/gi, '') // Remove all [View...] markdown links (including empty parentheses)
+        .replace(/\[Download[^\]]*\]\([^)]*\)/gi, '') // Remove all [Download...] markdown links (including empty parentheses)
+        .replace(/\[Link\]\([^)]*\)/gi, '') // Remove [Link] markdown (including empty parentheses)
+        .replace(/\*\*/g, '') // Remove bold markdown
+        .replace(/https?:\/\/[^\s]+/gi, '') // Remove any remaining URLs
+        .replace(/I've captured the following.*$/i, '') // Remove capture message and everything after
+        .replace(/Could you please confirm.*$/i, '') // Remove confirmation request
+        .replace(/- Screenshot:.*$/i, '') // Remove screenshot line
+        .replace(/- Favicon:.*$/i, '') // Remove favicon line
+        .replace(/\n+/g, ' ') // Replace multiple newlines with space
+        .replace(/\s+/g, ' '); // Normalize whitespace
+      
+      // Look for company description
+      const companyMatch = cleanedResponse.match(/company name:\s*([^|.]+?)(?:\.|$)/i) || 
+                          cleanedResponse.match(/description:\s*([^|.]+?)(?:\.|$)/i) ||
+                          cleanedResponse.match(/what.*company.*does[:\s]*([^|.]+?)(?:\.|$)/i);
+      
+      // Look for value proposition/takeaways
+      const valueMatch = cleanedResponse.match(/takeaways:\s*([^|.]+?)(?:\.|$)/i) ||
+                        cleanedResponse.match(/value proposition[:\s]*([^|.]+?)(?:\.|$)/i);
+      
+      // Look for business niche - extract only until period or end of line
+      const nicheMatch = cleanedResponse.match(/niche:\s*([^|.]+?)(?:\.|$)/i) ||
+                        cleanedResponse.match(/market[:\s]*([^|.]+?)(?:\.|$)/i);
+      
+      // Look for tags and limit to top 5
+      const tagsMatch = cleanedResponse.match(/tags:\s*([^|.]+?)(?:\.|$)/i);
+      let extractedTags: string[] = [];
+      if (tagsMatch && tagsMatch[1]) {
+        const allTags = tagsMatch[1].split(/[,]/).map(tag => tag.trim()).filter(tag => tag.length > 0);
+        // Limit to top 5 tags only
+        extractedTags = allTags.slice(0, 5);
+      }
+      
+      // Helper to clean extracted values
+      const cleanExtractedValue = (value: string | null) => {
+        if (!value) return null;
+        return value
+          .replace(/\s+/g, ' ') // Normalize whitespace
+          .trim();
+      };
+      
+      return {
+        companyDescription: cleanExtractedValue(companyMatch ? companyMatch[1] : null),
+        valueProposition: cleanExtractedValue(valueMatch ? valueMatch[1] : null),
+        businessNiche: cleanExtractedValue(nicheMatch ? nicheMatch[1] : null),
+        tags: extractedTags.length > 0 ? extractedTags : null,
+        screenshotUrl: screenshotMatch ? screenshotMatch[0].replace(/\)$/, '') : null,
+        faviconUrl: faviconMatch ? faviconMatch[0].replace(/\)$/, '') : null
+      };
+    } catch (error) {
+      console.error('Error parsing agent response:', error);
+      return {
+        companyDescription: null,
+        valueProposition: null,
+        businessNiche: null,
+        tags: null,
+        screenshotUrl: null,
+        faviconUrl: null
+      };
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       addTag();
+    }
+  };
+
+  const handleAnalyzeWebsite = async () => {
+    if (!isReady || !websiteUrl.trim()) return;
+    
+    setAnalyzing(true);
+    setScreenshotLoading(true);
+    clearProgress();
+    
+    // Clear all previous form data before starting new analysis
+    setCompanyDescription("");
+    setValueProposition("");
+    setBusinessNiche("");
+    setTags([]);
+    setScreenshotUrl("");
+    setFaviconUrl("");
+    
+    // Add detailed progress steps
+    const progressStepsList = [
+      { message: '🔍 Finding website...', delay: 500 },
+      { message: '🌐 Connecting to server...', delay: 800 },
+      { message: '📄 Accessing home page...', delay: 1200 },
+      { message: '🏗️ Analyzing site structure...', delay: 1000 },
+      { message: '📝 Scanning page content...', delay: 1500 },
+      { message: '📸 Capturing screenshot...', delay: 2000 },
+      { message: '🎨 Getting favicon...', delay: 800 },
+      { message: '🔎 Extracting business data...', delay: 1200 },
+      { message: '🧠 Processing with AI...', delay: 2500 }
+    ];
+
+    // Show progress steps with realistic timing
+    const showProgressSteps = async () => {
+      for (const step of progressStepsList) {
+        await new Promise(resolve => setTimeout(resolve, step.delay));
+        addProgressStep(step.message);
+      }
+    };
+
+    // Start progress steps (don't await so it runs parallel to actual work)
+    showProgressSteps();
+    
+    try {
+      // Ensure URL has protocol and www
+      let formattedUrl = websiteUrl;
+      
+      // Add https:// if no protocol
+      if (!formattedUrl.startsWith('http')) {
+        formattedUrl = `https://${formattedUrl}`;
+      }
+      
+      // Add www. if not present (but skip for subdomains)
+      const urlObj = new URL(formattedUrl);
+      const hostname = urlObj.hostname.toLowerCase();
+      
+      // Only add www. if:
+      // 1. It doesn't already have www.
+      // 2. It's not already a subdomain (no dots before the main domain)
+      // 3. It's not localhost or an IP address
+      if (!hostname.startsWith('www.') && 
+          hostname.split('.').length === 2 && // Only domain.tld format
+          !hostname.includes('localhost') &&
+          !/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) { // Not an IP address
+        urlObj.hostname = `www.${hostname}`;
+        formattedUrl = urlObj.toString();
+      }
+      
+      if (!userId) {
+        toast.error("Please log in to analyze websites");
+        return;
+      }
+
+      // Generate unique IDs for the N8N request
+      const requestId = crypto.randomUUID();
+      const currentTime = new Date().toISOString();
+
+      // Prepare N8N webhook payload
+      const n8nPayload = {
+        user_id: userId,
+        user_mssg: formattedUrl, // Send the website URL as the message
+        session_id: `${sessionId}_SOL_${Date.now()}`,
+        agent_name: "SOL", // Using SOL as specified
+        timestamp_of_call_made: currentTime,
+        request_id: requestId
+      };
+
+      console.log('Sending N8N webhook request:', n8nPayload);
+      
+      // Call N8N webhook
+      const n8nResponse = await callN8NWebhook(n8nPayload);
+      
+      console.log('N8N webhook response:', n8nResponse);
+      
+      // Parse the agent response to extract business information
+      if (n8nResponse.agent_response) {
+        const parsedData = parseAgentResponse(n8nResponse.agent_response);
+        
+        // Update form fields with extracted data (always set, even if empty)
+        setCompanyDescription(parsedData.companyDescription || "");
+        setValueProposition(parsedData.valueProposition || "");
+        setBusinessNiche(parsedData.businessNiche || "");
+        setTags(parsedData.tags || []);
+        
+        // Update screenshot URL state (React will handle UI update)
+        if (parsedData.screenshotUrl) {
+          setScreenshotUrl(parsedData.screenshotUrl);
+          console.log('✅ Screenshot URL extracted and state updated:', parsedData.screenshotUrl);
+        } else {
+          console.log('⚠️ No screenshot URL found in agent response');
+        }
+        
+        // Update favicon URL state
+        if (parsedData.faviconUrl) {
+          setFaviconUrl(parsedData.faviconUrl);
+          console.log('✅ Favicon URL extracted:', parsedData.faviconUrl);
+        } else {
+          console.log('⚠️ No favicon URL found in agent response');
+        }
+        
+        toast.success("Website analyzed successfully");
+      } else {
+        throw new Error('No agent response received from N8N webhook');
+      }
+    } catch (error) {
+      console.error('Website analysis error:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to analyze website");
+    } finally {
+      setAnalyzing(false);
+      setScreenshotLoading(false);
+      clearProgress();
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTag();
     }
   };
 
@@ -584,7 +837,7 @@ export default function WebsiteDetailsOnboarding() {
               className="flex-1"
             />
             <Button 
-              onClick={analyzeWebsite}
+              onClick={handleAnalyzeWebsite}
               disabled={!websiteUrl.trim() || analyzing || !isReady}
               className="bg-blue-600 hover:bg-blue-700"
             >
@@ -626,7 +879,7 @@ export default function WebsiteDetailsOnboarding() {
           )}
           
           <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200 mt-2">
-            💡 <strong>Tip:</strong> Click "Analyze Website" to automatically extract your business information!
+            💡 <strong>Tip:</strong> You can analyze your website using the button above OR by pasting the URL in the chat on the right - Seth will automatically extract your business information!
           </div>
         </div>
 
@@ -710,7 +963,7 @@ export default function WebsiteDetailsOnboarding() {
               className="w-full p-3 pr-10 border border-grey-500 rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
             />
             <button
-              onClick={addTag}
+              onClick={handleAddTag}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-primary hover:text-squidgy-purple transition-colors"
             >
               <ChevronDown className="w-5 h-5" />
