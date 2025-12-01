@@ -75,7 +75,7 @@ export function AddressAutocomplete({
 
   // Fetch address suggestions from Nominatim API
   useEffect(() => {
-    if (value.length < 3) {
+    if (!value || value.length < 3) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
@@ -216,7 +216,7 @@ export function AddressAutocomplete({
         <input
           ref={inputRef}
           type="text"
-          value={value}
+          value={value || ''}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
@@ -261,7 +261,7 @@ export function AddressAutocomplete({
       )}
 
       {/* No results message */}
-      {showSuggestions && suggestions.length === 0 && value.length >= 3 && !isLoading && (
+      {showSuggestions && suggestions.length === 0 && value && value.length >= 3 && !isLoading && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg p-4">
           <div className="text-sm text-gray-500 text-center">
             No addresses found. Try typing more of your address.

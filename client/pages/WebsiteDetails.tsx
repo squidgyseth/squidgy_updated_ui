@@ -370,7 +370,9 @@ export default function WebsiteDetails() {
   }, [toast]);
 
   const handleContinue = async () => {
+    console.log('🔍 WebsiteDetails: handleContinue called', { userId, isReady });
     if (!isReady || !userId) {
+      console.error('🔍 WebsiteDetails: Authentication check failed', { userId, isReady });
       toast({
         title: "Authentication required",
         description: "Please log in to continue",
@@ -401,6 +403,13 @@ export default function WebsiteDetails() {
         analysis_status: 'completed'
       };
 
+      // Double-check userId before API call
+      if (!userId) {
+        console.error('🔍 WebsiteDetails: userId became undefined before API call');
+        throw new Error('User authentication lost. Please refresh the page and try again.');
+      }
+
+      console.log('🔍 WebsiteDetails: About to save website analysis with userId:', userId);
       const savedData = await saveWebsiteAnalysis({
         ...websiteAnalysisData,
         isAnalyzeButton: true // Continue button includes screenshots/favicons
@@ -750,7 +759,7 @@ export default function WebsiteDetails() {
             {/* Continue Button */}
             <button
               onClick={handleContinue}
-              disabled={loading || !isReady}
+              disabled={loading || !isReady || !userId}
               className="w-full bg-squidgy-gradient text-white font-bold text-sm py-3 px-5 rounded-button hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading ? "Saving..." : "Continue"}
