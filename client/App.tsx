@@ -313,6 +313,11 @@ const App = () => (
               <BusinessDetailsOnboarding />
             </ProtectedRoute>
           } />
+          <Route path="/onboarding/welcome" element={
+            <ProtectedRoute>
+              <Welcome />
+            </ProtectedRoute>
+          } />
           <Route path="/ai-onboarding/welcome" element={
             <ProtectedRoute>
               <Welcome />

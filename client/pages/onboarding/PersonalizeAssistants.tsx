@@ -13,6 +13,7 @@ import {
 } from '@/types/onboarding.types';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
+import { ChevronDown, ChevronUp, Settings } from 'lucide-react';
 import BusinessFlowLoader, { AgentConfig } from '@/services/businessFlowLoader';
 import { onboardingRouter } from '@/services/onboardingRouter';
 import { onboardingDataService } from '@/services/onboardingDataService';
@@ -23,6 +24,8 @@ interface SelectedAssistant {
   icon: string;
   iconColor: string;
   agentConfig?: string | null;
+  presetupRequired?: boolean;
+  presetupPage?: string | null;
 }
 
 export default function PersonalizeAssistants() {
@@ -32,9 +35,11 @@ export default function PersonalizeAssistants() {
   const [selectedAssistants, setSelectedAssistants] = useState<SelectedAssistant[]>([]);
   const [avatarStyleOptions, setAvatarStyleOptions] = useState<Array<{ value: string; label: string; description: string }>>([]);
   const [communicationToneOptions, setCommunicationToneOptions] = useState<Array<{ value: string; label: string; description: string }>>([]);
+  const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(new Set());
+  const [activeConfigComponent, setActiveConfigComponent] = useState<{[key: string]: React.ComponentType<any>}>({});
   const [progress, setProgress] = useState<OnboardingProgress>({
     currentStep: 4,
-    totalSteps: 8,
+    totalSteps: 6,
     stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Configure Assistants', 'Website Details', 'Business Details', 'Welcome']
   });
   const [loading, setLoading] = useState(true);
@@ -69,7 +74,6 @@ export default function PersonalizeAssistants() {
         
         if (userId) {
           const savedData = await onboardingRouter.loadOnboardingDataForStep(userId, 4);
-          console.log('🔍 PersonalizeAssistants: Loaded data from database:', savedData);
           if (savedData) {
             assistantData = {
               selectedAssistants: savedData.selectedAssistants,
@@ -102,7 +106,6 @@ export default function PersonalizeAssistants() {
         }
         
         // Process assistant data if available
-        console.log('🔍 PersonalizeAssistants: Final assistantData:', assistantData);
         if (assistantData.selectedAssistants && assistantData.selectedAssistants.length > 0 && assistantData.selectedDepartments) {
           // Find assistant details using the hierarchical flow
           const selectedAssistantDetails: SelectedAssistant[] = [];
@@ -121,14 +124,15 @@ export default function PersonalizeAssistants() {
                   name: agent.name,
                   icon: agent.icon,
                   iconColor: agent.icon_color,
-                  agentConfig: agent.agent_config_file
+                  agentConfig: agent.agent_config_file,
+                  presetupRequired: agent.presetup_required || false,
+                  presetupPage: agent.presetup_page || null
                 });
                 addedAgentIds.add(agent.id); // Mark this agent as added
               }
             });
           });
 
-          console.log('Found selected assistants:', selectedAssistantDetails);
           setSelectedAssistants(selectedAssistantDetails);
           
           // Convert existing personalizations to the expected format
@@ -153,8 +157,6 @@ export default function PersonalizeAssistants() {
             }));
             setPersonalizations(initialPersonalizations);
           }
-        } else {
-          console.log('No selected assistants found');
         }
       } catch (error) {
         console.error('Error loading personalization configuration:', error);
@@ -263,6 +265,44 @@ export default function PersonalizeAssistants() {
     };
     
     return found || defaultPersonalization;
+  };
+
+  const toggleConfigExpansion = async (assistantId: string) => {
+    setExpandedConfigs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(assistantId)) {
+        newSet.delete(assistantId);
+      } else {
+        newSet.add(assistantId);
+        // Load the configuration component dynamically when expanding
+        loadConfigComponent(assistantId);
+      }
+      return newSet;
+    });
+  };
+
+  const loadConfigComponent = async (assistantId: string) => {
+    const assistant = selectedAssistants.find(a => a.id === assistantId);
+    if (!assistant?.presetupPage) return;
+
+    // Dynamic component mapping based on presetup_page
+    const componentMap: Record<string, () => Promise<{ default: React.ComponentType<any> }>> = {
+      '/solar-config': () => import('../../pages/SolarConfig'),
+      // Add more configuration components here as needed
+    };
+
+    try {
+      const importFn = componentMap[assistant.presetupPage];
+      if (importFn) {
+        const component = await importFn();
+        setActiveConfigComponent(prev => ({
+          ...prev,
+          [assistantId]: component.default
+        }));
+      }
+    } catch (error) {
+      console.error(`Failed to load config component for ${assistantId}:`, error);
+    }
   };
 
   if (loading || !isReady) {
@@ -395,6 +435,61 @@ export default function PersonalizeAssistants() {
                     </p>
                   </div>
                 </div>
+
+                {/* Presetup Configuration Section */}
+                {assistant.presetupRequired && (
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <button
+                      onClick={() => toggleConfigExpansion(assistant.id)}
+                      className="w-full flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Settings className="w-5 h-5 text-amber-600" />
+                        <div className="text-left">
+                          <p className="font-semibold text-amber-800 font-['Open_Sans']">
+                            Setup Required
+                          </p>
+                          <p className="text-sm text-amber-600 font-['Open_Sans']">
+                            This assistant needs initial configuration to work properly
+                          </p>
+                        </div>
+                      </div>
+                      {expandedConfigs.has(assistant.id) ? (
+                        <ChevronUp className="w-5 h-5 text-amber-600" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-amber-600" />
+                      )}
+                    </button>
+
+                    {expandedConfigs.has(assistant.id) && (
+                      <div className="mt-4">
+                        {activeConfigComponent[assistant.id] ? (
+                          // Render the embedded configuration component
+                          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                            <div className="p-0 [&_.min-h-screen]:min-h-0 [&_.min-h-screen]:bg-transparent [&_.sticky]:static [&_.max-w-7xl]:max-w-none [&_.max-w-4xl]:max-w-none [&_.px-6]:px-0 [&_.py-8]:py-0 [&_.shadow-xl]:shadow-none [&_.bg-white\\/80]:bg-transparent">
+                              {React.createElement(activeConfigComponent[assistant.id])}
+                            </div>
+                          </div>
+                        ) : (
+                          // Loading state while component loads
+                          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                            <div className="text-center">
+                              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+                              </div>
+                              <h4 className="text-lg font-semibold text-gray-900 font-['Open_Sans'] mb-2">
+                                Loading {assistant.name} Configuration...
+                              </h4>
+                              <p className="text-gray-600 font-['Open_Sans']">
+                                Please wait while we prepare the configuration interface.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           );

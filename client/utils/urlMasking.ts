@@ -14,16 +14,33 @@ export const isSupabaseUrl = (url: string): boolean => {
  * This would typically go through your backend to serve the image
  */
 export const createProxyUrl = (originalUrl: string, resourceType: 'avatar' | 'image' | 'file' = 'image'): string => {
-  if (!originalUrl || !isSupabaseUrl(originalUrl)) {
+  if (!originalUrl) {
+    return originalUrl;
+  }
+
+  // If it's already a proxy URL, return as-is to prevent double encoding
+  if (originalUrl.startsWith('/api/storage/')) {
+    return originalUrl;
+  }
+
+  // If it's not a Supabase URL, return as-is
+  if (!isSupabaseUrl(originalUrl)) {
     return originalUrl;
   }
 
   // Extract the file path from the Supabase URL
   const urlParts = originalUrl.split('/storage/v1/object/public/');
   if (urlParts.length > 1) {
-    const filePath = urlParts[1];
+    let filePath = urlParts[1];
+    
+    // Remove any query parameters and handle them separately
+    const [pathOnly, queryString] = filePath.split('?');
+    filePath = pathOnly;
+    
     // Create a masked URL that goes through your backend
-    return `/api/storage/${resourceType}/${encodeURIComponent(filePath)}`;
+    // Don't double-encode if it's already encoded
+    const encodedPath = filePath.includes('%') ? filePath : encodeURIComponent(filePath);
+    return `/api/storage/${resourceType}/${encodedPath}${queryString ? '?' + queryString : ''}`;
   }
 
   // Fallback - return a generic endpoint

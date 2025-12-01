@@ -169,7 +169,7 @@ agents:
     config_file: "smm_assistant"
     
   SOL:
-    config_file: "sol_bot"
+    config_file: "SOL"
     
   # Test/Template agents (usually not shown in production)
   agent_template:

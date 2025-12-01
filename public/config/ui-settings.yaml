@@ -41,7 +41,7 @@ personalization:
 
 # Flow Configuration
 flow:
-  total_steps: 8
+  total_steps: 6
   step_titles:
     - "Business Type"
     - "Support Areas" 

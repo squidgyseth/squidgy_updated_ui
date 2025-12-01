@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { OnboardingProgress } from '@/types/onboarding.types';
@@ -18,6 +18,8 @@ interface OnboardingLayoutProps {
   continueDisabled?: boolean;
   showSkip?: boolean;
   className?: string;
+  hideStepIndicator?: boolean;
+  customStepText?: string;
 }
 
 export function OnboardingLayout({
@@ -31,7 +33,9 @@ export function OnboardingLayout({
   continueText = "Continue",
   continueDisabled = false,
   showSkip = true,
-  className = ""
+  className = "",
+  hideStepIndicator = false,
+  customStepText
 }: OnboardingLayoutProps) {
   const navigate = useNavigate();
 
@@ -59,15 +63,21 @@ export function OnboardingLayout({
             {/* Step Info */}
             <div className="flex items-center gap-4">
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#FB252A] to-[#6017E8] text-white flex items-center justify-center text-sm font-bold">
-                {progress.currentStep}
+                {customStepText === "Setup Complete!" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  progress.currentStep
+                )}
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 font-['Open_Sans']">
                   {stepTitle}
                 </h1>
-                <p className="text-sm text-gray-600 font-['Open_Sans']">
-                  Step {progress.currentStep} of {progress.totalSteps}
-                </p>
+                {!hideStepIndicator && (
+                  <p className="text-sm text-gray-600 font-['Open_Sans']">
+                    {customStepText || `Step ${progress.currentStep} of ${progress.totalSteps}`}
+                  </p>
+                )}
               </div>
             </div>
 

@@ -27,19 +27,21 @@ export function useCompanyBranding(): CompanyBranding {
 
       try {
         // Fetch the most recent website analysis for this user
-        const { data: websiteAnalysis, error } = await supabase
+        const { data: websiteAnalysisArray, error } = await supabase
           .from('website_analysis')
           .select('website_url, favicon_url, business_domain')
           .eq('firm_user_id', userId)
           .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
+          .limit(1);
 
         if (error) {
-          console.log('No website analysis found, using default Squidgy branding');
+          console.log('Error fetching website analysis:', error);
           setBranding(prev => ({ ...prev, isLoading: false }));
           return;
         }
+
+        // Check if we have any results
+        const websiteAnalysis = websiteAnalysisArray && websiteAnalysisArray.length > 0 ? websiteAnalysisArray[0] : null;
 
         if (websiteAnalysis) {
           // Clean up favicon URL by removing any trailing "?)"

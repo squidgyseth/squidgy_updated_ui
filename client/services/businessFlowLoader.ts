@@ -219,7 +219,9 @@ class BusinessFlowLoader {
           icon_color: agentData.agent.icon_color || '#6017E8',
           key_capabilities: agentData.agent.capabilities || [],
           specialization: agentData.agent.specialization,
-          tagline: agentData.agent.tagline
+          tagline: agentData.agent.tagline,
+          presetup_required: agentData.agent.presetup_required || false,
+          presetup_page: agentData.agent.presetup_page || null
         };
       }
       
@@ -240,14 +242,17 @@ class BusinessFlowLoader {
 
     for (const deptId of departmentIds) {
       const department = config.departments[deptId];
+      
       if (department) {
         const agents: Array<{id: string} & AgentConfig> = [];
         
         for (const agentId of department.agents) {
           const agentRef = config.agents[agentId];
+          
           if (agentRef?.config_file) {
             // Load actual agent details from config file
             const agentDetails = await this.loadAgentFromConfigFile(agentRef.config_file);
+            
             if (agentDetails) {
               agents.push({
                 id: agentId,
@@ -257,7 +262,9 @@ class BusinessFlowLoader {
                 icon_color: agentDetails.icon_color || '#6017E8',
                 is_recommended: true, // Can be configured in business-flow if needed
                 agent_config_file: agentRef.config_file,
-                key_capabilities: agentDetails.key_capabilities || []
+                key_capabilities: agentDetails.key_capabilities || [],
+                presetup_required: agentDetails.presetup_required || false,
+                presetup_page: agentDetails.presetup_page || null
               });
             }
           }

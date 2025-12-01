@@ -20,9 +20,9 @@ export default function Welcome() {
   const flowLoader = BusinessFlowLoader.getInstance();
 
   const [progress, setProgress] = useState<OnboardingProgress>({
-    currentStep: 8,
-    totalSteps: 8,
-    stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Personalize', 'Company Details', 'Welcome']
+    currentStep: 6,
+    totalSteps: 6,
+    stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Personalize', 'Website Details', 'Business Details']
   });
 
   useEffect(() => {
@@ -36,8 +36,8 @@ export default function Welcome() {
         // Load flow configuration
         const flowConfig = await flowLoader.getFlowConfig();
         setProgress({
-          currentStep: 8,
-          totalSteps: flowConfig.total_steps,
+          currentStep: 6,
+          totalSteps: 6,
           stepTitles: flowConfig.step_titles
         });
 
@@ -146,7 +146,7 @@ export default function Welcome() {
   };
 
   const handleBack = () => {
-    navigate('/ai-onboarding/company-details');
+    navigate('/onboarding/business-details');
   };
 
   if (loading || !isReady || !onboardingData) {
@@ -166,11 +166,12 @@ export default function Welcome() {
     <OnboardingLayout
       progress={progress}
       stepTitle="Welcome to Squidgy!"
-      stepDescription={`Congratulations! Your AI team is ready to transform how you work.`}
-      onBack={() => navigate('/ai-onboarding/company-details')}
+      stepDescription={`You've completed all ${progress.totalSteps} steps! Your AI team is ready to transform how you work.`}
+      onBack={() => navigate('/onboarding/business-details')}
       onContinue={handleGetStarted}
       continueText="Get Started"
       showSkip={false}
+      customStepText="Setup Complete!"
     >
       <div className="max-w-4xl mx-auto text-center">
           {/* Squidgy Star Icon - Smaller and Round */}
