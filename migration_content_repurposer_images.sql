@@ -1,9 +1,18 @@
 -- Migration script to populate content_repurposer_images table from history_content_repurposer data
 
--- First, add unique constraint to prevent duplicate posts
-ALTER TABLE content_repurposer_images 
-ADD CONSTRAINT IF NOT EXISTS unique_user_post_id 
-UNIQUE (user_id, post_id);
+-- First, add unique constraint to prevent duplicate posts (only if it doesn't exist)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'unique_user_post_id' 
+        AND conrelid = 'content_repurposer_images'::regclass
+    ) THEN
+        ALTER TABLE content_repurposer_images 
+        ADD CONSTRAINT unique_user_post_id 
+        UNIQUE (user_id, post_id);
+    END IF;
+END $$;
 
 -- Create a function to parse JSON content and insert into content_repurposer_images
 CREATE OR REPLACE FUNCTION migrate_content_to_images(
