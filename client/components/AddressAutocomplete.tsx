@@ -28,16 +28,33 @@ interface AddressAutocompleteProps {
 // Helper to parse Nominatim response into our AddressResult format
 const parseNominatimResponse = (nominatimResult: any): AddressResult => {
   const address = nominatimResult.address || {};
+  
+  // Better handling for international addresses
+  const city = address.city || 
+               address.town || 
+               address.village || 
+               address.hamlet || 
+               address.municipality || 
+               address.district ||
+               address.locality;
+               
+  // State/Province handling for different countries
+  const state = address.state || 
+                address.province || 
+                address.region || 
+                address.county ||
+                address.state_district;
+  
   return {
     formatted_address: nominatimResult.display_name,
     street_number: address.house_number,
-    street_name: address.road,
-    city: address.city || address.town || address.village || address.hamlet,
-    suburb: address.suburb,
-    state: address.state,
-    postal_code: address.postcode,
+    street_name: address.road || address.street || address.path,
+    city: city,
+    suburb: address.suburb || address.neighbourhood || address.quarter,
+    state: state,
+    postal_code: address.postcode || address.postal_code || address.zip,
     country: address.country,
-    country_code: address.country_code,
+    country_code: address.country_code?.toUpperCase(),
     lat: nominatimResult.lat,
     lon: nominatimResult.lon,
   };
@@ -73,6 +90,13 @@ export function AddressAutocomplete({
     };
   }, []);
 
+  // Reset suggestions when country changes
+  useEffect(() => {
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setSelectedIndex(-1);
+  }, [country]);
+
   // Fetch address suggestions from Nominatim API
   useEffect(() => {
     if (!value || value.length < 3) {
@@ -95,16 +119,23 @@ export function AddressAutocomplete({
           format: 'json',
           addressdetails: '1',
           limit: '5',
+          'accept-language': 'en',
         });
 
         // Add country code to bias results if available
-        if (country) {
-            params.append('countrycodes', country.toLowerCase());
+        // Support both 2-letter and 3-letter country codes
+        if (country && country.length >= 2) {
+          // Convert to lowercase and handle special cases
+          let countryCode = country.toLowerCase();
+          // Handle common country code mappings
+          if (countryCode === 'gb') countryCode = 'gb,uk'; // UK addresses might be under either code
+          if (countryCode === 'us') countryCode = 'us,usa';
+          params.append('countrycodes', countryCode);
         }
 
         const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
           headers: {
-            'User-Agent': 'SquidgyApp/1.0 (contact@example.com)', // Nominatim requires a user agent
+            'User-Agent': 'SquidgyApp/1.0', // Nominatim requires a user agent
           },
         });
 

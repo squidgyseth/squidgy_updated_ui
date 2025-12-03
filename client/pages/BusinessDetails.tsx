@@ -491,7 +491,17 @@ export default function BusinessDetails() {
             <div className="mb-6">
               <label className="block text-sm font-semibold text-text-primary mb-2">Country</label>
               <div className="relative">
-                <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full p-3 pl-10 pr-10 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent appearance-none">
+                <select 
+                  value={country} 
+                  onChange={(e) => {
+                    setCountry(e.target.value);
+                    // Clear address fields when country changes
+                    setAddress('');
+                    setCity('');
+                    setState('');
+                    setPostalCode('');
+                  }} 
+                  className="w-full p-3 pl-10 pr-10 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent appearance-none">
                   {COUNTRIES.map((countryOption) => (
                     <option key={countryOption.code} value={countryOption.code}>
                       {countryOption.flag} {countryOption.name}
