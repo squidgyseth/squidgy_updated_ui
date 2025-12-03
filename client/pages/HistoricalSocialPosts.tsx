@@ -12,6 +12,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import ChatHistoryService, { SocialContentHistory } from '../services/chatHistoryService';
+import { PLATFORM_NAMES, mapToStandardPlatformName, getPlatformColor } from '../constants/platforms';
 
 interface ParsedSocialPost {
   id: string;
@@ -100,7 +101,7 @@ export default function HistoricalSocialPosts() {
         Object.entries(socialMediaContent.LinkedIn).forEach(([key, post]: [string, any]) => {
           posts.push({
             id: `linkedin-${postId++}`,
-            platform: 'LinkedIn',
+            platform: PLATFORM_NAMES.LINKEDIN,
             type: 'post',
             caption: post.Caption || '',
             imagePrompt: post.ImagePrompt || '',
@@ -114,7 +115,7 @@ export default function HistoricalSocialPosts() {
         Object.entries(socialMediaContent.InstagramFacebook).forEach(([key, post]: [string, any]) => {
           posts.push({
             id: `instagram-${postId++}`,
-            platform: 'Instagram',
+            platform: PLATFORM_NAMES.INSTAGRAM_FACEBOOK,
             type: 'post',
             caption: post.Caption || '',
             imagePrompt: post.ImagePrompt || '',
@@ -128,7 +129,7 @@ export default function HistoricalSocialPosts() {
         Object.entries(socialMediaContent.TikTokReels).forEach(([key, video]: [string, any]) => {
           posts.push({
             id: `tiktok-${postId++}`,
-            platform: 'TikTok',
+            platform: PLATFORM_NAMES.TIKTOK_REELS,
             type: 'video',
             caption: video.Script || '',
             videoConcept: video.Idea || '',
@@ -170,33 +171,41 @@ export default function HistoricalSocialPosts() {
     window.open(`/social-preview?${params.toString()}`, '_blank');
   };
 
-  const getPlatformColor = (platform: string) => {
-    switch (platform) {
-      case 'LinkedIn': return 'bg-blue-600';
-      case 'Instagram': return 'bg-gradient-to-r from-purple-500 to-pink-500';
-      case 'TikTok': return 'bg-black';
-      default: return 'bg-gray-600';
-    }
-  };
+  // Use standardized platform color function from constants
 
   const getPlatformIcon = (platform: string, size: string = 'w-5 h-5') => {
-    switch (platform) {
-      case 'LinkedIn': 
+    // Standardize platform name first
+    const standardPlatform = mapToStandardPlatformName(platform);
+    
+    switch (standardPlatform) {
+      case PLATFORM_NAMES.LINKEDIN: 
         return (
           <svg className={size} viewBox="0 0 24 24" fill="currentColor">
             <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
           </svg>
         );
-      case 'Instagram': 
+      case PLATFORM_NAMES.INSTAGRAM_FACEBOOK: 
         return (
           <svg className={size} viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12c0-3.403 2.759-6.162 6.162-6.162s6.162 2.759 6.162 6.162c0 3.403-2.759 6.162-6.162 6.162s-6.162-2.759-6.162-6.162zm12.162 0c0-2.298-1.864-4.162-4.162-4.162s-4.162 1.864-4.162 4.162c0 2.298 1.864 4.162 4.162 4.162s4.162-1.864 4.162-4.162zm2.588-6.461c0 .796-.646 1.442-1.442 1.442s-1.442-.646-1.442-1.442.646-1.441 1.442-1.441 1.442.645 1.442 1.441z"/>
           </svg>
         );
-      case 'TikTok': 
+      case PLATFORM_NAMES.TIKTOK_REELS: 
         return (
           <svg className={size} viewBox="0 0 24 24" fill="currentColor">
             <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+          </svg>
+        );
+      case PLATFORM_NAMES.GENERAL: 
+        return (
+          <svg className={size} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        );
+      case PLATFORM_NAMES.ADDITIONAL_ASSETS:
+        return (
+          <svg className={size} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
           </svg>
         );
       default: 
@@ -481,13 +490,13 @@ export default function HistoricalSocialPosts() {
                   {/* Platform indicators */}
                   <div className="flex items-center gap-3 mt-3 text-xs text-gray-500">
                     <span className="inline-flex items-center gap-1">
-                      {getPlatformIcon('LinkedIn', 'w-3 h-3')} LinkedIn
+                      {getPlatformIcon(PLATFORM_NAMES.LINKEDIN, 'w-3 h-3')} {PLATFORM_NAMES.LINKEDIN}
                     </span>
                     <span className="inline-flex items-center gap-1">
-                      {getPlatformIcon('Instagram', 'w-3 h-3')} Instagram/Facebook
+                      {getPlatformIcon(PLATFORM_NAMES.INSTAGRAM_FACEBOOK, 'w-3 h-3')} {PLATFORM_NAMES.INSTAGRAM_FACEBOOK}
                     </span>
                     <span className="inline-flex items-center gap-1">
-                      {getPlatformIcon('TikTok', 'w-3 h-3')} TikTok/Reels
+                      {getPlatformIcon(PLATFORM_NAMES.TIKTOK_REELS, 'w-3 h-3')} {PLATFORM_NAMES.TIKTOK_REELS}
                     </span>
                   </div>
                 </div>
