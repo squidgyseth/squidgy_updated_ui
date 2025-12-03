@@ -1,6 +1,44 @@
 -- Migration script to populate content_repurposer_images table from history_content_repurposer data
 
--- First, add unique constraint to prevent duplicate posts (only if it doesn't exist)
+-- First, check and clean up any existing duplicates before adding unique constraint
+DO $$
+DECLARE
+    duplicate_count INTEGER;
+BEGIN
+    -- Count duplicates before cleanup
+    SELECT COUNT(*) INTO duplicate_count
+    FROM (
+        SELECT user_id, post_id, COUNT(*) as cnt
+        FROM content_repurposer_images
+        GROUP BY user_id, post_id
+        HAVING COUNT(*) > 1
+    ) duplicates;
+    
+    IF duplicate_count > 0 THEN
+        RAISE NOTICE 'Found % duplicate post combinations. Cleaning up...', duplicate_count;
+        
+        -- Clean up duplicates, keeping the most recent one
+        WITH duplicates AS (
+          SELECT user_id, post_id, 
+                 ROW_NUMBER() OVER (PARTITION BY user_id, post_id ORDER BY created_date DESC) as rn
+          FROM content_repurposer_images
+        )
+        DELETE FROM content_repurposer_images 
+        WHERE id IN (
+          SELECT ci.id 
+          FROM content_repurposer_images ci
+          INNER JOIN duplicates d ON ci.user_id = d.user_id AND ci.post_id = d.post_id
+          WHERE d.rn > 1
+        );
+        
+        GET DIAGNOSTICS duplicate_count = ROW_COUNT;
+        RAISE NOTICE 'Cleaned up % duplicate records.', duplicate_count;
+    ELSE
+        RAISE NOTICE 'No duplicates found. Proceeding with constraint creation.';
+    END IF;
+END $$;
+
+-- Now add unique constraint to prevent duplicate posts (only if it doesn't exist)
 DO $$
 BEGIN
     IF NOT EXISTS (
