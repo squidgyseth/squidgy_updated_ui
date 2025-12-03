@@ -51,17 +51,30 @@ function convertLocalStorageContentToPosts(content: any): SocialPost[] {
   const posts: SocialPost[] = [];
   
   try {
+    // Handle error structure with raw JSON content
+    let processedContent = content;
+    if (content && content.error && content.raw) {
+      try {
+        // Extract JSON from markdown code blocks
+        const rawContent = content.raw.replace(/```json\n|\n```/g, '');
+        processedContent = JSON.parse(rawContent);
+      } catch (error) {
+        console.warn('❌ Failed to parse raw content from error structure:', error);
+        return posts;
+      }
+    }
+    
     // Handle array format (when content is wrapped in array)
     let socialMediaContent: SocialMediaContent;
     
-    if (Array.isArray(content) && content[0] && content[0].ContentRepurposerPosts) {
-      socialMediaContent = content[0].ContentRepurposerPosts;
-    } else if (content && content.ContentRepurposerPosts) {
-      socialMediaContent = content.ContentRepurposerPosts;
-    } else if (content && (content.LinkedIn || content.InstagramFacebook || content.TikTokReels)) {
-      socialMediaContent = content;
+    if (Array.isArray(processedContent) && processedContent[0] && processedContent[0].ContentRepurposerPosts) {
+      socialMediaContent = processedContent[0].ContentRepurposerPosts;
+    } else if (processedContent && processedContent.ContentRepurposerPosts) {
+      socialMediaContent = processedContent.ContentRepurposerPosts;
+    } else if (processedContent && (processedContent.LinkedIn || processedContent.InstagramFacebook || processedContent.TikTokReels)) {
+      socialMediaContent = processedContent;
     } else {
-      console.warn('❌ Unknown content format:', content);
+      console.warn('❌ Unknown content format:', processedContent);
       return posts;
     }
 
