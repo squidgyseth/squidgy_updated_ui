@@ -1,7 +1,11 @@
 -- Migration script to populate content_repurposer_images table from history_content_repurposer data
--- and create trigger for automatic population
 
--- First, let's create a function to parse JSON content and insert into content_repurposer_images
+-- First, add unique constraint to prevent duplicate posts
+ALTER TABLE content_repurposer_images 
+ADD CONSTRAINT IF NOT EXISTS unique_user_post_id 
+UNIQUE (user_id, post_id);
+
+-- Create a function to parse JSON content and insert into content_repurposer_images
 CREATE OR REPLACE FUNCTION migrate_content_to_images(
   p_user_id TEXT,
   p_agent_id TEXT,
@@ -205,11 +209,6 @@ $$ LANGUAGE plpgsql;
 
 -- Uncomment the following line if you want to migrate ALL existing content_repurposer records
 -- SELECT migrate_all_content_repurposer_records();
-
--- Add unique constraint to prevent duplicate posts
-ALTER TABLE content_repurposer_images 
-ADD CONSTRAINT unique_user_post_id 
-UNIQUE (user_id, post_id);
 
 -- Add some helpful comments
 COMMENT ON FUNCTION migrate_content_to_images IS 'Parses JSON content from content_repurposer and populates content_repurposer_images table - USE ONLY FOR MANUAL MIGRATION';
