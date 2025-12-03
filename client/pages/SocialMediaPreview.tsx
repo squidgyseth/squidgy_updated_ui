@@ -740,9 +740,33 @@ export default function SocialMediaPreview() {
     return acc;
   }, {} as Record<string, SocialPost[]>);
 
+  // Helper function to parse GeneralAssets (handles both string and array formats)
+  const parseGeneralAssets = (assets: any) => {
+    if (!assets) return null;
+    
+    const parseField = (field: any): string[] => {
+      if (!field) return [];
+      if (Array.isArray(field)) return field;
+      if (typeof field === 'string') {
+        // Split by pipe and clean up each item
+        return field.split('|').map(item => item.trim()).filter(item => item.length > 0);
+      }
+      return [];
+    };
+    
+    return {
+      Quotes: parseField(assets.Quotes),
+      DataPoints: parseField(assets.DataPoints),
+      Questions: parseField(assets.Questions)
+    };
+  };
+
+  // Parse GeneralAssets
+  const parsedGeneralAssets = parseGeneralAssets(generalAssets);
+  
   // Add GeneralAssets as a platform if it exists
   const platforms = Object.keys(groupedPosts);
-  if (generalAssets && (generalAssets.Quotes?.length > 0 || generalAssets.DataPoints?.length > 0 || generalAssets.Questions?.length > 0)) {
+  if (parsedGeneralAssets && (parsedGeneralAssets.Quotes?.length > 0 || parsedGeneralAssets.DataPoints?.length > 0 || parsedGeneralAssets.Questions?.length > 0)) {
     platforms.push('Additional Assets');
   }
   
@@ -825,7 +849,7 @@ export default function SocialMediaPreview() {
                     <span>{platform}</span>
                     <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
                       {platform === 'Additional Assets' 
-                        ? ((generalAssets?.Quotes?.length || 0) + (generalAssets?.DataPoints?.length || 0) + (generalAssets?.Questions?.length || 0))
+                        ? ((parsedGeneralAssets?.Quotes?.length || 0) + (parsedGeneralAssets?.DataPoints?.length || 0) + (parsedGeneralAssets?.Questions?.length || 0))
                         : groupedPosts[platform].length
                       }
                     </span>
@@ -842,20 +866,20 @@ export default function SocialMediaPreview() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'Additional Assets' ? (
           /* Show GeneralAssets when Additional Assets tab is selected */
-          generalAssets && (
+          parsedGeneralAssets && (
             <div className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Quotes */}
-                {generalAssets.Quotes && generalAssets.Quotes.length > 0 && (
+                {parsedGeneralAssets.Quotes && parsedGeneralAssets.Quotes.length > 0 && (
                   <div className="bg-blue-50 rounded-lg p-6">
                     <h3 className="font-medium text-blue-900 mb-4 flex items-center gap-2">
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
                       </svg>
-                      Quotes ({generalAssets.Quotes.length})
+                      Quotes ({parsedGeneralAssets.Quotes.length})
                     </h3>
                     <div className="space-y-3">
-                      {generalAssets.Quotes.map((quote: string, index: number) => (
+                      {parsedGeneralAssets.Quotes.map((quote: string, index: number) => (
                         <div key={index} className="bg-white rounded-lg p-4 shadow-sm">
                           <p className="text-blue-800 italic border-l-4 border-blue-300 pl-3">
                             {quote.replace(/^"/, '').replace(/"$/, '')}
@@ -873,16 +897,16 @@ export default function SocialMediaPreview() {
                 )}
 
                 {/* DataPoints */}
-                {generalAssets.DataPoints && generalAssets.DataPoints.length > 0 && (
+                {parsedGeneralAssets.DataPoints && parsedGeneralAssets.DataPoints.length > 0 && (
                   <div className="bg-green-50 rounded-lg p-6">
                     <h3 className="font-medium text-green-900 mb-4 flex items-center gap-2">
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
-                      Data Points ({generalAssets.DataPoints.length})
+                      Data Points ({parsedGeneralAssets.DataPoints.length})
                     </h3>
                     <div className="space-y-3">
-                      {generalAssets.DataPoints.map((dataPoint: string, index: number) => (
+                      {parsedGeneralAssets.DataPoints.map((dataPoint: string, index: number) => (
                         <div key={index} className="bg-white rounded-lg p-4 shadow-sm">
                           <p className="text-green-800 font-medium">
                             📊 {dataPoint}
@@ -900,16 +924,16 @@ export default function SocialMediaPreview() {
                 )}
 
                 {/* Questions */}
-                {generalAssets.Questions && generalAssets.Questions.length > 0 && (
+                {parsedGeneralAssets.Questions && parsedGeneralAssets.Questions.length > 0 && (
                   <div className="bg-purple-50 rounded-lg p-6">
                     <h3 className="font-medium text-purple-900 mb-4 flex items-center gap-2">
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                       </svg>
-                      Questions ({generalAssets.Questions.length})
+                      Questions ({parsedGeneralAssets.Questions.length})
                     </h3>
                     <div className="space-y-3">
-                      {generalAssets.Questions.map((question: string, index: number) => (
+                      {parsedGeneralAssets.Questions.map((question: string, index: number) => (
                         <div key={index} className="bg-white rounded-lg p-4 shadow-sm">
                           <p className="text-purple-800">
                             ❓ {question}
