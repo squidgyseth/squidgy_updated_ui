@@ -10,7 +10,19 @@ export default function SocialMediaPreview({ content, historyId }: SocialMediaPr
   // Parse the content to get platform counts
   const getPlatformCounts = () => {
     try {
-      const data = typeof content === 'string' ? JSON.parse(content) : content;
+      let data = typeof content === 'string' ? JSON.parse(content) : content;
+      
+      // Handle error structure with raw JSON content
+      if (data && data.error && data.raw) {
+        try {
+          // Extract JSON from markdown code blocks
+          const rawContent = data.raw.replace(/```json\n|\n```/g, '');
+          data = JSON.parse(rawContent);
+        } catch {
+          return {};
+        }
+      }
+      
       const counts: Record<string, number> = {};
       
       if (data.LinkedIn) {

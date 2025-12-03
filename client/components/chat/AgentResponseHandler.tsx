@@ -25,6 +25,21 @@ export default function AgentResponseHandler({
   const isSocialMediaContent = () => {
     try {
       const parsed = JSON.parse(response.agent_response);
+      
+      // Handle error structure with raw JSON content
+      if (parsed && parsed.error && parsed.raw) {
+        try {
+          // Extract JSON from markdown code blocks
+          const rawContent = parsed.raw.replace(/```json\n|\n```/g, '');
+          const innerParsed = JSON.parse(rawContent);
+          if (innerParsed && (innerParsed.LinkedIn || innerParsed.InstagramFacebook || innerParsed.TikTokReels || innerParsed.GeneralAssets)) {
+            return true;
+          }
+        } catch {
+          // If inner parsing fails, continue with outer checks
+        }
+      }
+      
       // Check for ContentRepurposerPosts structure
       if (Array.isArray(parsed) && parsed[0] && parsed[0].ContentRepurposerPosts) {
         return true;
@@ -33,7 +48,7 @@ export default function AgentResponseHandler({
         return true;
       }
       // Also check for direct social media keys
-      if (parsed && (parsed.LinkedIn || parsed.InstagramFacebook || parsed.TikTokReels)) {
+      if (parsed && (parsed.LinkedIn || parsed.InstagramFacebook || parsed.TikTokReels || parsed.GeneralAssets)) {
         return true;
       }
       return false;
