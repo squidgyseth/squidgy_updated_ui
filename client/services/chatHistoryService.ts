@@ -138,8 +138,8 @@ export class ChatHistoryService {
               // Store the database record ID in the saved record for later use
               savedRecord.content_repurposer_history_id = historyRecord.id;
               
-              // Create image records from extracted posts
-              const imageRecords = contentRepurposerParser.default.createImageRecords(parsedContent.posts, historyRecord);
+              // Create image records from extracted posts and general assets
+              const imageRecords = contentRepurposerParser.default.createImageRecords(parsedContent.posts, historyRecord, parsedContent.generalAssets);
               
               console.log(`✅ Saving ${imageRecords.length} posts to content_repurposer_images table`);
               const { data: insertedRecords, error: imageError } = await supabase

@@ -233,22 +233,144 @@ class ContentRepurposerParser {
   /**
    * Create image records for database insertion
    */
-  createImageRecords(posts: SocialMediaPost[], historyRecord: any): any[] {
-    return posts.map((post, index) => ({
-      user_id: historyRecord.user_id,
-      agent_id: 'content_repurposer',
-      platform: post.platform.toLowerCase(), // Use lowercase for database
-      post_id: `${historyRecord.session_id}_${post.platform.toLowerCase()}_${index + 1}`,
-      content: post.content,
-      image_url: null, // Will be generated on-demand
-      prompt: post.image_prompt || '',
-      generation_type: 'direct_parse',
-      session_id: historyRecord.session_id,
-      history_content_repurposer_id: historyRecord.id,
-      created_date: new Date().toISOString(),
-      updated_date: new Date().toISOString(),
-      in_use: true
-    }));
+  createImageRecords(posts: SocialMediaPost[], historyRecord: any, generalAssets?: any): any[] {
+    const records: any[] = [];
+    
+    // Add social media posts
+    posts.forEach((post, index) => {
+      records.push({
+        user_id: historyRecord.user_id,
+        agent_id: 'content_repurposer',
+        platform: post.platform.toLowerCase(), // Use lowercase for database
+        post_id: `${historyRecord.session_id}_${post.platform.toLowerCase()}_${index + 1}`,
+        content: post.content,
+        image_url: null, // Will be generated on-demand
+        prompt: post.image_prompt || '',
+        generation_type: 'direct_parse',
+        session_id: historyRecord.session_id,
+        history_content_repurposer_id: historyRecord.id,
+        created_date: new Date().toISOString(),
+        updated_date: new Date().toISOString(),
+        in_use: true
+      });
+    });
+    
+    // Add GeneralAssets (Additional Assets)
+    if (generalAssets) {
+      let assetIndex = 1;
+      
+      // Add quotes
+      if (generalAssets.quotes?.length) {
+        generalAssets.quotes.forEach((quote: string) => {
+          records.push({
+            user_id: historyRecord.user_id,
+            agent_id: 'content_repurposer',
+            platform: 'general', // Use 'general' for additional assets
+            post_id: `${historyRecord.session_id}_general_quote_${assetIndex}`,
+            content: quote,
+            image_url: null,
+            prompt: '',
+            generation_type: 'direct_parse',
+            session_id: historyRecord.session_id,
+            history_content_repurposer_id: historyRecord.id,
+            created_date: new Date().toISOString(),
+            updated_date: new Date().toISOString(),
+            in_use: true
+          });
+          assetIndex++;
+        });
+      }
+      
+      // Add tips
+      if (generalAssets.tips?.length) {
+        generalAssets.tips.forEach((tip: string) => {
+          records.push({
+            user_id: historyRecord.user_id,
+            agent_id: 'content_repurposer',
+            platform: 'general',
+            post_id: `${historyRecord.session_id}_general_tip_${assetIndex}`,
+            content: tip,
+            image_url: null,
+            prompt: '',
+            generation_type: 'direct_parse',
+            session_id: historyRecord.session_id,
+            history_content_repurposer_id: historyRecord.id,
+            created_date: new Date().toISOString(),
+            updated_date: new Date().toISOString(),
+            in_use: true
+          });
+          assetIndex++;
+        });
+      }
+      
+      // Add stats
+      if (generalAssets.stats?.length) {
+        generalAssets.stats.forEach((stat: string) => {
+          records.push({
+            user_id: historyRecord.user_id,
+            agent_id: 'content_repurposer',
+            platform: 'general',
+            post_id: `${historyRecord.session_id}_general_stat_${assetIndex}`,
+            content: stat,
+            image_url: null,
+            prompt: '',
+            generation_type: 'direct_parse',
+            session_id: historyRecord.session_id,
+            history_content_repurposer_id: historyRecord.id,
+            created_date: new Date().toISOString(),
+            updated_date: new Date().toISOString(),
+            in_use: true
+          });
+          assetIndex++;
+        });
+      }
+      
+      // Add FAQs
+      if (generalAssets.faqs?.length) {
+        generalAssets.faqs.forEach((faq: string) => {
+          records.push({
+            user_id: historyRecord.user_id,
+            agent_id: 'content_repurposer',
+            platform: 'general',
+            post_id: `${historyRecord.session_id}_general_faq_${assetIndex}`,
+            content: faq,
+            image_url: null,
+            prompt: '',
+            generation_type: 'direct_parse',
+            session_id: historyRecord.session_id,
+            history_content_repurposer_id: historyRecord.id,
+            created_date: new Date().toISOString(),
+            updated_date: new Date().toISOString(),
+            in_use: true
+          });
+          assetIndex++;
+        });
+      }
+      
+      // Add call to actions
+      if (generalAssets.callToActions?.length) {
+        generalAssets.callToActions.forEach((cta: string) => {
+          records.push({
+            user_id: historyRecord.user_id,
+            agent_id: 'content_repurposer',
+            platform: 'general',
+            post_id: `${historyRecord.session_id}_general_cta_${assetIndex}`,
+            content: cta,
+            image_url: null,
+            prompt: '',
+            generation_type: 'direct_parse',
+            session_id: historyRecord.session_id,
+            history_content_repurposer_id: historyRecord.id,
+            created_date: new Date().toISOString(),
+            updated_date: new Date().toISOString(),
+            in_use: true
+          });
+          assetIndex++;
+        });
+      }
+    }
+    
+    return records;
   }
 }
 

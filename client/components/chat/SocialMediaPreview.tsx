@@ -17,11 +17,37 @@ export default function SocialMediaPreview({ content, historyId }: SocialMediaPr
   const getPlatformCounts = () => {
     const counts: Record<string, number> = {};
     
+    // Count social media posts
     parsedContent.posts.forEach(post => {
       const platformKey = post.platform === 'Instagram' ? 'Instagram/Facebook' : 
                          post.platform === 'TikTok' ? 'TikTok/Reels' : post.platform;
       counts[platformKey] = (counts[platformKey] || 0) + 1;
     });
+    
+    // Count Additional Assets (GeneralAssets)
+    if (parsedContent.generalAssets) {
+      let additionalAssetsCount = 0;
+      
+      if (parsedContent.generalAssets.quotes?.length) {
+        additionalAssetsCount += parsedContent.generalAssets.quotes.length;
+      }
+      if (parsedContent.generalAssets.tips?.length) {
+        additionalAssetsCount += parsedContent.generalAssets.tips.length;
+      }
+      if (parsedContent.generalAssets.stats?.length) {
+        additionalAssetsCount += parsedContent.generalAssets.stats.length;
+      }
+      if (parsedContent.generalAssets.faqs?.length) {
+        additionalAssetsCount += parsedContent.generalAssets.faqs.length;
+      }
+      if (parsedContent.generalAssets.callToActions?.length) {
+        additionalAssetsCount += parsedContent.generalAssets.callToActions.length;
+      }
+      
+      if (additionalAssetsCount > 0) {
+        counts['Additional Assets'] = additionalAssetsCount;
+      }
+    }
     
     return counts;
   };
