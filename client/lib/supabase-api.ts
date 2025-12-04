@@ -647,20 +647,12 @@ export const contentRepurposerApi = {
     updated_at?: string;
   }, authToken?: string) => {
     const result = await supabaseApi.insert('history_content_repurposer', data, { authToken });
-    
-    // Note: No webhook trigger needed for content repurposer database operations
-    // Webhooks are handled by the bi-directional sync system in contentRepurposerWebhookService
-    
     return result;
   },
     
   // Update content repurposer
   updateById: async (id: string, updateData: any, authToken?: string) => {
     const result = await supabaseApi.update('history_content_repurposer', updateData, { id }, { authToken });
-    
-    // Note: No webhook trigger needed for content repurposer database operations
-    // Webhooks are handled by the bi-directional sync system in contentRepurposerWebhookService
-    
     return result;
   },
     

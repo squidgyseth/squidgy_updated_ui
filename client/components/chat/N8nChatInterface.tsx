@@ -74,7 +74,7 @@ export default function N8nChatInterface({
     agentStatus?: string
   ) => {
     try {
-      await chatHistoryService.saveMessage({
+      const savedRecord = await chatHistoryService.saveMessage({
         user_id: userId,
         session_id: sessionId,
         sender,
@@ -84,8 +84,10 @@ export default function N8nChatInterface({
         agent_id: agent.id,
         agent_status: agentStatus
       });
+      return savedRecord;
     } catch (error) {
       console.error('Error saving message to history:', error);
+      return null;
     }
   };
 
@@ -146,15 +148,20 @@ export default function N8nChatInterface({
           isHtml: response.agent_status === 'Ready'
         };
 
-        setMessages(prev => [...prev, agentMessage]);
-        
-        // Save agent response to database
-        await saveMessageToHistory(
+        // Save agent response to database and get back the saved record
+        const savedRecord = await saveMessageToHistory(
           response.agent_response, 
           'Agent', 
           new Date(response.timestamp_of_call_made),
           response.agent_status  // Pass agent_status
         );
+
+        // Update agentMessage with content_repurposer_history_id if available
+        if (savedRecord?.content_repurposer_history_id) {
+          agentMessage.content_repurposer_history_id = savedRecord.content_repurposer_history_id;
+        }
+
+        setMessages(prev => [...prev, agentMessage]);
       } else {
         // Handle error case
         const errorMessage = 'Sorry, I encountered an error processing your request. Please try again.';
@@ -467,7 +474,7 @@ export default function N8nChatInterface({
                           session_id: sessionId,
                           agent_name: agent.id,
                           timestamp_of_call_made: message.timestamp.toISOString(),
-                          request_id: message.id,
+                          request_id: message.content_repurposer_history_id || message.id,
                           agent_response: message.content,
                           agent_status: message.status
                         }}

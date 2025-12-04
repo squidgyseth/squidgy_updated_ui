@@ -17,6 +17,7 @@ export interface ChatHistoryRecord {
   agent_id: string;
   agent_status?: string;
   message_hash?: string;
+  content_repurposer_history_id?: string; // Database record ID for content repurposer
 }
 
 export interface ChatSession {
@@ -61,7 +62,7 @@ export class ChatHistoryService {
   /**
    * Save a message to chat history
    */
-  async saveMessage(record: ChatHistoryRecord): Promise<boolean> {
+  async saveMessage(record: ChatHistoryRecord): Promise<ChatHistoryRecord | null> {
     try {
       // Generate message hash for deduplication
       const messageHash = await this.generateMessageHash(
@@ -89,8 +90,15 @@ export class ChatHistoryService {
 
       if (error) {
         console.error('Error saving chat message:', error);
-        return false;
+        return null;
       }
+
+      // Create the saved record with the chat history ID
+      const savedRecord: ChatHistoryRecord = {
+        ...record,
+        id: chatHistoryId,
+        message_hash: messageHash
+      };
 
       // If this is a content_repurposer agent response, save to history_content_repurposer table
       if (record.agent_id === 'content_repurposer' && record.sender === 'Agent') {
@@ -99,25 +107,54 @@ export class ChatHistoryService {
         if (record.agent_status?.toLowerCase() === 'ready') {
           try {
             const { contentRepurposerApi } = await import('../lib/supabase-api');
+            const { supabase } = await import('../lib/supabase');
+            const contentRepurposerParser = await import('./contentRepurposerParser');
             
             // Generate title with format
             const currentDate = new Date().toISOString().split('T')[0];
             const contentNumber = Math.floor(Math.random() * 9999) + 1;
             const generatedTitle = `ContentRepurpose_${contentNumber}_${currentDate}`;
             
+            // Parse the JSON response to extract posts
+            const parsedContent = contentRepurposerParser.default.parseContentResponse(record.message);
+            
             console.log('✅ Saving content repurposer with Ready status to history_content_repurposer');
-            await contentRepurposerApi.upsertByChat({
+            const historyResult = await contentRepurposerApi.upsertByChat({
               user_id: record.user_id,
               session_id: record.session_id,
               chat_history_id: chatHistoryId,
               agent_id: 'content_repurposer',
               title: generatedTitle,
               content: record.message,
+              repurposed_content: parsedContent, // Store the parsed content
               source_type: 'chat',
               target_formats: ['twitter', 'linkedin', 'instagram'] // Default formats
             });
+
+            // If history save was successful and we have posts, save to images table
+            if (historyResult.data && !historyResult.error && parsedContent.posts.length > 0) {
+              const historyRecord = Array.isArray(historyResult.data) ? historyResult.data[0] : historyResult.data;
+              
+              // Store the database record ID in the saved record for later use
+              savedRecord.content_repurposer_history_id = historyRecord.id;
+              
+              // Create image records from extracted posts
+              const imageRecords = contentRepurposerParser.default.createImageRecords(parsedContent.posts, historyRecord);
+              
+              console.log(`✅ Saving ${imageRecords.length} posts to content_repurposer_images table`);
+              const { data: insertedRecords, error: imageError } = await supabase
+                .from('content_repurposer_images')
+                .insert(imageRecords)
+                .select();
+
+              if (imageError) {
+                console.error('Error saving to content_repurposer_images:', imageError);
+              } else {
+                console.log(`✅ Successfully saved ${insertedRecords?.length || 0} image records`);
+              }
+            }
           } catch (err) {
-            console.error('Error saving to history_content_repurposer:', err);
+            console.error('Error saving content repurposer data:', err);
             // Don't fail the main save if this fails
           }
         } else {
@@ -156,10 +193,10 @@ export class ChatHistoryService {
         }
       }
 
-      return true;
+      return savedRecord;
     } catch (error) {
       console.error('Error in saveMessage:', error);
-      return false;
+      return null;
     }
   }
 
