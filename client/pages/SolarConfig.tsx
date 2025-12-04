@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, DollarSign, Percent, Home, Building2, Package, CreditCard, Banknote, Calendar, Zap, TrendingUp, Clock, Sun, Layers, Award } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../hooks/useUser';
@@ -26,7 +25,6 @@ interface SolarConfigData {
 }
 
 export default function SolarConfig() {
-  const navigate = useNavigate();
   const { user, userId } = useUser();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -205,11 +203,6 @@ export default function SolarConfig() {
       if (error) throw error;
       
       toast.success('Solar configuration saved successfully!');
-      
-      // Navigate to agent chat after saving
-      setTimeout(() => {
-        navigate(`/chat/${getAgentId()}`);
-      }, 1500);
       
     } catch (error: any) {
       console.error('Error saving config:', error);
