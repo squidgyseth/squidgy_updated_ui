@@ -60,8 +60,8 @@ export default function AgentResponseHandler({
   // Handle different agent statuses
   switch (response.agent_status) {
     case 'Ready':
-      // Check if it's social media content from content repurposer
-      if (isSocialMediaContent() && response.agent_name === 'content_repurposer') {
+      // Always show SocialMediaPreview for content_repurposer agent (no iframe, just link)
+      if (response.agent_name === 'content_repurposer') {
         return (
           <div className={`agent-response ready-state ${className}`}>
             <SocialMediaPreview 

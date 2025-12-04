@@ -534,6 +534,38 @@ class ContentRepurposerWebhookService {
     localStorage.removeItem('content_webhook_success_logs');
     localStorage.removeItem('content_webhook_error_logs');
   }
+
+  /**
+   * Process existing content from history_content_repurposer that has repurposed_content
+   * but no corresponding records in content_repurposer_images
+   * This helps backfill the images table with already generated content
+   */
+  async processExistingContentFromHistory(historyRecord: any): Promise<void> {
+    try {
+      console.log('[Content Repurposer Webhook] Processing existing content from history:', historyRecord.id);
+      
+      if (!historyRecord.repurposed_content) {
+        console.log('[Content Repurposer Webhook] No repurposed content found in history record');
+        return;
+      }
+
+      const payload = {
+        id: historyRecord.id,
+        user_id: historyRecord.user_id,
+        session_id: historyRecord.session_id || historyRecord.id,
+        chat_history_id: historyRecord.chat_history_id || '',
+        content: historyRecord.content,
+        timestamp: new Date().toISOString()
+      };
+
+      // Process the repurposed content as if it came from webhook
+      await this.processWebhookResponse(payload, historyRecord.repurposed_content);
+      
+      console.log('[Content Repurposer Webhook] Successfully processed existing content from history');
+    } catch (error) {
+      console.error('[Content Repurposer Webhook] Error processing existing content from history:', error);
+    }
+  }
 }
 
 export default ContentRepurposerWebhookService.getInstance();
