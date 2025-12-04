@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { ExternalLink, Share2, Copy, Image } from 'lucide-react';
 import contentRepurposerParser from '../../services/contentRepurposerParser';
+import { PLATFORM_NAMES } from '../../constants/platforms';
 
 interface SocialMediaPreviewProps {
   content: string;
@@ -19,8 +20,9 @@ export default function SocialMediaPreview({ content, historyId }: SocialMediaPr
     
     // Count social media posts
     parsedContent.posts.forEach(post => {
-      const platformKey = post.platform === 'Instagram' ? 'Instagram/Facebook' : 
-                         post.platform === 'TikTok' ? 'TikTok/Reels' : post.platform;
+      const platformKey = post.platform === 'Instagram' ? PLATFORM_NAMES.INSTAGRAM_FACEBOOK : 
+                         post.platform === 'TikTok' ? PLATFORM_NAMES.TIKTOK_REELS : 
+                         post.platform === 'LinkedIn' ? PLATFORM_NAMES.LINKEDIN : post.platform;
       counts[platformKey] = (counts[platformKey] || 0) + 1;
     });
     
@@ -45,7 +47,7 @@ export default function SocialMediaPreview({ content, historyId }: SocialMediaPr
       }
       
       if (additionalAssetsCount > 0) {
-        counts['Additional Assets'] = additionalAssetsCount;
+        counts[PLATFORM_NAMES.ADDITIONAL_ASSETS] = additionalAssetsCount;
       }
     }
     
