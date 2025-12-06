@@ -166,6 +166,38 @@ export default function WebsiteDetailsOnboarding() {
     try {
       console.log('🔍 Parsing agent response:', agentResponse);
       
+      // Try to parse as JSON first (new format)
+      try {
+        const jsonData = JSON.parse(agentResponse);
+        
+        // Check if it's the new JSON format
+        if (jsonData && typeof jsonData === 'object') {
+          console.log('🔍 Detected JSON format response:', jsonData);
+          
+          // Extract data from JSON structure
+          const companyDescription = jsonData.description || '';
+          const valueProposition = Array.isArray(jsonData.takeaways) 
+            ? jsonData.takeaways.join('. ') 
+            : (jsonData.takeaways || '');
+          const businessNiche = jsonData.niche || '';
+          const tags = Array.isArray(jsonData.tags) ? jsonData.tags : [];
+          const screenshotUrl = jsonData.screenshot_url || '';
+          const faviconUrl = jsonData.favicon_url || '';
+          
+          return {
+            companyDescription,
+            valueProposition,
+            businessNiche,
+            tags: tags.length > 0 ? tags : null,
+            screenshotUrl: screenshotUrl || null,
+            faviconUrl: faviconUrl || null
+          };
+        }
+      } catch (jsonError) {
+        console.log('🔍 Not JSON format, falling back to text parsing');
+      }
+      
+      // Fallback to original text parsing for legacy format
       // First extract URLs before cleaning
       // Extract screenshot URL from the original response (before cleaning)
       const screenshotMatch = agentResponse.match(/https?:\/\/[^\s]*supabase[^\s]*\/screenshots\/[^\s)]*/i) ||
