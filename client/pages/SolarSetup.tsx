@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { X, Menu, Sun, HelpCircle, Banknote } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { ChatInterface } from "../components/ChatInterface";
 import { UserAccountDropdown } from "../components/UserAccountDropdown";
 import { SetupStepsSidebar } from "../components/SetupStepsSidebar";
@@ -37,7 +36,6 @@ function HelpTooltip({ content }: { content: string }) {
 
 // Main Solar Setup Page Component
 export default function SolarSetup() {
-  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { userId } = useUser();
   const [isLoading, setIsLoading] = useState(false);
@@ -184,7 +182,6 @@ export default function SolarSetup() {
       
       if (result.success) {
         toast.success('Solar setup saved successfully!');
-        navigate('/calendar-setup');
       } else {
         toast.error('Failed to save solar setup');
       }
