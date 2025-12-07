@@ -950,6 +950,7 @@ interface WebsiteAnalysisData {
   firm_user_id: string;
   agent_id: string;
   website_url: string;
+  company_name?: string;
   company_description?: string;
   value_proposition?: string;
   business_niche?: string;

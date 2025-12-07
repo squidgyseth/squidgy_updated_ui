@@ -99,15 +99,21 @@ export default function BusinessDetailsOnboarding() {
             // Try to pre-populate from website analysis
             const websiteData = await getWebsiteAnalysis(userId);
             if (websiteData) {
-              // Extract business name from company description
-              let extractedBusinessName = "";
-              if (websiteData.company_description) {
+              // Use company_name field if available, otherwise try to extract from description
+              let businessNameToUse = "";
+              
+              // First try to use the dedicated company_name field
+              if (websiteData.company_name) {
+                businessNameToUse = websiteData.company_name;
+              } 
+              // Fallback: try to extract from company_description (for legacy data)
+              else if (websiteData.company_description) {
                 // Try to extract business name from various patterns
                 const nameMatch = websiteData.company_description.match(/^([^-|*•]+)/);
                 if (nameMatch) {
-                  extractedBusinessName = nameMatch[1].trim();
+                  businessNameToUse = nameMatch[1].trim();
                   // Remove common prefixes/suffixes
-                  extractedBusinessName = extractedBusinessName.replace(/^(company name:|name:)/i, '').trim();
+                  businessNameToUse = businessNameToUse.replace(/^(company name:|name:)/i, '').trim();
                 }
               }
               
@@ -118,14 +124,15 @@ export default function BusinessDetailsOnboarding() {
               );
               
               // Populate form with website analysis data
-              setBusinessName(extractedBusinessName || "");
+              setBusinessName(businessNameToUse || "");
               setCountry(detectedCountry);
               setDataLoaded(true);
               
               console.log('🔄 BusinessDetails: Populated from website analysis data:', {
-                extractedBusinessName,
+                businessName: businessNameToUse,
                 detectedCountry,
                 websiteUrl: websiteData.website_url,
+                companyName: websiteData.company_name,
                 originalDescription: websiteData.company_description
               });
             } else {
