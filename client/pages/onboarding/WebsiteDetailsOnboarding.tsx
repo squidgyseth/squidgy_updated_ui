@@ -33,6 +33,40 @@ function TagChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   );
 }
 
+// Helper function to properly format website URLs
+const formatWebsiteUrl = (url: string): string => {
+  if (!url.trim()) return url;
+  
+  let formattedUrl = url;
+  
+  // Add https:// if no protocol
+  if (!formattedUrl.startsWith('http')) {
+    formattedUrl = `https://${formattedUrl}`;
+  }
+  
+  try {
+    const urlObj = new URL(formattedUrl);
+    const hostname = urlObj.hostname.toLowerCase();
+    
+    // Only add www. if:
+    // 1. It doesn't already have www.
+    // 2. It's not already a subdomain (no dots before the main domain)
+    // 3. It's not localhost or an IP address
+    if (!hostname.startsWith('www.') && 
+        hostname.split('.').length === 2 && // Only domain.tld format
+        !hostname.includes('localhost') &&
+        !/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) { // Not an IP address
+      urlObj.hostname = `www.${hostname}`;
+      formattedUrl = urlObj.toString();
+    }
+    
+    return formattedUrl;
+  } catch (error) {
+    // If URL parsing fails, return as-is
+    return formattedUrl;
+  }
+};
+
 export default function WebsiteDetailsOnboarding() {
   const navigate = useNavigate();
   const { isReady, userId, sessionId, agentId, user, profile } = useUser();
@@ -333,29 +367,8 @@ export default function WebsiteDetailsOnboarding() {
     showProgressSteps();
     
     try {
-      // Ensure URL has protocol and www
-      let formattedUrl = websiteUrl;
-      
-      // Add https:// if no protocol
-      if (!formattedUrl.startsWith('http')) {
-        formattedUrl = `https://${formattedUrl}`;
-      }
-      
-      // Add www. if not present (but skip for subdomains)
-      const urlObj = new URL(formattedUrl);
-      const hostname = urlObj.hostname.toLowerCase();
-      
-      // Only add www. if:
-      // 1. It doesn't already have www.
-      // 2. It's not already a subdomain (no dots before the main domain)
-      // 3. It's not localhost or an IP address
-      if (!hostname.startsWith('www.') && 
-          hostname.split('.').length === 2 && // Only domain.tld format
-          !hostname.includes('localhost') &&
-          !/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) { // Not an IP address
-        urlObj.hostname = `www.${hostname}`;
-        formattedUrl = urlObj.toString();
-      }
+      // Format the website URL properly
+      const formattedUrl = formatWebsiteUrl(websiteUrl);
 
       // Generate unique IDs for the N8N request
       const requestId = crypto.randomUUID();
@@ -465,29 +478,8 @@ export default function WebsiteDetailsOnboarding() {
     showProgressSteps();
     
     try {
-      // Ensure URL has protocol and www
-      let formattedUrl = websiteUrl;
-      
-      // Add https:// if no protocol
-      if (!formattedUrl.startsWith('http')) {
-        formattedUrl = `https://${formattedUrl}`;
-      }
-      
-      // Add www. if not present (but skip for subdomains)
-      const urlObj = new URL(formattedUrl);
-      const hostname = urlObj.hostname.toLowerCase();
-      
-      // Only add www. if:
-      // 1. It doesn't already have www.
-      // 2. It's not already a subdomain (no dots before the main domain)
-      // 3. It's not localhost or an IP address
-      if (!hostname.startsWith('www.') && 
-          hostname.split('.').length === 2 && // Only domain.tld format
-          !hostname.includes('localhost') &&
-          !/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) { // Not an IP address
-        urlObj.hostname = `www.${hostname}`;
-        formattedUrl = urlObj.toString();
-      }
+      // Format the website URL properly
+      const formattedUrl = formatWebsiteUrl(websiteUrl);
       
       if (!userId) {
         toast.error("Please log in to analyze websites");
@@ -591,7 +583,7 @@ export default function WebsiteDetailsOnboarding() {
       const websiteAnalysisData = {
         firm_user_id: userId,
         agent_id: 'SOL',
-        website_url: websiteUrl.startsWith('http') ? websiteUrl : `https://www.${websiteUrl}`,
+        website_url: formatWebsiteUrl(websiteUrl),
         company_name: companyName.trim() || null,
         company_description: companyDescription.trim() || null,
         value_proposition: valueProposition.trim() || null,
