@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ExternalLink, Share2, Copy, Image } from 'lucide-react';
+import { ExternalLink, Share2 } from 'lucide-react';
 import contentRepurposerParser from '../../services/contentRepurposerParser';
 import { PLATFORM_NAMES } from '../../constants/platforms';
 
@@ -66,7 +66,7 @@ export default function SocialMediaPreview({ content, historyId }: SocialMediaPr
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 max-w-md">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Share2 className="w-5 h-5 text-purple-600" />
           <h3 className="font-semibold text-gray-900">Social Media Content Generated</h3>
@@ -105,26 +105,6 @@ export default function SocialMediaPreview({ content, historyId }: SocialMediaPr
             <p className="text-sm text-gray-600">Social media content generated successfully!</p>
           )}
         </div>
-
-        {/* Features */}
-        <div className="flex flex-wrap gap-2">
-          <div className="flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-            <Copy size={12} />
-            <span>Copy to clipboard</span>
-          </div>
-          <div className="flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-            <Image size={12} />
-            <span>Image prompts included</span>
-          </div>
-        </div>
-
-        {/* Info */}
-        <p className="text-xs text-gray-500">
-          {historyId 
-            ? 'Click "Open Preview" to view, edit, and copy individual posts' 
-            : 'Social media posts are being processed and will be available momentarily'
-          }
-        </p>
       </div>
     </div>
   );
