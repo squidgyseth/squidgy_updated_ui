@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ExternalLink, Share2 } from 'lucide-react';
+import { ExternalLink, Users } from 'lucide-react';
 import contentRepurposerParser from '../../services/contentRepurposerParser';
 import { PLATFORM_NAMES } from '../../constants/platforms';
 
@@ -69,7 +69,7 @@ export default function SocialMediaPreview({ content, historyId }: SocialMediaPr
       <div className="mb-8">
         {/* Title */}
         <div className="flex items-center gap-2 mb-4">
-          <Share2 className="w-5 h-5 text-purple-600" />
+          <Users className="w-5 h-5 text-purple-600" />
           <h3 className="font-semibold text-gray-900">Social Media Content Generated</h3>
         </div>
         
