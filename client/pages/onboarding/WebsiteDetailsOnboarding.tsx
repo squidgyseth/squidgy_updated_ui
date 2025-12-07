@@ -42,6 +42,7 @@ export default function WebsiteDetailsOnboarding() {
 
   // Website details state
   const [websiteUrl, setWebsiteUrl] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [companyDescription, setCompanyDescription] = useState("");
   const [valueProposition, setValueProposition] = useState("");
   const [businessNiche, setBusinessNiche] = useState("");
@@ -102,6 +103,7 @@ export default function WebsiteDetailsOnboarding() {
           const websiteData = await getWebsiteAnalysis(userId);
           if (websiteData) {
             setWebsiteUrl(websiteData.website_url || "");
+            setCompanyName(websiteData.company_name || "");
             setCompanyDescription(websiteData.company_description || "");
             setValueProposition(websiteData.value_proposition || "");
             setBusinessNiche(websiteData.business_niche || "");
@@ -175,6 +177,7 @@ export default function WebsiteDetailsOnboarding() {
           console.log('🔍 Detected JSON format response:', jsonData);
           
           // Extract data from JSON structure
+          const companyName = jsonData.company_name || '';
           const companyDescription = jsonData.description || '';
           const valueProposition = Array.isArray(jsonData.takeaways) 
             ? jsonData.takeaways.join('. ') 
@@ -185,6 +188,7 @@ export default function WebsiteDetailsOnboarding() {
           const faviconUrl = jsonData.favicon_url || '';
           
           return {
+            companyName,
             companyDescription,
             valueProposition,
             businessNiche,
@@ -257,6 +261,7 @@ export default function WebsiteDetailsOnboarding() {
       };
       
       return {
+        companyName: null, // No company name in legacy format
         companyDescription: cleanExtractedValue(companyMatch ? companyMatch[1] : null),
         valueProposition: cleanExtractedValue(valueMatch ? valueMatch[1] : null),
         businessNiche: cleanExtractedValue(nicheMatch ? nicheMatch[1] : null),
@@ -267,6 +272,7 @@ export default function WebsiteDetailsOnboarding() {
     } catch (error) {
       console.error('Error parsing agent response:', error);
       return {
+        companyName: null,
         companyDescription: null,
         valueProposition: null,
         businessNiche: null,
@@ -293,6 +299,7 @@ export default function WebsiteDetailsOnboarding() {
     clearProgress();
     
     // Clear all previous form data before starting new analysis
+    setCompanyName("");
     setCompanyDescription("");
     setValueProposition("");
     setBusinessNiche("");
@@ -375,6 +382,7 @@ export default function WebsiteDetailsOnboarding() {
         const parsedData = parseAgentResponse(n8nResponse.agent_response);
         
         // Update form fields with extracted data (always set, even if empty)
+        setCompanyName(parsedData.companyName || "");
         setCompanyDescription(parsedData.companyDescription || "");
         setValueProposition(parsedData.valueProposition || "");
         setBusinessNiche(parsedData.businessNiche || "");
@@ -423,6 +431,7 @@ export default function WebsiteDetailsOnboarding() {
     clearProgress();
     
     // Clear all previous form data before starting new analysis
+    setCompanyName("");
     setCompanyDescription("");
     setValueProposition("");
     setBusinessNiche("");
@@ -510,6 +519,7 @@ export default function WebsiteDetailsOnboarding() {
         const parsedData = parseAgentResponse(n8nResponse.agent_response);
         
         // Update form fields with extracted data (always set, even if empty)
+        setCompanyName(parsedData.companyName || "");
         setCompanyDescription(parsedData.companyDescription || "");
         setValueProposition(parsedData.valueProposition || "");
         setBusinessNiche(parsedData.businessNiche || "");
@@ -581,6 +591,7 @@ export default function WebsiteDetailsOnboarding() {
         firm_user_id: userId,
         agent_id: 'SOL',
         website_url: websiteUrl.startsWith('http') ? websiteUrl : `https://www.${websiteUrl}`,
+        company_name: companyName.trim() || null,
         company_description: companyDescription.trim() || null,
         value_proposition: valueProposition.trim() || null,
         business_niche: businessNiche.trim() || null,
@@ -820,6 +831,18 @@ export default function WebsiteDetailsOnboarding() {
           <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200 mt-2">
             💡 <strong>Tip:</strong> Click "Analyze Website" to automatically extract your business information from your website!
           </div>
+        </div>
+
+        {/* Company Name */}
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-text-primary mb-2">Company Name</label>
+          <input
+            type="text"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            className="w-full p-3 border border-grey-500 rounded-md text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-squidgy-purple focus:border-transparent"
+            placeholder="Enter your company name"
+          />
         </div>
 
         {/* What the company does */}
