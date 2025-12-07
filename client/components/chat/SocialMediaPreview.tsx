@@ -96,18 +96,18 @@ export default function SocialMediaPreview({ content, historyId }: SocialMediaPr
         <div className="bg-gray-50 rounded-lg p-3">
           {totalPosts > 0 ? (
             <>
-              <p className="text-sm text-gray-600 mb-2">Generated {totalPosts} posts across platforms:</p>
-              <div className="space-y-2">
+              <p className="text-base text-gray-600 mb-3">Generated {totalPosts} posts across platforms:</p>
+              <div className="space-y-3">
                 {Object.entries(counts).map(([platform, count]) => (
                   <div key={platform} className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">{platform}</span>
-                    <span className="text-sm text-gray-600">{count} posts</span>
+                    <span className="text-base font-medium text-gray-700">{platform}</span>
+                    <span className="text-base text-gray-600">{count} posts</span>
                   </div>
                 ))}
               </div>
             </>
           ) : (
-            <p className="text-sm text-gray-600">Social media content generated successfully!</p>
+            <p className="text-base text-gray-600">Social media content generated successfully!</p>
           )}
         </div>
       </div>
