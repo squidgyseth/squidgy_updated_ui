@@ -142,6 +142,7 @@ export default function WebsiteDetailsOnboarding() {
       }
       
       // Update form fields with analysis results if available
+      if (result.company_name) setCompanyName(result.company_name);
       if (result.company_description) setCompanyDescription(result.company_description);
       if (result.value_proposition) setValueProposition(result.value_proposition);
       if (result.business_niche) setBusinessNiche(result.business_niche);
