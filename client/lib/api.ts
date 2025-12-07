@@ -1032,6 +1032,7 @@ export const saveWebsiteAnalysis = async (data: WebsiteAnalysisData & { isAnalyz
       agent_id: data.agent_id || 'SOL',
       firm_id: firm_id,
       website_url: data.website_url,
+      company_name: data.company_name || null,
       company_description: data.company_description || null,
       value_proposition: data.value_proposition || null,
       business_niche: data.business_niche || null,
