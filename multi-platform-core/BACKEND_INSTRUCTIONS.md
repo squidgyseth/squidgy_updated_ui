@@ -1,5 +1,7 @@
 # Backend Multi-Platform Integration Instructions
 
+**Updated:** December 2025
+
 ## Overview
 
 We are transforming our FastAPI backend into a multi-platform system that serves 5 different branded platforms from a single codebase. Each platform has its own:

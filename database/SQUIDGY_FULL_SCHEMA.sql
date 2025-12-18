@@ -145,7 +145,11 @@ CREATE TABLE IF NOT EXISTS public.chat_history (
     message_hash TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     mcp_tool_used TEXT,
-    mcp_context JSONB
+    mcp_context JSONB,
+    
+    -- Usage tracking
+    tokens_used INTEGER DEFAULT 0,
+    cost_usd DECIMAL(10, 6) DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_chat_history_session ON public.chat_history(session_id);
@@ -693,6 +697,14 @@ CREATE TABLE IF NOT EXISTS public.billing_settings (
     subscription_start_date TIMESTAMPTZ,
     subscription_end_date TIMESTAMPTZ,
     trial_end_date TIMESTAMPTZ,
+    
+    -- Multi-platform billing extensions
+    billing_model TEXT DEFAULT 'all_access',
+    seats_purchased INTEGER DEFAULT 1,
+    seats_used INTEGER DEFAULT 0,
+    agent_access JSONB DEFAULT '{}',
+    usage_this_period JSONB DEFAULT '{"runs": 0, "tokens": 0}',
+    
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id, company_id)
@@ -1087,6 +1099,11 @@ CREATE TABLE IF NOT EXISTS public.team_members (
     avatar_color TEXT,
     invited_at TIMESTAMPTZ,
     joined_at TIMESTAMPTZ,
+    
+    -- Multi-platform extensions
+    permissions JSONB DEFAULT '{}',
+    allowed_agents TEXT[],
+    
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -1374,6 +1391,206 @@ BEGIN
     RETURN result;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- ============================================================================
+-- 35. PLATFORM CONFIG (Identifies this database for multi-platform)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.platform_config (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    platform_id TEXT NOT NULL UNIQUE,
+    
+    -- Platform info
+    platform_name TEXT NOT NULL,
+    domain TEXT,
+    
+    -- Billing model: 'all_access', 'per_agent', 'hybrid'
+    billing_model TEXT NOT NULL DEFAULT 'all_access',
+    
+    -- Team settings
+    supports_teams BOOLEAN DEFAULT FALSE,
+    max_team_size INTEGER DEFAULT 1,
+    
+    -- Trial settings
+    trial_days INTEGER DEFAULT 14,
+    
+    -- Default plan
+    default_plan_name TEXT DEFAULT 'Free',
+    default_plan_price NUMERIC DEFAULT 0,
+    
+    -- Stripe (for platform-specific accounts)
+    stripe_account_id TEXT,
+    
+    -- Flexible config as JSONB
+    features JSONB DEFAULT '{}',
+    limits JSONB DEFAULT '{}',
+    branding JSONB DEFAULT '{}',
+    
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Insert Squidgy as default platform
+INSERT INTO public.platform_config (
+    platform_id, platform_name, billing_model, supports_teams, max_team_size, trial_days,
+    features, limits
+) VALUES (
+    'squidgy', 'Squidgy', 'all_access', true, 25, 14,
+    '{"referral_system": true, "ghl_integration": true, "solar_agent": true, "newsletter": true, "content_repurposer": true}',
+    '{"max_agents": -1, "max_conversations": -1, "max_team_members": 25}'
+)
+ON CONFLICT (platform_id) DO NOTHING;
+
+
+-- ============================================================================
+-- 36. API KEYS (For MCP server access)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.api_keys (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    company_id UUID,
+    
+    -- Key info
+    key_hash TEXT NOT NULL,
+    key_prefix TEXT NOT NULL,
+    name TEXT,
+    
+    -- Permissions
+    scopes TEXT[] DEFAULT '{}',
+    allowed_agents TEXT[],
+    
+    -- Status
+    is_active BOOLEAN DEFAULT TRUE,
+    revoked_at TIMESTAMPTZ,
+    
+    -- Usage tracking
+    last_used_at TIMESTAMPTZ,
+    use_count INTEGER DEFAULT 0,
+    
+    -- Expiration
+    expires_at TIMESTAMPTZ,
+    
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON public.api_keys(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON public.api_keys(key_hash);
+
+
+-- ============================================================================
+-- 37. HELPER FUNCTIONS FOR MULTI-PLATFORM
+-- ============================================================================
+
+-- Check if user has access to an agent
+CREATE OR REPLACE FUNCTION public.check_agent_access(
+    _user_id UUID,
+    _agent_id TEXT
+) RETURNS BOOLEAN AS $$
+DECLARE
+    _has_access BOOLEAN := FALSE;
+    _billing_model TEXT;
+    _plan_status TEXT;
+    _agent_access JSONB;
+BEGIN
+    -- Get platform billing model (only one row in platform_config per database)
+    SELECT billing_model INTO _billing_model
+    FROM public.platform_config
+    LIMIT 1;
+    
+    IF _billing_model IS NULL THEN
+        _billing_model := 'all_access';
+    END IF;
+    
+    -- Get user's billing settings
+    SELECT plan_status, COALESCE(bs.agent_access, '{}')
+    INTO _plan_status, _agent_access
+    FROM public.billing_settings bs
+    JOIN public.profiles p ON bs.user_id = p.user_id
+    WHERE p.id = _user_id
+    LIMIT 1;
+    
+    -- All-access: check subscription status
+    IF _billing_model = 'all_access' THEN
+        RETURN COALESCE(_plan_status, 'active') = 'active';
+    END IF;
+    
+    -- Per-agent: check agent_access JSONB
+    IF _billing_model IN ('per_agent', 'hybrid') THEN
+        IF _agent_access ? _agent_id THEN
+            RETURN COALESCE((_agent_access->_agent_id->>'active')::BOOLEAN, FALSE);
+        END IF;
+    END IF;
+    
+    -- Hybrid: active plan gives base access
+    IF _billing_model = 'hybrid' AND _plan_status = 'active' THEN
+        RETURN TRUE;
+    END IF;
+    
+    RETURN FALSE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- Get user's available agents
+CREATE OR REPLACE FUNCTION public.get_user_agents(
+    _user_id UUID
+) RETURNS TEXT[] AS $$
+DECLARE
+    _agents TEXT[] := '{}';
+    _billing_model TEXT;
+    _agent_access JSONB;
+BEGIN
+    SELECT billing_model INTO _billing_model
+    FROM public.platform_config
+    LIMIT 1;
+    
+    IF _billing_model IS NULL OR _billing_model = 'all_access' THEN
+        RETURN ARRAY['*'];
+    END IF;
+    
+    SELECT COALESCE(bs.agent_access, '{}')
+    INTO _agent_access
+    FROM public.billing_settings bs
+    JOIN public.profiles p ON bs.user_id = p.user_id
+    WHERE p.id = _user_id
+    LIMIT 1;
+    
+    SELECT ARRAY_AGG(key)
+    INTO _agents
+    FROM jsonb_each(_agent_access) 
+    WHERE (value->>'active')::BOOLEAN = TRUE;
+    
+    RETURN COALESCE(_agents, '{}');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- Track usage (call after each agent interaction)
+CREATE OR REPLACE FUNCTION public.track_usage(
+    _user_id UUID,
+    _agent_id TEXT,
+    _tokens INTEGER DEFAULT 0,
+    _cost DECIMAL DEFAULT 0
+) RETURNS VOID AS $$
+BEGIN
+    -- Update billing_settings usage
+    UPDATE public.billing_settings bs
+    SET usage_this_period = jsonb_set(
+        jsonb_set(
+            COALESCE(usage_this_period, '{"runs": 0, "tokens": 0}'),
+            '{runs}',
+            to_jsonb(COALESCE((usage_this_period->>'runs')::INTEGER, 0) + 1)
+        ),
+        '{tokens}',
+        to_jsonb(COALESCE((usage_this_period->>'tokens')::INTEGER, 0) + _tokens)
+    ),
+    updated_at = NOW()
+    FROM public.profiles p
+    WHERE bs.user_id = p.user_id AND p.id = _user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- ============================================================================

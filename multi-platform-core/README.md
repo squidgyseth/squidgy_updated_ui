@@ -2,16 +2,19 @@
 
 This package contains the core files needed to transform your existing codebase into a multi-platform system.
 
+**Updated:** December 2025 - Minimal Architecture (Database-Level Isolation)
+
 ## Quick Start
 
 ### 1. Set Up Supabase Instances
 
-Create 5 Supabase projects (or start with 1 for development):
+Create a Supabase project for each platform:
 
 1. Go to [supabase.com](https://supabase.com)
 2. Create a new project for each platform (e.g., `squidgy-prod`, `yeaa-prod`, etc.)
-3. Run `supabase/schema.sql` in each project's SQL Editor
-4. Copy the URL, anon key, and service key for each
+3. Run `database/NEW_PLATFORM_SETUP.sql` in each project's SQL Editor
+4. Configure your platform in `platform_config` table
+5. Copy the URL, anon key, and service key for each
 
 ### 2. Frontend Setup (Next.js)
 
@@ -220,7 +223,8 @@ The middleware automatically detects the domain and sets the platform.
 | `backend/config/platforms.py` | Platform definitions (Python) |
 | `backend/core/platform.py` | FastAPI middleware & dependencies |
 | `backend/core/database.py` | Supabase client factory |
-| `supabase/schema.sql` | Database schema for all platforms |
+| `database/NEW_PLATFORM_SETUP.sql` | Database schema for new platforms |
+| `database/SQUIDGY_FULL_SCHEMA.sql` | Complete Squidgy schema (reference) |
 
 ---
 
