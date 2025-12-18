@@ -69,6 +69,12 @@ export default {
           blue: "#6017E8",
           primary: "#5E17EB",
         },
+        // Platform whitelabel colors (CSS variable based)
+        platform: {
+          primary: "var(--platform-primary)",
+          secondary: "var(--platform-secondary)",
+          accent: "var(--platform-accent)",
+        },
         text: {
           primary: "#232534",
           secondary: "#444652",
@@ -105,6 +111,7 @@ export default {
       backgroundImage: {
         'squidgy-gradient': 'linear-gradient(107deg, #FB252A 3.11%, #A61D92 50.44%, #6017E8 100.58%)',
         'header-gradient': 'linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%)',
+        'platform-gradient': 'linear-gradient(107deg, var(--platform-gradient-start) 3.11%, var(--platform-gradient-mid) 50.44%, var(--platform-gradient-end) 100.58%)',
       },
       fontFamily: {
         'open-sans': ['Open Sans', 'Inter', '-apple-system', 'Roboto', 'Helvetica', 'sans-serif'],

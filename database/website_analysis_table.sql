@@ -1,24 +1,35 @@
--- Website Analysis Table Creation Script
--- This table stores website analysis data from the WebsiteDetails.tsx page
+-- ===========================================
+-- WEBSITE ANALYSIS TABLE
+-- ===========================================
+-- Updated based on actual Supabase database analysis (December 2024)
+-- Stores website analysis data from the WebsiteDetails.tsx page
 
-CREATE TABLE IF NOT EXISTS website_analysis (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    firm_user_id UUID NOT NULL REFERENCES profiles(user_id) ON DELETE CASCADE,
-    agent_id VARCHAR(50) NOT NULL DEFAULT 'SOL',
-    firm_id UUID, -- References profiles(company_id) but no foreign key constraint since company_id is not unique
+CREATE TABLE IF NOT EXISTS public.website_analysis (
+    id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    firm_user_id UUID NOT NULL,
+    agent_id VARCHAR(50) NOT NULL,
+    firm_id UUID NOT NULL,
     website_url VARCHAR(500) NOT NULL,
     company_description TEXT,
     value_proposition TEXT,
     business_niche TEXT,
-    tags TEXT[], -- Array of tags (max 5)
+    tags TEXT[],
     screenshot_url VARCHAR(500),
     favicon_url VARCHAR(500),
-    analysis_status VARCHAR(20) DEFAULT 'completed', -- pending, completed, failed
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    last_updated_timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    analysis_status VARCHAR(20),
     
-    -- Create unique constraint to prevent duplicates
-    UNIQUE(firm_user_id, agent_id, website_url)
+    -- Additional fields from actual DB
+    business_domain TEXT,
+    newsletter_questions TEXT,
+    company_name TEXT,
+    
+    -- GHL Integration
+    ghl_location_id VARCHAR(255),
+    ghl_user_id VARCHAR(255),
+    
+    -- Metadata
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    last_updated_timestamp TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Create indexes for better performance

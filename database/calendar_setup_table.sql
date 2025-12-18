@@ -1,10 +1,13 @@
--- Calendar Setup Table Creation Script
--- This table stores calendar setup data from the CalendarSetup.tsx page
+-- ===========================================
+-- CALENDAR SETUP TABLE
+-- ===========================================
+-- Updated based on actual Supabase database analysis (December 2024)
+-- Stores calendar setup data from the CalendarSetup.tsx page
 
-CREATE TABLE IF NOT EXISTS calendar_setup (
+CREATE TABLE IF NOT EXISTS public.calendar_setup (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    firm_user_id UUID NOT NULL REFERENCES profiles(user_id) ON DELETE CASCADE,
-    agent_id VARCHAR(50) NOT NULL DEFAULT 'SOL',
+    firm_user_id UUID,  -- No FK constraint in actual DB
+    agent_id VARCHAR(50) DEFAULT 'SOL',
     
     -- Calendar Information
     calendar_name VARCHAR(255) NOT NULL DEFAULT 'Solar consultations',
@@ -32,16 +35,22 @@ CREATE TABLE IF NOT EXISTS calendar_setup (
         "sunday": {"enabled": false, "start": "09:00", "end": "17:00"}
     }',
     
+    -- GHL Integration
+    ghl_location_id VARCHAR(255),
+    ghl_user_id VARCHAR(255),
+    
     -- Metadata
     setup_status VARCHAR(20) DEFAULT 'completed', -- pending, completed, failed
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    last_updated_timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    last_updated_timestamp TIMESTAMPTZ DEFAULT NOW(),
     
-    -- Create unique constraint to prevent duplicates per user/agent
-    UNIQUE(firm_user_id, agent_id)
+    -- Unique constraint (enforced via index in actual DB)
+    -- UNIQUE(firm_user_id, agent_id)
 );
 
 -- Create indexes for better performance
+CREATE UNIQUE INDEX IF NOT EXISTS unique_calendar_setup 
+    ON public.calendar_setup(firm_user_id, agent_id);
 CREATE INDEX IF NOT EXISTS idx_calendar_setup_firm_user_id ON calendar_setup(firm_user_id);
 CREATE INDEX IF NOT EXISTS idx_calendar_setup_agent_id ON calendar_setup(agent_id);
 CREATE INDEX IF NOT EXISTS idx_calendar_setup_last_updated ON calendar_setup(last_updated_timestamp);

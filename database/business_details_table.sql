@@ -1,33 +1,41 @@
--- Business Details Table Creation Script
--- This table stores business details data from the BusinessDetails.tsx page
+-- ===========================================
+-- BUSINESS DETAILS TABLE
+-- ===========================================
+-- Updated based on actual Supabase database analysis (December 2024)
+-- Stores business details data from the BusinessDetails.tsx page
 
-CREATE TABLE IF NOT EXISTS business_details (
+CREATE TABLE IF NOT EXISTS public.business_details (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    firm_user_id UUID NOT NULL REFERENCES profiles(user_id) ON DELETE CASCADE,
-    agent_id VARCHAR(50) NOT NULL DEFAULT 'SOL',
+    firm_user_id UUID,  -- No FK constraint in actual DB
+    agent_id VARCHAR(50) DEFAULT 'SOL',
     
     -- Business Information
-    business_name VARCHAR(255) NOT NULL,
-    business_email VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(50) NOT NULL,
-    emergency_numbers TEXT[], -- Array of emergency phone numbers
+    business_name VARCHAR(255),
+    business_email VARCHAR(255),
+    phone_number VARCHAR(50),
+    emergency_numbers TEXT[],  -- Array of emergency phone numbers
     
     -- Location Information
-    country VARCHAR(10) NOT NULL DEFAULT 'US', -- Country code (US, CA, GB, etc.)
-    address_method VARCHAR(20) DEFAULT 'manual', -- 'lookup' or 'manual'
-    address_line VARCHAR(500) NOT NULL,
-    city VARCHAR(100) NOT NULL,
-    state VARCHAR(100) NOT NULL,
-    postal_code VARCHAR(20) NOT NULL,
+    country VARCHAR(10) DEFAULT 'US',
+    address_method VARCHAR(20) DEFAULT 'manual',
+    address_line VARCHAR(500),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    postal_code VARCHAR(20),
+    
+    -- GHL Integration
+    ghl_location_id VARCHAR(255),
+    ghl_user_id VARCHAR(255),
     
     -- Metadata
-    setup_status VARCHAR(20) DEFAULT 'completed', -- pending, completed, failed
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    last_updated_timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    -- Create unique constraint to prevent duplicates per user/agent
-    UNIQUE(firm_user_id, agent_id)
+    setup_status VARCHAR(20) DEFAULT 'completed',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    last_updated_timestamp TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Unique constraint (enforced via index in actual DB)
+CREATE UNIQUE INDEX IF NOT EXISTS unique_business_details 
+    ON public.business_details(firm_user_id, agent_id);
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_business_details_firm_user_id ON business_details(firm_user_id);

@@ -11,6 +11,7 @@ import { UserProvider } from "./hooks/useUser";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import GlobalNotificationBell from "./components/GlobalNotificationBell";
 import { MobileProvider } from "./components/mobile";
+import { PlatformProvider } from "./contexts/PlatformContext";
 import { useEffect } from "react";
 import { supabase } from "./lib/supabase";
 import Index from "./pages/Index";
@@ -136,12 +137,13 @@ const AuthHandler = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <UserProvider>
-      <MobileProvider>
-        <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+    <PlatformProvider>
+      <UserProvider>
+        <MobileProvider>
+          <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
           <AuthHandler />
           <GlobalNotificationBell />
           <Routes>
@@ -348,10 +350,11 @@ const App = () => (
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-      </MobileProvider>
-    </UserProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+        </MobileProvider>
+      </UserProvider>
+    </PlatformProvider>
   </QueryClientProvider>
 );
 

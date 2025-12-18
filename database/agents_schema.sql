@@ -36,8 +36,29 @@ CREATE TABLE IF NOT EXISTS agent_conversations (
   FOREIGN KEY (agent_id) REFERENCES agents(agent_id)
 );
 
+-- 3. Chat history table (primary conversation storage)
+CREATE TABLE IF NOT EXISTS chat_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  sender TEXT NOT NULL,
+  message TEXT NOT NULL,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  agent_name TEXT NOT NULL,
+  agent_id TEXT NOT NULL,
+  message_hash TEXT,  -- For deduplication
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  -- MCP Integration
+  mcp_tool_used TEXT,
+  mcp_context JSONB
+);
+
 -- Indexes for performance
 CREATE INDEX idx_agents_category ON agents(category);
 CREATE INDEX idx_conversations_session ON agent_conversations(session_id);
 CREATE INDEX idx_conversations_timestamp ON agent_conversations(session_id, timestamp);
 CREATE INDEX idx_conversations_sender ON agent_conversations(is_user_message);
+CREATE INDEX idx_chat_history_session ON chat_history(session_id);
+CREATE INDEX idx_chat_history_timestamp ON chat_history(timestamp DESC);
+CREATE INDEX idx_chat_history_user_agent ON chat_history(user_id, agent_id);

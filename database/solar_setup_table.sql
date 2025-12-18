@@ -1,42 +1,54 @@
 -- Solar Setup Table Creation Script
 -- This table stores solar setup data from the SolarSetup.tsx page
 
-CREATE TABLE IF NOT EXISTS solar_setup (
+CREATE TABLE IF NOT EXISTS public.solar_setup (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    firm_user_id UUID NOT NULL REFERENCES profiles(user_id) ON DELETE CASCADE,
-    agent_id VARCHAR(50) NOT NULL DEFAULT 'SOL',
+    firm_user_id UUID,  -- No FK constraint in actual DB
+    agent_id VARCHAR(50) DEFAULT 'SOL',
     
     -- Pricing Information
-    installation_price DECIMAL(6, 2) NOT NULL DEFAULT 2.00, -- $/Watt
-    dealer_fee DECIMAL(5, 2) NOT NULL DEFAULT 15.0, -- Percentage
-    broker_fee DECIMAL(10, 2) NOT NULL DEFAULT 0.00, -- Fixed dollar amount
+    installation_price NUMERIC,
+    dealer_fee NUMERIC,
+    broker_fee NUMERIC,
     
     -- Purchase Options
-    allow_financed BOOLEAN NOT NULL DEFAULT true,
-    allow_cash BOOLEAN NOT NULL DEFAULT true,
+    allow_financed BOOLEAN,
+    allow_cash BOOLEAN,
     
     -- Financing Details
-    financing_apr DECIMAL(5, 2) NOT NULL DEFAULT 5.0, -- Annual percentage rate
-    financing_term INTEGER NOT NULL DEFAULT 240, -- Months
+    financing_apr NUMERIC,
+    financing_term INTEGER,
     
     -- Energy Information
-    energy_price DECIMAL(6, 3) NOT NULL DEFAULT 0.170, -- $/kW
-    yearly_electric_cost_increase DECIMAL(5, 2) NOT NULL DEFAULT 4.0, -- Percentage
+    energy_price NUMERIC,
+    yearly_electric_cost_increase NUMERIC,
     
     -- Installation Details
-    installation_lifespan INTEGER NOT NULL DEFAULT 20, -- Years
-    typical_panel_count INTEGER NOT NULL DEFAULT 40, -- Number of panels
-    max_roof_segments INTEGER NOT NULL DEFAULT 4, -- Maximum segments
-    solar_incentive DECIMAL(5, 2) NOT NULL DEFAULT 3.0, -- Percentage
+    installation_lifespan INTEGER,
+    typical_panel_count INTEGER,
+    max_roof_segments INTEGER,
+    solar_incentive NUMERIC,
+    
+    -- Property and Currency (added fields from actual DB)
+    property_type VARCHAR(20) NOT NULL DEFAULT 'Residential',
+    currency VARCHAR(3) DEFAULT 'GBP',
+    
+    -- Setup JSON for additional configuration
+    setup_json JSONB,
+    
+    -- GHL Integration
+    ghl_location_id VARCHAR(255),
+    ghl_user_id VARCHAR(255),
     
     -- Metadata
-    setup_status VARCHAR(20) DEFAULT 'completed', -- pending, completed, failed
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    last_updated_timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    -- Create unique constraint to prevent duplicates per user/agent
-    UNIQUE(firm_user_id, agent_id)
+    setup_status VARCHAR(20) DEFAULT 'completed',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    last_updated_timestamp TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Unique constraint (enforced via index in actual DB)
+CREATE UNIQUE INDEX IF NOT EXISTS unique_solar_setup 
+    ON public.solar_setup(firm_user_id, agent_id);
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_solar_setup_firm_user_id ON solar_setup(firm_user_id);

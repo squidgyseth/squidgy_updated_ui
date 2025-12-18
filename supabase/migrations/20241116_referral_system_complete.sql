@@ -17,8 +17,24 @@ DROP TABLE IF EXISTS referral_achievements CASCADE;
 -- Keep referral_tiers as it has our data
 -- DROP TABLE IF EXISTS referral_tiers CASCADE;
 
+-- Create referral_rewards table (missing from original)
+CREATE TABLE IF NOT EXISTS referral_rewards (
+    id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    reward_type VARCHAR(50) NOT NULL,
+    reward_value JSONB NOT NULL,
+    trigger_event VARCHAR(50) NOT NULL,
+    required_referrals INTEGER DEFAULT 1,
+    tier_id UUID,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    icon VARCHAR(10),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Create referral_codes table
-CREATE TABLE referral_codes (
+CREATE TABLE IF NOT EXISTS referral_codes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     code VARCHAR(50) UNIQUE NOT NULL,

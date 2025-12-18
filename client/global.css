@@ -6,6 +6,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Platform Whitelabel CSS Variables */
+:root {
+  --platform-primary: #5E17EB;
+  --platform-secondary: #A61D92;
+  --platform-accent: #FB252A;
+  --platform-gradient-start: #FB252A;
+  --platform-gradient-mid: #A61D92;
+  --platform-gradient-end: #6017E8;
+}
+
 @layer base {
   /**
    * Tailwind CSS theme
