@@ -158,9 +158,9 @@ export default function Login() {
             toast.success(routeDecision.reason);
             navigate(routeDecision.redirectPath);
           } else {
-            // Fallback to onboarding if no userId after waiting
-            console.log('⚠️ Login: No userId found after waiting, falling back to onboarding');
-            navigate('/ai-onboarding/business-type');
+            // Fallback to dashboard with onboarding if no userId after waiting
+            console.log('⚠️ Login: No userId found after waiting, falling back to dashboard with onboarding');
+            navigate('/dashboard?onboarding=true');
           }
         };
         
@@ -168,8 +168,8 @@ export default function Login() {
         
       } catch (error) {
         console.error('❌ Login: Error determining route:', error);
-        // Fallback to onboarding on error
-        navigate('/ai-onboarding/business-type');
+        // Fallback to dashboard with onboarding on error
+        navigate('/dashboard?onboarding=true');
       }
     } catch (error: any) {
       console.error('Login error:', error);

@@ -67,10 +67,10 @@ class OnboardingRouter {
         };
       }
 
-      // New user - start onboarding from beginning
+      // New user - redirect to dashboard with onboarding modal
       return {
         shouldShowOnboarding: true,
-        redirectPath: '/ai-onboarding/business-type',
+        redirectPath: '/dashboard?onboarding=true',
         reason: 'New user, starting fresh onboarding',
         isNewUser: true,
         isReturningUser: false,
@@ -80,10 +80,10 @@ class OnboardingRouter {
     } catch (error) {
       console.error('❌ OnboardingRouter: Error determining route:', error);
       
-      // Default to onboarding on error to be safe
+      // Default to dashboard with onboarding on error to be safe
       return {
         shouldShowOnboarding: true,
-        redirectPath: '/ai-onboarding/business-type',
+        redirectPath: '/dashboard?onboarding=true',
         reason: 'Error checking status, defaulting to onboarding',
         isNewUser: true,
         isReturningUser: false,
@@ -103,10 +103,10 @@ class OnboardingRouter {
       const progress = await onboardingDataService.getOnboardingProgress(userId);
       
       if (progress) {
-        // User has data - start from business type with pre-filled data
+        // User has data - show onboarding modal on dashboard
         return {
           shouldShowOnboarding: true,
-          redirectPath: '/ai-onboarding/business-type',
+          redirectPath: '/dashboard?onboarding=true',
           reason: 'User wants to modify existing onboarding data',
           isNewUser: false,
           isReturningUser: true,
@@ -117,7 +117,7 @@ class OnboardingRouter {
       // No progress data - start fresh
       return {
         shouldShowOnboarding: true,
-        redirectPath: '/ai-onboarding/business-type',
+        redirectPath: '/dashboard?onboarding=true',
         reason: 'User starting onboarding for first time via sidebar',
         isNewUser: true,
         isReturningUser: false,
@@ -129,7 +129,7 @@ class OnboardingRouter {
       
       return {
         shouldShowOnboarding: true,
-        redirectPath: '/ai-onboarding/business-type',
+        redirectPath: '/dashboard?onboarding=true',
         reason: 'Error checking data, starting fresh',
         isNewUser: true,
         isReturningUser: false,

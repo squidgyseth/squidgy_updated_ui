@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCompanyBranding } from "../hooks/useCompanyBranding";
 import { useUser } from "../hooks/useUser";
@@ -10,6 +10,7 @@ import LeftNavigation from "../components/layout/LeftNavigation";
 import NotificationBell from "../components/NotificationBell";
 import { ResponsiveLayout } from "../components/mobile";
 import { MobileDashboard } from "../components/mobile/dashboard/MobileDashboard";
+import NewOnboardingModal from "../components/onboarding/NewOnboardingModal";
 import { 
   MessageCircle, 
   Home, 
@@ -37,9 +38,24 @@ import {
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("weekly");
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const navigate = useNavigate();
   const { companyName, faviconUrl, isLoading } = useCompanyBranding();
-  const { user } = useUser();
+  const { user, userId } = useUser();
+
+  // Check if we should show onboarding modal
+  useEffect(() => {
+    // Check URL params for onboarding flag
+    const urlParams = new URLSearchParams(window.location.search);
+    const shouldShowOnboarding = urlParams.get('onboarding') === 'true';
+    
+    // Also check if user hasn't seen onboarding before
+    const hasSeenOnboarding = localStorage.getItem('onboarding_seen') === 'true';
+    
+    if (shouldShowOnboarding || (!hasSeenOnboarding && userId)) {
+      setShowOnboarding(true);
+    }
+  }, [userId]);
 
   const desktopLayout = (
     <div className="min-h-screen bg-white">
@@ -844,11 +860,19 @@ export default function Index() {
   );
 
   return (
-    <ResponsiveLayout
-      desktopLayout={desktopLayout}
-      showBottomNav={true}
-    >
-      <MobileDashboard />
-    </ResponsiveLayout>
+    <>
+      <ResponsiveLayout
+        desktopLayout={desktopLayout}
+        showBottomNav={true}
+      >
+        <MobileDashboard />
+      </ResponsiveLayout>
+      
+      {/* New Onboarding Modal */}
+      <NewOnboardingModal 
+        isOpen={showOnboarding} 
+        onClose={() => setShowOnboarding(false)} 
+      />
+    </>
   );
 }

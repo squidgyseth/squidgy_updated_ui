@@ -61,8 +61,8 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
       const routeDecision = await onboardingRouter.handleOnboardingIconClick(userId);
       navigate(routeDecision.redirectPath);
     } else {
-      // No userId, start fresh onboarding
-      navigate('/ai-onboarding/business-type');
+      // No userId, show onboarding modal on dashboard
+      navigate('/dashboard?onboarding=true');
     }
   };
 
