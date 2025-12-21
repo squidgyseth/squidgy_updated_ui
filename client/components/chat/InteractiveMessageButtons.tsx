@@ -1,4 +1,6 @@
 import React from 'react';
+import { googleCalendarService } from '../../lib/googleCalendar';
+import { toast } from 'sonner';
 
 interface InteractiveMessageButtonsProps {
   content: string;
@@ -66,9 +68,71 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
   const buttonOptions = parseButtonOptions(content);
   const textContent = cleanContent(content, buttonOptions);
 
-  const handleButtonClick = (option: ButtonOption) => {
-    // Send the option text directly - let the assistant handle the context
-    // This is more flexible and works with various conversation flows
+  const handleButtonClick = async (option: ButtonOption) => {
+    // Check for special button types that need real functionality
+    const buttonText = option.text.toLowerCase();
+    
+    // Google Calendar connection
+    if (buttonText.includes('google calendar') || buttonText === 'connect calendar') {
+      try {
+        const authUrl = googleCalendarService.getAuthUrl();
+        const urlWithState = `${authUrl}&state=google_calendar_auth`;
+        window.location.href = urlWithState;
+        return; // Don't send to chat, handle the redirect
+      } catch (error) {
+        console.error('Calendar connection error:', error);
+        toast.error('Failed to connect to Google Calendar');
+        onButtonClick('There was an error connecting to Google Calendar. Please try again.');
+        return;
+      }
+    }
+    
+    // Outlook Calendar connection  
+    if (buttonText.includes('outlook calendar')) {
+      toast.info('Outlook Calendar integration coming soon!');
+      onButtonClick('Outlook Calendar integration is coming soon. For now, you can use Google Calendar.');
+      return;
+    }
+    
+    // Apple Calendar connection
+    if (buttonText.includes('apple calendar')) {
+      toast.info('Apple Calendar integration coming soon!');
+      onButtonClick('Apple Calendar integration is coming soon. For now, you can use Google Calendar.');
+      return;
+    }
+    
+    // Enable Notifications
+    if (buttonText.includes('enable notifications')) {
+      try {
+        if ('Notification' in window) {
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+            toast.success('Notifications enabled successfully!');
+            onButtonClick('Great! Notifications have been enabled. You\'ll receive updates about leads, meetings, and important tasks.');
+          } else {
+            toast.error('Notifications were denied. Please enable them in your browser settings.');
+            onButtonClick('Notifications were not enabled. You can enable them later in your browser settings.');
+          }
+        } else {
+          toast.error('Notifications are not supported in this browser.');
+          onButtonClick('Notifications are not supported in this browser.');
+        }
+        return;
+      } catch (error) {
+        console.error('Notification error:', error);
+        onButtonClick('There was an error enabling notifications.');
+        return;
+      }
+    }
+    
+    // Connect Calendar (generic)
+    if (buttonText === 'connect calendar') {
+      // Show calendar options or default to Google
+      onButtonClick('I\'d like to connect my calendar. Please show me the available options.');
+      return;
+    }
+    
+    // For all other buttons, send the option text directly to continue conversation
     onButtonClick(option.text);
   };
 
