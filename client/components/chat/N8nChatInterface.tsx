@@ -11,6 +11,8 @@ import { createProxyUrl } from '../../utils/urlMasking';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 import NewsletterSelector from './NewsletterSelector';
 import InteractiveMessageButtons from './InteractiveMessageButtons';
+import { googleCalendarService } from '../../lib/googleCalendar';
+import { toast } from 'sonner';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -65,7 +67,55 @@ export default function N8nChatInterface({
     if (agent.id === 'content_repurposer') {
       setShowNewsletterSelector(true);
     }
+    
+    // Handle Google Calendar OAuth callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    
+    if (code && state === 'google_calendar_auth') {
+      handleCalendarAuthCallback(code);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, [agent.introMessage, agent.id]);
+
+  // Handle Google Calendar OAuth callback
+  const handleCalendarAuthCallback = async (code: string) => {
+    try {
+      const success = await googleCalendarService.handleAuthCallback(code);
+      if (success) {
+        toast.success('Successfully connected to Google Calendar!');
+        // Add a message to the chat about successful connection
+        const successMessage: ChatMessage = {
+          id: generateRequestId(),
+          content: '✅ Google Calendar connected successfully! Your assistant can now manage your schedule, create meetings, and check availability.',
+          sender: 'agent',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, successMessage]);
+      } else {
+        toast.error('Failed to connect to Google Calendar');
+        const errorMessage: ChatMessage = {
+          id: generateRequestId(),
+          content: '❌ Failed to connect to Google Calendar. Please try again.',
+          sender: 'agent',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Calendar auth callback error:', error);
+      toast.error('Failed to connect to Google Calendar');
+      const errorMessage: ChatMessage = {
+        id: generateRequestId(),
+        content: '❌ There was an error connecting to Google Calendar. Please try again.',
+        sender: 'agent',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
+  };
 
   // Helper function to save messages to database
   const saveMessageToHistory = async (
