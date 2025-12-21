@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase';
 import { createProxyUrl } from '../../utils/urlMasking';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 import NewsletterSelector from './NewsletterSelector';
+import InteractiveMessageButtons from './InteractiveMessageButtons';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -203,6 +204,19 @@ export default function N8nChatInterface({
 
   const handleAnswerQuestion = (answer: string) => {
     handleSendMessage(answer);
+  };
+
+  const handleButtonClick = (text: string) => {
+    handleSendMessage(text);
+  };
+
+  // Helper function to detect if message contains interactive buttons
+  const hasInteractiveButtons = (content: string): boolean => {
+    // Look for the flexible button patterns
+    const pattern1 = /^(.{1,4})\s*\*\*([^*]+)\*\*\s*-\s*(.+)$/gmu;
+    const pattern2 = /^(.{1,4})\s*\*\*([^*]+)\*\*\s*$/gmu;
+    
+    return pattern1.test(content) || pattern2.test(content);
   };
 
   const handleAttachmentClick = () => {
@@ -481,12 +495,19 @@ export default function N8nChatInterface({
                         onAnswerQuestion={handleAnswerQuestion}
                       />
                     ) : (
-                      // Regular message display
+                      // Regular message display with interactive buttons support
                       <div className="bg-gray-100 rounded-lg px-4 py-2">
-                        <LinkDetectingTextArea 
-                          content={message.content}
-                          className="text-text-primary whitespace-pre-wrap"
-                        />
+                        {hasInteractiveButtons(message.content) ? (
+                          <InteractiveMessageButtons
+                            content={message.content}
+                            onButtonClick={handleButtonClick}
+                          />
+                        ) : (
+                          <LinkDetectingTextArea 
+                            content={message.content}
+                            className="text-text-primary whitespace-pre-wrap"
+                          />
+                        )}
                       </div>
                     )}
                     <span className="text-xs text-gray-500 mt-1 block">
