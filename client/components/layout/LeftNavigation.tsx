@@ -116,8 +116,8 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
           </span>
         </button>
         
-        {/* Create Agent Icon */}
-        <button 
+        {/* Create Agent Icon - Hidden for now */}
+        {/* <button 
           onClick={handleCreateAgentClick}
           className="flex flex-col items-center p-2 w-full hover:bg-gray-100 rounded-lg transition-colors"
         >
@@ -138,7 +138,7 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
           <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center w-[46px]">
             Create Agents
           </span>
-        </button>
+        </button> */}
         
         {/* Chat Icon */}
         <button 
