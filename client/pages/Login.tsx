@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { signIn } from '../lib/api';
@@ -81,7 +81,6 @@ const carouselStates: CarouselState[] = [
 
 export default function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { setUserId, userId } = useUser();
   const { platform } = usePlatform();
   const theme = usePlatformTheme();
@@ -93,40 +92,17 @@ export default function Login() {
 
   // Check if user arrived after email confirmation
   useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const type = urlParams.get('type');
-    const code = urlParams.get('code');
+    // Check sessionStorage flag set by AuthHandler
+    const emailVerified = sessionStorage.getItem('email_verified');
     
-    // Don't show success message for password recovery - that goes to /reset-password
-    if (type === 'recovery') {
-      return;
+    if (emailVerified === 'true') {
+      console.log('Login: Email verified flag found, showing success toast');
+      // Clear the flag immediately to prevent showing again on refresh
+      sessionStorage.removeItem('email_verified');
+      
+      toast.success('Email verified successfully!');
     }
-    
-    // Show success message for email confirmation (explicit type in URL)
-    if (type === 'signup' || type === 'email_change') {
-      toast.success('Email verified successfully! You can now sign in.', {
-        duration: 5000,
-      });
-      // Clean up URL params after a short delay
-      setTimeout(() => {
-        navigate('/login', { replace: true });
-      }, 100);
-    } else if (code && !type) {
-      // Generic code without type - could be signup confirmation via PKCE
-      // Wait for Supabase to process and check if it's NOT a password recovery
-      // The AuthHandler will redirect to /reset-password if it's PASSWORD_RECOVERY
-      const timer = setTimeout(() => {
-        // Only show success if we're still on /login (not redirected to /reset-password)
-        if (window.location.pathname === '/login') {
-          toast.success('Email verified successfully! You can now sign in.', {
-            duration: 5000,
-          });
-          navigate('/login', { replace: true });
-        }
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [location.search, navigate]);
+  }, []); // Run only once on mount
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % carouselStates.length);

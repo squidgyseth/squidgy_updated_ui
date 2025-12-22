@@ -116,16 +116,21 @@ const AuthHandler = () => {
           // Password reset flow - explicit type in URL
           console.log('AuthHandler: Redirecting to reset password page');
           navigate('/reset-password' + location.search, { replace: true });
-        } else if (type === 'signup' || type === 'email_change' || type === 'magiclink') {
-          // Signup confirmation or other non-recovery flows
-          console.log('AuthHandler: Redirecting to login page for signup/email confirmation');
+        } else if (type === 'signup' || type === 'email_change') {
+          // Signup confirmation - set flag for Login page to show success toast
+          console.log('AuthHandler: Email verification detected, setting flag and redirecting to login');
+          sessionStorage.setItem('email_verified', 'true');
+          navigate('/login', { replace: true });
+        } else if (type === 'magiclink') {
+          // Magic link login
+          console.log('AuthHandler: Magic link detected, redirecting to login');
           navigate('/login' + location.search, { replace: true });
         } else if (code || accessToken) {
-          // Generic auth callback without type - let Supabase process it first
-          // The onAuthStateChange listener above will handle PASSWORD_RECOVERY
-          // For signup confirmations, default to login page
-          console.log('AuthHandler: Generic auth callback, defaulting to login (Supabase will fire PASSWORD_RECOVERY if needed)');
-          navigate('/login' + location.search, { replace: true });
+          // Generic auth callback without type - could be signup confirmation
+          // Set flag just in case, the Login page will check if it's appropriate
+          console.log('AuthHandler: Generic auth callback, setting flag and redirecting to login');
+          sessionStorage.setItem('email_verified', 'true');
+          navigate('/login', { replace: true });
         }
       }
       
