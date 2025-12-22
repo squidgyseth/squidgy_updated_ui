@@ -102,11 +102,15 @@ export default function Login() {
       return;
     }
     
-    // Show success message for email confirmation
+    // Show success message for email confirmation (explicit type in URL)
     if (type === 'signup' || type === 'email_change') {
-      toast.success('Email verified successfully! You can now sign in.');
-      // Clean up URL params
-      navigate('/login', { replace: true });
+      toast.success('Email verified successfully! You can now sign in.', {
+        duration: 5000,
+      });
+      // Clean up URL params after a short delay
+      setTimeout(() => {
+        navigate('/login', { replace: true });
+      }, 100);
     } else if (code && !type) {
       // Generic code without type - could be signup confirmation via PKCE
       // Wait for Supabase to process and check if it's NOT a password recovery
@@ -114,10 +118,12 @@ export default function Login() {
       const timer = setTimeout(() => {
         // Only show success if we're still on /login (not redirected to /reset-password)
         if (window.location.pathname === '/login') {
-          toast.success('Email verified successfully! You can now sign in.');
+          toast.success('Email verified successfully! You can now sign in.', {
+            duration: 5000,
+          });
           navigate('/login', { replace: true });
         }
-      }, 800);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [location.search, navigate]);
