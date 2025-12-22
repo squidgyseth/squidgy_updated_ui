@@ -1,6 +1,22 @@
 import "./global.css";
 import "./styles/mobile/mobile.css";
 
+// Capture email verification params IMMEDIATELY before Supabase processes them
+// This runs at module load time, before React mounts
+(function captureEmailVerification() {
+  const params = new URLSearchParams(window.location.search);
+  const type = params.get('type');
+  const code = params.get('code');
+  
+  console.log('App.tsx: Early capture check:', { type, hasCode: !!code, pathname: window.location.pathname });
+  
+  // If this looks like an email verification callback (not password recovery)
+  if ((type === 'signup' || type === 'email_change' || code) && type !== 'recovery') {
+    console.log('App.tsx: Email verification detected, setting flag');
+    sessionStorage.setItem('email_verified', 'true');
+  }
+})();
+
 import { Toaster } from "./components/ui/toaster";
 import { createRoot } from "react-dom/client";
 import { Toaster as Sonner } from "./components/ui/sonner";
