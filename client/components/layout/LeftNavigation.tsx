@@ -116,8 +116,8 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
           </span>
         </button>
         
-        {/* Create Agent Icon */}
-        <button 
+        {/* Create Agent Icon - Hidden for now */}
+        {/* <button 
           onClick={handleCreateAgentClick}
           className="flex flex-col items-center p-2 w-full hover:bg-gray-100 rounded-lg transition-colors"
         >
@@ -138,7 +138,7 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
           <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center w-[46px]">
             Create Agents
           </span>
-        </button>
+        </button> */}
         
         {/* Chat Icon */}
         <button 
@@ -244,8 +244,8 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
           </span>
         </button>
         
-        {/* Menu Icon */}
-        <div className="flex flex-col items-center p-2 w-full">
+        {/* Menu Icon - Hidden for now */}
+        {/* <div className="flex flex-col items-center p-2 w-full">
           <div className="flex justify-center items-center mb-1">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 12H21M3 6H21M3 18H21" stroke="url(#menuGradient)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -261,7 +261,7 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
           <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center w-[46px]">
             Menu
           </span>
-        </div>
+        </div> */}
       </div>
       
       {/* Spacer to push bottom items to the very bottom */}
