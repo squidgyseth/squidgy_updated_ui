@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
@@ -86,6 +86,16 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Check if user arrived after email confirmation
+  useEffect(() => {
+    const emailVerified = sessionStorage.getItem('email_verified');
+    
+    if (emailVerified === 'true') {
+      sessionStorage.removeItem('email_verified');
+      toast.success('Email verified successfully!');
+    }
+  }, []);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % carouselStates.length);
