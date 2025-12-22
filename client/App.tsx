@@ -123,23 +123,19 @@ const AuthHandler = () => {
         }
       }
       
-      // Also check if we're on /login with password reset parameters
-      if (location.pathname === '/login' && code && !type) {
-        console.log('AuthHandler: Checking if this is a password reset on login page');
-        // This might be a password reset that landed on /login
-        // Let's check if the user gets authenticated and then redirect to reset-password
-        setTimeout(async () => {
-          try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-              console.log('AuthHandler: User authenticated via password reset link, redirecting to reset-password');
-              navigate('/reset-password' + location.search, { replace: true });
-            }
-          } catch (error) {
-            console.log('AuthHandler: Not a password reset link');
-          }
-        }, 500);
-      }
+      // Listen for PASSWORD_RECOVERY event from Supabase to handle password reset
+      // This is the only reliable way to detect password reset vs email verification
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          console.log('AuthHandler: PASSWORD_RECOVERY event detected, redirecting to reset-password');
+          navigate('/reset-password', { replace: true });
+        }
+      });
+
+      // Clean up subscription after a short delay
+      setTimeout(() => {
+        subscription.unsubscribe();
+      }, 2000);
     };
 
     // Small delay to ensure the component is mounted
