@@ -16,7 +16,8 @@ interface CompanyMaterial {
   name: string;
   size: number;
   type: string;
-  file: File;
+  file?: File;
+  url?: string;
 }
 
 // Main Business Details Page Component
@@ -46,6 +47,49 @@ export default function BusinessDetails() {
   const [state, setState] = useState('');
   const [postalCode, setPostalCode] = useState('');
   
+  // Load previously uploaded files from Supabase storage
+  const loadUploadedFiles = async () => {
+    if (!userId) return;
+    
+    try {
+      // List files in the company bucket that belong to this user
+      const { data: files, error } = await supabase.storage
+        .from('company')
+        .list('', {
+          search: `${userId}_`
+        });
+
+      if (error) {
+        console.error('Error loading uploaded files:', error);
+        return;
+      }
+
+      if (files && files.length > 0) {
+        const materials: CompanyMaterial[] = files.map((file) => {
+          const { data: { publicUrl } } = supabase.storage
+            .from('company')
+            .getPublicUrl(file.name);
+          
+          // Extract original filename (remove userId_timestamp_ prefix)
+          const originalName = file.name.replace(/^[^_]+_\d+_/, '');
+          
+          return {
+            id: file.id || file.name,
+            name: originalName,
+            size: file.metadata?.size || 0,
+            type: file.metadata?.mimetype || '',
+            url: publicUrl
+          };
+        });
+        
+        setUploadedMaterials(materials);
+        console.log('📁 BusinessDetails: Loaded', materials.length, 'previously uploaded files');
+      }
+    } catch (error) {
+      console.error('Error loading uploaded files:', error);
+    }
+  };
+
   // Load existing data from database on component mount
   useEffect(() => {
     const loadExistingData = async () => {
@@ -124,6 +168,7 @@ export default function BusinessDetails() {
     };
 
     loadExistingData();
+    loadUploadedFiles();
   }, [userId, dataLoaded]);
   
   // Handle address method change - clear fields when switching
