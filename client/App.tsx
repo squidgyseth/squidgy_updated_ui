@@ -108,22 +108,11 @@ const AuthHandler = () => {
         }
       }
       
-      // Also check if we're on /login with password reset parameters
-      if (location.pathname === '/login' && code && !type) {
-        console.log('AuthHandler: Checking if this is a password reset on login page');
-        // This might be a password reset that landed on /login
-        // Let's check if the user gets authenticated and then redirect to reset-password
-        setTimeout(async () => {
-          try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-              console.log('AuthHandler: User authenticated via password reset link, redirecting to reset-password');
-              navigate('/reset-password' + location.search, { replace: true });
-            }
-          } catch (error) {
-            console.log('AuthHandler: Not a password reset link');
-          }
-        }, 500);
+      // Only redirect to reset-password if type is explicitly 'recovery'
+      // Do NOT redirect signup confirmations to reset-password
+      if (location.pathname === '/login' && code && type === 'recovery') {
+        console.log('AuthHandler: Password reset detected on login page, redirecting to reset-password');
+        navigate('/reset-password' + location.search, { replace: true });
       }
     };
 
