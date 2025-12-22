@@ -164,7 +164,8 @@ export default function BusinessDetails() {
       formData.append('agent_id', 'personal_assistant'); // Use personal_assistant for company materials
       formData.append('agent_name', 'Personal Assistant');
 
-      const response = await fetch('http://localhost:8000/api/knowledge-base/file', {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/knowledge-base/file`, {
         method: 'POST',
         body: formData,
       });
