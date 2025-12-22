@@ -206,9 +206,30 @@ export default function BusinessDetails() {
         const timestamp = Date.now();
         const fileName = `${userId}_${timestamp}_${file.name}`;
         
+        // Determine content type - use file.type if available, otherwise infer from extension
+        let contentType = file.type;
+        if (!contentType || contentType === 'application/octet-stream') {
+          const ext = file.name.split('.').pop()?.toLowerCase();
+          const mimeTypes: Record<string, string> = {
+            'md': 'text/markdown',
+            'txt': 'text/plain',
+            'pdf': 'application/pdf',
+            'doc': 'application/msword',
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'png': 'image/png',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'svg': 'image/svg+xml',
+          };
+          contentType = mimeTypes[ext || ''] || 'application/octet-stream';
+        }
+
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('company')
-          .upload(fileName, file);
+          .upload(fileName, file, {
+            contentType,
+            upsert: false
+          });
 
         if (uploadError) {
           console.error('Supabase upload error:', uploadError);
@@ -672,7 +693,7 @@ export default function BusinessDetails() {
                     <span className="text-gray-600"> or drag and drop</span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    PDF, PNG, JPG, SVG (max. 10MB each)
+                    PDF, PNG, JPG, SVG, MD, TXT, DOC (max. 10MB each)
                   </p>
                   {isDragging && !uploading && (
                     <p className="text-sm text-blue-600 font-medium mt-2">
@@ -690,7 +711,7 @@ export default function BusinessDetails() {
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept=".pdf,.png,.jpg,.jpeg,.svg,.doc,.docx"
+                  accept=".pdf,.png,.jpg,.jpeg,.svg,.doc,.docx,.md,.txt"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
