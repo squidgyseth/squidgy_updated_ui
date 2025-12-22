@@ -347,11 +347,48 @@ export default function BusinessDetails() {
     processFiles(files);
   };
 
-  const removeUploadedFile = (id: string) => {
+  const removeUploadedFile = async (id: string) => {
+    // Find the material to get its name for deletion from Supabase
+    const material = uploadedMaterials.find(m => m.id === id);
+    
+    if (material) {
+      try {
+        // Try to find and delete the file from Supabase storage
+        // The file is stored with format: userId_timestamp_filename
+        const { data: files } = await supabase.storage
+          .from('company')
+          .list('', {
+            search: `${userId}_`
+          });
+        
+        if (files) {
+          // Find the file that matches this material's name
+          const fileToDelete = files.find(f => {
+            const originalName = f.name.replace(/^[^_]+_\d+_/, '');
+            return originalName === material.name || f.name === id || f.id === id;
+          });
+          
+          if (fileToDelete) {
+            const { error } = await supabase.storage
+              .from('company')
+              .remove([fileToDelete.name]);
+            
+            if (error) {
+              console.error('Error deleting file from Supabase:', error);
+            } else {
+              console.log('📁 BusinessDetails: Deleted file from Supabase:', fileToDelete.name);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error removing file from storage:', error);
+      }
+    }
+    
     setUploadedMaterials(prev => prev.filter(material => material.id !== id));
     toast({
       title: "File Removed",
-      description: "File has been removed from upload queue",
+      description: "File has been removed",
     });
   };
 
