@@ -134,10 +134,21 @@ const AuthHandler = () => {
         }
       }
       
-      // Only redirect to reset-password if type is explicitly 'recovery'
-      if (location.pathname === '/login' && code && type === 'recovery') {
-        console.log('AuthHandler: Password reset detected on login page, redirecting to reset-password');
-        navigate('/reset-password' + location.search, { replace: true });
+      // Handle auth callbacks on /login page (email confirmation links redirect here directly)
+      if (location.pathname === '/login' && (code || accessToken || type) && !error) {
+        console.log('AuthHandler: Auth callback detected on login page');
+        
+        if (type === 'recovery') {
+          // Password reset flow
+          console.log('AuthHandler: Password reset detected on login page, redirecting to reset-password');
+          navigate('/reset-password' + location.search, { replace: true });
+        } else if (type === 'signup' || type === 'email_change' || code || accessToken) {
+          // Email verification - set flag and clean URL
+          console.log('AuthHandler: Email verification detected on login page, setting flag');
+          sessionStorage.setItem('email_verified', 'true');
+          // Clean up URL params
+          navigate('/login', { replace: true });
+        }
       }
     };
 

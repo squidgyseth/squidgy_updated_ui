@@ -91,15 +91,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   // Check if user arrived after email confirmation
+  // The flag is set by inline script in index.html BEFORE Supabase processes the URL
   useEffect(() => {
-    // Check sessionStorage flag set by AuthHandler
     const emailVerified = sessionStorage.getItem('email_verified');
     
     if (emailVerified === 'true') {
       console.log('Login: Email verified flag found, showing success toast');
-      // Clear the flag immediately to prevent showing again on refresh
       sessionStorage.removeItem('email_verified');
-      
       toast.success('Email verified successfully!');
     }
   }, []); // Run only once on mount
