@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { signIn } from '../lib/api';
@@ -81,6 +81,7 @@ const carouselStates: CarouselState[] = [
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setUserId, userId } = useUser();
   const { platform } = usePlatform();
   const theme = usePlatformTheme();
@@ -89,6 +90,37 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Check if user arrived after email confirmation
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const type = urlParams.get('type');
+    const code = urlParams.get('code');
+    
+    // Don't show success message for password recovery - that goes to /reset-password
+    if (type === 'recovery') {
+      return;
+    }
+    
+    // Show success message for email confirmation
+    if (type === 'signup' || type === 'email_change') {
+      toast.success('Email verified successfully! You can now sign in.');
+      // Clean up URL params
+      navigate('/login', { replace: true });
+    } else if (code && !type) {
+      // Generic code without type - could be signup confirmation via PKCE
+      // Wait for Supabase to process and check if it's NOT a password recovery
+      // The AuthHandler will redirect to /reset-password if it's PASSWORD_RECOVERY
+      const timer = setTimeout(() => {
+        // Only show success if we're still on /login (not redirected to /reset-password)
+        if (window.location.pathname === '/login') {
+          toast.success('Email verified successfully! You can now sign in.');
+          navigate('/login', { replace: true });
+        }
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [location.search, navigate]);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % carouselStates.length);

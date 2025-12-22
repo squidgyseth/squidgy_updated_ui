@@ -73,6 +73,23 @@ const AuthHandler = () => {
   const location = useLocation();
 
   useEffect(() => {
+    // Listen for Supabase auth events to properly detect PASSWORD_RECOVERY
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('AuthHandler: Supabase auth event:', event);
+      
+      // Only handle PASSWORD_RECOVERY event - this is the definitive way to detect password reset
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log('AuthHandler: PASSWORD_RECOVERY event detected, redirecting to reset-password');
+        navigate('/reset-password', { replace: true });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  useEffect(() => {
     const handleAuthRedirect = () => {
       const urlParams = new URLSearchParams(location.search);
       const code = urlParams.get('code');
@@ -96,23 +113,23 @@ const AuthHandler = () => {
         console.log('AuthHandler: Auth callback detected on root path');
         
         if (type === 'recovery') {
-          // Password reset flow
+          // Password reset flow - explicit type in URL
           console.log('AuthHandler: Redirecting to reset password page');
           navigate('/reset-password' + location.search, { replace: true });
-        } else if (type === 'signup') {
-          // Signup confirmation flow
-          console.log('AuthHandler: Redirecting to login page for signup confirmation');
+        } else if (type === 'signup' || type === 'email_change' || type === 'magiclink') {
+          // Signup confirmation or other non-recovery flows
+          console.log('AuthHandler: Redirecting to login page for signup/email confirmation');
           navigate('/login' + location.search, { replace: true });
         } else if (code || accessToken) {
-          // Generic auth callback - could be either, check for password reset indicators
-          // If no specific type, default to login page
-          console.log('AuthHandler: Generic auth callback, redirecting to login');
+          // Generic auth callback without type - let Supabase process it first
+          // The onAuthStateChange listener above will handle PASSWORD_RECOVERY
+          // For signup confirmations, default to login page
+          console.log('AuthHandler: Generic auth callback, defaulting to login (Supabase will fire PASSWORD_RECOVERY if needed)');
           navigate('/login' + location.search, { replace: true });
         }
       }
       
       // Only redirect to reset-password if type is explicitly 'recovery'
-      // Do NOT redirect signup confirmations to reset-password
       if (location.pathname === '/login' && code && type === 'recovery') {
         console.log('AuthHandler: Password reset detected on login page, redirecting to reset-password');
         navigate('/reset-password' + location.search, { replace: true });
