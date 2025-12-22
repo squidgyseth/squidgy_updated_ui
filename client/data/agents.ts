@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2025-12-19T12:28:05.496Z
+// Generated on: 2025-12-21T17:28:02.705Z
 
 export interface AgentConfig {
   agent: {
@@ -51,6 +51,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tagline": "Organize. Schedule. Support.",
       "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
       "pinned": true,
+      "initial_message": "Hello! To continue with the setup process, I'll need to review your company website to understand your organization's values, communication style, industry sector, and other relevant details. Could you please provide your website URL?",
       "capabilities": [
         "Task management and scheduling coordination",
         "Research and information gathering",
@@ -95,7 +96,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "Help me plan my upcoming trip"
     ],
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/c2fcbad6-abc0-43af-8aa8-d1661ff4461d"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant"
     },
     "personality": {
       "tone": "professional",
@@ -681,6 +682,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tagline": "Organize. Schedule. Support.",
       "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
       "pinned": true,
+      "initial_message": "Hello! To continue with the setup process, I'll need to review your company website to understand your organization's values, communication style, industry sector, and other relevant details. Could you please provide your website URL?",
       "capabilities": [
         "Task management and scheduling coordination",
         "Research and information gathering",
@@ -725,7 +727,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "Help me plan my upcoming trip"
     ],
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/c2fcbad6-abc0-43af-8aa8-d1661ff4461d"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant"
     },
     "personality": {
       "tone": "professional",
@@ -1046,6 +1048,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "tagline": "Organize. Schedule. Support.",
         "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
         "pinned": true,
+        "initial_message": "Hello! To continue with the setup process, I'll need to review your company website to understand your organization's values, communication style, industry sector, and other relevant details. Could you please provide your website URL?",
         "capabilities": [
           "Task management and scheduling coordination",
           "Research and information gathering",
@@ -1090,7 +1093,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "Help me plan my upcoming trip"
       ],
       "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/c2fcbad6-abc0-43af-8aa8-d1661ff4461d"
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant"
       },
       "personality": {
         "tone": "professional",

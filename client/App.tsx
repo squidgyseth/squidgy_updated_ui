@@ -62,6 +62,9 @@ import WaitlistWelcome from "./pages/WaitlistWelcome";
 // Mobile Pages
 import MobileChats from "./pages/mobile/chats";
 
+// New Onboarding
+import NewOnboarding from "./pages/new_onboarding";
+
 const queryClient = new QueryClient();
 
 // Component to handle auth redirects
@@ -333,6 +336,13 @@ const App = () => (
           <Route path="/mobile/chats" element={
             <ProtectedRoute>
               <MobileChats />
+            </ProtectedRoute>
+          } />
+          
+          {/* New Onboarding Flow */}
+          <Route path="/new_onboarding" element={
+            <ProtectedRoute>
+              <NewOnboarding />
             </ProtectedRoute>
           } />
           
