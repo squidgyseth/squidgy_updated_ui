@@ -5,24 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Squidgy</title>
     <script>
-<<<<<<< HEAD
-      // Capture email verification params BEFORE Supabase processes them
-=======
       // Capture email verification params BEFORE any other scripts run
->>>>>>> 30f3f67b6e1181d34a38da03ccffdc74e2f36230
       (function() {
         var params = new URLSearchParams(window.location.search);
         var type = params.get('type');
         var code = params.get('code');
-<<<<<<< HEAD
-        // If this looks like an email verification callback (not password recovery)
         if ((type === 'signup' || type === 'email_change' || code) && type !== 'recovery') {
           sessionStorage.setItem('email_verified', 'true');
-          console.log('index.html: Email verification detected, flag set');
-=======
-        if ((type === 'signup' || type === 'email_change' || code) && type !== 'recovery') {
-          sessionStorage.setItem('email_verified', 'true');
->>>>>>> 30f3f67b6e1181d34a38da03ccffdc74e2f36230
         }
       })();
     </script>
