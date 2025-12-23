@@ -105,8 +105,8 @@ export default function N8nChatInterface({
         setMessages(chatMessages);
         console.log(`✅ Loaded ${chatMessages.length} messages for session ${sessionId}`);
       } else {
-        console.log(`📝 No existing messages, creating new session with intro message`);
-        // New session - add intro message if available
+        console.log(`📝 No existing messages, showing intro message (not saving to DB)`);
+        // New session - show intro message in UI but DON'T save to database
         if (agent.introMessage) {
           const introMessage: ChatMessage = {
             id: generateRequestId(),
@@ -115,23 +115,14 @@ export default function N8nChatInterface({
             timestamp: new Date()
           };
           setMessages([introMessage]);
-          
-          // Save intro message to database
-          await chatSessionService.saveMessage(
-            userId,
-            sessionId,
-            'Agent',
-            agent.introMessage,
-            agent.name,
-            agent.id
-          );
+          // NOTE: Not saving intro message to database - only save real conversations
         } else {
           setMessages([]);
         }
       }
     } catch (error) {
       console.error('❌ Error loading session messages:', error);
-      // Fallback to intro message for new sessions
+      // Fallback to intro message for new sessions (but don't save to DB)
       if (agent.introMessage) {
         setMessages([{
           id: generateRequestId(),
