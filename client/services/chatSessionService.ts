@@ -69,6 +69,7 @@ class ChatSessionService {
         latest_timestamp: string;
         latest_message: string;
         message_count: number;
+        has_user_message: boolean;
       }>();
 
       data.forEach(row => {
@@ -82,11 +83,16 @@ class ChatSessionService {
             agent_name: row.agent_name,
             latest_timestamp: row.timestamp,
             latest_message: row.message.substring(0, 100), // Preview first 100 chars
-            message_count: 1
+            message_count: 1,
+            has_user_message: row.sender === 'User'
           });
         } else {
           // Update existing session
           existingSession.message_count++;
+          // Check if this session has any user messages
+          if (row.sender === 'User') {
+            existingSession.has_user_message = true;
+          }
           // Since data is sorted by timestamp DESC, the first message for each session is the latest
           // So we don't need to update latest_timestamp and latest_message after the first one
         }
@@ -94,11 +100,14 @@ class ChatSessionService {
 
       console.log(`📋 Grouped into ${sessionMap.size} unique sessions`);
 
+      // Filter out sessions that only have intro messages (no user messages)
       // Convert to array and sort by latest timestamp (most recent first)
       const sessions = Array.from(sessionMap.values())
+        .filter(session => session.has_user_message) // Only show sessions with actual conversations
         .sort((a, b) => new Date(b.latest_timestamp).getTime() - new Date(a.latest_timestamp).getTime())
         .slice(0, limit);
 
+      console.log(`✅ Filtered to ${sessions.length} sessions with real conversations`);
       console.log(`✅ Returning ${sessions.length} most recent sessions`);
       sessions.forEach((session, index) => {
         console.log(`📝 Session ${index + 1}: ${session.session_id} (${session.message_count} messages, latest: ${session.latest_timestamp})`);
