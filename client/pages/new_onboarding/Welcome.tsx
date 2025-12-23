@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Sparkles } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
+import { usePlatform, usePlatformTheme } from '@/contexts/PlatformContext';
 
 export default function NewOnboardingWelcome() {
   const navigate = useNavigate();
   const { profile } = useUser();
+  const { platform } = usePlatform();
+  const theme = usePlatformTheme();
   const [isOpen, setIsOpen] = useState(true);
 
   const handleStartSetup = () => {
@@ -55,7 +58,12 @@ export default function NewOnboardingWelcome() {
               />
             </div>
             {/* Sparkle Badge */}
-            <div className="absolute bottom-0 right-0 w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+            <div 
+              className="absolute bottom-0 right-0 w-10 h-10 rounded-full flex items-center justify-center"
+              style={{
+                background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+              }}
+            >
               <Sparkles className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -63,7 +71,7 @@ export default function NewOnboardingWelcome() {
           {/* Welcome Text */}
           <div className="space-y-4">
             <h1 className="text-3xl font-bold text-gray-900">
-              Hello, {userName}! I'm your Squidgy personal assistant
+              Hello, {userName}! I'm your {platform.displayName} personal assistant
             </h1>
             <p className="text-xl text-gray-600 max-w-lg">
               I'll help you set up your account, but first I need some info from you!
@@ -73,7 +81,10 @@ export default function NewOnboardingWelcome() {
           {/* Start Setup Button */}
           <button
             onClick={handleStartSetup}
-            className="px-12 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-lg rounded-full hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg"
+            className="px-12 py-4 text-white font-semibold text-lg rounded-full transition-all transform hover:scale-105 shadow-lg"
+            style={{
+              background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+            }}
           >
             Start Setup
           </button>

@@ -3,26 +3,58 @@
 
 // Import newsletter webhook service for editor save operations  
 import newslettersWebhookService from '../services/newslettersWebhookService';
+import { getPlatform, detectPlatformFromUrl, DEFAULT_PLATFORM_ID } from '../config/platforms';
 
 interface SupabaseApiConfig {
   url: string;
   key: string;
 }
 
-class SupabaseDirectApi {
-  private config: SupabaseApiConfig;
-
-  constructor() {
-    this.config = {
-      url: import.meta.env.VITE_SUPABASE_URL,
-      key: import.meta.env.VITE_SUPABASE_ANON_KEY
+/**
+ * Get platform-aware Supabase configuration
+ * Uses the current platform's Supabase URL and anon key
+ */
+function getPlatformSupabaseConfig(): SupabaseApiConfig {
+  const platformId = detectPlatformFromUrl();
+  const platform = getPlatform(platformId);
+  
+  if (platform && platform.supabase.url && platform.supabase.anonKey) {
+    console.log(`🔧 SUPABASE_API: Using platform "${platformId}" Supabase config`);
+    return {
+      url: platform.supabase.url,
+      key: platform.supabase.anonKey
     };
+  }
+  
+  // Fall back to default platform
+  const defaultPlatform = getPlatform(DEFAULT_PLATFORM_ID);
+  if (defaultPlatform && defaultPlatform.supabase.url && defaultPlatform.supabase.anonKey) {
+    console.log(`🔧 SUPABASE_API: Platform "${platformId}" not configured, falling back to default`);
+    return {
+      url: defaultPlatform.supabase.url,
+      key: defaultPlatform.supabase.anonKey
+    };
+  }
+  
+  // Ultimate fallback to env vars
+  console.log(`🔧 SUPABASE_API: Using environment variable Supabase config`);
+  return {
+    url: import.meta.env.VITE_SUPABASE_URL,
+    key: import.meta.env.VITE_SUPABASE_ANON_KEY
+  };
+}
+
+class SupabaseDirectApi {
+  private getConfig(): SupabaseApiConfig {
+    // Always get fresh config to respect platform changes
+    return getPlatformSupabaseConfig();
   }
 
   private getHeaders(authToken?: string): Record<string, string> {
+    const config = this.getConfig();
     const headers: Record<string, string> = {
-      'apikey': this.config.key,
-      'Authorization': `Bearer ${authToken || this.config.key}`,
+      'apikey': config.key,
+      'Authorization': `Bearer ${authToken || config.key}`,
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     };
@@ -30,7 +62,8 @@ class SupabaseDirectApi {
   }
 
   private buildUrl(endpoint: string, params?: Record<string, any>): string {
-    const url = new URL(`${this.config.url}/rest/v1${endpoint}`);
+    const config = this.getConfig();
+    const url = new URL(`${config.url}/rest/v1${endpoint}`);
     
     if (params) {
       Object.keys(params).forEach(key => {

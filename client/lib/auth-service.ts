@@ -3,6 +3,40 @@ import { supabase } from './supabase';
 import { Profile } from './supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { profilesApi } from './supabase-api';
+import { getPlatform, detectPlatformFromUrl, DEFAULT_PLATFORM_ID } from '../config/platforms';
+
+/**
+ * Get platform-aware Supabase configuration for auth service
+ * Uses the current platform's Supabase URL and anon key
+ */
+function getPlatformSupabaseConfig(): { url: string; key: string } {
+  const platformId = detectPlatformFromUrl();
+  const platform = getPlatform(platformId);
+  
+  if (platform && platform.supabase.url && platform.supabase.anonKey) {
+    console.log(`🔧 AUTH_SERVICE: Using platform "${platformId}" Supabase config`);
+    return {
+      url: platform.supabase.url,
+      key: platform.supabase.anonKey
+    };
+  }
+  
+  // Fall back to default platform
+  const defaultPlatform = getPlatform(DEFAULT_PLATFORM_ID);
+  if (defaultPlatform && defaultPlatform.supabase.url && defaultPlatform.supabase.anonKey) {
+    console.log(`🔧 AUTH_SERVICE: Platform "${platformId}" not configured, falling back to default`);
+    return {
+      url: defaultPlatform.supabase.url,
+      key: defaultPlatform.supabase.anonKey
+    };
+  }
+  
+  // Ultimate fallback to env vars
+  return {
+    url: import.meta.env.VITE_SUPABASE_URL,
+    key: import.meta.env.VITE_SUPABASE_ANON_KEY
+  };
+}
 
 interface SignUpData {
   email: string;
@@ -48,11 +82,12 @@ export class AuthService {
       console.log('📧 AUTH_SERVICE: Email provided:', userData.email ? `${userData.email.substring(0, 3)}***@${userData.email.split('@')[1] || '***'}` : 'empty');
       console.log('👤 AUTH_SERVICE: Full name provided:', userData.fullName ? `${userData.fullName.substring(0, 2)}***` : 'empty');
       
-      // Check if Supabase is configured
+      // Check if Supabase is configured (platform-aware)
       console.log('🔧 AUTH_SERVICE: Checking Supabase configuration...');
-      console.log('🔧 AUTH_SERVICE: VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Not set');
+      const supabaseConfig = getPlatformSupabaseConfig();
+      console.log('🔧 AUTH_SERVICE: Supabase URL:', supabaseConfig.url ? 'Set' : 'Not set');
       
-      if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co') {
+      if (!supabaseConfig.url || supabaseConfig.url === 'https://your-project.supabase.co') {
         console.log('❌ AUTH_SERVICE: Supabase configuration check failed');
         throw new Error('Supabase is not configured. Please add your Supabase credentials to the .env file.');
       }
@@ -84,8 +119,7 @@ export class AuthService {
       const startEmailCheck = Date.now();
       
       try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const { url: supabaseUrl, key: supabaseKey } = getPlatformSupabaseConfig();
         const url = `${supabaseUrl}/rest/v1/profiles?email=eq.${userData.email.toLowerCase()}&select=id`;
         
         console.log('🌐 AUTH_SERVICE: Using direct API call for email check');
@@ -194,8 +228,7 @@ export class AuthService {
         let checkError = null;
         
         try {
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+          const { url: supabaseUrl, key: supabaseKey } = getPlatformSupabaseConfig();
           const url = `${supabaseUrl}/rest/v1/profiles?id=eq.${authData.user.id}&select=*`;
           
           console.log('🌐 AUTH_SERVICE: Using direct API call for profile check');
@@ -236,8 +269,7 @@ export class AuthService {
           const startProfileCreation = Date.now();
           
           try {
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-            const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            const { url: supabaseUrl, key: supabaseKey } = getPlatformSupabaseConfig();
             const url = `${supabaseUrl}/rest/v1/profiles`;
             
             const profileData = {
@@ -293,8 +325,7 @@ export class AuthService {
             console.log('🔄 AUTH_SERVICE: Updating existing profile with missing data...');
             
             try {
-              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-              const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+              const { url: supabaseUrl, key: supabaseKey } = getPlatformSupabaseConfig();
               const url = `${supabaseUrl}/rest/v1/profiles?id=eq.${authData.user.id}`;
               
               const updateData = {
@@ -418,16 +449,17 @@ export class AuthService {
   // Sign in user
   async signIn(credentials: SignInData): Promise<{ user: any; profile?: Profile; needsEmailConfirmation?: boolean }> {
     try {
-      // Debug: Log the actual environment values
+      // Debug: Log the actual environment values (platform-aware)
+      const signInConfig = getPlatformSupabaseConfig();
       console.log('🔍 Auth Service - Environment check:', {
-        VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-        VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set (hidden)' : 'Not set',
-        urlCheck: !import.meta.env.VITE_SUPABASE_URL,
-        placeholderCheck: import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co'
+        SUPABASE_URL: signInConfig.url,
+        SUPABASE_ANON_KEY: signInConfig.key ? 'Set (hidden)' : 'Not set',
+        urlCheck: !signInConfig.url,
+        placeholderCheck: signInConfig.url === 'https://your-project.supabase.co'
       });
       
       // Check if Supabase is configured
-      if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co') {
+      if (!signInConfig.url || signInConfig.url === 'https://your-project.supabase.co') {
         throw new Error('Supabase is not configured. Please add your Supabase credentials to the .env file.');
       }
 

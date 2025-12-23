@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCompanyBranding } from "../hooks/useCompanyBranding";
 import { useUser } from "../hooks/useUser";
+import { usePlatform, usePlatformTheme } from "@/contexts/PlatformContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,8 @@ export default function Index() {
   const navigate = useNavigate();
   const { companyName, faviconUrl, isLoading } = useCompanyBranding();
   const { user, userId } = useUser();
+  const { platform } = usePlatform();
+  const theme = usePlatformTheme();
 
   // Check if we should show onboarding modal
   useEffect(() => {
@@ -69,11 +72,24 @@ export default function Index() {
           <div className="flex items-center justify-between bg-gray-50 pb-8 border-b border-gray-200">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <img 
-                  src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=290"
-                  alt="Squidgy"
-                  className="w-[100px] h-[40px]"
-                />
+                {platform.id === 'squidgy' ? (
+                  <img 
+                    src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=290"
+                    alt="Squidgy"
+                    className="w-[100px] h-[40px]"
+                  />
+                ) : (
+                  <span 
+                    className="text-2xl font-bold"
+                    style={{
+                      background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`,
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
+                    {platform.displayName}
+                  </span>
+                )}
                 <div>
                   <h1 className="text-[15px] font-bold text-black font-open-sans">Dashboard</h1>
                   <p className="text-[11px] text-gray-500 font-open-sans">AI that works like a team — built for the way you work</p>

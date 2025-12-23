@@ -14,6 +14,7 @@ import { useUser } from '../hooks/useUser';
 import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
 import { InvoiceStorageService } from '../services/invoiceStorageService';
+import { usePlatformTheme } from '../contexts/PlatformContext';
 
 interface BillingSettings {
   id: string;
@@ -45,6 +46,7 @@ interface Invoice {
 export default function BillingSettings() {
   const navigate = useNavigate();
   const { user, profile, isReady, isAuthenticated } = useUser();
+  const theme = usePlatformTheme();
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
@@ -689,7 +691,10 @@ export default function BillingSettings() {
           <button
             onClick={handleUpgradeToEnterprise}
             disabled={upgrading}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2"
+            className="px-6 py-3 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2"
+            style={{
+              background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+            }}
           >
             {upgrading ? 'Processing...' : billingSettings?.payment_method_type ? 'Upgrade to Enterprise' : 'Add Payment & Upgrade'}
             <ArrowRight className="w-4 h-4" />
@@ -983,7 +988,12 @@ export default function BillingSettings() {
                 } transition-colors cursor-pointer relative`}>
                   {billingSettings?.plan_name !== 'Enterprise' && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-full text-xs font-medium">
+                      <span 
+                        className="text-white px-3 py-1 rounded-full text-xs font-medium"
+                        style={{
+                          background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+                        }}
+                      >
                         Most Popular
                       </span>
                     </div>
@@ -1029,7 +1039,10 @@ export default function BillingSettings() {
                         'Dedicated account manager',
                         'Custom training & onboarding'
                       ])}
-                      className="w-full py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 transition-all"
+                      className="w-full py-2 px-4 text-white rounded-lg font-medium transition-all"
+                      style={{
+                        background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+                      }}
                     >
                       Upgrade to Enterprise
                     </button>

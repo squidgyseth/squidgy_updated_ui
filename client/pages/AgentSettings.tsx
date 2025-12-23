@@ -4,6 +4,7 @@ import { useUser } from '../hooks/useUser';
 import { AgentConfigService } from '../services/agentConfigService';
 import { Mic, MicOff, Upload, Send, File, X, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { usePlatformTheme } from '../contexts/PlatformContext';
 
 interface KnowledgeEntry {
   id: string;
@@ -18,6 +19,7 @@ export default function AgentSettings() {
   const { agentId } = useParams<{ agentId: string }>();
   const { userId } = useUser();
   const navigate = useNavigate();
+  const theme = usePlatformTheme();
   const [agentConfig, setAgentConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -338,7 +340,12 @@ export default function AgentSettings() {
           {/* Content Input Section - Figma Style */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             {/* Header Section */}
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-6">
+            <div 
+              className="px-8 py-6"
+              style={{
+                background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+              }}
+            >
               <h2 className="text-2xl font-bold text-white mb-2">Add Your Content</h2>
               <p className="text-purple-100">
                 Share your knowledge with {agentConfig?.agent?.name} to get personalized assistance
@@ -467,7 +474,10 @@ export default function AgentSettings() {
                 <button
                   onClick={handleSubmit}
                   disabled={isUploading || (!currentText.trim() && uploadedFiles.length === 0)}
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+                  className="inline-flex items-center gap-3 px-8 py-4 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+                  style={{
+                    background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+                  }}
                 >
                   {isUploading ? (
                     <>

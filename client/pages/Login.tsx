@@ -312,7 +312,11 @@ export default function Login() {
             <div className="flex justify-end">
               <button
                 type="button"
-                onClick={() => navigate('/forgot-password')}
+                onClick={() => {
+                  // Preserve platform parameter when navigating
+                  const platformParam = new URLSearchParams(window.location.search).get('platform');
+                  navigate(platformParam ? `/forgot-password?platform=${platformParam}` : '/forgot-password');
+                }}
                 className="text-[13px] font-bold font-['Open_Sans'] hover:underline"
                 style={{ color: theme.primaryColor }}
               >
@@ -335,7 +339,11 @@ export default function Login() {
           <div className="text-center mt-6">
             <span className="text-[14px] text-[#4A5565] font-['Open_Sans']">Don't have account? </span>
             <button
-              onClick={() => navigate('/register')}
+              onClick={() => {
+                // Preserve platform parameter when navigating
+                const platformParam = new URLSearchParams(window.location.search).get('platform');
+                navigate(platformParam ? `/register?platform=${platformParam}` : '/register');
+              }}
               className="text-[14px] font-bold font-['Open_Sans'] hover:underline"
               style={{ color: theme.primaryColor }}
             >

@@ -1,8 +1,45 @@
 // src/lib/supabase.ts
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getPlatform, detectPlatformFromUrl, DEFAULT_PLATFORM_ID } from '../config/platforms';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+/**
+ * Get platform-aware Supabase configuration
+ * Uses the current platform's Supabase URL and anon key
+ */
+function getPlatformSupabaseConfig(): { url: string; key: string; platformId: string } {
+  const platformId = detectPlatformFromUrl();
+  const platform = getPlatform(platformId);
+  
+  if (platform && platform.supabase.url && platform.supabase.anonKey) {
+    return {
+      url: platform.supabase.url,
+      key: platform.supabase.anonKey,
+      platformId
+    };
+  }
+  
+  // Fall back to default platform
+  const defaultPlatform = getPlatform(DEFAULT_PLATFORM_ID);
+  if (defaultPlatform && defaultPlatform.supabase.url && defaultPlatform.supabase.anonKey) {
+    return {
+      url: defaultPlatform.supabase.url,
+      key: defaultPlatform.supabase.anonKey,
+      platformId: DEFAULT_PLATFORM_ID
+    };
+  }
+  
+  // Ultimate fallback to env vars
+  return {
+    url: import.meta.env.VITE_SUPABASE_URL,
+    key: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    platformId: 'default'
+  };
+}
+
+// Get platform-aware config
+const config = getPlatformSupabaseConfig();
+const supabaseUrl = config.url;
+const supabaseAnonKey = config.key;
 
 // Temporarily allow the app to load without Supabase for development
 if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://your-project.supabase.co' || supabaseAnonKey === 'your-anon-key-here') {
@@ -11,6 +48,7 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://your-project.su
 
 // Log Supabase configuration for debugging
 console.log('🔧 Supabase client configuration:', {
+  platform: config.platformId,
   url: supabaseUrl,
   anonKeyPrefix: supabaseAnonKey ? supabaseAnonKey.substring(0, 20) + '...' : 'not set',
   isClient: typeof window !== 'undefined'
@@ -20,13 +58,54 @@ console.log('🔧 Supabase client configuration:', {
 const finalUrl = supabaseUrl || 'https://dummy.supabase.co';
 const finalKey = supabaseAnonKey || 'dummy-key';
 
+// Cache for platform-specific Supabase clients
+const clientCache: Map<string, SupabaseClient> = new Map();
+
+/**
+ * Get or create a Supabase client for the current platform
+ * This ensures we use the correct Supabase instance based on the platform parameter
+ */
+export function getSupabaseClient(): SupabaseClient {
+  const currentConfig = getPlatformSupabaseConfig();
+  const cacheKey = currentConfig.platformId;
+  
+  if (clientCache.has(cacheKey)) {
+    return clientCache.get(cacheKey)!;
+  }
+  
+  const url = currentConfig.url || 'https://dummy.supabase.co';
+  const key = currentConfig.key || 'dummy-key';
+  
+  const client = createClient(url, key, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      storageKey: `supabase.auth.token.${cacheKey}`,
+      flowType: 'pkce'
+    },
+    realtime: {
+      headers: {
+        apikey: key,
+      },
+    },
+  });
+  
+  clientCache.set(cacheKey, client);
+  console.log(`🔧 Created Supabase client for platform: ${cacheKey}`);
+  
+  return client;
+}
+
+// Default export for backward compatibility - uses platform-aware client
 export const supabase = createClient(finalUrl, finalKey, {
   auth: {
     autoRefreshToken: true,     // ✅ Enable automatic token refresh
     persistSession: true,       // ✅ Persist sessions across browser refreshes
     detectSessionInUrl: true,   // ✅ Handle auth redirects from OAuth providers
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    storageKey: 'supabase.auth.token',
+    storageKey: `supabase.auth.token.${config.platformId}`,
     flowType: 'pkce'
   },
   realtime: {

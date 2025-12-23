@@ -4,10 +4,12 @@ import { Save } from 'lucide-react';
 import { useUser } from '../hooks/useUser';
 import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
+import { usePlatformTheme } from '../contexts/PlatformContext';
 
 export default function AccountSettings() {
   const navigate = useNavigate();
   const { user, profile, refreshProfile, isReady, isAuthenticated } = useUser();
+  const theme = usePlatformTheme();
   const [fullName, setFullName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -310,7 +312,10 @@ export default function AccountSettings() {
         <button
           onClick={handleSubmit}
           disabled={isSaving || isUploading}
-          className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg flex items-center gap-2"
+          className="px-8 py-3 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg flex items-center gap-2"
+          style={{
+            background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+          }}
         >
           {isSaving ? (
             <>

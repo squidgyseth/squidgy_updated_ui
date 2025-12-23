@@ -3,13 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { sendPasswordResetEmail } from '../lib/api';
 import { CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePlatform, usePlatformTheme } from "@/contexts/PlatformContext";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
+  const { platform } = usePlatform();
+  const theme = usePlatformTheme();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Helper to preserve platform parameter in navigation
+  const navigateWithPlatform = (path: string) => {
+    const platformParam = new URLSearchParams(window.location.search).get('platform');
+    navigate(platformParam ? `${path}?platform=${platformParam}` : path);
+  };
 
   // Carousel state
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -141,15 +150,17 @@ const InsightsIcon = () => (
             {/* Actions */}
             <div className="space-y-3">
               <button
-                onClick={() => navigate('/login')}
-                className="w-full px-4 py-3 rounded-[10px] bg-gradient-to-r from-[#FB252A] to-[#6017E8] text-white font-bold text-[15px] font-['Open_Sans'] hover:opacity-90 transition-opacity"
+                onClick={() => navigateWithPlatform('/login')}
+                className="w-full px-4 py-3 rounded-[10px] text-white font-bold text-[15px] font-['Open_Sans'] hover:opacity-90 transition-opacity"
+                style={{ background: `linear-gradient(to right, ${theme.gradientStart}, ${theme.gradientEnd})` }}
               >
                 Back to sign in
               </button>
               
               <button
                 onClick={() => setEmailSent(false)}
-                className="w-full px-4 py-3 text-[#5E17EB] font-bold text-[15px] font-['Open_Sans'] rounded-[10px] hover:bg-gray-50 transition-colors"
+                className="w-full px-4 py-3 font-bold text-[15px] font-['Open_Sans'] rounded-[10px] hover:bg-gray-50 transition-colors"
+                style={{ color: theme.primaryColor }}
               >
                 Try different email
               </button>
@@ -158,7 +169,10 @@ const InsightsIcon = () => (
         </div>
 
         {/* Right Side - Carousel */}
-        <div className="flex-1 flex flex-col justify-between p-12 min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8]">
+        <div 
+          className="flex-1 flex flex-col justify-between p-12 min-h-screen"
+          style={{ background: `linear-gradient(to bottom right, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})` }}
+        >
           {/* Carousel Indicators */}
           <div className="flex justify-center gap-2 mb-8">
             {carouselStates.map((_, index) => (
@@ -245,11 +259,24 @@ const InsightsIcon = () => (
         <div className="w-full max-w-[400px] mx-auto">
           {/* Logo */}
           <div className="flex justify-center mb-16">
-            <img 
-              src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=290"
-              alt="Squidgy"
-              className="w-[145px] h-[59px]"
-            />
+            {platform.id === 'squidgy' ? (
+              <img 
+                src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=290"
+                alt="Squidgy"
+                className="w-[145px] h-[59px]"
+              />
+            ) : (
+              <span 
+                className="text-3xl font-bold"
+                style={{
+                  background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                {platform.displayName}
+              </span>
+            )}
           </div>
 
           {/* Header */}
@@ -264,11 +291,12 @@ const InsightsIcon = () => (
 
           {/* Back to Sign In */}
           <button
-            onClick={() => navigate('/login')}
-            className="flex items-center gap-2 mb-6 text-[#5E17EB] hover:underline"
+            onClick={() => navigateWithPlatform('/login')}
+            className="flex items-center gap-2 mb-6 hover:underline"
+            style={{ color: theme.primaryColor }}
           >
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4.89062 8.125L8.39062 11.625L7.5 12.5L2.5 7.5L7.5 2.5L8.39062 3.375L4.89062 6.875H12.5V8.125H4.89062Z" fill="#5E17EB"/>
+              <path d="M4.89062 8.125L8.39062 11.625L7.5 12.5L2.5 7.5L7.5 2.5L8.39062 3.375L4.89062 6.875H12.5V8.125H4.89062Z" fill={theme.primaryColor}/>
             </svg>
             <span className="text-[15px] font-['Open_Sans']">Back to sign in</span>
           </button>
@@ -285,7 +313,8 @@ const InsightsIcon = () => (
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-[13px] py-4 border border-[#D1D5DC] rounded-[10px] text-[15px] placeholder:text-[rgba(10,10,10,0.5)] font-['Open_Sans'] focus:outline-none focus:ring-2 focus:ring-[#5E17EB] focus:border-transparent"
+                className="w-full px-[13px] py-4 border border-[#D1D5DC] rounded-[10px] text-[15px] placeholder:text-[rgba(10,10,10,0.5)] font-['Open_Sans'] focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{ '--tw-ring-color': theme.primaryColor } as React.CSSProperties}
                 placeholder="Enter your email"
                 required
               />
@@ -295,7 +324,8 @@ const InsightsIcon = () => (
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-4 py-3 rounded-[10px] bg-gradient-to-r from-[#FB252A] to-[#6017E8] text-white font-bold text-[15px] font-['Open_Sans'] hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="w-full px-4 py-3 rounded-[10px] text-white font-bold text-[15px] font-['Open_Sans'] hover:opacity-90 transition-opacity disabled:opacity-50"
+              style={{ background: `linear-gradient(to right, ${theme.gradientStart}, ${theme.gradientEnd})` }}
             >
               {loading ? "Sending..." : "Send Reset Link"}
             </button>
@@ -305,16 +335,19 @@ const InsightsIcon = () => (
           <div className="text-center mt-8">
             <p className="text-[#9CA3AF] text-[11px] leading-4">
               By creating an account, you agree to our{" "}
-              <a href="#" className="font-bold text-[#5E17EB] hover:underline">Terms of service</a>
+              <a href="#" className="font-bold hover:underline" style={{ color: theme.primaryColor }}>Terms of service</a>
               {" "}and{" "}
-              <a href="#" className="font-bold text-[#5E17EB] hover:underline">Privacy policy</a>
+              <a href="#" className="font-bold hover:underline" style={{ color: theme.primaryColor }}>Privacy policy</a>
             </p>
           </div>
         </div>
       </div>
 
       {/* Right Side - Carousel */}
-      <div className="flex-1 flex flex-col justify-between p-12 min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8]">
+      <div 
+        className="flex-1 flex flex-col justify-between p-12 min-h-screen"
+        style={{ background: `linear-gradient(to bottom right, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})` }}
+      >
         {/* Carousel Indicators */}
         <div className="flex justify-center gap-2 mb-8">
           {carouselStates.map((_, index) => (

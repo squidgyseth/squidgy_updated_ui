@@ -194,20 +194,26 @@ CREATE INDEX IF NOT EXISTS idx_chat_history_agent_id ON public.chat_history(agen
 CREATE INDEX IF NOT EXISTS idx_chat_history_created_at ON public.chat_history(created_at DESC);
 
 
--- 3.5 AGENTS (Registry of available agents for this platform)
+-- 3.5 AGENTS (Available agents for this platform)
+-- Each platform has its OWN Supabase instance with its own agents table.
+-- This table lists which agents are available on THIS platform.
+-- Agent behavior/config comes from YAML files, this table controls availability.
 CREATE TABLE IF NOT EXISTS public.agents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    agent_id VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
+    agent_id VARCHAR(50) UNIQUE NOT NULL,                 -- Agent identifier (matches YAML id)
+    name VARCHAR(100) NOT NULL,                           -- Display name
+    category VARCHAR(50),                                 -- MARKETING, SALES, HR, SUPPORT, OPERATIONS
     description TEXT,
-    icon TEXT,
-    category TEXT,
-    is_active BOOLEAN DEFAULT TRUE,
-    is_premium BOOLEAN DEFAULT FALSE,
-    config JSONB DEFAULT '{}',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    avatar_url TEXT,
+    is_enabled BOOLEAN DEFAULT TRUE,                      -- Enable/disable agent
+    display_order INTEGER DEFAULT 0,                      -- Order in sidebar
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_agents_agent_id ON public.agents(agent_id);
+CREATE INDEX IF NOT EXISTS idx_agents_category ON public.agents(category);
+CREATE INDEX IF NOT EXISTS idx_agents_enabled ON public.agents(is_enabled);
 
 
 -- ============================================================================

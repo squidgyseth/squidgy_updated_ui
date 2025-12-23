@@ -108,25 +108,28 @@ CREATE TRIGGER on_auth_user_created
 
 
 -- ============================================================================
--- 2. AGENTS
+-- 2. AGENTS (Available agents for this platform)
 -- ============================================================================
+-- Each platform (squidgy, yeaa, fanatiq, etc.) has its OWN Supabase instance.
+-- This table lists which agents are available on THIS platform.
+-- Agent behavior/config comes from YAML files, this table controls availability.
 
 CREATE TABLE IF NOT EXISTS public.agents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    agent_id VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    category VARCHAR(50),
+    agent_id VARCHAR(50) UNIQUE NOT NULL,                 -- Agent identifier (matches YAML id)
+    name VARCHAR(100) NOT NULL,                           -- Display name
+    category VARCHAR(50),                                 -- MARKETING, SALES, HR, SUPPORT, OPERATIONS
     description TEXT,
     avatar_url TEXT,
-    page_type VARCHAR(20) DEFAULT 'standard',
-    figma_url TEXT,
-    generated_component_path TEXT,
-    n8n_webhook_url TEXT,
+    is_enabled BOOLEAN DEFAULT TRUE,                      -- Enable/disable agent
+    display_order INTEGER DEFAULT 0,                      -- Order in sidebar
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE INDEX IF NOT EXISTS idx_agents_agent_id ON public.agents(agent_id);
 CREATE INDEX IF NOT EXISTS idx_agents_category ON public.agents(category);
+CREATE INDEX IF NOT EXISTS idx_agents_enabled ON public.agents(is_enabled);
 
 
 -- ============================================================================

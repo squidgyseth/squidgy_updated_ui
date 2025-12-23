@@ -99,8 +99,9 @@ export const platforms: Record<string, PlatformConfig> = {
     displayName: 'YEAA',
     domains: ['yeaa.com', 'www.yeaa.com'],
     supabase: {
-      url: getEnvVar('VITE_YEAA_SUPABASE_URL'),
-      anonKey: getEnvVar('VITE_YEAA_SUPABASE_ANON_KEY'),
+      // Use YEAA-specific Supabase instance
+      url: getEnvVar('VITE_YEAA_SUPABASE_URL', getEnvVar('VITE_SUPABASE_URL')),
+      anonKey: getEnvVar('VITE_YEAA_SUPABASE_ANON_KEY', getEnvVar('VITE_SUPABASE_ANON_KEY')),
     },
     theme: {
       primaryColor: '#f59e0b',
@@ -114,18 +115,9 @@ export const platforms: Record<string, PlatformConfig> = {
       gradientEnd: '#d97706',
     },
     agents: [
-      'content-creator',
-      'visual-designer',
-      'graham',
-      'engagement-manager',
-      'analytics-expert',
-      'strategy-advisor',
-      'lead-generator',
-      'outreach-agent',
-      'landing-page-builder',
-      'funnel-tracker',
-      'competitor-spy',
-      'launch-manager',
+      'personal_assistant',
+      'smm_assistant',
+      'content_repurposer',
     ],
     features: {
       workspaces: true,
@@ -145,8 +137,9 @@ export const platforms: Record<string, PlatformConfig> = {
     displayName: 'FanatiQ',
     domains: ['fanatiq.com', 'www.fanatiq.com'],
     supabase: {
-      url: getEnvVar('VITE_FANATIQ_SUPABASE_URL'),
-      anonKey: getEnvVar('VITE_FANATIQ_SUPABASE_ANON_KEY'),
+      // TEMP: Using Squidgy Supabase for auth until FanatiQ email is configured
+      url: getEnvVar('VITE_SUPABASE_URL'),
+      anonKey: getEnvVar('VITE_SUPABASE_ANON_KEY'),
     },
     theme: {
       primaryColor: '#ef4444',
@@ -192,8 +185,9 @@ export const platforms: Record<string, PlatformConfig> = {
     displayName: 'Trades',
     domains: ['trades.com', 'www.trades.com'],
     supabase: {
-      url: getEnvVar('VITE_TRADES_SUPABASE_URL'),
-      anonKey: getEnvVar('VITE_TRADES_SUPABASE_ANON_KEY'),
+      // TEMP: Using Squidgy Supabase for auth until Trades email is configured
+      url: getEnvVar('VITE_SUPABASE_URL'),
+      anonKey: getEnvVar('VITE_SUPABASE_ANON_KEY'),
     },
     theme: {
       primaryColor: '#f97316',
@@ -239,8 +233,9 @@ export const platforms: Record<string, PlatformConfig> = {
     displayName: 'Finance',
     domains: ['finance.com', 'www.finance.com'],
     supabase: {
-      url: getEnvVar('VITE_FINANCE_SUPABASE_URL'),
-      anonKey: getEnvVar('VITE_FINANCE_SUPABASE_ANON_KEY'),
+      // TEMP: Using Squidgy Supabase for auth until Finance email is configured
+      url: getEnvVar('VITE_SUPABASE_URL'),
+      anonKey: getEnvVar('VITE_SUPABASE_ANON_KEY'),
     },
     theme: {
       primaryColor: '#0ea5e9',

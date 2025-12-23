@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Sparkles } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
+import { usePlatform, usePlatformTheme } from '@/contexts/PlatformContext';
 
 interface NewOnboardingModalProps {
   isOpen: boolean;
@@ -11,6 +12,8 @@ interface NewOnboardingModalProps {
 export default function NewOnboardingModal({ isOpen, onClose }: NewOnboardingModalProps) {
   const navigate = useNavigate();
   const { profile } = useUser();
+  const { platform } = usePlatform();
+  const theme = usePlatformTheme();
 
   const handleStartSetup = () => {
     // Close the modal
@@ -70,7 +73,12 @@ export default function NewOnboardingModal({ isOpen, onClose }: NewOnboardingMod
                 />
               </div>
               {/* Sparkle Badge */}
-              <div className="absolute bottom-0 right-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+              <div 
+                className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center"
+                style={{
+                  background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+                }}
+              >
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
             </div>
@@ -78,7 +86,7 @@ export default function NewOnboardingModal({ isOpen, onClose }: NewOnboardingMod
             {/* Welcome Text - Smaller font sizes */}
             <div className="space-y-3">
               <h1 className="text-2xl font-bold text-gray-900">
-                Hello, {userName}! I'm your Squidgy personal assistant
+                Hello, {userName}! I'm your {platform.displayName} personal assistant
               </h1>
               <p className="text-base text-gray-600 max-w-sm">
                 I'll help you set up your account, but first I need some info from you!
@@ -88,7 +96,10 @@ export default function NewOnboardingModal({ isOpen, onClose }: NewOnboardingMod
             {/* Start Setup Button - Smaller size */}
             <button
               onClick={handleStartSetup}
-              className="px-10 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-base rounded-full hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg"
+              className="px-10 py-3 text-white font-semibold text-base rounded-full transition-all transform hover:scale-105 shadow-lg"
+              style={{
+                background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+              }}
             >
               Start Setup
             </button>

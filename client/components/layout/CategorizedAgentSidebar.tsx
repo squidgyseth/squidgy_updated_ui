@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CreateGroupChatModal from '../modals/CreateGroupChatModal';
 import OptimizedAgentService from '../../services/optimizedAgentService';
+import { usePlatform, usePlatformTheme } from '../../contexts/PlatformContext';
 
 interface Assistant {
   name: string;
@@ -26,25 +27,43 @@ export default function CategorizedAgentSidebar() {
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [categories, setCategories] = useState<AssistantCategory[]>([]);
   const [selectedAssistant, setSelectedAssistant] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { platform } = usePlatform();
+  const theme = usePlatformTheme();
 
   useEffect(() => {
-    loadAgentsFromYAML();
-  }, []);
+    const loadAgents = async () => {
+      setIsLoading(true);
+      try {
+        const agentService = OptimizedAgentService.getInstance();
+        // Ensure database agents are loaded first, passing platform ID for cache invalidation
+        await agentService.loadAvailableAgents(platform.id);
+        // Now get the filtered agents
+        loadAgentsFromService();
+      } catch (error) {
+        console.error('Failed to load agents from database:', error);
+        loadAgentsFromService();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadAgents();
+  }, [platform.id]);
 
   useEffect(() => {
-    // Extract selected agent from URL
     const pathParts = location.pathname.split('/');
     if (pathParts[1] === 'chat' && pathParts[2]) {
       setSelectedAssistant(pathParts[2]);
     }
   }, [location]);
 
-  const loadAgentsFromYAML = () => {
+  const loadAgentsFromService = () => {
     try {
       const agentService = OptimizedAgentService.getInstance();
       const agentConfigs = agentService.getAllAgents();
       
-      // Transform configs to match sidebar format
+      console.log(`🤖 Loading ${agentConfigs.length} agents for platform: ${platform.id}`);
+      
       const assistants: Assistant[] = agentConfigs.map((config) => ({
         name: config.agent.name,
         description: config.agent.description || config.agent.specialization || 'AI Assistant',
@@ -55,7 +74,6 @@ export default function CategorizedAgentSidebar() {
         pinned: config.agent.pinned || false
       }));
 
-      // Group by category
       const grouped = groupAssistantsByCategory(assistants);
       setCategories(grouped);
       
@@ -144,14 +162,27 @@ export default function CategorizedAgentSidebar() {
   );
 
   return (
-    <div className="w-[284px] h-full flex flex-col border-r border-border-purple bg-white">
-      {/* Header with Squidgy logo */}
-      <div className="h-24 flex items-center justify-center gap-5 px-6 bg-header-gradient">
-        <img 
-          src="https://api.builder.io/api/v1/image/assets/TEMP/38911497e575307b8d9004ca969b8a56bbf75c3c?width=278"
-          alt="Squidgy"
-          className="w-[139px] h-12"
-        />
+    <div className="w-[284px] h-full flex flex-col border-r border-gray-200 bg-white">
+      {/* Header with Platform logo */}
+      <div className="h-24 flex items-center justify-center gap-5 px-6 bg-white border-b border-gray-200">
+        {platform.id === 'squidgy' ? (
+          <img 
+            src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=290"
+            alt="Squidgy"
+            className="w-[139px] h-12"
+          />
+        ) : (
+          <span 
+            className="text-3xl font-bold"
+            style={{
+              background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}
+          >
+            {platform.displayName}
+          </span>
+        )}
       </div>
       
       {/* Assistant Controls */}
@@ -162,7 +193,10 @@ export default function CategorizedAgentSidebar() {
         <div className="flex items-start gap-2">
           <button 
             onClick={() => setIsCreateGroupModalOpen(true)}
-            className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-squidgy-gradient text-white text-xs whitespace-nowrap"
+            className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-white text-xs whitespace-nowrap"
+            style={{
+              background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+            }}
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12.1839 13.7715V12.4889C12.1839 11.8086 11.9137 11.1562 11.4326 10.6751C10.9516 10.1941 10.2991 9.92383 9.6188 9.92383H5.77115C5.09085 9.92383 4.4384 10.1941 3.95735 10.6751C3.47631 11.1562 3.20605 11.8086 3.20605 12.4889V13.7715" stroke="white" strokeWidth="1.2825" strokeLinecap="round" strokeLinejoin="round"/>
@@ -170,7 +204,13 @@ export default function CategorizedAgentSidebar() {
             </svg>
             <span>Group Chat</span>
           </button>
-          <button className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-squidgy-primary/10 text-squidgy-primary text-xs whitespace-nowrap">
+          <button 
+            className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-xs whitespace-nowrap"
+            style={{
+              backgroundColor: `${theme.primaryColor}15`,
+              color: theme.primaryColor
+            }}
+          >
             <span className="text-sm">+</span>
             <span>Add New</span>
           </button>
@@ -190,9 +230,15 @@ export default function CategorizedAgentSidebar() {
                 </svg>
               )}
               <div className="flex justify-between items-center w-full">
-                <span className="text-xs font-semibold text-squidgy-primary">{category.name}</span>
+                <span className="text-xs font-semibold" style={{ color: theme.primaryColor }}>{category.name}</span>
                 {category.count > 0 && (
-                  <span className="px-2 py-0.5 text-xs font-semibold text-squidgy-primary bg-squidgy-primary/20 rounded-full">
+                  <span 
+                    className="px-2 py-0.5 text-xs font-semibold rounded-full"
+                    style={{
+                      color: theme.primaryColor,
+                      backgroundColor: `${theme.primaryColor}20`
+                    }}
+                  >
                     {category.count}
                   </span>
                 )}

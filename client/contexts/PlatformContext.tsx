@@ -17,6 +17,7 @@ import {
   isAgentAvailable as checkAgentAvailable,
   getAvailableAgents as getAgents
 } from '../config/platforms'
+import { OptimizedAgentService } from '../services/optimizedAgentService'
 
 interface PlatformContextValue {
   platform: PlatformConfig
@@ -66,20 +67,13 @@ function getInitialPlatformId(): string {
     return queryPlatform
   }
   
-  // Check localStorage (for persistence through redirects within same session)
-  // But only if we're on the same origin (not a fresh visit)
+  // Check localStorage for persisted platform (persists through navigation within session)
   const storedPlatform = localStorage.getItem('platform_id')
-  const isRedirect = sessionStorage.getItem('platform_redirect') === 'true'
+  const isActiveSession = sessionStorage.getItem('platform_redirect') === 'true'
   
-  if (storedPlatform && getPlatform(storedPlatform) && isRedirect) {
-    console.log('🎨 Platform loaded from storage (redirect):', storedPlatform)
+  if (storedPlatform && getPlatform(storedPlatform) && isActiveSession) {
+    console.log('🎨 Platform loaded from storage (session):', storedPlatform)
     return storedPlatform
-  }
-  
-  // Clear stored platform on fresh visit (no query param = reset to default)
-  if (!queryPlatform && storedPlatform) {
-    localStorage.removeItem('platform_id')
-    sessionStorage.removeItem('platform_redirect')
   }
   
   // Default to squidgy
@@ -106,6 +100,21 @@ export function PlatformProvider({ children, initialPlatformId }: PlatformProvid
       // Update document title
       document.title = `${platform.displayName} - AI Assistant`
     }
+  }, [platformId])
+  
+  // Load available agents from database when platform is ready
+  useEffect(() => {
+    const loadAgents = async () => {
+      try {
+        const agentService = OptimizedAgentService.getInstance()
+        await agentService.loadAvailableAgents()
+        console.log('📦 Platform agents loaded from database')
+      } catch (error) {
+        console.error('Failed to load platform agents:', error)
+      }
+    }
+    
+    loadAgents()
   }, [platformId])
   
   const setPlatformId = useCallback((newPlatformId: string) => {

@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import ReferralService from '@/services/referralService';
 import { ResponsiveLayout } from '../../components/mobile/layout/ResponsiveLayout';
 import { MobileReferralHub } from '../../components/mobile/referrals/MobileReferralHub';
+import { usePlatform } from '@/contexts/PlatformContext';
 
 // Import components (will create these next)
 import { MyReferralStats } from '@/components/referrals/MyReferralStats';
@@ -20,6 +21,7 @@ import { ReferralLeaderboard } from '@/components/referrals/ReferralLeaderboard'
 
 export default function ReferralHub() {
   const { userId, isReady, profile } = useUser();
+  const { platform } = usePlatform();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   
@@ -208,7 +210,7 @@ export default function ReferralHub() {
                   Referral Hub
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  Share Squidgy and earn rewards for every friend who joins
+                  Share {platform.displayName} and earn rewards for every friend who joins
                 </p>
               </div>
               

@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
+import { usePlatformTheme } from '../contexts/PlatformContext';
 
 interface Agent {
   id: string;
@@ -27,6 +28,7 @@ type AssistantTone = 'friendly' | 'professional' | 'casual';
 export default function PersonalisationSettings() {
   const navigate = useNavigate();
   const { user, profile, isReady, isAuthenticated } = useUser();
+  const theme = usePlatformTheme();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   
@@ -446,7 +448,10 @@ export default function PersonalisationSettings() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg flex items-center gap-2"
+            className="px-8 py-3 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg flex items-center gap-2"
+            style={{
+              background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+            }}
           >
             <Save className="w-4 h-4" />
             {saving ? 'Saving...' : 'Save Personalization'}

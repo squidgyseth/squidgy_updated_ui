@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
 import { AddressAutocomplete } from '../components/AddressAutocomplete';
 import { COUNTRIES, getCountryByCode, getPhoneNumberPlaceholder } from '../utils/phoneNumberUtils';
+import { usePlatformTheme } from '../contexts/PlatformContext';
 
 interface BusinessSettingsData {
   companyName: string;
@@ -66,6 +67,7 @@ const countries = [
 export default function BusinessSettings() {
   const navigate = useNavigate();
   const { user, profile, isReady, isAuthenticated } = useUser();
+  const theme = usePlatformTheme();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -686,7 +688,10 @@ export default function BusinessSettings() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg"
+          className="px-8 py-3 text-white rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg"
+          style={{
+            background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+          }}
         >
           {saving ? 'Saving Changes...' : 'Save Changes'}
         </button>

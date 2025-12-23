@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { LeadService, type Lead } from '../services/leadService';
 import { ResponsiveLayout } from '../components/mobile/layout/ResponsiveLayout';
 import { MobileLeads } from '../components/mobile/leads/MobileLeads';
+import { usePlatform, usePlatformTheme } from '../contexts/PlatformContext';
 
 // Lead interface is now imported from LeadService
 
@@ -26,6 +27,8 @@ export default function Leads() {
   const navigate = useNavigate();
   const { user, profile, isReady, isAuthenticated } = useUser();
   const { companyName, faviconUrl, isLoading } = useCompanyBranding();
+  const { platform } = usePlatform();
+  const theme = usePlatformTheme();
   
   const [statusFilter, setStatusFilter] = useState('All');
   const [minQualification, setMinQualification] = useState('');
@@ -222,11 +225,24 @@ export default function Leads() {
           <div className="flex items-center justify-between bg-gray-50 pb-8 border-b border-gray-200">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <img 
-                  src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=290"
-                  alt="Squidgy"
-                  className="w-[100px] h-[40px]"
-                />
+                {platform.id === 'squidgy' ? (
+                  <img 
+                    src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=290"
+                    alt="Squidgy"
+                    className="w-[100px] h-[40px]"
+                  />
+                ) : (
+                  <span 
+                    className="text-2xl font-bold"
+                    style={{
+                      background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`,
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
+                    {platform.displayName}
+                  </span>
+                )}
                 <div>
                   <h1 className="text-[15px] font-bold text-black font-open-sans">Leads</h1>
                   <p className="text-[11px] text-gray-500 font-open-sans">Every lead in one place — faster follow-ups, better results.</p>
@@ -344,7 +360,10 @@ export default function Leads() {
 
             <button
               onClick={handleAddLead}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium flex items-center gap-2 text-sm"
+              className="px-4 py-2 text-white rounded-lg transition-all font-medium flex items-center gap-2 text-sm"
+              style={{
+                background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
+              }}
             >
               <Plus className="w-4 h-4" />
               Add Lead
