@@ -6,6 +6,7 @@ import FileMessage from './FileMessage';
 import { sendToN8nWorkflow, generateRequestId, generateSessionId } from '../../lib/n8nService';
 import { ChatHistoryService } from '../../services/chatHistoryService';
 import { FileUploadService } from '../../services/fileUploadService';
+import { chatSessionService } from '../../services/chatSessionService';
 import { supabase } from '../../lib/supabase';
 import { createProxyUrl } from '../../utils/urlMasking';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
@@ -52,17 +53,15 @@ export default function N8nChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Add intro message on mount and show newsletter selector for content_repurposer
+  // Load messages for the current session
   useEffect(() => {
-    if (agent.introMessage) {
-      setMessages([{
-        id: generateRequestId(),
-        content: agent.introMessage,
-        sender: 'agent',
-        timestamp: new Date()
-      }]);
-    }
-    
+    console.log(`📨 N8nChatInterface: sessionId changed to: ${sessionId}`);
+    console.log(`📨 N8nChatInterface: agentId: ${agent.id}, userId: ${userId}`);
+    loadSessionMessages();
+  }, [sessionId]);
+
+  // Show newsletter selector for content_repurposer and handle OAuth callback
+  useEffect(() => {
     // Show newsletter selector for content_repurposer agent
     if (agent.id === 'content_repurposer') {
       setShowNewsletterSelector(true);
@@ -78,7 +77,73 @@ export default function N8nChatInterface({
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [agent.introMessage, agent.id]);
+  }, [agent.id]);
+
+  const loadSessionMessages = async () => {
+    console.log(`🔍 loadSessionMessages called with sessionId: ${sessionId}`);
+    if (!sessionId) {
+      console.log('❌ No sessionId provided, returning early');
+      return;
+    }
+
+    try {
+      console.log(`🔄 Fetching messages for session: ${sessionId}`);
+      // Load existing messages for this session
+      const existingMessages = await chatSessionService.getSessionMessages(sessionId);
+      console.log(`📊 Found ${existingMessages.length} existing messages`);
+      
+      if (existingMessages.length > 0) {
+        // Convert database messages to ChatMessage format
+        const chatMessages: ChatMessage[] = existingMessages.map(msg => ({
+          id: msg.id,
+          content: msg.message,
+          sender: msg.sender.toLowerCase() as 'user' | 'agent',
+          timestamp: new Date(msg.timestamp)
+        }));
+        
+        console.log(`✅ Setting ${chatMessages.length} messages in state`);
+        setMessages(chatMessages);
+        console.log(`✅ Loaded ${chatMessages.length} messages for session ${sessionId}`);
+      } else {
+        console.log(`📝 No existing messages, creating new session with intro message`);
+        // New session - add intro message if available
+        if (agent.introMessage) {
+          const introMessage: ChatMessage = {
+            id: generateRequestId(),
+            content: agent.introMessage,
+            sender: 'agent',
+            timestamp: new Date()
+          };
+          setMessages([introMessage]);
+          
+          // Save intro message to database
+          await chatSessionService.saveMessage(
+            userId,
+            sessionId,
+            'Agent',
+            agent.introMessage,
+            agent.name,
+            agent.id
+          );
+        } else {
+          setMessages([]);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading session messages:', error);
+      // Fallback to intro message for new sessions
+      if (agent.introMessage) {
+        setMessages([{
+          id: generateRequestId(),
+          content: agent.introMessage,
+          sender: 'agent',
+          timestamp: new Date()
+        }]);
+      } else {
+        setMessages([]);
+      }
+    }
+  };
 
   // Handle Google Calendar OAuth callback
   const handleCalendarAuthCallback = async (code: string) => {

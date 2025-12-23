@@ -6,6 +6,7 @@ import N8nChatInterface from '../components/chat/N8nChatInterface';
 import { AgentConfigService } from '../services/agentConfigService';
 import { navigationService } from '../services/navigationService';
 import { useNavigationService } from '../hooks/useNavigationService';
+import { chatSessionService } from '../services/chatSessionService';
 
 /**
  * Dynamic Agent Dashboard - A single component that handles ALL agents
@@ -20,6 +21,7 @@ export default function DynamicAgentDashboard() {
   const [agentConfig, setAgentConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadAgentConfig = async () => {
@@ -65,6 +67,31 @@ export default function DynamicAgentDashboard() {
     // This will open the AI Assistant Customization section with the agent pre-selected
     navigationService.navigateToPersonalisationSettings(agentId);
   };
+
+  const handleNewChat = (agentId: string) => {
+    console.log(`New chat clicked for agent: ${agentId}`);
+    
+    // Generate a new session ID
+    const newSessionId = chatSessionService.generateSessionId(userId, agentId);
+    setCurrentSessionId(newSessionId);
+    
+    console.log(`Created new chat session: ${newSessionId}`);
+  };
+
+  const handleSessionSelect = (sessionId: string) => {
+    console.log(`🔄 Session selected: ${sessionId}`);
+    console.log(`🔄 Previous session ID was: ${currentSessionId}`);
+    setCurrentSessionId(sessionId);
+    console.log(`✅ Current session ID updated to: ${sessionId}`);
+  };
+
+  // Initialize with a new session when component loads
+  useEffect(() => {
+    if (userId && agentId && !currentSessionId) {
+      const newSessionId = chatSessionService.generateSessionId(userId, agentId);
+      setCurrentSessionId(newSessionId);
+    }
+  }, [userId, agentId, currentSessionId]);
 
   // Loading state
   if (loading) {
@@ -112,11 +139,15 @@ export default function DynamicAgentDashboard() {
       agent={agentConfig.agent}
       onPinToggle={handlePinToggle}
       onSettingsClick={handleSettingsClick}
+      onNewChat={handleNewChat}
+      currentSessionId={currentSessionId}
+      onSessionSelect={handleSessionSelect}
     >
       <N8nChatInterface
+        key={currentSessionId} // Force re-render when session changes
         agent={agentInfo}
         userId={userId}
-        sessionId={sessionId}
+        sessionId={currentSessionId} // Use the current session ID
         webhookUrl={agentConfig.n8n?.webhook_url} // Pass the webhook URL from agent config
       />
     </UniversalChatLayout>
