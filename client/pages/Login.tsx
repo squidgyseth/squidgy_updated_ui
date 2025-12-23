@@ -92,34 +92,13 @@ export default function Login() {
 
   // Check if user arrived after email confirmation
   useEffect(() => {
-    // Method 1: Check sessionStorage flag (set by index.html inline script)
     const emailVerified = sessionStorage.getItem('email_verified');
     
     if (emailVerified === 'true') {
-      console.log('Login: Email verified flag found, showing success toast');
       sessionStorage.removeItem('email_verified');
       toast.success('Email verified successfully!');
-      return;
     }
-    
-    // Method 2: Check URL for auth code
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const type = urlParams.get('type');
-    
-    console.log('Login: Checking URL params on mount:', { code: !!code, type });
-    
-    // If there's a code and it's not password recovery, show toast immediately
-    // The code being present means this is an email verification callback
-    if (code && type !== 'recovery') {
-      console.log('Login: Auth code detected, showing success toast');
-      toast.success('Email verified successfully!');
-      // Clean up URL after a short delay
-      setTimeout(() => {
-        window.history.replaceState({}, '', '/login');
-      }, 100);
-    }
-  }, []); // Run only once on mount
+  }, []);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % carouselStates.length);

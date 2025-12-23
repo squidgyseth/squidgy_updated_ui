@@ -16,7 +16,8 @@ interface CompanyMaterial {
   name: string;
   size: number;
   type: string;
-  file: File;
+  file?: File;
+  url?: string;
 }
 
 // Main Business Details Page Component
@@ -46,6 +47,49 @@ export default function BusinessDetails() {
   const [state, setState] = useState('');
   const [postalCode, setPostalCode] = useState('');
   
+  // Load previously uploaded files from Supabase storage
+  const loadUploadedFiles = async () => {
+    if (!userId) return;
+    
+    try {
+      // List files in the company bucket that belong to this user
+      const { data: files, error } = await supabase.storage
+        .from('company')
+        .list('', {
+          search: `${userId}_`
+        });
+
+      if (error) {
+        console.error('Error loading uploaded files:', error);
+        return;
+      }
+
+      if (files && files.length > 0) {
+        const materials: CompanyMaterial[] = files.map((file) => {
+          const { data: { publicUrl } } = supabase.storage
+            .from('company')
+            .getPublicUrl(file.name);
+          
+          // Extract original filename (remove userId_timestamp_ prefix)
+          const originalName = file.name.replace(/^[^_]+_\d+_/, '');
+          
+          return {
+            id: file.id || file.name,
+            name: originalName,
+            size: file.metadata?.size || 0,
+            type: file.metadata?.mimetype || '',
+            url: publicUrl
+          };
+        });
+        
+        setUploadedMaterials(materials);
+        console.log('📁 BusinessDetails: Loaded', materials.length, 'previously uploaded files');
+      }
+    } catch (error) {
+      console.error('Error loading uploaded files:', error);
+    }
+  };
+
   // Load existing data from database on component mount
   useEffect(() => {
     const loadExistingData = async () => {
@@ -124,6 +168,7 @@ export default function BusinessDetails() {
     };
 
     loadExistingData();
+    loadUploadedFiles();
   }, [userId, dataLoaded]);
   
   // Handle address method change - clear fields when switching
@@ -164,7 +209,8 @@ export default function BusinessDetails() {
       formData.append('agent_id', 'personal_assistant'); // Use personal_assistant for company materials
       formData.append('agent_name', 'Personal Assistant');
 
-      const response = await fetch('http://localhost:8000/api/knowledge-base/file', {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/knowledge-base/file`, {
         method: 'POST',
         body: formData,
       });
@@ -206,9 +252,30 @@ export default function BusinessDetails() {
         const timestamp = Date.now();
         const fileName = `${userId}_${timestamp}_${file.name}`;
         
+        // Determine content type - use file.type if available, otherwise infer from extension
+        let contentType = file.type;
+        if (!contentType || contentType === 'application/octet-stream') {
+          const ext = file.name.split('.').pop()?.toLowerCase();
+          const mimeTypes: Record<string, string> = {
+            'md': 'text/markdown',
+            'txt': 'text/plain',
+            'pdf': 'application/pdf',
+            'doc': 'application/msword',
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'png': 'image/png',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'svg': 'image/svg+xml',
+          };
+          contentType = mimeTypes[ext || ''] || 'application/octet-stream';
+        }
+
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('company')
-          .upload(fileName, file);
+          .upload(fileName, file, {
+            contentType,
+            upsert: false
+          });
 
         if (uploadError) {
           console.error('Supabase upload error:', uploadError);
@@ -280,11 +347,48 @@ export default function BusinessDetails() {
     processFiles(files);
   };
 
-  const removeUploadedFile = (id: string) => {
+  const removeUploadedFile = async (id: string) => {
+    // Find the material to get its name for deletion from Supabase
+    const material = uploadedMaterials.find(m => m.id === id);
+    
+    if (material) {
+      try {
+        // Try to find and delete the file from Supabase storage
+        // The file is stored with format: userId_timestamp_filename
+        const { data: files } = await supabase.storage
+          .from('company')
+          .list('', {
+            search: `${userId}_`
+          });
+        
+        if (files) {
+          // Find the file that matches this material's name
+          const fileToDelete = files.find(f => {
+            const originalName = f.name.replace(/^[^_]+_\d+_/, '');
+            return originalName === material.name || f.name === id || f.id === id;
+          });
+          
+          if (fileToDelete) {
+            const { error } = await supabase.storage
+              .from('company')
+              .remove([fileToDelete.name]);
+            
+            if (error) {
+              console.error('Error deleting file from Supabase:', error);
+            } else {
+              console.log('📁 BusinessDetails: Deleted file from Supabase:', fileToDelete.name);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error removing file from storage:', error);
+      }
+    }
+    
     setUploadedMaterials(prev => prev.filter(material => material.id !== id));
     toast({
       title: "File Removed",
-      description: "File has been removed from upload queue",
+      description: "File has been removed",
     });
   };
 
@@ -672,7 +776,7 @@ export default function BusinessDetails() {
                     <span className="text-gray-600"> or drag and drop</span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    PDF, PNG, JPG, SVG (max. 10MB each)
+                    PDF, PNG, JPG, SVG, MD, TXT, DOC (max. 10MB each)
                   </p>
                   {isDragging && !uploading && (
                     <p className="text-sm text-blue-600 font-medium mt-2">
@@ -690,7 +794,7 @@ export default function BusinessDetails() {
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept=".pdf,.png,.jpg,.jpeg,.svg,.doc,.docx"
+                  accept=".pdf,.png,.jpg,.jpeg,.svg,.doc,.docx,.md,.txt"
                   onChange={handleFileUpload}
                   className="hidden"
                 />

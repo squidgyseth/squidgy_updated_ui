@@ -8,11 +8,8 @@ import "./styles/mobile/mobile.css";
   const type = params.get('type');
   const code = params.get('code');
   
-  console.log('App.tsx: Early capture check:', { type, hasCode: !!code, pathname: window.location.pathname });
-  
   // If this looks like an email verification callback (not password recovery)
   if ((type === 'signup' || type === 'email_change' || code) && type !== 'recovery') {
-    console.log('App.tsx: Email verification detected, setting flag');
     sessionStorage.setItem('email_verified', 'true');
   }
 })();
@@ -150,22 +147,19 @@ const AuthHandler = () => {
         }
       }
       
-      // Handle auth callbacks on /login page (email confirmation links redirect here directly)
-      if (location.pathname === '/login' && (code || accessToken || type) && !error) {
-        console.log('AuthHandler: Auth callback detected on login page');
-        
-        if (type === 'recovery') {
-          // Password reset flow
-          console.log('AuthHandler: Password reset detected on login page, redirecting to reset-password');
-          navigate('/reset-password' + location.search, { replace: true });
-        } else if (type === 'signup' || type === 'email_change' || code || accessToken) {
-          // Email verification - set flag and clean URL
-          console.log('AuthHandler: Email verification detected on login page, setting flag');
-          sessionStorage.setItem('email_verified', 'true');
-          // Clean up URL params
-          navigate('/login', { replace: true });
+      // Listen for PASSWORD_RECOVERY event from Supabase to handle password reset
+      // This is the only reliable way to detect password reset vs email verification
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          console.log('AuthHandler: PASSWORD_RECOVERY event detected, redirecting to reset-password');
+          navigate('/reset-password', { replace: true });
         }
-      }
+      });
+
+      // Clean up subscription after a short delay
+      setTimeout(() => {
+        subscription.unsubscribe();
+      }, 2000);
     };
 
     // Small delay to ensure the component is mounted
