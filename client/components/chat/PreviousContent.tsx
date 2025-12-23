@@ -17,9 +17,14 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
   const [socialContent, setSocialContent] = useState<SocialContentHistory[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Only show Previous Content for agents that generate newsletters or social content
+  const shouldShowPreviousContent = agentId === 'newsletter' || agentId === 'content_repurposer' || !agentId;
+
   useEffect(() => {
-    loadPreviousContent();
-  }, [userId, agentId]); // Re-run when agentId changes
+    if (shouldShowPreviousContent) {
+      loadPreviousContent();
+    }
+  }, [userId, agentId, shouldShowPreviousContent]); // Re-run when agentId changes
 
   const loadPreviousContent = async () => {
     if (!userId) return;
@@ -91,6 +96,11 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
     const dateStr = latest.timestamp || latest.created_at;
     return ChatHistoryService.formatDate(dateStr);
   };
+
+  // Don't render anything for agents that don't generate content
+  if (!shouldShowPreviousContent) {
+    return null;
+  }
 
   if (loading) {
     return (

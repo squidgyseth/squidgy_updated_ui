@@ -8,7 +8,7 @@ import { SidebarProvider, useSidebar } from "../../contexts/SidebarContext";
 
 function MainLayoutContent() {
   const location = useLocation();
-  const [selectedAssistant, setSelectedAssistant] = useState("SMM Assistant");
+  const [selectedAssistant, setSelectedAssistant] = useState("Personal Assistant");
   const { isSidebarOpen } = useSidebar();
   
   // Check if we're on a specific agent page that uses UniversalChatLayout

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight } from 'lucide-react';
+import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, Plus } from 'lucide-react';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useUser } from '../../hooks/useUser';
 import ChatHistory from '../chat/ChatHistory';
 import PreviousContent from '../chat/PreviousContent';
+import PreviousSessions from '../chat/PreviousSessions';
 
 interface AgentConfig {
   id: string;
@@ -23,13 +24,19 @@ interface UniversalChatLayoutProps {
   children: React.ReactNode; // The actual agent interface (newsletter form, etc.)
   onPinToggle?: (agentId: string, pinned: boolean) => void;
   onSettingsClick?: (agentId: string) => void;
+  onNewChat?: (agentId: string) => void;
+  currentSessionId?: string;
+  onSessionSelect?: (sessionId: string) => void;
 }
 
 export default function UniversalChatLayout({ 
   agent, 
   children, 
   onPinToggle, 
-  onSettingsClick 
+  onSettingsClick,
+  onNewChat,
+  currentSessionId,
+  onSessionSelect
 }: UniversalChatLayoutProps) {
   const [isPinned, setIsPinned] = useState(agent.pinned || false);
   const { isSidebarOpen, toggleSidebar } = useSidebar();
@@ -43,6 +50,10 @@ export default function UniversalChatLayout({
 
   const handleSettingsClick = () => {
     onSettingsClick?.(agent.id);
+  };
+
+  const handleNewChat = () => {
+    onNewChat?.(agent.id);
   };
 
   return (
@@ -143,21 +154,33 @@ export default function UniversalChatLayout({
           <p className="text-sm text-gray-600 leading-relaxed mb-6 text-center max-w-xs mx-auto">{agent.description}</p>
 
           {/* Action Buttons - matching screenshot */}
-          <div className="flex space-x-3">
+          <div className="space-y-3">
+            {/* New Chat Button */}
             <button 
-              onClick={handleSettingsClick}
-              className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-500 to-purple-600 text-white rounded-xl hover:from-red-600 hover:to-purple-700 transition font-medium"
+              onClick={handleNewChat}
+              className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition font-medium"
             >
-              <Settings size={18} />
-              <span>Settings</span>
+              <Plus size={18} />
+              <span>New Chat</span>
             </button>
-            <button 
-              onClick={handlePinToggle}
-              className="flex items-center justify-center space-x-2 px-6 py-3 border-2 border-purple-300 text-purple-600 rounded-xl hover:bg-purple-50 transition font-medium"
-            >
-              {isPinned ? <Pin size={18} /> : <PinOff size={18} />}
-              <span>{isPinned ? 'Pinned' : 'To pin'}</span>
-            </button>
+
+            {/* Settings and Pin Buttons */}
+            <div className="flex space-x-3">
+              <button 
+                onClick={handleSettingsClick}
+                className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-500 to-purple-600 text-white rounded-xl hover:from-red-600 hover:to-purple-700 transition font-medium"
+              >
+                <Settings size={18} />
+                <span>Settings</span>
+              </button>
+              <button 
+                onClick={handlePinToggle}
+                className="flex items-center justify-center space-x-2 px-6 py-3 border-2 border-purple-300 text-purple-600 rounded-xl hover:bg-purple-50 transition font-medium"
+              >
+                {isPinned ? <Pin size={18} /> : <PinOff size={18} />}
+                <span>{isPinned ? 'Pinned' : 'To pin'}</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -237,6 +260,15 @@ export default function UniversalChatLayout({
         {/* Previous Content Section */}
         <div className="px-6 py-2">
           <PreviousContent agentId={agent.id} />
+        </div>
+
+        {/* Previous Sessions Section */}
+        <div className="px-6 py-2">
+          <PreviousSessions 
+            agentId={agent.id} 
+            currentSessionId={currentSessionId}
+            onSessionSelect={onSessionSelect || (() => {})}
+          />
         </div>
       </div>
     </div>
