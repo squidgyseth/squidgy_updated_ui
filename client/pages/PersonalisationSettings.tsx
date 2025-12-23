@@ -7,7 +7,7 @@ import {
   Smile,
   Save
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
@@ -26,6 +26,7 @@ type AssistantTone = 'friendly' | 'professional' | 'casual';
 
 export default function PersonalisationSettings() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile, isReady, isAuthenticated } = useUser();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -34,6 +35,15 @@ export default function PersonalisationSettings() {
   const [selectedTones, setSelectedTones] = useState<AssistantTone[]>(['friendly']);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+
+  // Handle navigation state for auto-selecting agent
+  useEffect(() => {
+    const navigationState = location.state as { selectedAgent?: string; openSection?: string } | null;
+    if (navigationState?.selectedAgent) {
+      console.log('Auto-selecting agent from navigation:', navigationState.selectedAgent);
+      // We'll handle the agent selection after agents are loaded
+    }
+  }, [location.state]);
 
   // Load agents from compiled data
   useEffect(() => {
@@ -55,21 +65,51 @@ export default function PersonalisationSettings() {
           }));
           setAgents(formattedAgents);
           
-          // Select first agent by default if none selected
-          if (formattedAgents.length > 0) {
-            const defaultAgent = formattedAgents[0];
-            setSelectedAgent(defaultAgent);
-            setAgents(prev => prev.map(a => ({
-              ...a, 
-              selected: a.id === defaultAgent.id
-            })));
-            
-            // Load customization for the default agent
-            await loadAgentCustomization(defaultAgent.id, defaultAgent);
-            
-            // Check which agents have existing customizations
-            await checkExistingCustomizations(formattedAgents);
+          // Check for navigation state to auto-select agent
+          const navigationState = location.state as { selectedAgent?: string; openSection?: string } | null;
+          const preSelectedAgentId = navigationState?.selectedAgent;
+          
+          if (preSelectedAgentId) {
+            // Find and select the agent from navigation state
+            const preSelectedAgent = formattedAgents.find(a => a.id === preSelectedAgentId);
+            if (preSelectedAgent) {
+              setSelectedAgent(preSelectedAgent);
+              setAgents(prev => prev.map(a => ({
+                ...a, 
+                selected: a.id === preSelectedAgentId
+              })));
+              
+              // Load customization for the pre-selected agent
+              await loadAgentCustomization(preSelectedAgentId, preSelectedAgent);
+            } else {
+              // Agent not found, fallback to default
+              const defaultAgent = formattedAgents[0];
+              if (defaultAgent) {
+                setSelectedAgent(defaultAgent);
+                setAgents(prev => prev.map(a => ({
+                  ...a, 
+                  selected: a.id === defaultAgent.id
+                })));
+                await loadAgentCustomization(defaultAgent.id, defaultAgent);
+              }
+            }
+          } else {
+            // No pre-selected agent, use default
+            if (formattedAgents.length > 0) {
+              const defaultAgent = formattedAgents[0];
+              setSelectedAgent(defaultAgent);
+              setAgents(prev => prev.map(a => ({
+                ...a, 
+                selected: a.id === defaultAgent.id
+              })));
+              
+              // Load customization for the default agent
+              await loadAgentCustomization(defaultAgent.id, defaultAgent);
+            }
           }
+          
+          // Check which agents have existing customizations
+          await checkExistingCustomizations(formattedAgents);
         }
       } catch (error) {
         console.error('Error loading agents:', error);
@@ -82,7 +122,7 @@ export default function PersonalisationSettings() {
     if (isReady && isAuthenticated) {
       loadAgents();
     }
-  }, [isReady, isAuthenticated]);
+  }, [isReady, isAuthenticated, location.state]);
 
   // Redirect if not authenticated
   useEffect(() => {

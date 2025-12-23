@@ -4,6 +4,8 @@ import { useUser } from '../hooks/useUser';
 import UniversalChatLayout from '../components/layout/UniversalChatLayout';
 import N8nChatInterface from '../components/chat/N8nChatInterface';
 import { AgentConfigService } from '../services/agentConfigService';
+import { navigationService } from '../services/navigationService';
+import { useNavigationService } from '../hooks/useNavigationService';
 
 /**
  * Dynamic Agent Dashboard - A single component that handles ALL agents
@@ -53,16 +55,15 @@ export default function DynamicAgentDashboard() {
     // TODO: Implement pin toggle persistence
   };
 
+  // Initialize navigation service with React Router
+  useNavigationService();
+  
   const handleSettingsClick = (agentId: string) => {
     console.log(`Settings clicked for agent: ${agentId}`);
-    const url = `/agent-settings/${agentId}`;
     
-    // Try to open in new tab, fallback to same tab if popup blocked
-    const newWindow = window.open(url, '_blank');
-    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-      console.warn('Popup blocked, opening in same tab');
-      window.location.href = url;
-    }
+    // Navigate to personalisation settings with the selected agent
+    // This will open the AI Assistant Customization section with the agent pre-selected
+    navigationService.navigateToPersonalisationSettings(agentId);
   };
 
   // Loading state
