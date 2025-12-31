@@ -103,7 +103,40 @@ tokens_used INTEGER DEFAULT 0,
 cost_usd DECIMAL(10, 6) DEFAULT 0
 ```
 
-### 5. `api_keys` (New Table)
+### 5. `user_knowledge_base` (New Table)
+
+Stores extracted/structured KB content per user. General Assistant creates KB, other agents read/use it:
+
+```sql
+CREATE TABLE user_knowledge_base (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    category TEXT NOT NULL,  -- 01-12 KB categories
+    content JSONB NOT NULL,  -- Structured KB content
+    source_file TEXT,        -- Original filename
+    source_url TEXT,         -- File URL in storage
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**KB Categories (12-category structure):**
+| # | Category | Content |
+|---|----------|---------|
+| 01 | company-overview | Business model, mission, history |
+| 02 | icp-target-audience | Customer personas, job titles |
+| 03 | branding-identity | Logo, colors, tone of voice |
+| 04 | messaging-positioning | Taglines, value props |
+| 05 | product-services | Products, features, pricing |
+| 06 | sales-process | Sales stages, objections |
+| 07 | marketing-channels | Channels, campaigns |
+| 08 | development-technical | Tech stack, integrations |
+| 09 | operations-workflows | Tools, SOPs |
+| 10 | contacts-stakeholders | Key people, roles |
+| 11 | customer-success | Onboarding, support |
+| 12 | competitive-landscape | Competitors, positioning |
+
+### 6. `api_keys` (New Table)
 
 For MCP server access:
 
@@ -221,7 +254,9 @@ VITE_YEAA_SUPABASE_ANON_KEY=eyJ...
 | `chat_history` | +2 columns for token/cost tracking |
 | `platform_config` | New table (1 row identifies platform) |
 | `api_keys` | New table for MCP access |
-| Functions | 3 new helper functions |
+| `user_knowledge_base` | New table for shared KB (General Assistant creates, all agents use) |
+| `knowledge-base` bucket | New storage bucket with user-specific folders |
+| Functions | 3 new helper functions + KB cleanup trigger |
 
 ### What Stayed the Same
 

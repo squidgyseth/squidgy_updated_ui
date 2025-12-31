@@ -418,8 +418,91 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES 
     ('avatars', 'avatars', true),
     ('content', 'content', false),
-    ('documents', 'documents', false)
+    ('documents', 'documents', false),
+    ('knowledge-base', 'knowledge-base', true)  -- Shared KB storage for all agents
 ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies for knowledge-base bucket (user-specific folders)
+CREATE POLICY "Users can upload to own KB folder" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (
+    bucket_id = 'knowledge-base' 
+    AND (storage.foldername(name))[1] = auth.uid()::text
+);
+
+CREATE POLICY "Users can read own KB files" ON storage.objects
+FOR SELECT TO authenticated
+USING (
+    bucket_id = 'knowledge-base' 
+    AND (storage.foldername(name))[1] = auth.uid()::text
+);
+
+CREATE POLICY "Users can delete own KB files" ON storage.objects
+FOR DELETE TO authenticated
+USING (
+    bucket_id = 'knowledge-base' 
+    AND (storage.foldername(name))[1] = auth.uid()::text
+);
+
+
+-- ============================================================================
+-- PART 7.1: USER KNOWLEDGE BASE TABLE
+-- ============================================================================
+-- Stores extracted/structured KB content per user
+-- General Assistant creates KB, other agents read/use it
+-- Files stored in: {userId}/uploads/{timestamp}_{filename}
+
+CREATE TABLE IF NOT EXISTS public.user_knowledge_base (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    category TEXT NOT NULL,  -- 01-12 KB categories (company-overview, icp-target-audience, etc.)
+    content JSONB NOT NULL,  -- Structured KB content
+    source_file TEXT,        -- Original filename
+    source_url TEXT,         -- File URL in storage
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_kb_user_id ON public.user_knowledge_base(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_kb_category ON public.user_knowledge_base(category);
+
+DROP TRIGGER IF EXISTS user_kb_updated_at ON public.user_knowledge_base;
+CREATE TRIGGER user_kb_updated_at
+    BEFORE UPDATE ON public.user_knowledge_base
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+-- RLS for user_knowledge_base
+ALTER TABLE public.user_knowledge_base ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own KB" ON public.user_knowledge_base
+FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own KB" ON public.user_knowledge_base
+FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own KB" ON public.user_knowledge_base
+FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own KB" ON public.user_knowledge_base
+FOR DELETE USING (auth.uid() = user_id);
+
+
+-- Function to clean up user's KB storage folder when account is deleted
+CREATE OR REPLACE FUNCTION delete_user_kb_storage()
+RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM storage.objects 
+    WHERE bucket_id = 'knowledge-base' 
+    AND (storage.foldername(name))[1] = OLD.id::text;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_user_delete_kb_storage ON auth.users;
+CREATE TRIGGER on_user_delete_kb_storage
+    BEFORE DELETE ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION delete_user_kb_storage();
 
 
 -- ============================================================================

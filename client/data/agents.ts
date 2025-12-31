@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2025-12-23T15:57:06.564Z
+// Generated on: 2025-12-31T11:22:16.069Z
 
 export interface AgentConfig {
   agent: {
@@ -41,6 +41,72 @@ export interface AgentConfig {
 
 // All agents (pre-sorted)
 export const ALL_AGENTS: AgentConfig[] = [
+  {
+    "agent": {
+      "id": "general_assistant",
+      "name": "General Personal Assistant",
+      "category": "GENERAL",
+      "description": "Build a comprehensive knowledge base from your documents, websites, and files.",
+      "specialization": "Knowledge Base Builder",
+      "tagline": "Upload. Extract. Learn.",
+      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+      "pinned": true,
+      "initial_message": "Hi there! I'm here to learn about your business so I can give you the best possible support.\n\nTo get started, could you share your company website? I'll review it to understand what you do, your products or services, and how you communicate with customers.\n\nYou can also upload any documents that help describe your business - like brochures, guides, or internal docs.\n\nThe more I know about you, the better I can help!",
+      "capabilities": [
+        "Scan and extract data from website URLs",
+        "Process uploaded documents (PDF, Word, Excel, images, etc.)",
+        "Build detailed knowledge bases from multiple sources",
+        "Store extracted knowledge in your personal Supabase database",
+        "Ask clarifying questions to ensure data accuracy",
+        "Organize and categorize extracted information",
+        "Cross-reference data across multiple documents",
+        "Summarize and highlight key insights"
+      ],
+      "recent_actions": [
+        "Scanned company website and extracted brand guidelines",
+        "Processed uploaded PDF and added to knowledge base",
+        "Asked clarification about ambiguous product details",
+        "Organized extracted data into categories"
+      ]
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Knowledge Base Builder",
+          "path": "knowledge-base",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons",
+        "url_input"
+      ]
+    },
+    "suggestions": [
+      "Scan my website: [paste URL]",
+      "Upload a document to analyze",
+      "Show me my knowledge base",
+      "Extract data from this file",
+      "What information do you have about...",
+      "Add this to my knowledge base"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/general_assistant"
+    },
+    "personality": {
+      "tone": "professional",
+      "style": "thorough",
+      "approach": "inquisitive"
+    }
+  },
   {
     "agent": {
       "id": "personal_assistant",
@@ -607,6 +673,72 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "approach": "proactive"
     }
   },
+  "general_assistant": {
+    "agent": {
+      "id": "general_assistant",
+      "name": "General Personal Assistant",
+      "category": "GENERAL",
+      "description": "Build a comprehensive knowledge base from your documents, websites, and files.",
+      "specialization": "Knowledge Base Builder",
+      "tagline": "Upload. Extract. Learn.",
+      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+      "pinned": true,
+      "initial_message": "Hi there! I'm here to learn about your business so I can give you the best possible support.\n\nTo get started, could you share your company website? I'll review it to understand what you do, your products or services, and how you communicate with customers.\n\nYou can also upload any documents that help describe your business - like brochures, guides, or internal docs.\n\nThe more I know about you, the better I can help!",
+      "capabilities": [
+        "Scan and extract data from website URLs",
+        "Process uploaded documents (PDF, Word, Excel, images, etc.)",
+        "Build detailed knowledge bases from multiple sources",
+        "Store extracted knowledge in your personal Supabase database",
+        "Ask clarifying questions to ensure data accuracy",
+        "Organize and categorize extracted information",
+        "Cross-reference data across multiple documents",
+        "Summarize and highlight key insights"
+      ],
+      "recent_actions": [
+        "Scanned company website and extracted brand guidelines",
+        "Processed uploaded PDF and added to knowledge base",
+        "Asked clarification about ambiguous product details",
+        "Organized extracted data into categories"
+      ]
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Knowledge Base Builder",
+          "path": "knowledge-base",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons",
+        "url_input"
+      ]
+    },
+    "suggestions": [
+      "Scan my website: [paste URL]",
+      "Upload a document to analyze",
+      "Show me my knowledge base",
+      "Extract data from this file",
+      "What information do you have about...",
+      "Add this to my knowledge base"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/general_assistant"
+    },
+    "personality": {
+      "tone": "professional",
+      "style": "thorough",
+      "approach": "inquisitive"
+    }
+  },
   "newsletter": {
     "agent": {
       "id": "newsletter",
@@ -1038,6 +1170,72 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
 // Agents by category (pre-grouped)
 export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
   "GENERAL": [
+    {
+      "agent": {
+        "id": "general_assistant",
+        "name": "General Personal Assistant",
+        "category": "GENERAL",
+        "description": "Build a comprehensive knowledge base from your documents, websites, and files.",
+        "specialization": "Knowledge Base Builder",
+        "tagline": "Upload. Extract. Learn.",
+        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+        "pinned": true,
+        "initial_message": "Hi there! I'm here to learn about your business so I can give you the best possible support.\n\nTo get started, could you share your company website? I'll review it to understand what you do, your products or services, and how you communicate with customers.\n\nYou can also upload any documents that help describe your business - like brochures, guides, or internal docs.\n\nThe more I know about you, the better I can help!",
+        "capabilities": [
+          "Scan and extract data from website URLs",
+          "Process uploaded documents (PDF, Word, Excel, images, etc.)",
+          "Build detailed knowledge bases from multiple sources",
+          "Store extracted knowledge in your personal Supabase database",
+          "Ask clarifying questions to ensure data accuracy",
+          "Organize and categorize extracted information",
+          "Cross-reference data across multiple documents",
+          "Summarize and highlight key insights"
+        ],
+        "recent_actions": [
+          "Scanned company website and extracted brand guidelines",
+          "Processed uploaded PDF and added to knowledge base",
+          "Asked clarification about ambiguous product details",
+          "Organized extracted data into categories"
+        ]
+      },
+      "ui_use": {
+        "page_type": "single_page",
+        "pages": [
+          {
+            "name": "Knowledge Base Builder",
+            "path": "knowledge-base",
+            "order": 1,
+            "validated": true
+          }
+        ]
+      },
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "voice_input",
+          "suggestion_buttons",
+          "url_input"
+        ]
+      },
+      "suggestions": [
+        "Scan my website: [paste URL]",
+        "Upload a document to analyze",
+        "Show me my knowledge base",
+        "Extract data from this file",
+        "What information do you have about...",
+        "Add this to my knowledge base"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/general_assistant"
+      },
+      "personality": {
+        "tone": "professional",
+        "style": "thorough",
+        "approach": "inquisitive"
+      }
+    },
     {
       "agent": {
         "id": "personal_assistant",
@@ -1542,7 +1740,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","newsletter","personal_assistant","smm_assistant","SOL","test_multi_agent","test_multi_page_agent"];
+export const AGENT_IDS: string[] = ["content_repurposer","general_assistant","newsletter","personal_assistant","smm_assistant","SOL","test_multi_agent","test_multi_page_agent"];
 
 // Total count
-export const TOTAL_AGENTS = 7;
+export const TOTAL_AGENTS = 8;

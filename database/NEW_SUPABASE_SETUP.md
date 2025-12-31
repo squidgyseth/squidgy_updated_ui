@@ -87,6 +87,7 @@ VALUES ('yeaa', 'per_agent', false);
 | `usage` | Usage tracking for billing |
 | `api_keys` | MCP server access keys |
 | `chat_history` | Conversation storage |
+| `user_knowledge_base` | Shared KB per user (General Assistant creates, all agents use) |
 
 ### Flexible Billing Tables (Both Platforms)
 
@@ -122,6 +123,7 @@ VALUES ('yeaa', 'per_agent', false);
 - `avatars` (public) - User avatars
 - `content` (private) - Generated content
 - `documents` (private) - User documents
+- `knowledge-base` (public) - Shared KB storage for all agents (user-specific folders)
 
 ### Squidgy-Specific Buckets
 - `company` (private) - Company assets

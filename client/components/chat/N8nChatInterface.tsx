@@ -273,7 +273,7 @@ export default function N8nChatInterface({
     // Create file input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.pdf,.txt,.docx';
+    fileInput.accept = '.pdf,.txt,.docx,.md,.png,.jpg,.jpeg,.gif,.webp';
     fileInput.style.display = 'none';
     
     fileInput.onchange = async (e) => {
@@ -289,9 +289,20 @@ export default function N8nChatInterface({
       }
       
       // Validate file type
-      const allowedTypes = ['application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-      if (!allowedTypes.includes(file.type)) {
-        alert('Only PDF, TXT, and DOCX files are supported');
+      const allowedTypes = [
+        'application/pdf', 
+        'text/plain', 
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+        'text/markdown',
+        'image/png',
+        'image/jpeg',
+        'image/gif',
+        'image/webp'
+      ];
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      const imageExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+      if (!allowedTypes.includes(file.type) && fileExtension !== 'md' && !imageExtensions.includes(fileExtension || '')) {
+        alert('Only PDF, TXT, DOCX, MD, and image files (PNG, JPG, GIF, WEBP) are supported');
         return;
       }
       
@@ -312,20 +323,32 @@ export default function N8nChatInterface({
 
   const uploadFileToSupabase = async (file: File) => {
     try {
+      // Get the actual auth user ID for RLS policy compliance
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        throw new Error('Not authenticated');
+      }
+      
       const timestamp = Date.now();
-      const fileName = `${userId}_${timestamp}_${file.name}`;
+      // Store files in user-specific folder using auth.uid(): {authUserId}/uploads/{timestamp}_{filename}
+      // This matches the RLS policy which checks (storage.foldername(name))[1] = auth.uid()::text
+      const filePath = `${authUser.id}/uploads/${timestamp}_${file.name}`;
       
-      console.log('Uploading file to Supabase...', fileName);
-      console.log('File details:', { name: file.name, size: file.size, type: file.type });
+      // All agents use the shared knowledge-base bucket
+      // Files are organized per user for easy cleanup on account deletion
+      const bucketName = 'knowledge-base';
       
-      // Step 1: Upload to Supabase storage
+      console.log('Uploading file to Supabase...', filePath);
+      console.log('File details:', { name: file.name, size: file.size, type: file.type, bucket: bucketName, authUserId: authUser.id });
+      
+      // Step 1: Upload to Supabase storage in user's folder
       const { data, error } = await supabase.storage
-        .from('newsletter')
-        .upload(fileName, file);
+        .from(bucketName)
+        .upload(filePath, file);
       
       if (error) {
         console.error('Supabase upload error:', error);
-        console.error('Error details:', { message: error.message, statusCode: error.statusCode });
+        console.error('Error details:', { message: error.message });
         throw new Error(`Upload failed: ${error.message}`);
       }
       
@@ -333,7 +356,7 @@ export default function N8nChatInterface({
     
     // Step 2: Get public URL
     const { data: urlData } = supabase.storage
-      .from('newsletter')
+      .from(bucketName)
       .getPublicUrl(data.path);
     
     const fileUrl = urlData.publicUrl;

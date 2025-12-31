@@ -199,8 +199,10 @@ POST /api/facebook/connect-pages-simple
 | File | Purpose |
 |------|---------|
 | `client/lib/api.ts` | Main API service layer |
+| `client/lib/n8nService.ts` | N8N webhook communication |
 | `client/pages/FacebookConnect.tsx` | Facebook integration |
 | `client/components/FacebookSetup.tsx` | Facebook setup flow |
+| `client/components/chat/N8nChatInterface.tsx` | Chat interface with file upload |
 | `client/lib/auth-service.ts` | Authentication services |
 | `server/index.ts` | Server-side routes |
 

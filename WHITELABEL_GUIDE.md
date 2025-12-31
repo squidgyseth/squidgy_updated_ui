@@ -255,6 +255,17 @@ VITE_YEAA_SUPABASE_ANON_KEY=eyJ...
 | Trades | `trades` | Orange (#f97316) | Trades/services |
 | Finance | `finance` | Sky Blue (#0ea5e9) | Financial services |
 
+## Shared Knowledge Base
+
+All platforms share a common knowledge base architecture:
+
+- **Storage Bucket:** `knowledge-base` (per Supabase instance)
+- **File Path:** `{auth.uid()}/uploads/{timestamp}_{filename}`
+- **Table:** `user_knowledge_base` with `ON DELETE CASCADE`
+- **RLS:** Users can only access their own folder
+
+The **General Personal Assistant** agent creates and manages the KB, while other agents can read and use it for their specific purposes.
+
 ## Hooks Reference
 
 | Hook | Description |
