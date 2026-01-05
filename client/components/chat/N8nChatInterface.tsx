@@ -44,13 +44,29 @@ export default function N8nChatInterface({
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null);
   const [showNewsletterSelector, setShowNewsletterSelector] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [lastMessageCount, setLastMessageCount] = useState(0);
   const chatHistoryService = ChatHistoryService.getInstance();
   const fileUploadService = FileUploadService.getInstance();
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom only when a new agent message arrives (for general_assistant)
   useEffect(() => {
+    if (agent.id === 'general_assistant') {
+      // Only scroll when a new message is added (not on every render)
+      const lastMessage = messages[messages.length - 1];
+      if (messages.length > lastMessageCount && lastMessage?.sender === 'agent') {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+      setLastMessageCount(messages.length);
+      return;
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, agent.id, lastMessageCount]);
+
+  // Handle scroll events (kept for potential future use)
+  const handleScroll = () => {
+    // No-op for now - scroll tracking removed
+  };
 
   // Add intro message on mount and show newsletter selector for content_repurposer
   useEffect(() => {
@@ -536,7 +552,11 @@ export default function N8nChatInterface({
       )}
       
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div 
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 space-y-4" style={{ overflowAnchor: 'none' }}
+      >
         {messages.map((message, index) => (
           <div
             key={`${message.id}-${index}`}

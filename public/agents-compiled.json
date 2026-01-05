@@ -60,6 +60,10 @@
       "n8n": {
         "webhook_url": "https://n8n.theaiteam.uk/webhook/general_assistant"
       },
+      "storage": {
+        "bucket": "knowledge-base",
+        "path_format": "{auth_uid}/uploads/{timestamp}_{filename}"
+      },
       "personality": {
         "tone": "professional",
         "style": "thorough",
@@ -690,6 +694,10 @@
       "n8n": {
         "webhook_url": "https://n8n.theaiteam.uk/webhook/general_assistant"
       },
+      "storage": {
+        "bucket": "knowledge-base",
+        "path_format": "{auth_uid}/uploads/{timestamp}_{filename}"
+      },
       "personality": {
         "tone": "professional",
         "style": "thorough",
@@ -1184,6 +1192,10 @@
         ],
         "n8n": {
           "webhook_url": "https://n8n.theaiteam.uk/webhook/general_assistant"
+        },
+        "storage": {
+          "bucket": "knowledge-base",
+          "path_format": "{auth_uid}/uploads/{timestamp}_{filename}"
         },
         "personality": {
           "tone": "professional",
@@ -1695,6 +1707,6 @@
   },
   "meta": {
     "total": 8,
-    "buildTime": "2025-12-31T11:22:16.075Z"
+    "buildTime": "2026-01-05T09:39:47.297Z"
   }
 }

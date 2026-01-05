@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2025-12-31T11:22:16.069Z
+// Generated on: 2026-01-05T09:39:47.290Z
 
 export interface AgentConfig {
   agent: {
@@ -100,6 +100,10 @@ export const ALL_AGENTS: AgentConfig[] = [
     ],
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/general_assistant"
+    },
+    "storage": {
+      "bucket": "knowledge-base",
+      "path_format": "{auth_uid}/uploads/{timestamp}_{filename}"
     },
     "personality": {
       "tone": "professional",
@@ -733,6 +737,10 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/general_assistant"
     },
+    "storage": {
+      "bucket": "knowledge-base",
+      "path_format": "{auth_uid}/uploads/{timestamp}_{filename}"
+    },
     "personality": {
       "tone": "professional",
       "style": "thorough",
@@ -1229,6 +1237,10 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       ],
       "n8n": {
         "webhook_url": "https://n8n.theaiteam.uk/webhook/general_assistant"
+      },
+      "storage": {
+        "bucket": "knowledge-base",
+        "path_format": "{auth_uid}/uploads/{timestamp}_{filename}"
       },
       "personality": {
         "tone": "professional",
