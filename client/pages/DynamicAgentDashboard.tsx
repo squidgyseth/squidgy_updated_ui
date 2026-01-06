@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import UniversalChatLayout from '../components/layout/UniversalChatLayout';
 import N8nChatInterface from '../components/chat/N8nChatInterface';
@@ -16,6 +16,7 @@ export default function DynamicAgentDashboard() {
   const { agentId } = useParams<{ agentId: string }>();
   const { userId, sessionId } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
   const configService = AgentConfigService.getInstance();
   
   const [agentConfig, setAgentConfig] = useState<any>(null);
@@ -149,6 +150,7 @@ export default function DynamicAgentDashboard() {
         userId={userId}
         sessionId={currentSessionId} // Use the current session ID
         webhookUrl={agentConfig.n8n?.webhook_url} // Pass the webhook URL from agent config
+        showAddNewMessage={location.state?.showAddNewMessage}
       />
     </UniversalChatLayout>
   );
