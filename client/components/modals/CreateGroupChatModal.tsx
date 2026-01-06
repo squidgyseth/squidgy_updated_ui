@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
+import GroupChatService from "../../services/groupChatService";
+import OptimizedAgentService from "../../services/optimizedAgentService";
 
 interface CreateGroupChatModalProps {
   isOpen: boolean;
@@ -16,60 +20,26 @@ interface Assistant {
 }
 
 export default function CreateGroupChatModal({ isOpen, onClose, onCreateGroup }: CreateGroupChatModalProps) {
+  const navigate = useNavigate();
   const [groupName, setGroupName] = useState("");
-  const [selectedAssistants, setSelectedAssistants] = useState<string[]>(["SMM Assistant"]);
   const [activeTab, setActiveTab] = useState<"ai" | "team">("ai");
+  const [isCreating, setIsCreating] = useState(false);
+  
+  const groupChatService = GroupChatService.getInstance();
+  const agentService = OptimizedAgentService.getInstance();
 
-  const assistants: Assistant[] = [
-    {
-      id: "SMM Assistant",
-      name: "SMM Assistant",
-      category: "Marketing",
-      description: "Trend. Post. Analyze.",
-      avatar: "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
-      isActive: true
-    },
-    {
-      id: "Content Strategist",
-      name: "Content Strategist",
-      category: "Marketing",
-      description: "Plan. Write. Repurpose.",
-      avatar: "https://api.builder.io/api/v1/image/assets/TEMP/fae0953bfe5842c25b1a321c667188d167c18abb?width=64",
-      isActive: true
-    },
-    {
-      id: "Lead Generator",
-      name: "Lead Generator",
-      category: "Sales",
-      description: "Find leads fast.",
-      avatar: "https://api.builder.io/api/v1/image/assets/TEMP/1c1a9e476685a48c996662d5e993f34fffc24ec0?width=64",
-      isActive: true
-    },
-    {
-      id: "Personal Assistant",
-      name: "Personal Assistant",
-      category: "General",
-      description: "Always here to help.",
-      avatar: "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-      isActive: true
-    },
-    {
-      id: "CRM Updater",
-      name: "CRM Updater",
-      category: "Sales",
-      description: "Keep data clean.",
-      avatar: "https://api.builder.io/api/v1/image/assets/TEMP/aba5f5c2e7b9e818f550225ff47becc0bcd708e2?width=64",
-      isActive: true
-    },
-    {
-      id: "Recruiter Assistant",
-      name: "Recruiter Assistant",
-      category: "HR",
-      description: "Hire with ease.",
-      avatar: "https://api.builder.io/api/v1/image/assets/TEMP/ffe6304047504c08d7faccb66297228d39227080?width=64",
-      isActive: true
-    }
-  ];
+  // Load assistants from the agent service
+  const loadedAgents = agentService.getAllAgents();
+  const assistants: Assistant[] = loadedAgents.map(config => ({
+    id: config.agent.id,
+    name: config.agent.name,
+    category: config.agent.category || "General",
+    description: config.agent.description || config.agent.specialization || "AI Assistant",
+    avatar: config.agent.avatar || "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+    isActive: true
+  }));
+
+  const [selectedAssistants, setSelectedAssistants] = useState<string[]>([assistants[0]?.id || ""]);
 
   const handleAssistantToggle = (assistantId: string) => {
     setSelectedAssistants(prev => 
@@ -79,12 +49,46 @@ export default function CreateGroupChatModal({ isOpen, onClose, onCreateGroup }:
     );
   };
 
-  const handleCreateGroup = () => {
-    if (selectedAssistants.length > 0) {
-      onCreateGroup(groupName || "New Group Chat", selectedAssistants);
-      onClose();
-      setGroupName("");
-      setSelectedAssistants(["SMM Assistant"]);
+  const handleCreateGroup = async () => {
+    if (selectedAssistants.length === 0 || isCreating) return;
+    
+    setIsCreating(true);
+    
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('No authenticated user');
+        return;
+      }
+
+      // Create the group chat
+      const groupChat = await groupChatService.createGroupChat(
+        user.id,
+        groupName || "New Group Chat",
+        selectedAssistants
+      );
+
+      if (groupChat) {
+        console.log('✅ Group chat created:', groupChat);
+        
+        // Call the original callback for any additional handling
+        onCreateGroup(groupChat.name, selectedAssistants);
+        
+        // Close modal and reset state
+        onClose();
+        setGroupName("");
+        setSelectedAssistants([assistants[0]?.id || ""]);
+        
+        // Navigate to the new group chat
+        navigate(`/chat/group/${groupChat.id}`);
+      } else {
+        console.error('❌ Failed to create group chat');
+      }
+    } catch (error) {
+      console.error('❌ Error creating group chat:', error);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -242,14 +246,14 @@ export default function CreateGroupChatModal({ isOpen, onClose, onCreateGroup }:
           </button>
           <button
             onClick={handleCreateGroup}
-            disabled={selectedAssistants.length === 0}
+            disabled={selectedAssistants.length === 0 || isCreating}
             className={`px-6 py-2 rounded-lg font-medium transition-all ${
-              selectedAssistants.length > 0
+              selectedAssistants.length > 0 && !isCreating
                 ? "bg-squidgy-gradient text-white hover:opacity-90"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
-            Create Group Chat ({selectedAssistants.length})
+            {isCreating ? "Creating..." : `Create Group Chat (${selectedAssistants.length})`}
           </button>
         </div>
       </div>
