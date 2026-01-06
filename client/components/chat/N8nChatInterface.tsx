@@ -28,6 +28,7 @@ interface N8nChatInterfaceProps {
   sessionId?: string;
   className?: string;
   webhookUrl?: string; // Add webhook URL from agent config
+  showAddNewMessage?: boolean; // Flag to show Add Another Assistant message
 }
 
 export default function N8nChatInterface({
@@ -35,7 +36,8 @@ export default function N8nChatInterface({
   userId,
   sessionId: initialSessionId,
   className = '',
-  webhookUrl
+  webhookUrl,
+  showAddNewMessage = false
 }: N8nChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -59,6 +61,13 @@ export default function N8nChatInterface({
     console.log(`📨 N8nChatInterface: agentId: ${agent.id}, userId: ${userId}`);
     loadSessionMessages();
   }, [sessionId]);
+
+  // Set input text when showAddNewMessage is true
+  useEffect(() => {
+    if (showAddNewMessage) {
+      setInputValue("➕ Add Another Assistant");
+    }
+  }, [showAddNewMessage]);
 
   // Show newsletter selector for content_repurposer and handle OAuth callback
   useEffect(() => {

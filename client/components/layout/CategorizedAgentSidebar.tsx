@@ -115,6 +115,14 @@ export default function CategorizedAgentSidebar() {
     }
   };
 
+  const handleAddNew = () => {
+    navigate('/chat/personal_assistant', { 
+      state: { 
+        showAddNewMessage: true 
+      } 
+    });
+  };
+
   const AssistantItem = ({ assistant, isSelected = false }: { assistant: Assistant; isSelected?: boolean }) => (
     <div 
       className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
@@ -172,7 +180,10 @@ export default function CategorizedAgentSidebar() {
             <span>Group Chat</span>
           </button>
           */}
-          <button className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-squidgy-primary/10 text-squidgy-primary text-xs whitespace-nowrap">
+          <button 
+            onClick={handleAddNew}
+            className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-squidgy-primary/10 text-squidgy-primary text-xs whitespace-nowrap"
+          >
             <span className="text-sm">+</span>
             <span>Add New</span>
           </button>
