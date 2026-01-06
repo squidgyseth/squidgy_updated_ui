@@ -160,6 +160,7 @@ export default function CategorizedAgentSidebar() {
           <h2 className="text-sm font-semibold text-black leading-5">Your Assistants</h2>
         </div>
         <div className="flex items-start gap-2">
+          {/* 
           <button 
             onClick={() => setIsCreateGroupModalOpen(true)}
             className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-squidgy-gradient text-white text-xs whitespace-nowrap"
@@ -170,6 +171,7 @@ export default function CategorizedAgentSidebar() {
             </svg>
             <span>Group Chat</span>
           </button>
+          */}
           <button className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-squidgy-primary/10 text-squidgy-primary text-xs whitespace-nowrap">
             <span className="text-sm">+</span>
             <span>Add New</span>
