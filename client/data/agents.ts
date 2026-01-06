@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-06T02:08:11.654Z
+// Generated on: 2026-01-06T20:39:41.690Z
 
 export interface AgentConfig {
   agent: {
@@ -46,25 +46,25 @@ export const ALL_AGENTS: AgentConfig[] = [
       "id": "personal_assistant",
       "name": "Personal Assistant",
       "category": "GENERAL",
-      "description": "Your versatile personal assistant ready to help with any task.",
-      "specialization": "Always Ready to Help",
-      "tagline": "Organize. Schedule. Support.",
+      "description": "Your onboarding assistant for setting up AI agents",
+      "specialization": "Onboarding Expert",
+      "tagline": "Setup. Configure. Launch.",
       "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
       "pinned": true,
-      "initial_message": "Hello! To continue with the setup process, I'll need to review your company website to understand your organization's values, communication style, industry sector, and other relevant details. Could you please provide your website URL?",
+      "initial_message": "Hey! To proceed further with setup I need your website to analyse your company's values, tone, industry and etc. Please share your website URL below.",
       "capabilities": [
-        "Task management and scheduling coordination",
-        "Research and information gathering",
-        "Email drafting and communication support",
-        "Document organization and file management",
-        "Calendar management and appointment scheduling",
-        "Travel planning and logistics coordination"
+        "Website analysis and company insights",
+        "AI agent recommendation and setup",
+        "Brand voice and communication style configuration",
+        "Target audience and business goal analysis",
+        "Calendar and notification setup",
+        "Complete onboarding flow management"
       ],
       "recent_actions": [
-        "Organized calendar for next week's meetings",
-        "Researched market trends for quarterly report",
-        "Drafted follow-up emails for client meetings",
-        "Scheduled team meetings for project kickoff"
+        "Analyzed company website and recommended 3 AI agents",
+        "Configured SMM Assistant for e-commerce business",
+        "Set up professional brand voice for marketing team",
+        "Enabled notifications and calendar integration"
       ]
     },
     "ui_use": {
@@ -88,12 +88,12 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "suggestions": [
-      "Help me organize my schedule for this week",
-      "Draft a professional email for me",
-      "Research latest industry trends",
-      "Create a task list for my project",
-      "Schedule a meeting with my team",
-      "Help me plan my upcoming trip"
+      "Let's start the setup process",
+      "Analyze my company website",
+      "Recommend AI agents for my business",
+      "Configure my brand voice and style",
+      "Set up notifications and calendar",
+      "➕ Add Another Assistant"
     ],
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant"
@@ -113,7 +113,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "specialization": "Creative & Trendy",
       "tagline": "Content. Create. Distribute.",
       "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
-      "pinned": true,
+      "pinned": false,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
         "Content creation and optimization for newsletters",
@@ -616,7 +616,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "specialization": "Creative & Trendy",
       "tagline": "Content. Create. Distribute.",
       "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
-      "pinned": true,
+      "pinned": false,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
         "Content creation and optimization for newsletters",
@@ -677,25 +677,25 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "id": "personal_assistant",
       "name": "Personal Assistant",
       "category": "GENERAL",
-      "description": "Your versatile personal assistant ready to help with any task.",
-      "specialization": "Always Ready to Help",
-      "tagline": "Organize. Schedule. Support.",
+      "description": "Your onboarding assistant for setting up AI agents",
+      "specialization": "Onboarding Expert",
+      "tagline": "Setup. Configure. Launch.",
       "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
       "pinned": true,
-      "initial_message": "Hello! To continue with the setup process, I'll need to review your company website to understand your organization's values, communication style, industry sector, and other relevant details. Could you please provide your website URL?",
+      "initial_message": "Hey! To proceed further with setup I need your website to analyse your company's values, tone, industry and etc. Please share your website URL below.",
       "capabilities": [
-        "Task management and scheduling coordination",
-        "Research and information gathering",
-        "Email drafting and communication support",
-        "Document organization and file management",
-        "Calendar management and appointment scheduling",
-        "Travel planning and logistics coordination"
+        "Website analysis and company insights",
+        "AI agent recommendation and setup",
+        "Brand voice and communication style configuration",
+        "Target audience and business goal analysis",
+        "Calendar and notification setup",
+        "Complete onboarding flow management"
       ],
       "recent_actions": [
-        "Organized calendar for next week's meetings",
-        "Researched market trends for quarterly report",
-        "Drafted follow-up emails for client meetings",
-        "Scheduled team meetings for project kickoff"
+        "Analyzed company website and recommended 3 AI agents",
+        "Configured SMM Assistant for e-commerce business",
+        "Set up professional brand voice for marketing team",
+        "Enabled notifications and calendar integration"
       ]
     },
     "ui_use": {
@@ -719,12 +719,12 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
-      "Help me organize my schedule for this week",
-      "Draft a professional email for me",
-      "Research latest industry trends",
-      "Create a task list for my project",
-      "Schedule a meeting with my team",
-      "Help me plan my upcoming trip"
+      "Let's start the setup process",
+      "Analyze my company website",
+      "Recommend AI agents for my business",
+      "Configure my brand voice and style",
+      "Set up notifications and calendar",
+      "➕ Add Another Assistant"
     ],
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant"
@@ -1043,25 +1043,25 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "id": "personal_assistant",
         "name": "Personal Assistant",
         "category": "GENERAL",
-        "description": "Your versatile personal assistant ready to help with any task.",
-        "specialization": "Always Ready to Help",
-        "tagline": "Organize. Schedule. Support.",
+        "description": "Your onboarding assistant for setting up AI agents",
+        "specialization": "Onboarding Expert",
+        "tagline": "Setup. Configure. Launch.",
         "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
         "pinned": true,
-        "initial_message": "Hello! To continue with the setup process, I'll need to review your company website to understand your organization's values, communication style, industry sector, and other relevant details. Could you please provide your website URL?",
+        "initial_message": "Hey! To proceed further with setup I need your website to analyse your company's values, tone, industry and etc. Please share your website URL below.",
         "capabilities": [
-          "Task management and scheduling coordination",
-          "Research and information gathering",
-          "Email drafting and communication support",
-          "Document organization and file management",
-          "Calendar management and appointment scheduling",
-          "Travel planning and logistics coordination"
+          "Website analysis and company insights",
+          "AI agent recommendation and setup",
+          "Brand voice and communication style configuration",
+          "Target audience and business goal analysis",
+          "Calendar and notification setup",
+          "Complete onboarding flow management"
         ],
         "recent_actions": [
-          "Organized calendar for next week's meetings",
-          "Researched market trends for quarterly report",
-          "Drafted follow-up emails for client meetings",
-          "Scheduled team meetings for project kickoff"
+          "Analyzed company website and recommended 3 AI agents",
+          "Configured SMM Assistant for e-commerce business",
+          "Set up professional brand voice for marketing team",
+          "Enabled notifications and calendar integration"
         ]
       },
       "ui_use": {
@@ -1085,12 +1085,12 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "suggestions": [
-        "Help me organize my schedule for this week",
-        "Draft a professional email for me",
-        "Research latest industry trends",
-        "Create a task list for my project",
-        "Schedule a meeting with my team",
-        "Help me plan my upcoming trip"
+        "Let's start the setup process",
+        "Analyze my company website",
+        "Recommend AI agents for my business",
+        "Configure my brand voice and style",
+        "Set up notifications and calendar",
+        "➕ Add Another Assistant"
       ],
       "n8n": {
         "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant"
@@ -1112,7 +1112,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "specialization": "Creative & Trendy",
         "tagline": "Content. Create. Distribute.",
         "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
-        "pinned": true,
+        "pinned": false,
         "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
         "capabilities": [
           "Content creation and optimization for newsletters",

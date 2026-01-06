@@ -14,6 +14,7 @@ import NewsletterSelector from './NewsletterSelector';
 import InteractiveMessageButtons from './InteractiveMessageButtons';
 import { googleCalendarService } from '../../lib/googleCalendar';
 import { toast } from 'sonner';
+import AgentEnablementService from '../../services/agentEnablementService';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -278,6 +279,12 @@ export default function N8nChatInterface({
         }
 
         setMessages(prev => [...prev, agentMessage]);
+
+        // Handle agent enablement for Personal Assistant onboarding
+        if (agent.id === 'personal_assistant') {
+          const enablementService = AgentEnablementService.getInstance();
+          await enablementService.handleOnboardingResponse(response.agent_response);
+        }
       } else {
         // Handle error case
         const errorMessage = 'Sorry, I encountered an error processing your request. Please try again.';
