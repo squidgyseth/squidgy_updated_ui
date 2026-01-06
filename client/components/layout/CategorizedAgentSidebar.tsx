@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CreateGroupChatModal from '../modals/CreateGroupChatModal';
 import OptimizedAgentService from '../../services/optimizedAgentService';
+import OnboardingService from '../../services/onboardingService';
+import { supabase } from '../../lib/supabase';
 
 interface Assistant {
   name: string;
@@ -31,6 +33,21 @@ export default function CategorizedAgentSidebar() {
     loadAgentsFromYAML();
   }, []);
 
+  // Refresh agents when needed (can be called from outside)
+  const refreshAgents = () => {
+    console.log('🔄 CategorizedAgentSidebar: Refreshing agents');
+    loadAgentsFromYAML();
+  };
+
+  // Expose refresh function to window for N8N webhook calls
+  useEffect(() => {
+    (window as any).refreshAgentSidebar = refreshAgents;
+    
+    return () => {
+      delete (window as any).refreshAgentSidebar;
+    };
+  }, []);
+
   useEffect(() => {
     // Extract selected agent from URL
     const pathParts = location.pathname.split('/');
@@ -39,21 +56,64 @@ export default function CategorizedAgentSidebar() {
     }
   }, [location]);
 
-  const loadAgentsFromYAML = () => {
+  const loadAgentsFromYAML = async () => {
     try {
+      // Get current user from auth
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No authenticated user, showing only Personal Assistant');
+        setCategories([]);
+        return;
+      }
+
+      // Get the correct user_id from profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('Error fetching profile:', profileError);
+        setCategories([]);
+        return;
+      }
+
+      const actualUserId = profile.user_id;
+
       const agentService = OptimizedAgentService.getInstance();
-      const agentConfigs = agentService.getAllAgents();
+      const onboardingService = OnboardingService.getInstance();
+      const allAgentConfigs = agentService.getAllAgents();
+      
+      // Get enabled agents for this user
+      const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
+      const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
+      
+      // Always include Personal Assistant (pinned)
+      enabledAgentIds.add('personal_assistant');
+      
+      // Filter configs to only show enabled agents
+      const enabledConfigs = allAgentConfigs.filter(config => 
+        enabledAgentIds.has(config.agent.id)
+      );
       
       // Transform configs to match sidebar format
-      const assistants: Assistant[] = agentConfigs.map((config) => ({
-        name: config.agent.name,
-        description: config.agent.description || config.agent.specialization || 'AI Assistant',
-        avatar: config.agent.avatar || "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-        isOnline: true,
-        id: config.agent.id,
-        category: config.agent.category?.toUpperCase() || 'GENERAL',
-        pinned: config.agent.pinned || false
-      }));
+      const assistants: Assistant[] = enabledConfigs.map((config) => {
+        // Get custom data for this agent
+        const customData = enabledAgents.find(agent => agent.assistant_id === config.agent.id);
+        
+        return {
+          name: customData?.custom_name || config.agent.name,
+          description: config.agent.description || config.agent.specialization || 'AI Assistant',
+          avatar: config.agent.avatar || "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+          isOnline: true,
+          id: config.agent.id,
+          category: config.agent.category?.toUpperCase() || 'GENERAL',
+          pinned: config.agent.pinned || false
+        };
+      });
+
+      console.log(`🔍 CategorizedAgentSidebar: Loaded ${assistants.length} enabled agents for user`);
 
       // Group by category
       const grouped = groupAssistantsByCategory(assistants);
