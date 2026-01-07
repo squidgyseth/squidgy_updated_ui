@@ -14,6 +14,10 @@ import { useUser } from '../hooks/useUser';
 import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
 import { InvoiceStorageService } from '../services/invoiceStorageService';
+import CombinedUsageAnalytics from '../components/billing/CombinedUsageAnalytics';
+import UsageAnalytics from '../components/billing/UsageAnalytics';
+import ToolUsageAnalytics from '../components/billing/ToolUsageAnalytics';
+import MonthlyUsageLimit from '../components/billing/MonthlyUsageLimit';
 
 interface BillingSettings {
   id: string;
@@ -598,6 +602,11 @@ export default function BillingSettings() {
 
   return (
     <SettingsLayout title="Billing & Subscription">
+      {/* Monthly Usage Limit */}
+      {profile?.user_id && (
+        <MonthlyUsageLimit userId={profile.user_id} />
+      )}
+
       {/* Current Plan Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-8 mb-6">
         <h2 className="text-lg font-medium text-gray-900 mb-6">Current Plan</h2>
@@ -732,6 +741,27 @@ export default function BillingSettings() {
           </button>
         </div>
       </div>
+
+      {/* Combined Usage Overview Section */}
+      {profile?.user_id && (
+        <div className="mb-6">
+          <CombinedUsageAnalytics userId={profile.user_id} />
+        </div>
+      )}
+
+      {/* Token Usage Analytics Section */}
+      {profile?.user_id && (
+        <div className="mb-6">
+          <UsageAnalytics userId={profile.user_id} />
+        </div>
+      )}
+
+      {/* Tool Usage Analytics Section */}
+      {profile?.user_id && (
+        <div className="mb-6">
+          <ToolUsageAnalytics userId={profile.user_id} />
+        </div>
+      )}
 
       {/* Billing History Section */}
       <div className="bg-white rounded-lg border border-gray-200">
