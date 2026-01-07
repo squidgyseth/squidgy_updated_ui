@@ -236,7 +236,15 @@ export default function N8nChatInterface({
       } : undefined
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    // Check if user message already exists to prevent duplicates
+    setMessages(prev => {
+      const messageExists = prev.some(msg => msg.id === userMessage.id);
+      if (messageExists) {
+        console.log(`⚠️ User message ${userMessage.id} already exists, skipping duplicate`);
+        return prev;
+      }
+      return [...prev, userMessage];
+    });
     setInputValue('');
     setIsLoading(true);
 
@@ -296,7 +304,15 @@ export default function N8nChatInterface({
           agentMessage.content_repurposer_history_id = savedRecord.content_repurposer_history_id;
         }
 
-        setMessages(prev => [...prev, agentMessage]);
+        // Check if message already exists to prevent duplicates
+        setMessages(prev => {
+          const messageExists = prev.some(msg => msg.id === agentMessage.id);
+          if (messageExists) {
+            console.log(`⚠️ Message ${agentMessage.id} already exists, skipping duplicate`);
+            return prev;
+          }
+          return [...prev, agentMessage];
+        });
 
         // Handle agent enablement for Personal Assistant onboarding
         if (agent.id === 'personal_assistant') {
