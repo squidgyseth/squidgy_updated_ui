@@ -256,9 +256,27 @@ export default function N8nChatInterface({
       );
 
       if (response) {
+        // Parse response to handle structured JSON format
+        let displayMessage = response.agent_response;
+        let structuredData = null;
+        
+        // Handle agent enablement for Personal Assistant onboarding
+        if (agent.id === 'personal_assistant') {
+          // Check if we have the exact expected format with finished: true
+          if (response.finished === true && response.agent_data) {
+            console.log('✅ N8nChatInterface: Found exact structured format - processing agent enablement');
+            structuredData = response;
+          }
+          // Otherwise fallback to legacy text parsing
+          else {
+            console.log('🔄 N8nChatInterface: Using legacy text parsing approach');
+            structuredData = response.agent_response;
+          }
+        }
+
         const agentMessage: ChatMessage = {
           id: response.request_id,
-          content: response.agent_response,
+          content: displayMessage,
           sender: 'agent',
           timestamp: new Date(response.timestamp_of_call_made),
           status: response.agent_status,
@@ -267,7 +285,7 @@ export default function N8nChatInterface({
 
         // Save agent response to database and get back the saved record
         const savedRecord = await saveMessageToHistory(
-          response.agent_response, 
+          displayMessage, 
           'Agent', 
           new Date(response.timestamp_of_call_made),
           response.agent_status  // Pass agent_status
@@ -283,7 +301,8 @@ export default function N8nChatInterface({
         // Handle agent enablement for Personal Assistant onboarding
         if (agent.id === 'personal_assistant') {
           const enablementService = AgentEnablementService.getInstance();
-          await enablementService.handleOnboardingResponse(response.agent_response);
+          // Pass structured data if available, otherwise original response
+          await enablementService.handleOnboardingResponse(structuredData || response.agent_response);
         }
       } else {
         // Handle error case

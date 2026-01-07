@@ -1,4 +1,5 @@
 import OnboardingService, { OnboardingAgentData } from './onboardingService';
+import OptimizedAgentService from './optimizedAgentService';
 import { supabase } from '../lib/supabase';
 
 export interface AgentEnablementData {
@@ -12,12 +13,41 @@ export interface AgentEnablementData {
 
 class AgentEnablementService {
   private static instance: AgentEnablementService;
+  private agentNameToIdMap: Record<string, string> = {};
+
+  constructor() {
+    this.buildAgentNameMapping();
+  }
 
   static getInstance(): AgentEnablementService {
     if (!AgentEnablementService.instance) {
       AgentEnablementService.instance = new AgentEnablementService();
     }
     return AgentEnablementService.instance;
+  }
+
+  /**
+   * Build dynamic agent name to ID mapping from config files
+   */
+  private buildAgentNameMapping(): void {
+    try {
+      const agentService = OptimizedAgentService.getInstance();
+      const allAgents = agentService.getAllAgents();
+      
+      // Build mapping from config files
+      this.agentNameToIdMap = {};
+      allAgents.forEach(config => {
+        if (config.agent?.name && config.agent?.id) {
+          this.agentNameToIdMap[config.agent.name] = config.agent.id;
+        }
+      });
+      
+      console.log('🔄 AgentEnablementService: Built dynamic agent mapping:', this.agentNameToIdMap);
+    } catch (error) {
+      console.error('❌ AgentEnablementService: Error building agent mapping:', error);
+      // Fallback to prevent crashes
+      this.agentNameToIdMap = {};
+    }
   }
 
   /**
@@ -28,16 +58,31 @@ class AgentEnablementService {
     try {
       console.log('🎯 AgentEnablementService: Enabling agent from onboarding:', data);
 
-      // Get current user
+      // Get current user from auth
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.error('❌ AgentEnablementService: No authenticated user');
         return false;
       }
 
+      // Get the correct user_id from profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('❌ AgentEnablementService: Error fetching profile:', profileError);
+        return false;
+      }
+
+      const actualUserId = profile.user_id;
+      console.log(`🔍 AgentEnablementService: Using user_id from profiles: ${actualUserId}`);
+
       // Prepare agent data for onboarding service
       const agentData: OnboardingAgentData = {
-        user_id: user.id,
+        user_id: actualUserId,
         assistant_id: data.agentId,
         custom_name: data.customName,
         communication_tone: data.communicationTone || 'professional',
@@ -77,112 +122,39 @@ class AgentEnablementService {
    */
   parseOnboardingResponse(responseText: string): AgentEnablementData | null {
     try {
-      // Simplified: look for any agent name followed by enablement words
-      const step5Patterns = [
-        /(.+?) (?:Agent|Assistant)? is now (?:configured|enabled|ready)/i,
-        /Your (.+?) is now (?:configured|enabled|ready)/i,
-        /(.+?) is available in .+ sidebar/i
-      ];
-
-      let agentName = '';
-      for (const pattern of step5Patterns) {
-        const match = responseText.match(pattern);
-        if (match) {
-          agentName = match[1].trim();
-          break;
-        }
-      }
-
-      if (!agentName) {
-        return null;
-      }
-
-      // Simple agent name to ID mapping - using exact names from config files
-      const agentNameToId: Record<string, string> = {
-        'SMM Assistant': 'smm_assistant',
-        'Content Repurposer': 'content_repurposer', 
-        'Newsletter Agent': 'newsletter',
-        'SOL Bot': 'SOL'
-      };
-
-      // Direct mapping - no aggressive cleaning
-      const agentId = agentNameToId[agentName] || agentName.toLowerCase().replace(/ /g, '_');
-
-      // Extract additional data from conversation context
-      const data: AgentEnablementData = {
-        agentId,
-        customName: agentName !== agentId ? agentName : undefined
-      };
-
-      // Try to extract communication tone
-      const tonePatterns = [
-        /tone of voice.*?(\w+)/i,
-        /brand voice.*?(\w+)/i,
-        /communication.*?(\w+)/i
-      ];
-
-      for (const pattern of tonePatterns) {
-        const match = responseText.match(pattern);
-        if (match) {
-          const tone = match[1].toLowerCase();
-          if (['professional', 'friendly', 'casual', 'formal'].includes(tone)) {
-            data.communicationTone = tone as any;
-            break;
+      console.log('🔍 AgentEnablementService: Parsing response text:', responseText);
+      
+      // Get all agents dynamically from config files
+      const agentService = OptimizedAgentService.getInstance();
+      const allAgents = agentService.getAllAgents();
+      
+      // Check for agent enablement using dynamic agent names and multiple patterns
+      for (const config of allAgents) {
+        const agentName = config.agent.name;
+        const agentId = config.agent.id;
+        
+        // Multiple patterns to catch different response formats
+        const patterns = [
+          new RegExp(`${agentName} is now (?:configured|enabled|ready)`, 'i'),
+          new RegExp(`Your ${agentName} (?:assistant )?is now (?:configured|enabled|ready)`, 'i'),
+          new RegExp(`${agentName} (?:assistant )?is available`, 'i'),
+          new RegExp(`Your ${agentName} (?:is )?(?:configured|enabled|ready)`, 'i')
+        ];
+        
+        for (const pattern of patterns) {
+          if (pattern.test(responseText)) {
+            console.log(`✅ AgentEnablementService: Found ${agentName} enablement with pattern: ${pattern}`);
+            return {
+              agentId: agentId,
+              customName: agentName
+            };
           }
         }
       }
 
-      // Try to extract target audience
-      const audiencePatterns = [
-        /target audience.*?(B2C|B2B|Enterprise|Both)/i,
-        /targeting.*?(B2C|B2B|Enterprise|Both)/i
-      ];
-
-      for (const pattern of audiencePatterns) {
-        const match = responseText.match(pattern);
-        if (match) {
-          const audience = match[1].toLowerCase();
-          switch (audience) {
-            case 'b2c':
-              data.targetAudience = 'b2c';
-              break;
-            case 'b2b':
-              data.targetAudience = 'b2b';
-              break;
-            case 'both':
-              data.targetAudience = 'both';
-              break;
-            case 'enterprise':
-              data.targetAudience = 'enterprise';
-              break;
-          }
-          break;
-        }
-      }
-
-      // Try to extract primary goals
-      const goalPatterns = [
-        /Generate more leads/i,
-        /Close more deals/i,
-        /Improve customer support/i,
-        /Streamline marketing/i,
-        /Manage sales pipeline/i,
-        /All of the above/i
-      ];
-
-      const extractedGoals: string[] = [];
-      for (const pattern of goalPatterns) {
-        if (pattern.test(responseText)) {
-          extractedGoals.push(pattern.source.replace(/[/\\^$*+?.()|[\]{}]/g, ''));
-        }
-      }
-
-      if (extractedGoals.length > 0) {
-        data.primaryGoals = extractedGoals;
-      }
-
-      console.log('🎯 AgentEnablementService: Parsed onboarding data:', data);
-      return data;
+      console.log('❌ AgentEnablementService: No agent enablement pattern matched');
+      console.log('🔍 AgentEnablementService: Available agents:', allAgents.map(a => a.agent.name));
+      return null;
 
     } catch (error) {
       console.error('❌ AgentEnablementService: Error parsing onboarding response:', error);
@@ -246,9 +218,62 @@ class AgentEnablementService {
   }
 
   /**
-   * Main function to be called from N8N response handler
+   * Refresh agent mapping from config files
+   * Call this when new agents are added
    */
-  async handleOnboardingResponse(responseText: string): Promise<void> {
+  refreshAgentMapping(): void {
+    console.log('🔄 AgentEnablementService: Refreshing agent mapping...');
+    this.buildAgentNameMapping();
+  }
+
+  /**
+   * Get current agent mapping (for debugging)
+   */
+  getAgentMapping(): Record<string, string> {
+    return { ...this.agentNameToIdMap };
+  }
+
+  /**
+   * Main function to be called from N8N response handler
+   * Handles both structured JSON and legacy text responses
+   */
+  async handleOnboardingResponse(responseData: any): Promise<void> {
+    try {
+      console.log('🔍 AgentEnablementService: Received responseData:', responseData);
+      
+      // Handle structured format (object with finished: true)
+      if (typeof responseData === 'object' && responseData.finished === true && responseData.agent_data) {
+        console.log('✅ AgentEnablementService: Processing structured agent enablement');
+        
+        const agentData: AgentEnablementData = {
+          agentId: responseData.agent_data.agent_id,
+          customName: responseData.agent_data.agent_name,
+          communicationTone: responseData.agent_data.communication_tone,
+          targetAudience: responseData.agent_data.target_audience,
+          primaryGoals: responseData.agent_data.primary_goals,
+          brandVoice: responseData.agent_data.brand_voice
+        };
+
+        await this.enableAgentFromOnboarding(agentData);
+        return;
+      }
+
+      // Handle legacy text parsing
+      if (typeof responseData === 'string') {
+        console.log('🔄 AgentEnablementService: Using legacy text parsing');
+        return this.handleLegacyResponse(responseData);
+      }
+
+      console.log('❌ AgentEnablementService: No agent enablement action detected - unsupported format');
+    } catch (error) {
+      console.error('❌ AgentEnablementService: Error handling onboarding response:', error);
+    }
+  }
+
+  /**
+   * Legacy text-based parsing (fallback for old responses)
+   */
+  private async handleLegacyResponse(responseText: string): Promise<void> {
     try {
       if (!this.shouldTriggerEnablement(responseText)) {
         return;
@@ -259,7 +284,7 @@ class AgentEnablementService {
         await this.enableAgentFromOnboarding(agentData);
       }
     } catch (error) {
-      console.error('❌ AgentEnablementService: Error handling onboarding response:', error);
+      console.error('❌ AgentEnablementService: Error handling legacy response:', error);
     }
   }
 }
