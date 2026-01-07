@@ -344,6 +344,69 @@ export const calendarSetupApi = {
     supabaseApi.upsert('calendar_setup', data, { onConflict: 'firm_user_id,agent_id', authToken })
 };
 
+// User Token Usage Logs API
+export const userTokenUsageApi = {
+  getByUserId: (user_id: string, authToken?: string) =>
+    supabaseApi.select('User_token_Usage_Logs', '*', { 'User ID': user_id }, { authToken }),
+  
+  getByUserIdWithDateRange: async (user_id: string, startDate: string, endDate: string, authToken?: string) => {
+    try {
+      const { supabase } = await import('./supabase');
+      const { data, error } = await supabase
+        .from('User_token_Usage_Logs')
+        .select('*')
+        .eq('User ID', user_id)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true });
+      
+      return { data, error };
+    } catch (error: any) {
+      return { data: null, error: { message: error.message } };
+    }
+  },
+  create: (data: any, authToken?: string) =>
+    supabaseApi.insert('User_token_Usage_Logs', data, { authToken })
+};
+
+// User Tool Usage API
+export const userToolUsageApi = {
+  getByUserId: (user_id: string, authToken?: string) =>
+    supabaseApi.select('User_Tool Usage', '*', { 'User Id': user_id }, { authToken }),
+  
+  getByUserIdWithDateRange: async (user_id: string, startDate: string, endDate: string, authToken?: string) => {
+    try {
+      const { supabase } = await import('./supabase');
+      const { data, error } = await supabase
+        .from('User_Tool Usage')
+        .select('*')
+        .eq('User Id', user_id)
+        .gte('created_at', startDate)
+        .lte('created_at', endDate)
+        .order('created_at', { ascending: true });
+      
+      return { data, error };
+    } catch (error: any) {
+      return { data: null, error: { message: error.message } };
+    }
+  },
+
+  create: (data: any, authToken?: string) =>
+    supabaseApi.insert('User_Tool Usage', data, { authToken })
+};
+
+// Tool Use Cost API
+export const toolUseCostApi = {
+  getAll: (authToken?: string) =>
+    supabaseApi.select('Tool_Use_Cost', '*', {}, { authToken }),
+  
+  getByToolName: (toolName: string, authToken?: string) =>
+    supabaseApi.select('Tool_Use_Cost', '*', { 'Tool Name': toolName }, { single: true, authToken }),
+  
+  create: (data: any, authToken?: string) =>
+    supabaseApi.insert('Tool_Use_Cost', data, { authToken })
+};
+
 // Chat History API
 export const chatHistoryApi = {
   getById: (id: string, authToken?: string) => 
