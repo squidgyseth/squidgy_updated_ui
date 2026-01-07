@@ -88,11 +88,13 @@ export default function DynamicAgentDashboard() {
 
   // Initialize with a new session when component loads
   useEffect(() => {
-    if (userId && agentId && !currentSessionId) {
+    if (userId && agentId) {
+      // Always create a new session when switching agents to show fresh initial message
       const newSessionId = chatSessionService.generateSessionId(userId, agentId);
       setCurrentSessionId(newSessionId);
+      console.log(`🔄 DynamicAgentDashboard: Created new session for ${agentId}: ${newSessionId}`);
     }
-  }, [userId, agentId, currentSessionId]);
+  }, [userId, agentId]); // Remove currentSessionId from dependencies to force new session each time
 
   // Loading state
   if (loading) {
