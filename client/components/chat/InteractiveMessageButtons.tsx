@@ -21,11 +21,11 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     
     // Multiple patterns to catch various button formats:
     
-    // Pattern 1: emoji **Text** - description (main format)
-    const pattern1 = /^(.{1,4})\s*\*\*([^*]+)\*\*\s*-\s*(.+)$/gmu;
+    // Pattern 1: emoji $$**Text**$$ - description (main format)
+    const pattern1 = /^(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*-\s*(.+)$/gmu;
     
-    // Pattern 2: emoji **Text** (without description)
-    const pattern2 = /^(.{1,4})\s*\*\*([^*]+)\*\*\s*$/gmu;
+    // Pattern 2: emoji $$**Text**$$ (without description)
+    const pattern2 = /^(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*$/gmu;
     
     const patterns = [pattern1, pattern2];
     
