@@ -72,7 +72,7 @@ export default function DynamicAgentDashboard() {
   const handleNewChat = (agentId: string) => {
     console.log(`New chat clicked for agent: ${agentId}`);
     
-    // Generate a new session ID
+    // When user explicitly clicks "New Chat", always generate a fresh session
     const newSessionId = chatSessionService.generateSessionId(userId, agentId);
     setCurrentSessionId(newSessionId);
     
@@ -86,15 +86,26 @@ export default function DynamicAgentDashboard() {
     console.log(`✅ Current session ID updated to: ${sessionId}`);
   };
 
-  // Initialize with a new session when component loads
+  // Initialize with session persistence logic (1-hour timeout)
   useEffect(() => {
-    if (userId && agentId) {
-      // Always create a new session when switching agents to show fresh initial message
-      const newSessionId = chatSessionService.generateSessionId(userId, agentId);
-      setCurrentSessionId(newSessionId);
-      console.log(`🔄 DynamicAgentDashboard: Created new session for ${agentId}: ${newSessionId}`);
-    }
-  }, [userId, agentId]); // Remove currentSessionId from dependencies to force new session each time
+    const initializeSession = async () => {
+      if (userId && agentId) {
+        try {
+          // Use session persistence logic - continue existing session within 1 hour or create new one
+          const sessionId = await chatSessionService.getOrCreateActiveSession(userId, agentId);
+          setCurrentSessionId(sessionId);
+          console.log(`🔄 DynamicAgentDashboard: Session initialized for ${agentId}: ${sessionId}`);
+        } catch (error) {
+          console.error(`❌ Error initializing session for ${agentId}:`, error);
+          // Fallback to creating new session
+          const newSessionId = chatSessionService.generateSessionId(userId, agentId);
+          setCurrentSessionId(newSessionId);
+        }
+      }
+    };
+    
+    initializeSession();
+  }, [userId, agentId]);
 
   // Loading state
   if (loading) {
