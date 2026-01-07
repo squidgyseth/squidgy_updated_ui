@@ -60,6 +60,10 @@ export default function N8nChatInterface({
   useEffect(() => {
     console.log(`📨 N8nChatInterface: sessionId changed to: ${sessionId}`);
     console.log(`📨 N8nChatInterface: agentId: ${agent.id}, userId: ${userId}`);
+    
+    // Clear existing messages immediately when session changes
+    setMessages([]);
+    
     loadSessionMessages();
   }, [sessionId]);
 
