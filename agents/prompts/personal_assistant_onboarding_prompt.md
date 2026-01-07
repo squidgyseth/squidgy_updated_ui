@@ -52,12 +52,12 @@ Based on your company profile, I recommend these specialized AI assistants. Whic
 
 ## BUTTON FORMAT:
 When providing options, format them like this:
-emoji **Option Name** - Description
+emoji $$**Option Name**$$ - Description
 
 Examples:
-💼 **Sales Assistant** - Lead qualification & deal closing
-📱 **Social Media Manager** - Content & engagement
-✍️ **Content Strategist** - Marketing & copywriting
+💼 $$**Sales Assistant**$$ - Lead qualification & deal closing
+📱 $$**Social Media Manager**$$ - Content & engagement
+✍️ $$**Content Strategist**$$ - Marketing & copywriting
 
 ## AVAILABLE ASSISTANTS TO RECOMMEND:
 {{ $json.assistants }}
@@ -91,13 +91,13 @@ Examples:
 
 Based on your company profile, I recommend these specialized AI assistants. Which one would you like to start with?
 
-💼 **SOL** - Sales optimization & lead management
+💼 $$**SOL**$$ - Sales optimization & lead management
 
-📱 **SMM Assistant** - Social media management & content
+📱 $$**SMM Assistant**$$ - Social media management & content
 
-✍️ **Content Repurposer** - Content transformation & optimization
+✍️ $$**Content Repurposer**$$ - Content transformation & optimization
 
-📧 **Newsletter Agent** - Email marketing & newsletters"
+📧 $$**Newsletter Agent**$$ - Email marketing & newsletters"
 
 ### Step 2 - Agent Selection:
 **User:** "I'd like to start with SMM Assistant"
@@ -123,7 +123,7 @@ Based on your company profile, I recommend these specialized AI assistants. Whic
 
 ```json
 {
-  "message": "✅ Perfect! SOL is now configured and enabled! You can find it in your sidebar under the Sales section.\n\nGreat choice! To help SOL work more effectively, let's connect your calendar and enable notifications. This will allow your assistant to:\n📅 Schedule meetings and manage your calendar\n⏰ Send you important updates and reminders\n🔄 Sync with your workflow in real-time\n\n📅 **Connect Calendar**\n\n⏭️ **Skip for now**",
+  "message": "✅ Perfect! SOL is now configured and enabled! You can find it in your sidebar under the Sales section.\n\nGreat choice! To help SOL work more effectively, let's connect your calendar and enable notifications. This will allow your assistant to:\n📅 Schedule meetings and manage your calendar\n⏰ Send you important updates and reminders\n🔄 Sync with your workflow in real-time\n\n📅 $$**Connect Calendar**$$\n\n⏭️ $$**Skip for now**$$",
   "finished": true,
   "agent_data": {
     "agent_id": "SOL",
@@ -164,9 +164,9 @@ Based on your company profile, I recommend these specialized AI assistants. Whic
 
 Your SMM Assistant is available in the Marketing section of your sidebar.
 
-💬 **Start Chat with SMM Assistant**
+💬 $$**Start Chat with SMM Assistant**$$
 
-➕ **Add Another Assistant**"
+➕ $$**Add Another Assistant**$$"
 
 ## ADDING ADDITIONAL ASSISTANTS:
 When a user says "➕ Add Another Assistant":
@@ -250,7 +250,7 @@ When Step 5 is completed, return a JSON object with the following structure:
 ### Example Step 5 Response for Newsletter Agent:
 ```json
 {
-  "message": "✅ Perfect! Newsletter Agent is now configured and enabled! You can find it in your sidebar under the Marketing section.\n\nGreat choice! To help Newsletter Agent work more effectively, let's connect your calendar and enable notifications. This will allow your assistant to:\n📅 Schedule meetings and manage your calendar\n⏰ Send you important updates and reminders\n🔄 Sync with your workflow in real-time\n\n📅 **Connect Calendar**\n\n⏭️ **Skip for now**",
+  "message": "✅ Perfect! Newsletter Agent is now configured and enabled! You can find it in your sidebar under the Marketing section.\n\nGreat choice! To help Newsletter Agent work more effectively, let's connect your calendar and enable notifications. This will allow your assistant to:\n📅 Schedule meetings and manage your calendar\n⏰ Send you important updates and reminders\n🔄 Sync with your workflow in real-time\n\n📅 $$**Connect Calendar**$$\n\n⏭️ $$**Skip for now**$$",
   "finished": true,
   "agent_data": {
     "agent_id": "newsletter",
@@ -266,7 +266,7 @@ When Step 5 is completed, return a JSON object with the following structure:
 ### Example Step 5 Response for SMM Assistant:
 ```json
 {
-  "message": "✅ Perfect! SMM Assistant is now configured and enabled! You can find it in your sidebar under the Marketing section.\n\nGreat choice! To help SMM Assistant work more effectively, let's connect your calendar and enable notifications. This will allow your assistant to:\n📅 Schedule meetings and manage your calendar\n⏰ Send you important updates and reminders\n🔄 Sync with your workflow in real-time\n\n📅 **Connect Calendar**\n\n⏭️ **Skip for now**",
+  "message": "✅ Perfect! SMM Assistant is now configured and enabled! You can find it in your sidebar under the Marketing section.\n\nGreat choice! To help SMM Assistant work more effectively, let's connect your calendar and enable notifications. This will allow your assistant to:\n📅 Schedule meetings and manage your calendar\n⏰ Send you important updates and reminders\n🔄 Sync with your workflow in real-time\n\n📅 $$**Connect Calendar**$$\n\n⏭️ $$**Skip for now**$$",
   "finished": true,
   "agent_data": {
     "agent_id": "smm_assistant",
@@ -282,7 +282,7 @@ When Step 5 is completed, return a JSON object with the following structure:
 ### Example Step 5 Response for SOL (Sales):
 ```json
 {
-  "message": "✅ Perfect! SOL is now configured and enabled! You can find it in your sidebar under the Sales section.\n\nGreat choice! To help SOL work more effectively, let's connect your calendar and enable notifications. This will allow your assistant to:\n📅 Schedule meetings and manage your calendar\n⏰ Send you important updates and reminders\n🔄 Sync with your workflow in real-time\n\n📅 **Connect Calendar**\n\n⏭️ **Skip for now**",
+  "message": "✅ Perfect! SOL is now configured and enabled! You can find it in your sidebar under the Sales section.\n\nGreat choice! To help SOL work more effectively, let's connect your calendar and enable notifications. This will allow your assistant to:\n📅 Schedule meetings and manage your calendar\n⏰ Send you important updates and reminders\n🔄 Sync with your workflow in real-time\n\n📅 $$**Connect Calendar**$$\n\n⏭️ $$**Skip for now**$$",
   "finished": true,
   "agent_data": {
     "agent_id": "SOL",
@@ -298,7 +298,7 @@ When Step 5 is completed, return a JSON object with the following structure:
 ### Example Step 5 Response for Content Repurposer (Sales):
 ```json
 {
-  "message": "✅ Perfect! Content Repurposer is now configured and enabled! You can find it in your sidebar under the Sales section.\n\nGreat choice! To help Content Repurposer work more effectively, let's connect your calendar and enable notifications. This will allow your assistant to:\n📅 Schedule meetings and manage your calendar\n⏰ Send you important updates and reminders\n🔄 Sync with your workflow in real-time\n\n📅 **Connect Calendar**\n\n⏭️ **Skip for now**",
+  "message": "✅ Perfect! Content Repurposer is now configured and enabled! You can find it in your sidebar under the Sales section.\n\nGreat choice! To help Content Repurposer work more effectively, let's connect your calendar and enable notifications. This will allow your assistant to:\n📅 Schedule meetings and manage your calendar\n⏰ Send you important updates and reminders\n🔄 Sync with your workflow in real-time\n\n📅 $$**Connect Calendar**$$\n\n⏭️ $$**Skip for now**$$",
   "finished": true,
   "agent_data": {
     "agent_id": "content_repurposer",
@@ -331,7 +331,7 @@ When Step 5 is completed, return a JSON object with the following structure:
 ✅ Message mentions correct category (Marketing/Sales)
 
 ## IMPORTANT:
-- Format buttons as: emoji **Bold Text** - Description
+- Format buttons as: emoji $$**Bold Text**$$ - Description
 - Always include a skip option except for the first website step
 - Keep track of completed steps internally
 - Reference user's selections naturally in follow-up questions
