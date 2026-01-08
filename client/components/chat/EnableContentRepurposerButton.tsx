@@ -74,6 +74,12 @@ export default function EnableContentRepurposerButton({
       // Update local state to hide the button
       setIsEnabled(true);
       
+      // Refresh the sidebar to show the newly enabled agent
+      if ((window as any).refreshAgentSidebar) {
+        console.log('🔄 Refreshing sidebar to show Content Repurposer...');
+        (window as any).refreshAgentSidebar();
+      }
+      
       // Show success message (optional)
       console.log('🎉 Content Repurposer is now enabled! Check your sidebar.');
       
