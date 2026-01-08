@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { googleCalendarService } from '../../lib/googleCalendar';
 import { toast } from 'sonner';
+import AgentMappingService from '../../services/agentMappingService';
 
 interface InteractiveMessageButtonsProps {
   content: string;
@@ -15,6 +16,12 @@ interface ButtonOption {
 }
 
 export default function InteractiveMessageButtons({ content, onButtonClick }: InteractiveMessageButtonsProps) {
+  const agentMappingService = AgentMappingService.getInstance();
+
+  // Load agent mappings on component mount
+  useEffect(() => {
+    agentMappingService.loadAgentMappings();
+  }, []);
   // Parse the content to find button patterns - flexible detection
   const parseButtonOptions = (text: string): ButtonOption[] => {
     console.log('🔍 InteractiveMessageButtons: Parsing content:', text);
@@ -91,25 +98,20 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
       const chatMatch = buttonText.match(/start chat with (.+)/);
       if (chatMatch) {
         const agentName = chatMatch[1].trim();
-        let agentId = '';
         
-        // Map agent names to IDs
-        if (agentName.includes('newsletter')) {
-          agentId = 'newsletter';
-        } else if (agentName.includes('solar sales') || agentName.includes('sol')) {
-          agentId = 'SOL';
-        } else if (agentName.includes('content strategist') || agentName.includes('content repurposer')) {
-          agentId = 'content_repurposer';
-        } else if (agentName.includes('smm') || agentName.includes('social media')) {
-          agentId = 'smm_assistant';
-        } else if (agentName.includes('personal assistant')) {
-          agentId = 'personal_assistant';
-        }
+        // Use dynamic agent mapping service
+        const agentId = agentMappingService.getAgentId(agentName);
         
         if (agentId) {
+          console.log(`🔗 Navigating to chat with agent: ${agentName} -> ${agentId}`);
           // Navigate to chat page
           window.location.href = `/chat/${agentId}`;
           return; // Don't send to chat, handle the navigation
+        } else {
+          console.warn(`⚠️ No agent ID found for: "${agentName}"`);
+          // Fallback: send as regular message to continue conversation
+          onButtonClick(option.text);
+          return;
         }
       }
     }
