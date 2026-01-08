@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { authService } from "@/lib/auth-service";
 import LeftNavigation from "../components/layout/LeftNavigation";
 import NotificationBell from "../components/NotificationBell";
+import { supabase } from "../lib/supabase";
 import { ResponsiveLayout } from "../components/mobile";
 import { MobileDashboard } from "../components/mobile/dashboard/MobileDashboard";
 import NewOnboardingModal from "../components/onboarding/NewOnboardingModal";
@@ -39,6 +40,8 @@ import {
 export default function Index() {
   const [activeTab, setActiveTab] = useState("weekly");
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [userFirstName, setUserFirstName] = useState<string>("User");
+  const [isLoadingUserName, setIsLoadingUserName] = useState(true);
   const navigate = useNavigate();
   const { companyName, faviconUrl, isLoading } = useCompanyBranding();
   const { user, userId } = useUser();
@@ -55,6 +58,46 @@ export default function Index() {
     if (shouldShowOnboarding || (!hasSeenOnboarding && userId)) {
       setShowOnboarding(true);
     }
+  }, [userId]);
+
+  // Fetch user's profile data to get their first name
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!userId) {
+        setIsLoadingUserName(false);
+        return;
+      }
+
+      try {
+        console.log('🔍 Dashboard: Fetching profile for user_id:', userId);
+        
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', userId)
+          .single();
+
+        if (error) {
+          console.error('❌ Dashboard: Error fetching profile:', error);
+          setUserFirstName("User");
+        } else if (profile && profile.full_name) {
+          // Extract first name from full_name
+          const firstName = profile.full_name.split(' ')[0];
+          setUserFirstName(firstName);
+          console.log('✅ Dashboard: User first name set to:', firstName);
+        } else {
+          console.log('ℹ️ Dashboard: No full_name found in profile');
+          setUserFirstName("User");
+        }
+      } catch (error) {
+        console.error('❌ Dashboard: Error in fetchUserProfile:', error);
+        setUserFirstName("User");
+      } finally {
+        setIsLoadingUserName(false);
+      }
+    };
+
+    fetchUserProfile();
   }, [userId]);
 
   const desktopLayout = (
@@ -131,7 +174,9 @@ export default function Index() {
           {/* Welcome Section */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-[29px] font-bold text-gray-900 font-open-sans">Good afternoon, Alesja! 🙌</h1>
+              <h1 className="text-[29px] font-bold text-gray-900 font-open-sans">
+                {isLoadingUserName ? 'Good afternoon! 🙌' : `Good afternoon, ${userFirstName}! 🙌`}
+              </h1>
               <p className="text-[15px] text-gray-600 font-open-sans">Your AI-powered solar sales command center - never miss a lead again</p>
             </div>
             
