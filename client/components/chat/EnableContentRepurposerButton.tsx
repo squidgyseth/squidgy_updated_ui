@@ -15,6 +15,7 @@ export default function EnableContentRepurposerButton({
   const { userId } = useUser();
   const [isEnabled, setIsEnabled] = useState(true); // Default to true to hide button initially
   const [loading, setLoading] = useState(true);
+  const [enabling, setEnabling] = useState(false);
 
   useEffect(() => {
     checkContentRepurposerEnabled();
@@ -45,18 +46,41 @@ export default function EnableContentRepurposerButton({
     }
   };
 
-  const handleEnableClick = () => {
-    // Navigate to Personal Assistant with pre-filled message about setting up Content Repurposer
-    const setupMessage = "I want to enable the Content Repurposer agent to repurpose my newsletter content into social media posts. Please help me set it up.";
-    const encodedMessage = encodeURIComponent(setupMessage);
-    const targetUrl = `/chat/personal_assistant?message=${encodedMessage}`;
+  const handleEnableClick = async () => {
+    if (enabling) return; // Prevent double clicks
     
-    console.log('🎯 EnableContentRepurposer: Navigating to:', targetUrl);
-    console.log('📝 Original message:', setupMessage);
-    console.log('🔐 Encoded message:', encodedMessage);
-    
-    // Navigate to personal assistant with the message as a URL parameter
-    navigate(targetUrl);
+    try {
+      setEnabling(true);
+      console.log('🔧 EnableContentRepurposer: Starting to enable agent...');
+      
+      // Insert or update the agent personalization to enable it
+      const { data, error } = await supabase
+        .from('assistant_personalizations')
+        .upsert({
+          user_id: userId,
+          assistant_id: 'content_repurposer',
+          is_enabled: true,
+          last_updated: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('❌ Error enabling content repurposer:', error);
+        setEnabling(false);
+        return;
+      }
+
+      console.log('✅ Content repurposer enabled successfully:', data);
+      
+      // Update local state to hide the button
+      setIsEnabled(true);
+      
+      // Show success message (optional)
+      console.log('🎉 Content Repurposer is now enabled! Check your sidebar.');
+      
+    } catch (error) {
+      console.error('❌ Error in handleEnableClick:', error);
+      setEnabling(false);
+    }
   };
 
   // Don't render if loading or if already enabled
@@ -76,14 +100,19 @@ export default function EnableContentRepurposerButton({
               Want to repurpose this newsletter?
             </h4>
             <p className="text-xs text-gray-600 mb-3">
-              Enable Content Repurposer to automatically convert your newsletters into engaging social media posts for LinkedIn, Instagram, and TikTok.
+              Enable Content Repurposer to convert your newsletters into engaging social media posts for LinkedIn, Instagram, and TikTok. It will appear in your sidebar once enabled.
             </p>
             <button
               onClick={handleEnableClick}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+              disabled={enabling}
+              className={`inline-flex items-center gap-2 px-4 py-2 text-white text-sm rounded-lg transition-colors ${
+                enabling 
+                  ? 'bg-purple-400 cursor-not-allowed' 
+                  : 'bg-purple-600 hover:bg-purple-700'
+              }`}
             >
-              <Sparkles className="w-4 h-4" />
-              Enable Content Repurposer
+              <Sparkles className={`w-4 h-4 ${enabling ? 'animate-spin' : ''}`} />
+              {enabling ? 'Enabling...' : 'Enable Content Repurposer'}
             </button>
           </div>
         </div>
