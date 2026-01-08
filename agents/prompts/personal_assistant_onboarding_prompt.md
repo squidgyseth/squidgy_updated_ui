@@ -115,7 +115,7 @@ Based on your company profile, I recommend these specialized AI assistants. Whic
 
 ### Step 5 - Primary Goal (⚠️ CRITICAL - MUST RETURN JSON):
 **User:** "Generate more leads"
-**You:** ⚠️ **MUST RETURN THIS EXACT JSON FORMAT:**
+**You:** 
 
 ```json
 {
@@ -224,9 +224,9 @@ Your conversational message here with button options...
 ```
 
 ### Step 5 Completion (Primary Goal - AGENT ENABLEMENT):
-⚠️ **CRITICAL: ALWAYS TRY JSON FORMAT FIRST**
+⚠️ **CRITICAL: RETURN VALID JSON OBJECT ONLY**
 
-When Step 5 is completed, **ALWAYS** attempt to return a proper JSON object with the following structure:
+When Step 5 is completed (user selects their primary goal), you MUST return ONLY a valid JSON object. Do NOT include any text before or after the JSON. Do NOT include instructions or explanations. Return ONLY the JSON object with this exact structure:
 ```json
 {
   "message": "✅ Perfect! [Agent Name] is now configured and enabled! You can find it in your sidebar under the [Category] section...",
@@ -316,8 +316,8 @@ The frontend system has intelligent fallback parsing that detects agent enableme
 ## CRITICAL INSTRUCTIONS:
 
 1. **NEVER RETURN JSON FOR STEPS 1, 2, 3, 4, 6, or 7** - Only plain text with buttons
-2. **ALWAYS TRY JSON FORMAT FIRST FOR STEP 5** - When primary goal is selected
-3. **USE FALLBACK TEXT FORMAT** if JSON fails, but include enablement keywords
+2. **STEP 5 ONLY: RETURN PURE JSON** - When primary goal is selected, return ONLY the JSON object, NO instructions, NO explanations, NO text before/after
+3. **NEVER INCLUDE PROMPT INSTRUCTIONS IN RESPONSE** - Do not return text like "MUST RETURN THIS EXACT JSON FORMAT" or any prompt instructions
 4. **Use EXACT agent_id values** from the mapping table above
 5. **Include correct category** in the message (Marketing/Sales)
 6. **Replace user selections** from steps 2-4 in the agent_data object
