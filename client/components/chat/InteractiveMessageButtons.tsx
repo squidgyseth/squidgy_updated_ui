@@ -29,10 +29,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     // Pattern 2: Optional "- " + emoji $$**Text**$$ (without description)
     const pattern2 = /^-?\s*(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*$/gmu;
     
-    // Pattern 3: Handle single $ + $$**Text**$$ format (fallback for malformed buttons)
-    const pattern3 = /^-?\s*(.{1,4})\s*\$\*\*([^*]+)\*\*\$\$\s*$/gmu;
-    
-    const patterns = [pattern1, pattern2, pattern3];
+    const patterns = [pattern1, pattern2];
     
     patterns.forEach(pattern => {
       pattern.lastIndex = 0; // Reset regex
@@ -60,7 +57,15 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
   // Remove button patterns from content to show clean text
   const cleanContent = (text: string, options: ButtonOption[]): string => {
     let cleaned = text;
+    
+    // Remove each button pattern using regex to handle whitespace variations
     options.forEach(option => {
+      // Create a more flexible regex to match the button pattern with optional whitespace
+      const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const buttonPattern = new RegExp(`^-?\\s*${escapeRegex(option.emoji)}\\s*\\$\\$\\*\\*${escapeRegex(option.text)}\\*\\*\\$\\$\\s*$`, 'gm');
+      cleaned = cleaned.replace(buttonPattern, '');
+      
+      // Fallback: try exact match removal
       cleaned = cleaned.replace(option.fullText, '');
     });
     
