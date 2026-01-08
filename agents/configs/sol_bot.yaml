@@ -7,7 +7,7 @@ agent:
   id: SOL
   
   # Display name shown in the sidebar
-  name: SOL Bot
+  name: Solar Sales Assistant
   
   # Category - SALES for solar sales
   category: SALES
