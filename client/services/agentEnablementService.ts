@@ -122,7 +122,7 @@ class AgentEnablementService {
    */
   parseOnboardingResponse(responseText: string): AgentEnablementData | null {
     try {
-      console.log('🔍 AgentEnablementService: Parsing response text:', responseText);
+      console.log('🔍 AgentEnablementService: Parsing response text:', responseText.substring(0, 200) + '...');
       
       // Get all agents dynamically from config files
       const agentService = OptimizedAgentService.getInstance();
@@ -170,9 +170,41 @@ class AgentEnablementService {
         }
       }
 
-      console.log('❌ AgentEnablementService: No agent enablement pattern matched');
+      console.log('❌ AgentEnablementService: No agent enablement pattern matched using flexible keyword matching');
       console.log('🔍 AgentEnablementService: Available agents:', allAgents.map(a => a.agent.name));
       console.log('🔍 AgentEnablementService: Response text to parse:', responseText.substring(0, 500));
+      
+      // Fallback: Look for specific phrases like "configured and enabled" or "successfully set up"
+      for (const config of allAgents) {
+        const agentName = config.agent.name;
+        const agentId = config.agent.id;
+        
+        // Look for common enablement phrases in the text
+        const enablementPhrases = [
+          `${agentName} configured and enabled`,
+          `${agentName} is now configured and enabled`,
+          `successfully set up the ${agentName}`,
+          `${agentName} configured and ready`,
+          `${agentName} Assistant configured and enabled`,
+          `${agentName} Agent configured and enabled`,
+          'configured and enabled'  // Generic fallback
+        ];
+        
+        const foundPhrase = enablementPhrases.find(phrase => 
+          responseTextLower.includes(phrase.toLowerCase())
+        );
+        
+        if (foundPhrase) {
+          console.log(`✅ AgentEnablementService: Found ${agentName} -> ${agentId} enablement via fallback phrase: "${foundPhrase}"`);
+          
+          return {
+            agentId: agentId,
+            customName: agentName
+          };
+        }
+      }
+      
+      console.log('❌ AgentEnablementService: No enablement patterns found with any method');
       return null;
 
     } catch (error) {
