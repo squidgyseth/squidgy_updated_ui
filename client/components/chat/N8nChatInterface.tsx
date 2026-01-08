@@ -373,7 +373,7 @@ export default function N8nChatInterface({
   const hasInteractiveButtons = (content: string): boolean => {
     // Look for both button patterns: $$**text**$$ (new) and $**text**$ (old)
     const newFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
-    const oldFormatPattern = /\$\*\*([^*]+)\*\*\$/g;
+    const oldFormatPattern = /\$\*\*\*\*([^*]+)\*\*\*\*\$/g;
     
     return newFormatPattern.test(content) || oldFormatPattern.test(content);
   };

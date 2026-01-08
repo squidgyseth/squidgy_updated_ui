@@ -22,7 +22,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     
     // Handle both formats: $$**TEXT**$$ (new) and $**TEXT**$ (old)
     const newFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
-    const oldFormatPattern = /\$\*\*([^*]+)\*\*\$/g;
+    const oldFormatPattern = /\$\*\*\*\*([^*]+)\*\*\*\*\$/g;
     
     // Try new format first
     let match;
@@ -66,7 +66,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     // Remove both formats: $$**TEXT**$$ and $**TEXT**$
     let cleaned = text
       .replace(/\$\$\*\*[^*]+\*\*\$\$/g, '') // New format
-      .replace(/\$\*\*[^*]+\*\*\$/g, ''); // Old format
+      .replace(/\$\*\*\*\*[^*]+\*\*\*\*\$/g, ''); // Old format
     
     // Clean up extra whitespace and empty lines
     return cleaned
