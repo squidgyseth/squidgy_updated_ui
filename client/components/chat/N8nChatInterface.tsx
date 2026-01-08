@@ -3,6 +3,7 @@ import { Send, Loader, Paperclip, Mic } from 'lucide-react';
 import type { N8nResponse, ChatMessage } from '../../types/n8n.types';
 import AgentResponseHandler from './AgentResponseHandler';
 import HTMLPreview from './HTMLPreview';
+import SocialMediaPreview from './SocialMediaPreview';
 import EnableContentRepurposerButton from './EnableContentRepurposerButton';
 import FileMessage from './FileMessage';
 import { sendToN8nWorkflow, generateRequestId, generateSessionId } from '../../lib/n8nService';
@@ -418,6 +419,42 @@ export default function N8nChatInterface({
     return htmlPatterns.some(pattern => pattern.test(content));
   };
 
+  // Helper function to detect if message contains social media content (for content_repurposer agent)
+  const hasSocialMediaContent = (content: string): boolean => {
+    try {
+      const parsed = JSON.parse(content);
+      
+      // Handle error structure with raw JSON content
+      if (parsed && parsed.error && parsed.raw) {
+        try {
+          // Extract JSON from markdown code blocks
+          const rawContent = parsed.raw.replace(/```json\n|\n```/g, '');
+          const innerParsed = JSON.parse(rawContent);
+          if (innerParsed && (innerParsed.LinkedIn || innerParsed.InstagramFacebook || innerParsed.TikTokReels || innerParsed.GeneralAssets)) {
+            return true;
+          }
+        } catch {
+          // If inner parsing fails, continue with outer checks
+        }
+      }
+      
+      // Check for ContentRepurposerPosts structure
+      if (Array.isArray(parsed) && parsed[0] && parsed[0].ContentRepurposerPosts) {
+        return true;
+      }
+      if (parsed && parsed.ContentRepurposerPosts) {
+        return true;
+      }
+      // Also check for direct social media keys
+      if (parsed && (parsed.LinkedIn || parsed.InstagramFacebook || parsed.TikTokReels || parsed.GeneralAssets)) {
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
   const handleAttachmentClick = () => {
     // Create file input element
     const fileInput = document.createElement('input');
@@ -702,6 +739,18 @@ export default function N8nChatInterface({
                             <div className="html-preview-wrapper">
                               <HTMLPreview content={message.content} />
                               <EnableContentRepurposerButton />
+                            </div>
+                          );
+                        }
+                        
+                        // For content_repurposer agent, check if content is social media and use SocialMediaPreview
+                        if (agent.id === 'content_repurposer' && hasSocialMediaContent(message.content)) {
+                          return (
+                            <div className="social-media-preview-wrapper">
+                              <SocialMediaPreview 
+                                content={message.content} 
+                                historyId={message.content_repurposer_history_id || message.id}
+                              />
                             </div>
                           );
                         }
