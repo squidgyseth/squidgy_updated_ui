@@ -4,6 +4,7 @@ import HTMLPreview from './HTMLPreview';
 import SocialMediaLink from './SocialMediaLink';
 import SocialMediaPreview from './SocialMediaPreview';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
+import EnableContentRepurposerButton from './EnableContentRepurposerButton';
 
 interface AgentResponseHandlerProps {
   response: N8nResponse;
@@ -78,6 +79,7 @@ export default function AgentResponseHandler({
         return (
           <div className={`agent-response ready-state ${className}`}>
             <HTMLPreview content={response.agent_response} />
+            <EnableContentRepurposerButton />
           </div>
         );
       }
