@@ -85,6 +85,41 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     // Check for special button types that need real functionality
     const buttonText = option.text.toLowerCase();
     
+    // Start Chat with Agent navigation
+    if (buttonText.includes('start chat with')) {
+      // Extract agent name from button text: "Start Chat with Newsletter Agent" -> "newsletter"
+      const chatMatch = buttonText.match(/start chat with (.+)/);
+      if (chatMatch) {
+        const agentName = chatMatch[1].trim();
+        let agentId = '';
+        
+        // Map agent names to IDs
+        if (agentName.includes('newsletter')) {
+          agentId = 'newsletter';
+        } else if (agentName.includes('solar sales') || agentName.includes('sol')) {
+          agentId = 'SOL';
+        } else if (agentName.includes('content strategist') || agentName.includes('content repurposer')) {
+          agentId = 'content_repurposer';
+        } else if (agentName.includes('smm') || agentName.includes('social media')) {
+          agentId = 'smm_assistant';
+        } else if (agentName.includes('personal assistant')) {
+          agentId = 'personal_assistant';
+        }
+        
+        if (agentId) {
+          // Navigate to chat page
+          window.location.href = `/chat/${agentId}`;
+          return; // Don't send to chat, handle the navigation
+        }
+      }
+    }
+    
+    // Add Another Assistant - trigger onboarding flow
+    if (buttonText.includes('add another assistant') || buttonText.includes('add assistant')) {
+      onButtonClick('Add Another Assistant');
+      return;
+    }
+    
     // Google Calendar connection
     if (buttonText.includes('google calendar') || buttonText === 'connect calendar') {
       try {
