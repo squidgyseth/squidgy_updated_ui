@@ -48,9 +48,15 @@ export default function EnableContentRepurposerButton({
   const handleEnableClick = () => {
     // Navigate to Personal Assistant with pre-filled message about setting up Content Repurposer
     const setupMessage = "I want to enable the Content Repurposer agent to repurpose my newsletter content into social media posts. Please help me set it up.";
+    const encodedMessage = encodeURIComponent(setupMessage);
+    const targetUrl = `/chat/personal_assistant?message=${encodedMessage}`;
+    
+    console.log('🎯 EnableContentRepurposer: Navigating to:', targetUrl);
+    console.log('📝 Original message:', setupMessage);
+    console.log('🔐 Encoded message:', encodedMessage);
     
     // Navigate to personal assistant with the message as a URL parameter
-    navigate(`/chat/personal_assistant?message=${encodeURIComponent(setupMessage)}`);
+    navigate(targetUrl);
   };
 
   // Don't render if loading or if already enabled

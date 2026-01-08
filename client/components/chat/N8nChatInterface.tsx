@@ -83,27 +83,33 @@ export default function N8nChatInterface({
       setShowNewsletterSelector(true);
     }
     
-    // Handle Google Calendar OAuth callback and pre-filled messages
+    // Handle Google Calendar OAuth callback
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const state = urlParams.get('state');
-    const preFilledMessage = urlParams.get('message');
     
     if (code && state === 'google_calendar_auth') {
       handleCalendarAuthCallback(code);
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
+  }, [agent.id]);
+
+  // Separate useEffect for handling pre-filled message (runs only once on mount)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const preFilledMessage = urlParams.get('message');
     
-    // Handle pre-filled message parameter
-    if (preFilledMessage && inputValue === '') {
+    if (preFilledMessage) {
+      console.log('🔧 Pre-filled message detected:', preFilledMessage);
       setInputValue(decodeURIComponent(preFilledMessage));
       // Clean up URL parameter
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('message');
       window.history.replaceState({}, document.title, newUrl.toString());
+      console.log('✅ Pre-filled message set in input');
     }
-  }, [agent.id, inputValue]);
+  }, []); // Empty dependency array - runs only once on mount
 
   const loadSessionMessages = async () => {
     console.log(`🔍 loadSessionMessages called with sessionId: ${sessionId}`);
