@@ -18,66 +18,36 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
   // Parse the content to find button patterns - flexible detection
   const parseButtonOptions = (text: string): ButtonOption[] => {
     console.log('🔍 InteractiveMessageButtons: Parsing content:', text);
-    console.log('🔍 InteractiveMessageButtons: Content lines:', text.split('\n'));
     const options: ButtonOption[] = [];
     
-    // Multiple patterns to catch various button formats:
+    // Simple pattern: Find ALL $$**TEXT**$$ patterns
+    const buttonPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
     
-    // Pattern 1: emoji $$**Text**$$ - description (main format)
-    const pattern1 = /^(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*-\s*(.+)$/gmu;
-    
-    // Pattern 2: emoji $$**Text**$$ (without description) - double dollar
-    const pattern2 = /^(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*$/gmu;
-    
-    // Pattern 3: emoji $**Text**$ (without description) - single dollar  
-    const pattern3 = /^(.{1,4})\s*\$\*\*([^*]+)\*\*\$\s*$/gmu;
-    
-    const patterns = [pattern1, pattern2, pattern3];
-    
-    patterns.forEach(pattern => {
-      pattern.lastIndex = 0; // Reset regex
-      let match;
-      while ((match = pattern.exec(text)) !== null) {
-        const [fullMatch, emoji, optionText, description] = match;
-        
-        // Check if this is likely an emoji (not just any character)
-        const cleanEmoji = emoji.trim();
-        if (cleanEmoji && !options.find(o => o.fullText === fullMatch.trim())) {
-          options.push({
-            emoji: cleanEmoji,
-            text: optionText.trim(),
-            description: description ? description.trim() : '',
-            fullText: fullMatch.trim()
-          });
-        }
+    let match;
+    while ((match = buttonPattern.exec(text)) !== null) {
+      const [fullMatch, buttonText] = match;
+      
+      // Avoid duplicates
+      if (!options.find(o => o.text === buttonText.trim())) {
+        options.push({
+          emoji: '', // No emoji needed
+          text: buttonText.trim(),
+          description: '',
+          fullText: fullMatch
+        });
       }
-    });
+    }
     
     console.log('🔍 InteractiveMessageButtons: Found button options:', options);
     return options;
   };
 
   // Remove button patterns from content to show clean text
-  const cleanContent = (text: string, options: ButtonOption[]): string => {
-    let cleaned = text;
+  const cleanContent = (text: string): string => {
+    // Simply remove ALL $$**TEXT**$$ patterns from content
+    let cleaned = text.replace(/\$\$\*\*[^*]+\*\*\$\$/g, '');
     
-    // Remove each button pattern using regex to handle whitespace variations
-    options.forEach(option => {
-      // Create a more flexible regex to match the button pattern with optional whitespace
-      const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      
-      // Try both single and double dollar formats
-      const doublePattern = new RegExp(`^-?\\s*${escapeRegex(option.emoji)}\\s*\\$\\$\\*\\*${escapeRegex(option.text)}\\*\\*\\$\\$\\s*$`, 'gm');
-      const singlePattern = new RegExp(`^-?\\s*${escapeRegex(option.emoji)}\\s*\\$\\*\\*${escapeRegex(option.text)}\\*\\*\\$\\s*$`, 'gm');
-      
-      cleaned = cleaned.replace(doublePattern, '');
-      cleaned = cleaned.replace(singlePattern, '');
-      
-      // Fallback: try exact match removal
-      cleaned = cleaned.replace(option.fullText, '');
-    });
-    
-    // Clean up extra newlines and whitespace
+    // Clean up extra whitespace and empty lines
     return cleaned
       .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace triple+ newlines with double
       .replace(/^\s+|\s+$/g, '') // Trim start/end whitespace
@@ -85,7 +55,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
   };
 
   const buttonOptions = parseButtonOptions(content);
-  const textContent = cleanContent(content, buttonOptions);
+  const textContent = cleanContent(content);
   
   console.log('🔍 InteractiveMessageButtons: Clean text content:', textContent);
   console.log('🔍 InteractiveMessageButtons: Button options count:', buttonOptions.length);
