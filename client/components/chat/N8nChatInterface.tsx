@@ -3,6 +3,7 @@ import { Send, Loader, Paperclip, Mic } from 'lucide-react';
 import type { N8nResponse, ChatMessage } from '../../types/n8n.types';
 import AgentResponseHandler from './AgentResponseHandler';
 import HTMLPreview from './HTMLPreview';
+import EnableContentRepurposerButton from './EnableContentRepurposerButton';
 import FileMessage from './FileMessage';
 import { sendToN8nWorkflow, generateRequestId, generateSessionId } from '../../lib/n8nService';
 import { ChatHistoryService } from '../../services/chatHistoryService';
@@ -82,17 +83,27 @@ export default function N8nChatInterface({
       setShowNewsletterSelector(true);
     }
     
-    // Handle Google Calendar OAuth callback
+    // Handle Google Calendar OAuth callback and pre-filled messages
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const state = urlParams.get('state');
+    const preFilledMessage = urlParams.get('message');
     
     if (code && state === 'google_calendar_auth') {
       handleCalendarAuthCallback(code);
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [agent.id]);
+    
+    // Handle pre-filled message parameter
+    if (preFilledMessage && inputValue === '') {
+      setInputValue(decodeURIComponent(preFilledMessage));
+      // Clean up URL parameter
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('message');
+      window.history.replaceState({}, document.title, newUrl.toString());
+    }
+  }, [agent.id, inputValue]);
 
   const loadSessionMessages = async () => {
     console.log(`🔍 loadSessionMessages called with sessionId: ${sessionId}`);
@@ -684,6 +695,7 @@ export default function N8nChatInterface({
                           return (
                             <div className="html-preview-wrapper">
                               <HTMLPreview content={message.content} />
+                              <EnableContentRepurposerButton />
                             </div>
                           );
                         }
