@@ -331,17 +331,24 @@ class AgentEnablementService {
     try {
       console.log('🔍 AgentEnablementService: Received responseData:', responseData);
       
+      // Handle N8N array format - extract first item if it's an array
+      let actualData = responseData;
+      if (Array.isArray(responseData) && responseData.length > 0) {
+        actualData = responseData[0];
+        console.log('🔍 AgentEnablementService: Extracted data from array format:', actualData);
+      }
+      
       // Handle structured format (object with finished: true)
-      if (typeof responseData === 'object' && responseData.finished === true && responseData.agent_data) {
+      if (typeof actualData === 'object' && actualData.finished === true && actualData.agent_data) {
         console.log('✅ AgentEnablementService: Processing structured agent enablement');
         
         const agentData: AgentEnablementData = {
-          agentId: responseData.agent_data.agent_id,
-          customName: responseData.agent_data.agent_name,
-          communicationTone: responseData.agent_data.communication_tone,
-          targetAudience: responseData.agent_data.target_audience,
-          primaryGoals: responseData.agent_data.primary_goals,
-          brandVoice: responseData.agent_data.brand_voice
+          agentId: actualData.agent_data.agent_id,
+          customName: actualData.agent_data.agent_name,
+          communicationTone: actualData.agent_data.communication_tone,
+          targetAudience: actualData.agent_data.target_audience,
+          primaryGoals: actualData.agent_data.primary_goals,
+          brandVoice: actualData.agent_data.brand_voice
         };
 
         await this.enableAgentFromOnboarding(agentData);
