@@ -211,7 +211,6 @@ export default function SocialMediaPreview() {
       console.log('🔍 SocialMediaPreview: userId:', userId);
       console.log('🔍 SocialMediaPreview: sessionId:', sessionId);
       console.log('🔍 SocialMediaPreview: historyId:', historyId);
-      console.log('🔍 SocialMediaPreview: localStorage squidgy_user_id:', localStorage.getItem('squidgy_user_id'));
       
       // Also load the history record to get GeneralAssets from the original content
       let historyQuery = supabase
@@ -280,17 +279,6 @@ export default function SocialMediaPreview() {
         }
       }
 
-      console.log('📱 SocialMediaPreview: Raw social content from database:', data);
-      console.log('📱 SocialMediaPreview: First record fields:', Object.keys(data[0] || {}));
-      console.log('📱 SocialMediaPreview: First record data:', data[0]);
-      console.log('📱 SocialMediaPreview: Query executed:', {
-        table: 'content_repurposer_images',
-        userId: userId,
-        sessionId: sessionId || 'none',
-        historyId: historyId || 'none',
-        filterUsed: historyId ? 'history_content_repurposer_id' : sessionId ? 'session_id' : 'user_id only',
-        resultCount: data?.length || 0
-      });
 
       if (!data || data.length === 0) {
         console.log('❌ SocialMediaPreview: No social content found in database');
@@ -299,12 +287,10 @@ export default function SocialMediaPreview() {
         // Try to load from localStorage as fallback
         const localStorageContent = localStorage.getItem('socialMediaContent');
         if (localStorageContent) {
-          console.log('📱 SocialMediaPreview: Found content in localStorage:', localStorageContent);
           try {
             const parsedContent = JSON.parse(localStorageContent);
             const convertedPosts = convertLocalStorageContentToPosts(parsedContent);
             if (convertedPosts.length > 0) {
-              console.log('✅ SocialMediaPreview: Successfully converted localStorage content to posts:', convertedPosts);
               setPosts(convertedPosts);
               
               // Set the first platform with posts as active tab
@@ -319,7 +305,6 @@ export default function SocialMediaPreview() {
           }
         }
         
-        console.log('❌ SocialMediaPreview: No content found in localStorage either');
         setPosts([]);
         return;
       }
