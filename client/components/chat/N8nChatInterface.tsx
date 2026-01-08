@@ -371,10 +371,11 @@ export default function N8nChatInterface({
 
   // Helper function to detect if message contains interactive buttons
   const hasInteractiveButtons = (content: string): boolean => {
-    // Look for the simplified $$**text**$$ button patterns
-    const buttonPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
+    // Look for both button patterns: $$**text**$$ (new) and $**text**$ (old)
+    const newFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
+    const oldFormatPattern = /\$\*\*([^*]+)\*\*\$/g;
     
-    return buttonPattern.test(content);
+    return newFormatPattern.test(content) || oldFormatPattern.test(content);
   };
 
   const handleAttachmentClick = () => {
