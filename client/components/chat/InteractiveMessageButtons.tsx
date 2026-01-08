@@ -20,11 +20,13 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     console.log('🔍 InteractiveMessageButtons: Parsing content:', text);
     const options: ButtonOption[] = [];
     
-    // Simple pattern: Find ALL $$**TEXT**$$ patterns
-    const buttonPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
+    // Handle both formats: $$**TEXT**$$ (new) and $**TEXT**$ (old)
+    const newFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
+    const oldFormatPattern = /\$\*\*([^*]+)\*\*\$/g;
     
+    // Try new format first
     let match;
-    while ((match = buttonPattern.exec(text)) !== null) {
+    while ((match = newFormatPattern.exec(text)) !== null) {
       const [fullMatch, buttonText] = match;
       
       // Avoid duplicates
@@ -38,14 +40,33 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
       }
     }
     
+    // If no buttons found with new format, try old format
+    if (options.length === 0) {
+      while ((match = oldFormatPattern.exec(text)) !== null) {
+        const [fullMatch, buttonText] = match;
+        
+        // Avoid duplicates
+        if (!options.find(o => o.text === buttonText.trim())) {
+          options.push({
+            emoji: '', // No emoji needed
+            text: buttonText.trim(),
+            description: '',
+            fullText: fullMatch
+          });
+        }
+      }
+    }
+    
     console.log('🔍 InteractiveMessageButtons: Found button options:', options);
     return options;
   };
 
   // Remove button patterns from content to show clean text
   const cleanContent = (text: string): string => {
-    // Simply remove ALL $$**TEXT**$$ patterns from content
-    let cleaned = text.replace(/\$\$\*\*[^*]+\*\*\$\$/g, '');
+    // Remove both formats: $$**TEXT**$$ and $**TEXT**$
+    let cleaned = text
+      .replace(/\$\$\*\*[^*]+\*\*\$\$/g, '') // New format
+      .replace(/\$\*\*[^*]+\*\*\$/g, ''); // Old format
     
     // Clean up extra whitespace and empty lines
     return cleaned
