@@ -17,15 +17,16 @@ interface ButtonOption {
 export default function InteractiveMessageButtons({ content, onButtonClick }: InteractiveMessageButtonsProps) {
   // Parse the content to find button patterns - flexible detection
   const parseButtonOptions = (text: string): ButtonOption[] => {
+    console.log('🔍 InteractiveMessageButtons: Parsing content:', text);
     const options: ButtonOption[] = [];
     
     // Multiple patterns to catch various button formats:
     
-    // Pattern 1: emoji $$**Text**$$ - description (main format)
-    const pattern1 = /^(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*-\s*(.+)$/gmu;
+    // Pattern 1: Optional "- " + emoji $$**Text**$$ - description (main format)
+    const pattern1 = /^-?\s*(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*-\s*(.+)$/gmu;
     
-    // Pattern 2: emoji $$**Text**$$ (without description)
-    const pattern2 = /^(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*$/gmu;
+    // Pattern 2: Optional "- " + emoji $$**Text**$$ (without description)
+    const pattern2 = /^-?\s*(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*$/gmu;
     
     const patterns = [pattern1, pattern2];
     
@@ -48,6 +49,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
       }
     });
     
+    console.log('🔍 InteractiveMessageButtons: Found button options:', options);
     return options;
   };
 
@@ -67,6 +69,9 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
 
   const buttonOptions = parseButtonOptions(content);
   const textContent = cleanContent(content, buttonOptions);
+  
+  console.log('🔍 InteractiveMessageButtons: Clean text content:', textContent);
+  console.log('🔍 InteractiveMessageButtons: Button options count:', buttonOptions.length);
 
   const handleButtonClick = async (option: ButtonOption) => {
     // Check for special button types that need real functionality
