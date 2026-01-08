@@ -89,6 +89,11 @@ export default function CategorizedAgentSidebar() {
       const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
       const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
       
+      // Debug logging
+      console.log(`🔍 CategorizedAgentSidebar: Enabled agents from DB:`, enabledAgents);
+      console.log(`🔍 CategorizedAgentSidebar: Enabled agent IDs:`, Array.from(enabledAgentIds));
+      console.log(`🔍 CategorizedAgentSidebar: All available configs:`, allAgentConfigs.map(c => c.agent.id));
+      
       // Always include Personal Assistant (pinned)
       enabledAgentIds.add('personal_assistant');
       
@@ -96,6 +101,8 @@ export default function CategorizedAgentSidebar() {
       const enabledConfigs = allAgentConfigs.filter(config => 
         enabledAgentIds.has(config.agent.id)
       );
+      
+      console.log(`🔍 CategorizedAgentSidebar: Final enabled configs:`, enabledConfigs.map(c => c.agent.name));
       
       // Transform configs to match sidebar format
       const assistants: Assistant[] = enabledConfigs.map((config) => {
