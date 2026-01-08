@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader, Paperclip, Mic } from 'lucide-react';
 import type { N8nResponse, ChatMessage } from '../../types/n8n.types';
 import AgentResponseHandler from './AgentResponseHandler';
+import HTMLPreview from './HTMLPreview';
 import FileMessage from './FileMessage';
 import { sendToN8nWorkflow, generateRequestId, generateSessionId } from '../../lib/n8nService';
 import { ChatHistoryService } from '../../services/chatHistoryService';
@@ -378,6 +379,28 @@ export default function N8nChatInterface({
     return newFormatPattern.test(content) || oldFormatPattern.test(content);
   };
 
+  // Helper function to detect if message contains HTML content (for newsletter agent)
+  const hasHTMLContent = (content: string): boolean => {
+    // Look for common HTML tags that indicate newsletter content
+    const htmlPatterns = [
+      /<html[\s>]/i,
+      /<body[\s>]/i,
+      /<div[\s>]/i,
+      /<table[\s>]/i,
+      /<td[\s>]/i,
+      /<tr[\s>]/i,
+      /<p[\s>]/i,
+      /<h[1-6][\s>]/i,
+      /<img[\s>]/i,
+      /<a[\s>]/i,
+      /<style[\s>]/i,
+      /<head[\s>]/i,
+      /<!DOCTYPE/i
+    ];
+    
+    return htmlPatterns.some(pattern => pattern.test(content));
+  };
+
   const handleAttachmentClick = () => {
     // Create file input element
     const fileInput = document.createElement('input');
@@ -655,19 +678,33 @@ export default function N8nChatInterface({
                       />
                     ) : (
                       // Regular message display with interactive buttons support
-                      <div className="bg-gray-100 rounded-lg px-4 py-2">
-                        {hasInteractiveButtons(message.content) ? (
-                          <InteractiveMessageButtons
-                            content={message.content}
-                            onButtonClick={handleButtonClick}
-                          />
-                        ) : (
-                          <LinkDetectingTextArea 
-                            content={message.content}
-                            className="text-text-primary whitespace-pre-wrap"
-                          />
-                        )}
-                      </div>
+                      (() => {
+                        // For newsletter agent, check if content is HTML and use HTMLPreview
+                        if (agent.id === 'newsletter' && hasHTMLContent(message.content)) {
+                          return (
+                            <div className="html-preview-wrapper">
+                              <HTMLPreview content={message.content} />
+                            </div>
+                          );
+                        }
+                        
+                        // Regular message display
+                        return (
+                          <div className="bg-gray-100 rounded-lg px-4 py-2">
+                            {hasInteractiveButtons(message.content) ? (
+                              <InteractiveMessageButtons
+                                content={message.content}
+                                onButtonClick={handleButtonClick}
+                              />
+                            ) : (
+                              <LinkDetectingTextArea 
+                                content={message.content}
+                                className="text-text-primary whitespace-pre-wrap"
+                              />
+                            )}
+                          </div>
+                        );
+                      })()
                     )}
                     <span className="text-xs text-gray-500 mt-1 block">
                       {message.timestamp.toLocaleTimeString()}
