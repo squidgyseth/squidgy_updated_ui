@@ -23,13 +23,16 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     
     // Multiple patterns to catch various button formats:
     
-    // Pattern 1: Optional "- " + emoji $$**Text**$$ - description (main format)
-    const pattern1 = /^-?\s*(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*-\s*(.+)$/gmu;
+    // Pattern 1: emoji $$**Text**$$ - description (main format)
+    const pattern1 = /^(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*-\s*(.+)$/gmu;
     
-    // Pattern 2: Optional "- " + emoji $$**Text**$$ (without description)
-    const pattern2 = /^-?\s*(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*$/gmu;
+    // Pattern 2: emoji $$**Text**$$ (without description) - double dollar
+    const pattern2 = /^(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*$/gmu;
     
-    const patterns = [pattern1, pattern2];
+    // Pattern 3: emoji $**Text**$ (without description) - single dollar  
+    const pattern3 = /^(.{1,4})\s*\$\*\*([^*]+)\*\*\$\s*$/gmu;
+    
+    const patterns = [pattern1, pattern2, pattern3];
     
     patterns.forEach(pattern => {
       pattern.lastIndex = 0; // Reset regex
@@ -62,8 +65,13 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     options.forEach(option => {
       // Create a more flexible regex to match the button pattern with optional whitespace
       const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const buttonPattern = new RegExp(`^-?\\s*${escapeRegex(option.emoji)}\\s*\\$\\$\\*\\*${escapeRegex(option.text)}\\*\\*\\$\\$\\s*$`, 'gm');
-      cleaned = cleaned.replace(buttonPattern, '');
+      
+      // Try both single and double dollar formats
+      const doublePattern = new RegExp(`^-?\\s*${escapeRegex(option.emoji)}\\s*\\$\\$\\*\\*${escapeRegex(option.text)}\\*\\*\\$\\$\\s*$`, 'gm');
+      const singlePattern = new RegExp(`^-?\\s*${escapeRegex(option.emoji)}\\s*\\$\\*\\*${escapeRegex(option.text)}\\*\\*\\$\\s*$`, 'gm');
+      
+      cleaned = cleaned.replace(doublePattern, '');
+      cleaned = cleaned.replace(singlePattern, '');
       
       // Fallback: try exact match removal
       cleaned = cleaned.replace(option.fullText, '');
