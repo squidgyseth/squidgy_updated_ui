@@ -18,6 +18,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
   // Parse the content to find button patterns - flexible detection
   const parseButtonOptions = (text: string): ButtonOption[] => {
     console.log('🔍 InteractiveMessageButtons: Parsing content:', text);
+    console.log('🔍 InteractiveMessageButtons: Content lines:', text.split('\n'));
     const options: ButtonOption[] = [];
     
     // Multiple patterns to catch various button formats:
@@ -28,7 +29,10 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     // Pattern 2: Optional "- " + emoji $$**Text**$$ (without description)
     const pattern2 = /^-?\s*(.{1,4})\s*\$\$\*\*([^*]+)\*\*\$\$\s*$/gmu;
     
-    const patterns = [pattern1, pattern2];
+    // Pattern 3: Handle single $ + $$**Text**$$ format (fallback for malformed buttons)
+    const pattern3 = /^-?\s*(.{1,4})\s*\$\*\*([^*]+)\*\*\$\$\s*$/gmu;
+    
+    const patterns = [pattern1, pattern2, pattern3];
     
     patterns.forEach(pattern => {
       pattern.lastIndex = 0; // Reset regex
