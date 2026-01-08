@@ -128,44 +128,45 @@ class AgentEnablementService {
       const agentService = OptimizedAgentService.getInstance();
       const allAgents = agentService.getAllAgents();
       
-      // Define alternate names mapping (Personal Assistant uses different names)
-      const alternateNames: Record<string, string[]> = {
-        'smm_assistant': ['SMM Assistant', 'Social Media Manager'],
-        'newsletter': ['Newsletter Agent', 'Newsletter Assistant'],
-        'SOL': ['SOL Bot'],
-        'content_repurposer': ['Content Repurposer']
-      };
+      // Convert response to lowercase for flexible matching
+      const responseTextLower = responseText.toLowerCase();
       
-      // Check for agent enablement using both official and alternate names
+      // Keywords that indicate agent enablement
+      const enablementKeywords = ['enabled', 'configured', 'ready', 'available'];
+      const enablementIndicators = ['✅', '✓', 'perfect!', 'great!', 'nice!'];
+      
+      // Check for agent enablement using flexible keyword matching
       for (const config of allAgents) {
         const agentName = config.agent.name;
         const agentId = config.agent.id;
         
-        // Build list of names to check (official name + alternates)
-        const namesToCheck = [agentName];
-        if (alternateNames[agentId]) {
-          namesToCheck.push(...alternateNames[agentId]);
-        }
+        // Extract key words from agent name for flexible matching
+        const agentNameWords = agentName.toLowerCase().split(/\s+/);
         
-        // Check each name variation
-        for (const nameToCheck of namesToCheck) {
-          // Multiple patterns to catch different response formats
-          const patterns = [
-            new RegExp(`${nameToCheck.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} is now (?:configured|enabled|ready)`, 'i'),
-            new RegExp(`Your ${nameToCheck.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} (?:assistant )?is now (?:configured|enabled|ready)`, 'i'),
-            new RegExp(`${nameToCheck.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} (?:assistant )?is available`, 'i'),
-            new RegExp(`Your ${nameToCheck.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} (?:is )?(?:configured|enabled|ready)`, 'i')
-          ];
+        // Check if response contains agent name words AND enablement keywords
+        const hasAgentNameWords = agentNameWords.every(word => 
+          word.length > 2 && responseTextLower.includes(word)
+        );
+        
+        const hasEnablementKeyword = enablementKeywords.some(keyword => 
+          responseTextLower.includes(keyword)
+        );
+        
+        const hasEnablementIndicator = enablementIndicators.some(indicator => 
+          responseText.includes(indicator) // Check original text for emojis
+        );
+        
+        // If we find agent name words + enablement keywords/indicators, consider it enabled
+        if (hasAgentNameWords && (hasEnablementKeyword || hasEnablementIndicator)) {
+          console.log(`✅ AgentEnablementService: Found ${agentName} -> ${agentId} enablement via keyword matching`);
+          console.log(`🔍 Agent name words found: ${agentNameWords.join(', ')}`);
+          console.log(`🔍 Enablement keyword found: ${hasEnablementKeyword}`);
+          console.log(`🔍 Enablement indicator found: ${hasEnablementIndicator}`);
           
-          for (const pattern of patterns) {
-            if (pattern.test(responseText)) {
-              console.log(`✅ AgentEnablementService: Found ${nameToCheck} -> ${agentId} enablement with pattern: ${pattern}`);
-              return {
-                agentId: agentId,
-                customName: agentName
-              };
-            }
-          }
+          return {
+            agentId: agentId,
+            customName: agentName
+          };
         }
       }
 
