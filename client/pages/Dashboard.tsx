@@ -215,7 +215,7 @@ export default function Index() {
                   <p className="text-[15px] text-gray-600 font-open-sans mt-1">Your onboarding assistant for setting up AI agents. Get help configuring your team of AI assistants.</p>
                 </div>
                 <Button 
-                  onClick={() => navigate('/agents/personal_assistant')}
+                  onClick={() => navigate('/chat/personal_assistant')}
                   className="bg-squidgy-gradient text-white gap-2 px-7 py-3"
                 >
                   <MessageCircle className="w-6 h-6" />
