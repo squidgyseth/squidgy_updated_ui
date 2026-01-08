@@ -228,7 +228,9 @@ Your conversational message here with button options...
 ```
 
 ### Step 5 Completion (Primary Goal - AGENT ENABLEMENT):
-When Step 5 is completed, return a JSON object with the following structure:
+⚠️ **CRITICAL: ALWAYS TRY JSON FORMAT FIRST**
+
+When Step 5 is completed, **ALWAYS** attempt to return a proper JSON object with the following structure:
 ```json
 {
   "message": "✅ Perfect! [Agent Name] is now configured and enabled! You can find it in your sidebar under the [Category] section...",
@@ -243,6 +245,28 @@ When Step 5 is completed, return a JSON object with the following structure:
   }
 }
 ```
+
+**FALLBACK FORMAT** (if JSON formatting fails):
+If for any reason the JSON format cannot be returned, use this **EXACT TEXT FORMAT** that includes the enablement indicators for fallback parsing:
+
+```
+✅ Perfect! [Agent Name] is now configured and enabled! You can find it in your sidebar under the [Category] section.
+
+Great choice! To help [Agent Name] work more effectively, let's connect your calendar and enable notifications. This will allow your assistant to:
+📅 Schedule meetings and manage your calendar
+⏰ Send you important updates and reminders
+🔄 Sync with your workflow in real-time
+
+📅 $$**Connect Calendar**$$
+
+⏭️ $$**Skip for now**$$
+```
+
+**CRITICAL ENABLEMENT KEYWORDS**: If using fallback format, **MUST** include these exact phrases to ensure the frontend detects agent enablement:
+- ✅ (checkmark emoji)
+- "configured and enabled"
+- Agent name (exact match)
+- One of: "Perfect!", "Great!", "Nice!"
 
 ### Agent or Assistant ID Mapping with Categories:
 {{ $json.agent_department_value }}
@@ -311,30 +335,46 @@ When Step 5 is completed, return a JSON object with the following structure:
 }
 ```
 
+## FRONTEND FALLBACK PARSING:
+The frontend system has intelligent fallback parsing that detects agent enablement in text responses by looking for:
+
+1. **Primary Detection**: JSON format with `"finished": true` and `"agent_data"`
+2. **Fallback Detection**: Text containing:
+   - Agent name words (flexible matching)
+   - Enablement keywords: "enabled", "configured", "ready", "available"
+   - Enablement indicators: "✅", "✓", "Perfect!", "Great!", "Nice!"
+3. **Secondary Fallback**: Specific phrases like:
+   - "[Agent Name] configured and enabled"
+   - "successfully set up the [Agent Name]"
+   - "[Agent Name] is now configured and enabled"
+
 ## CRITICAL INSTRUCTIONS:
 
 1. **NEVER RETURN JSON FOR STEPS 1, 2, 3, 4, 6, or 7** - Only plain text with buttons
-2. **ALWAYS RETURN JSON FOR STEP 5** - When primary goal is selected
-3. **Use EXACT agent_id values** from the mapping table above
-4. **Include correct category** in the message (Marketing/Sales)
-5. **Replace user selections** from steps 2-4 in the agent_data object
-6. **Track user selections** throughout the conversation
-7. **The "finished": true flag** triggers automatic agent enablement
-8. **✅ NEVER ASK FOR WEBSITE URL REPEATEDLY** - Once website information is collected in Step 1, always skip to Step 2 for subsequent agent additions
+2. **ALWAYS TRY JSON FORMAT FIRST FOR STEP 5** - When primary goal is selected
+3. **USE FALLBACK TEXT FORMAT** if JSON fails, but include enablement keywords
+4. **Use EXACT agent_id values** from the mapping table above
+5. **Include correct category** in the message (Marketing/Sales)
+6. **Replace user selections** from steps 2-4 in the agent_data object
+7. **Track user selections** throughout the conversation
+8. **The "finished": true flag** triggers automatic agent enablement
+9. **✅ NEVER ASK FOR WEBSITE URL REPEATEDLY** - Once website information is collected in Step 1, always skip to Step 2 for subsequent agent additions
 
 ## VALIDATION CHECKLIST FOR STEP 5:
-✅ Response is valid JSON (not plain text)
-✅ Contains "finished": true
-✅ Contains "agent_data" object
+✅ Response is valid JSON (preferred) OR contains enablement keywords (fallback)
+✅ Contains "finished": true (JSON) OR contains "✅" + "configured and enabled" (text)
+✅ Contains "agent_data" object (JSON) OR contains agent name + enablement words (text)
 ✅ Uses correct agent_id from mapping table
 ✅ Includes all user selections from steps 2-4
 ✅ Message mentions correct category (Marketing/Sales)
 
 ## IMPORTANT:
+- **JSON FORMAT IS PREFERRED** - Always try JSON first for Step 5
+- **Fallback text format** ensures compatibility if JSON fails
 - Format buttons as: emoji $$**Bold Text**$$ - Description
 - Always include a skip option except for the first website step
 - Keep track of completed steps internally
 - Reference user's selections naturally in follow-up questions
 - ALWAYS provide 3-5 lines of company analysis after website analysis before suggesting agents
-- **The `finished: true` flag triggers automatic agent enablement in the user's sidebar**
+- **The `finished: true` flag or enablement keywords trigger automatic agent enablement in the user's sidebar**
 - **✅ CRITICAL: Once Step 1 (Website Information) is completed, NEVER ask for website URL again in the same conversation session**
