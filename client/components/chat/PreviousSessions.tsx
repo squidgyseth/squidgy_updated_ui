@@ -125,8 +125,20 @@ export default function PreviousSessions({
                     </div>
                     
                     <p className="text-xs text-gray-600 line-clamp-2">
-                      {session.last_message_preview}
-                      {session.last_message_preview.length >= 100 && '...'}
+                      {(() => {
+                        // Clean HTML tags and get readable text
+                        const cleanPreview = (text: string): string => {
+                          // Remove HTML tags
+                          const withoutTags = text.replace(/<[^>]*>/g, ' ');
+                          // Remove extra whitespace and normalize
+                          const normalized = withoutTags.replace(/\s+/g, ' ').trim();
+                          // Take first 80 characters for preview
+                          return normalized.length > 80 ? normalized.substring(0, 80) + '...' : normalized;
+                        };
+                        
+                        const cleanText = cleanPreview(session.last_message_preview);
+                        return cleanText || 'No preview available';
+                      })()}
                     </p>
                   </div>
                 </div>
