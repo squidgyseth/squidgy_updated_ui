@@ -201,20 +201,23 @@ export default function Index() {
             </div>
           </div>
 
-          {/* Solar Sales Assistant Card */}
+          {/* Personal Assistant Card */}
           <Card className="border-2 border-squidgy-red bg-purple-50">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <img 
-                  src="https://api.builder.io/api/v1/image/assets/TEMP/09c4998d4dacea2a22e91eb5243c5cac2433e507?width=128" 
-                  alt="Solar panel icon" 
+                  src="https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64" 
+                  alt="Personal Assistant icon" 
                   className="w-16 h-16 rounded-full"
                 />
                 <div className="flex-1">
-                  <h2 className="text-[20px] font-bold text-gray-900 font-open-sans">Solar Sales Assistant</h2>
-                  <p className="text-[15px] text-gray-600 font-open-sans mt-1">Your 24/7 solar sales expert that qualifies leads, nurtures prospects, and converts interest into installations.</p>
+                  <h2 className="text-[20px] font-bold text-gray-900 font-open-sans">Personal Assistant</h2>
+                  <p className="text-[15px] text-gray-600 font-open-sans mt-1">Your onboarding assistant for setting up AI agents. Get help configuring your team of AI assistants.</p>
                 </div>
-                <Button className="bg-squidgy-gradient text-white gap-2 px-7 py-3">
+                <Button 
+                  onClick={() => navigate('/agents/personal_assistant')}
+                  className="bg-squidgy-gradient text-white gap-2 px-7 py-3"
+                >
                   <MessageCircle className="w-6 h-6" />
                   Start Chat
                 </Button>
