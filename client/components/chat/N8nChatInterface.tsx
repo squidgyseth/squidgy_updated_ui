@@ -305,8 +305,10 @@ export default function N8nChatInterface({
         // Handle agent enablement for Personal Assistant onboarding
         if (agent.id === 'personal_assistant') {
           const enablementService = AgentEnablementService.getInstance();
+          const responseText = structuredData || response.agent_response;
+          console.log('🔍 N8N DEBUG: Agent response for enablement check:', responseText);
           // Pass structured data if available, otherwise original response
-          await enablementService.handleOnboardingResponse(structuredData || response.agent_response);
+          await enablementService.handleOnboardingResponse(responseText);
         }
       } else {
         // Handle error case
