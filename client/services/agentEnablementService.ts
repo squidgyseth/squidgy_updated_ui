@@ -140,6 +140,11 @@ class AgentEnablementService {
         const agentName = config.agent.name;
         const agentId = config.agent.id;
         
+        // Skip Personal Assistant - it's already enabled and pinned by default
+        if (agentId === 'personal_assistant') {
+          continue;
+        }
+        
         // Extract key words from agent name for flexible matching
         const agentNameWords = agentName.toLowerCase().split(/\s+/);
         
@@ -179,15 +184,20 @@ class AgentEnablementService {
         const agentName = config.agent.name;
         const agentId = config.agent.id;
         
-        // Look for common enablement phrases in the text
+        // Skip Personal Assistant - it's already enabled and pinned by default
+        if (agentId === 'personal_assistant') {
+          continue;
+        }
+        
+        // Look for common enablement phrases in the text (SPECIFIC AGENT NAMES ONLY)
         const enablementPhrases = [
           `${agentName} configured and enabled`,
           `${agentName} is now configured and enabled`,
           `successfully set up the ${agentName}`,
           `${agentName} configured and ready`,
           `${agentName} Assistant configured and enabled`,
-          `${agentName} Agent configured and enabled`,
-          'configured and enabled'  // Generic fallback
+          `${agentName} Agent configured and enabled`
+          // Removed generic fallback to prevent wrong matches
         ];
         
         const foundPhrase = enablementPhrases.find(phrase => 
@@ -201,6 +211,35 @@ class AgentEnablementService {
             agentId: agentId,
             customName: agentName
           };
+        }
+      }
+      
+      // Special handling for common naming variations
+      if (responseTextLower.includes('configured and enabled')) {
+        // Look for agent names with variations like "Newsletter Assistant" vs "Newsletter Agent"
+        for (const config of allAgents) {
+          const agentName = config.agent.name;
+          const agentId = config.agent.id;
+          
+          // Skip Personal Assistant - it's already enabled and pinned by default
+          if (agentId === 'personal_assistant') {
+            continue;
+          }
+          
+          // Check if the agent name words appear before "configured and enabled"
+          const agentWords = agentName.toLowerCase().split(/\s+/);
+          const hasAllWords = agentWords.every(word => 
+            word.length > 2 && responseTextLower.includes(word)
+          );
+          
+          if (hasAllWords) {
+            console.log(`✅ AgentEnablementService: Found ${agentName} -> ${agentId} enablement via word matching in "configured and enabled" text`);
+            
+            return {
+              agentId: agentId,
+              customName: agentName
+            };
+          }
         }
       }
       
