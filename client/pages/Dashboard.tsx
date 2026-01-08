@@ -140,7 +140,7 @@ export default function Index() {
                 AI Assistant Active
               </Badge>
               <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 px-3 py-1">
-                3 Urgent Follow-ups
+                X Urgent Follow-ups
               </Badge>
               <button 
                 onClick={() => navigate('/welcome')}
@@ -187,7 +187,7 @@ export default function Index() {
                   </div>
                 </div>
                 <h3 className="text-[17px] font-bold text-gray-900 font-open-sans mb-2">Never Miss a Lead</h3>
-                <p className="text-[15px] text-gray-700 font-open-sans mb-4">100% response rate with instant replies to all enquiries, 24/7</p>
+                <p className="text-[15px] text-gray-700 font-open-sans mb-4">XXX% response rate with instant replies to all enquiries, XX/X</p>
                 <p className="text-[13px] text-green-600 font-open-sans">Zero missed opportunities</p>
               </CardContent>
             </Card>
@@ -214,7 +214,7 @@ export default function Index() {
                 </div>
                 <h3 className="text-[18px] font-bold text-gray-900 font-open-sans mb-2">Boost Conversions</h3>
                 <p className="text-[15px] text-gray-700 font-open-sans mb-4">Personalized energy reports and ROI calculations increase sales</p>
-                <p className="text-[13px] text-red-600 font-open-sans">+8.1% conversion rate</p>
+                <p className="text-[13px] text-red-600 font-open-sans">+X.X% conversion rate</p>
               </CardContent>
             </Card>
 
@@ -227,7 +227,7 @@ export default function Index() {
                 </div>
                 <h3 className="text-[17px] font-bold text-gray-900 font-open-sans mb-2">Customer Delight</h3>
                 <p className="text-[15px] text-gray-700 font-open-sans mb-4">Knowledgeable responses and proactive follow-ups build trust</p>
-                <p className="text-[13px] text-yellow-600 font-open-sans">4.8/5 satisfaction</p>
+                <p className="text-[13px] text-yellow-600 font-open-sans">X.X/X satisfaction</p>
               </CardContent>
             </Card>
           </div>
@@ -241,7 +241,7 @@ export default function Index() {
                   <div>
                     <p className="text-sm text-white/80 font-open-sans">New Leads</p>
                     <div className="flex items-baseline gap-2">
-                      <h3 className="text-2xl font-bold font-open-sans">47</h3>
+                      <h3 className="text-2xl font-bold font-open-sans">XX</h3>
                       <span className="text-xs text-white/70 font-open-sans">this week</span>
                     </div>
                   </div>
@@ -251,7 +251,7 @@ export default function Index() {
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <TrendingUp className="w-4 h-4 text-green-400" />
-                  <span className="text-green-400 font-open-sans">+23.5%</span>
+                  <span className="text-green-400 font-open-sans">+XX.X%</span>
                 </div>
               </CardContent>
             </Card>
@@ -262,7 +262,7 @@ export default function Index() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <p className="text-sm text-gray-500 font-open-sans">Surveys Booked</p>
-                    <h3 className="text-2xl font-bold text-gray-900 font-open-sans">23</h3>
+                    <h3 className="text-2xl font-bold text-gray-900 font-open-sans">XX</h3>
                   </div>
                   <div className="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center">
                     <Calendar className="w-6 h-6 text-cyan-600" />
@@ -270,7 +270,7 @@ export default function Index() {
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500 font-open-sans">+28.4%</span>
+                  <span className="text-green-500 font-open-sans">+XX.X%</span>
                 </div>
               </CardContent>
             </Card>
@@ -282,7 +282,7 @@ export default function Index() {
                   <div>
                     <p className="text-sm text-gray-500 font-open-sans">Deals Won</p>
                     <div className="flex items-baseline gap-2">
-                      <h3 className="text-2xl font-bold text-gray-900 font-open-sans">12</h3>
+                      <h3 className="text-2xl font-bold text-gray-900 font-open-sans">XX</h3>
                       <span className="text-xs text-gray-500 font-open-sans">this month</span>
                     </div>
                   </div>
@@ -292,7 +292,7 @@ export default function Index() {
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500 font-open-sans">+41.2%</span>
+                  <span className="text-green-500 font-open-sans">+XX.X%</span>
                 </div>
               </CardContent>
             </Card>
@@ -304,7 +304,7 @@ export default function Index() {
                   <div>
                     <p className="text-sm text-gray-500 font-open-sans">Conversion Rate</p>
                     <div className="flex items-baseline gap-2">
-                      <h3 className="text-2xl font-bold text-gray-900 font-open-sans">34.2%</h3>
+                      <h3 className="text-2xl font-bold text-gray-900 font-open-sans">XX.X%</h3>
                       <span className="text-xs text-gray-500 font-open-sans">vs last month</span>
                     </div>
                   </div>
@@ -314,7 +314,7 @@ export default function Index() {
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500 font-open-sans">+8.1%</span>
+                  <span className="text-green-500 font-open-sans">+X.X%</span>
                 </div>
               </CardContent>
             </Card>
@@ -325,7 +325,7 @@ export default function Index() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <p className="text-sm text-gray-500 font-open-sans">Pipeline Value</p>
-                    <h3 className="text-2xl font-bold text-gray-900 font-open-sans">£284k</h3>
+                    <h3 className="text-2xl font-bold text-gray-900 font-open-sans">£XXXk</h3>
                   </div>
                   <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                     <BarChart3 className="w-6 h-6 text-red-600" />
@@ -333,7 +333,7 @@ export default function Index() {
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500 font-open-sans">+18.7%</span>
+                  <span className="text-green-500 font-open-sans">+XX.X%</span>
                 </div>
               </CardContent>
             </Card>
@@ -344,7 +344,7 @@ export default function Index() {
                   <div>
                     <p className="text-sm text-gray-500 font-open-sans">Revenue Generated</p>
                     <div className="flex items-baseline gap-2">
-                      <h3 className="text-2xl font-bold text-gray-900 font-open-sans">£187k</h3>
+                      <h3 className="text-2xl font-bold text-gray-900 font-open-sans">£XXXk</h3>
                       <span className="text-xs text-gray-500 font-open-sans">this month</span>
                     </div>
                   </div>
@@ -354,7 +354,7 @@ export default function Index() {
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500 font-open-sans">+29.8%</span>
+                  <span className="text-green-500 font-open-sans">+XX.X%</span>
                 </div>
               </CardContent>
             </Card>
@@ -365,7 +365,7 @@ export default function Index() {
                   <div>
                     <p className="text-sm text-gray-500 font-open-sans">Time Saved</p>
                     <div className="flex items-baseline gap-2">
-                      <h3 className="text-2xl font-bold text-gray-900 font-open-sans">164</h3>
+                      <h3 className="text-2xl font-bold text-gray-900 font-open-sans">XXX</h3>
                       <span className="text-xs text-gray-500 font-open-sans">hours this month</span>
                     </div>
                   </div>
@@ -375,7 +375,7 @@ export default function Index() {
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500 font-open-sans">+35.2%</span>
+                  <span className="text-green-500 font-open-sans">+XX.X%</span>
                 </div>
               </CardContent>
             </Card>
@@ -386,7 +386,7 @@ export default function Index() {
                   <div>
                     <p className="text-sm text-gray-500 font-open-sans">Customer Satisfaction</p>
                     <div className="flex items-baseline gap-2">
-                      <h3 className="text-2xl font-bold text-gray-900 font-open-sans">4.8/5</h3>
+                      <h3 className="text-2xl font-bold text-gray-900 font-open-sans">X.X/X</h3>
                       <span className="text-xs text-gray-500 font-open-sans">avg rating</span>
                     </div>
                   </div>
@@ -396,7 +396,7 @@ export default function Index() {
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500 font-open-sans">+6.7%</span>
+                  <span className="text-green-500 font-open-sans">+X.X%</span>
                 </div>
               </CardContent>
             </Card>
@@ -419,8 +419,8 @@ export default function Index() {
                         <p className="font-open-sans text-black">Follow up on 3 qualified leads from yesterday</p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge className="bg-red-100 text-red-800 text-xs">high</Badge>
-                          <span className="text-sm text-gray-500 font-open-sans">30 min</span>
-                          <span className="text-sm text-gray-500 font-open-sans">• 9:00 AM</span>
+                          <span className="text-sm text-gray-500 font-open-sans">XX min</span>
+                          <span className="text-sm text-gray-500 font-open-sans">• X:XX AM</span>
                         </div>
                       </div>
                     </div>
@@ -433,8 +433,8 @@ export default function Index() {
                         <p className="font-open-sans text-gray-500 line-through">Review and approve AI-generated proposals</p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge className="bg-purple-100 text-purple-800 text-xs">medium</Badge>
-                          <span className="text-sm text-gray-500 font-open-sans">15 min</span>
-                          <span className="text-sm text-gray-500 font-open-sans">• 11:00 AM</span>
+                          <span className="text-sm text-gray-500 font-open-sans">XX min</span>
+                          <span className="text-sm text-gray-500 font-open-sans">• XX:XX AM</span>
                         </div>
                       </div>
                     </div>
@@ -445,8 +445,8 @@ export default function Index() {
                         <p className="font-open-sans text-black">Schedule site surveys for this week</p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge className="bg-red-100 text-red-800 text-xs">high</Badge>
-                          <span className="text-sm text-gray-500 font-open-sans">20 min</span>
-                          <span className="text-sm text-gray-500 font-open-sans">• 2:00 PM</span>
+                          <span className="text-sm text-gray-500 font-open-sans">XX min</span>
+                          <span className="text-sm text-gray-500 font-open-sans">• X:XX PM</span>
                         </div>
                       </div>
                     </div>
@@ -457,8 +457,8 @@ export default function Index() {
                         <p className="font-open-sans text-black">Send weekly solar insights to nurture list</p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge className="bg-purple-100 text-purple-800 text-xs">medium</Badge>
-                          <span className="text-sm text-gray-500 font-open-sans">10 min</span>
-                          <span className="text-sm text-gray-500 font-open-sans">• 4:00 PM</span>
+                          <span className="text-sm text-gray-500 font-open-sans">XX min</span>
+                          <span className="text-sm text-gray-500 font-open-sans">• X:XX PM</span>
                         </div>
                       </div>
                     </div>
@@ -479,7 +479,7 @@ export default function Index() {
                         <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
                         <h4 className="font-open-sans font-medium">Team Standup Meeting</h4>
                       </div>
-                      <p className="text-sm text-gray-600 font-open-sans mb-2">10:00 AM - 10:30 AM</p>
+                      <p className="text-sm text-gray-600 font-open-sans mb-2">XX:XX AM - XX:XX AM</p>
                       <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
                         <div className="flex items-center gap-1">
                           <MapPin className="w-3 h-3" />
@@ -487,7 +487,7 @@ export default function Index() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Users className="w-3 h-3" />
-                          <span className="font-open-sans">2 attendees</span>
+                          <span className="font-open-sans">X attendees</span>
                         </div>
                       </div>
                       <Button className="bg-squidgy-gradient text-white gap-2 text-xs px-4 py-2">
@@ -501,7 +501,7 @@ export default function Index() {
                         <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
                         <h4 className="font-open-sans font-medium">Review AI Suggestions</h4>
                       </div>
-                      <p className="text-sm text-gray-600 font-open-sans">Due in 2 hours</p>
+                      <p className="text-sm text-gray-600 font-open-sans">Due in X hours</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -594,9 +594,9 @@ export default function Index() {
                           <h4 className="font-open-sans font-medium">High-value prospect identified</h4>
                           <Badge className="bg-red-100 text-red-800 text-xs">High</Badge>
                         </div>
-                        <p className="text-sm text-gray-600 font-open-sans mb-2">New enquiry from £50k+ property with optimal roof conditions</p>
-                        <p className="text-sm text-purple-600 font-open-sans mb-2">Priority follow-up within 1 hour</p>
-                        <p className="text-xs text-gray-500 font-open-sans mb-3">8 minutes ago</p>
+                        <p className="text-sm text-gray-600 font-open-sans mb-2">New enquiry from £XXk+ property with optimal roof conditions</p>
+                        <p className="text-sm text-purple-600 font-open-sans mb-2">Priority follow-up within X hour</p>
+                        <p className="text-xs text-gray-500 font-open-sans mb-3">X minutes ago</p>
                         <div className="flex gap-2">
                           <Button size="sm" className="bg-purple-100 text-purple-700 hover:bg-purple-100">
                             Approve
@@ -618,9 +618,9 @@ export default function Index() {
                           <h4 className="font-open-sans font-medium">Government incentive deadline approaching</h4>
                           <Badge className="bg-purple-100 text-purple-800 text-xs">Medium</Badge>
                         </div>
-                        <p className="text-sm text-gray-600 font-open-sans mb-2">15 prospects eligible for Smart Export Guarantee - deadline in 2 weeks</p>
+                        <p className="text-sm text-gray-600 font-open-sans mb-2">XX prospects eligible for Smart Export Guarantee - deadline in X weeks</p>
                         <p className="text-sm text-purple-600 font-open-sans mb-2">Send targeted incentive campaign</p>
-                        <p className="text-xs text-gray-500 font-open-sans mb-3">2 hours ago</p>
+                        <p className="text-xs text-gray-500 font-open-sans mb-3">X hours ago</p>
                         <div className="flex gap-2">
                           <Button size="sm" className="bg-purple-100 text-purple-700 hover:bg-purple-100">
                             Approve
@@ -642,9 +642,9 @@ export default function Index() {
                           <h4 className="font-open-sans font-medium">Warm leads ready for follow-up</h4>
                           <Badge className="bg-purple-100 text-purple-800 text-xs">Medium</Badge>
                         </div>
-                        <p className="text-sm text-gray-600 font-open-sans mb-2">7 prospects have viewed proposals multiple times but not responded</p>
+                        <p className="text-sm text-gray-600 font-open-sans mb-2">X prospects have viewed proposals multiple times but not responded</p>
                         <p className="text-sm text-purple-600 font-open-sans mb-2">Schedule gentle follow-up calls</p>
-                        <p className="text-xs text-gray-500 font-open-sans mb-3">1 hour ago</p>
+                        <p className="text-xs text-gray-500 font-open-sans mb-3">X hour ago</p>
                         <div className="flex gap-2">
                           <Button size="sm" className="bg-purple-100 text-purple-700 hover:bg-purple-100">
                             Approve
@@ -686,10 +686,10 @@ export default function Index() {
                             <h4 className="font-open-sans font-medium">Sarah Johnson</h4>
                             <Badge className="bg-red-100 text-red-800 text-xs">Hot Lead</Badge>
                           </div>
-                          <p className="text-sm text-gray-600 font-open-sans mb-2">4-bed detached, £500k property</p>
-                          <p className="text-sm text-gray-700 font-open-sans mb-2">Optimal south-facing roof, high energy bills (£300/month), ready to proceed</p>
+                          <p className="text-sm text-gray-600 font-open-sans mb-2">X-bed detached, £XXXk property</p>
+                          <p className="text-sm text-gray-700 font-open-sans mb-2">Optimal south-facing roof, high energy bills (£XXX/month), ready to proceed</p>
                           <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <span className="font-open-sans">15 minutes ago</span>
+                            <span className="font-open-sans">XX minutes ago</span>
                             <span>•</span>
                             <span className="font-open-sans">WhatsApp enquiry</span>
                           </div>
@@ -708,9 +708,9 @@ export default function Index() {
                             <Badge className="bg-purple-100 text-purple-800 text-xs">Qualified</Badge>
                           </div>
                           <p className="text-sm text-gray-600 font-open-sans mb-2">New build property, eligible for grants</p>
-                          <p className="text-sm text-gray-700 font-open-sans mb-2">Interested in 6kW system, requesting quote for Smart Export Guarantee</p>
+                          <p className="text-sm text-gray-700 font-open-sans mb-2">Interested in XkW system, requesting quote for Smart Export Guarantee</p>
                           <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <span className="font-open-sans">1 hour ago</span>
+                            <span className="font-open-sans">X hour ago</span>
                             <span>•</span>
                             <span className="font-open-sans">Website form</span>
                           </div>
@@ -731,7 +731,7 @@ export default function Index() {
                           <p className="text-sm text-gray-600 font-open-sans mb-2">Considering battery storage addition</p>
                           <p className="text-sm text-gray-700 font-open-sans mb-2">Existing solar customer interested in battery upgrade, budget confirmed</p>
                           <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <span className="font-open-sans">3 hours ago</span>
+                            <span className="font-open-sans">X hours ago</span>
                             <span>•</span>
                             <span className="font-open-sans">Phone call</span>
                           </div>
@@ -755,7 +755,7 @@ export default function Index() {
                         <CheckCircle className="w-5 h-5 text-green-600" />
                       </div>
                       <div>
-                        <h4 className="font-open-sans font-medium mb-1">Qualified 3 new leads automatically</h4>
+                        <h4 className="font-open-sans font-medium mb-1">Qualified X new leads automatically</h4>
                         <p className="text-sm text-gray-600 font-open-sans mb-1">Assessed roof suitability and energy usage via WhatsApp conversations</p>
                         <p className="text-xs text-gray-500 font-open-sans">Just now</p>
                       </div>
@@ -766,9 +766,9 @@ export default function Index() {
                         <MessageCircle className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <h4 className="font-open-sans font-medium mb-1">Sent personalized energy reports to 12 prospects</h4>
+                        <h4 className="font-open-sans font-medium mb-1">Sent personalized energy reports to XX prospects</h4>
                         <p className="text-sm text-gray-600 font-open-sans mb-1">Including ROI calculations and government incentive eligibility</p>
-                        <p className="text-xs text-gray-500 font-open-sans">15 minutes ago</p>
+                        <p className="text-xs text-gray-500 font-open-sans">XX minutes ago</p>
                       </div>
                     </div>
 
@@ -777,9 +777,9 @@ export default function Index() {
                         <Calendar className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div>
-                        <h4 className="font-open-sans font-medium mb-1">Scheduled 4 site surveys for next week</h4>
+                        <h4 className="font-open-sans font-medium mb-1">Scheduled X site surveys for next week</h4>
                         <p className="text-sm text-gray-600 font-open-sans mb-1">Coordinated with customer availability and engineer schedules</p>
-                        <p className="text-xs text-gray-500 font-open-sans">1 hour ago</p>
+                        <p className="text-xs text-gray-500 font-open-sans">X hour ago</p>
                       </div>
                     </div>
 
@@ -791,8 +791,8 @@ export default function Index() {
                       </div>
                       <div>
                         <h4 className="font-open-sans font-medium mb-1">Identified high-value prospect requiring urgent follow-up</h4>
-                        <p className="text-sm text-gray-600 font-open-sans mb-1">£50k+ property with optimal conditions, ready to proceed immediately</p>
-                        <p className="text-xs text-gray-500 font-open-sans">2 hours ago</p>
+                        <p className="text-sm text-gray-600 font-open-sans mb-1">£XXk+ property with optimal conditions, ready to proceed immediately</p>
+                        <p className="text-xs text-gray-500 font-open-sans">X hours ago</p>
                       </div>
                     </div>
 
@@ -802,8 +802,8 @@ export default function Index() {
                       </div>
                       <div>
                         <h4 className="font-open-sans font-medium mb-1">Generated Smart Export Guarantee campaign</h4>
-                        <p className="text-sm text-gray-600 font-open-sans mb-1">Targeting 47 qualified prospects with deadline approaching</p>
-                        <p className="text-xs text-gray-500 font-open-sans">3 hours ago</p>
+                        <p className="text-sm text-gray-600 font-open-sans mb-1">Targeting XX qualified prospects with deadline approaching</p>
+                        <p className="text-xs text-gray-500 font-open-sans">X hours ago</p>
                       </div>
                     </div>
                   </CardContent>
