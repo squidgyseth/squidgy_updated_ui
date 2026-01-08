@@ -302,13 +302,25 @@ export default function N8nChatInterface({
 
         setMessages(prev => [...prev, agentMessage]);
 
+        console.log('🔍 N8N DEBUG: Agent response received from agent.id:', agent.id);
+        console.log('🔍 N8N DEBUG: Response object:', response);
+
         // Handle agent enablement for Personal Assistant onboarding
         if (agent.id === 'personal_assistant') {
+          console.log('🔍 N8N DEBUG: Personal Assistant detected, checking for agent enablement');
           const enablementService = AgentEnablementService.getInstance();
           const responseText = structuredData || response.agent_response;
           console.log('🔍 N8N DEBUG: Agent response for enablement check:', responseText);
-          // Pass structured data if available, otherwise original response
-          await enablementService.handleOnboardingResponse(responseText);
+          
+          try {
+            // Pass structured data if available, otherwise original response
+            await enablementService.handleOnboardingResponse(responseText);
+            console.log('🔍 N8N DEBUG: AgentEnablementService called successfully');
+          } catch (error) {
+            console.error('❌ N8N DEBUG: Error calling AgentEnablementService:', error);
+          }
+        } else {
+          console.log('🔍 N8N DEBUG: Not Personal Assistant, skipping enablement check for agent:', agent.id);
         }
       } else {
         // Handle error case
