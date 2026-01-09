@@ -123,6 +123,7 @@ class AgentEnablementService {
   parseOnboardingResponse(responseText: string): AgentEnablementData | null {
     try {
       console.log('🔍 AgentEnablementService: Parsing response text:', responseText.substring(0, 200) + '...');
+      console.log('🔍 AgentEnablementService: Full response text:', responseText);
       
       // Get all agents dynamically from config files
       const agentService = OptimizedAgentService.getInstance();
@@ -382,6 +383,8 @@ class AgentEnablementService {
   async handleOnboardingResponse(responseData: any): Promise<void> {
     try {
       console.log('🔍 AgentEnablementService: Received responseData:', responseData);
+      console.log('🔍 AgentEnablementService: Response type:', typeof responseData);
+      console.log('🔍 AgentEnablementService: Response length:', typeof responseData === 'string' ? responseData.length : 'N/A');
       
       // Handle N8N array format - extract first item if it's an array
       let actualData = responseData;
