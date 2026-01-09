@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-06T20:39:41.690Z
+// Generated on: 2026-01-09T16:25:22.565Z
 
 export interface AgentConfig {
   agent: {
@@ -231,7 +231,7 @@ export const ALL_AGENTS: AgentConfig[] = [
   {
     "agent": {
       "id": "SOL",
-      "name": "SOL Bot",
+      "name": "Solar Sales Assistant",
       "category": "SALES",
       "description": "Solar sales expert - Calculate savings, design systems, close deals",
       "specialization": "Solar Energy Expert",
@@ -797,7 +797,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
   "SOL": {
     "agent": {
       "id": "SOL",
-      "name": "SOL Bot",
+      "name": "Solar Sales Assistant",
       "category": "SALES",
       "description": "Solar sales expert - Calculate savings, design systems, close deals",
       "specialization": "Solar Energy Expert",
@@ -1232,7 +1232,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     {
       "agent": {
         "id": "SOL",
-        "name": "SOL Bot",
+        "name": "Solar Sales Assistant",
         "category": "SALES",
         "description": "Solar sales expert - Calculate savings, design systems, close deals",
         "specialization": "Solar Energy Expert",
