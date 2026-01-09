@@ -423,6 +423,7 @@ export default function N8nChatInterface({
   const hasSocialMediaContent = (content: string): boolean => {
     try {
       const parsed = JSON.parse(content);
+      console.log('🔍 hasSocialMediaContent: Parsed content:', parsed);
       
       // Handle error structure with raw JSON content
       if (parsed && parsed.error && parsed.raw) {
@@ -431,6 +432,7 @@ export default function N8nChatInterface({
           const rawContent = parsed.raw.replace(/```json\n|\n```/g, '');
           const innerParsed = JSON.parse(rawContent);
           if (innerParsed && (innerParsed.LinkedIn || innerParsed.InstagramFacebook || innerParsed.TikTokReels || innerParsed.GeneralAssets)) {
+            console.log('🔍 hasSocialMediaContent: Found social media in raw content');
             return true;
           }
         } catch {
@@ -440,17 +442,22 @@ export default function N8nChatInterface({
       
       // Check for ContentRepurposerPosts structure
       if (Array.isArray(parsed) && parsed[0] && parsed[0].ContentRepurposerPosts) {
+        console.log('🔍 hasSocialMediaContent: Found ContentRepurposerPosts in array');
         return true;
       }
       if (parsed && parsed.ContentRepurposerPosts) {
+        console.log('🔍 hasSocialMediaContent: Found ContentRepurposerPosts');
         return true;
       }
       // Also check for direct social media keys
       if (parsed && (parsed.LinkedIn || parsed.InstagramFacebook || parsed.TikTokReels || parsed.GeneralAssets)) {
+        console.log('🔍 hasSocialMediaContent: Found direct social media keys');
         return true;
       }
+      console.log('🔍 hasSocialMediaContent: No social media content detected');
       return false;
-    } catch {
+    } catch (error) {
+      console.log('🔍 hasSocialMediaContent: JSON parse failed:', error);
       return false;
     }
   };
@@ -744,15 +751,22 @@ export default function N8nChatInterface({
                         }
                         
                         // For content_repurposer agent, check if content is social media and use SocialMediaPreview
-                        if (agent.id === 'content_repurposer' && hasSocialMediaContent(message.content)) {
-                          return (
-                            <div className="social-media-preview-wrapper">
-                              <SocialMediaPreview 
-                                content={message.content} 
-                                historyId={message.content_repurposer_history_id || message.id}
-                              />
-                            </div>
-                          );
+                        if (agent.id === 'content_repurposer') {
+                          const isSocialMedia = hasSocialMediaContent(message.content);
+                          console.log('🔍 N8nChatInterface: Content repurposer message detected');
+                          console.log('🔍 N8nChatInterface: Is social media content?', isSocialMedia);
+                          console.log('🔍 N8nChatInterface: Message content preview:', message.content.substring(0, 100) + '...');
+                          
+                          if (isSocialMedia) {
+                            return (
+                              <div className="social-media-preview-wrapper">
+                                <SocialMediaPreview 
+                                  content={message.content} 
+                                  historyId={message.content_repurposer_history_id || message.id}
+                                />
+                              </div>
+                            );
+                          }
                         }
                         
                         // Regular message display

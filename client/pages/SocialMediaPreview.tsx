@@ -287,9 +287,26 @@ export default function SocialMediaPreview() {
         // Try to load from localStorage as fallback
         const localStorageContent = localStorage.getItem('socialMediaContent');
         if (localStorageContent) {
+          console.log('📱 SocialMediaPreview: Raw localStorage content:', localStorageContent.substring(0, 200) + '...');
           try {
-            const parsedContent = JSON.parse(localStorageContent);
+            // The content might already be a JSON string or a parsed object
+            let parsedContent;
+            if (typeof localStorageContent === 'string') {
+              // Try to parse if it's a string
+              try {
+                parsedContent = JSON.parse(localStorageContent);
+              } catch {
+                // If parsing fails, treat it as already parsed content
+                parsedContent = localStorageContent;
+              }
+            } else {
+              parsedContent = localStorageContent;
+            }
+            
+            console.log('📱 SocialMediaPreview: Parsed content:', parsedContent);
             const convertedPosts = convertLocalStorageContentToPosts(parsedContent);
+            console.log('📱 SocialMediaPreview: Converted posts:', convertedPosts);
+            
             if (convertedPosts.length > 0) {
               setPosts(convertedPosts);
               
