@@ -190,7 +190,7 @@
     {
       "agent": {
         "id": "SOL",
-        "name": "SOL Bot",
+        "name": "Solar Sales Assistant",
         "category": "SALES",
         "description": "Solar sales expert - Calculate savings, design systems, close deals",
         "specialization": "Solar Energy Expert",
@@ -754,7 +754,7 @@
     "SOL": {
       "agent": {
         "id": "SOL",
-        "name": "SOL Bot",
+        "name": "Solar Sales Assistant",
         "category": "SALES",
         "description": "Solar sales expert - Calculate savings, design systems, close deals",
         "specialization": "Solar Energy Expert",
@@ -1187,7 +1187,7 @@
       {
         "agent": {
           "id": "SOL",
-          "name": "SOL Bot",
+          "name": "Solar Sales Assistant",
           "category": "SALES",
           "description": "Solar sales expert - Calculate savings, design systems, close deals",
           "specialization": "Solar Energy Expert",
@@ -1497,6 +1497,6 @@
   },
   "meta": {
     "total": 7,
-    "buildTime": "2026-01-06T20:39:41.693Z"
+    "buildTime": "2026-01-09T16:25:22.567Z"
   }
 }
