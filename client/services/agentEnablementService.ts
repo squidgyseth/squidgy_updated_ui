@@ -149,9 +149,24 @@ class AgentEnablementService {
         const agentNameWords = agentName.toLowerCase().split(/\s+/);
         
         // Check if response contains agent name words AND enablement keywords
-        const hasAgentNameWords = agentNameWords.every(word => 
+        // Handle both "Agent" and "Assistant" variations
+        let hasAgentNameWords = agentNameWords.every(word => 
           word.length > 2 && responseTextLower.includes(word)
         );
+        
+        // If not found and agent name contains "agent", try with "assistant"
+        if (!hasAgentNameWords && agentName.toLowerCase().includes('agent')) {
+          const assistantVariation = agentNameWords.map(word => 
+            word === 'agent' ? 'assistant' : word
+          );
+          hasAgentNameWords = assistantVariation.every(word => 
+            word.length > 2 && responseTextLower.includes(word)
+          );
+          
+          if (hasAgentNameWords) {
+            console.log(`🔄 AgentEnablementService: Matched using Assistant variation: ${assistantVariation.join(' ')}`);
+          }
+        }
         
         const hasEnablementKeyword = enablementKeywords.some(keyword => 
           responseTextLower.includes(keyword)
@@ -197,8 +212,18 @@ class AgentEnablementService {
           `${agentName} configured and ready`,
           `${agentName} Assistant configured and enabled`,
           `${agentName} Agent configured and enabled`
-          // Removed generic fallback to prevent wrong matches
         ];
+        
+        // If agent name contains "Agent", also try "Assistant" variations
+        if (agentName.toLowerCase().includes('agent')) {
+          const assistantName = agentName.replace(/agent/gi, 'Assistant');
+          enablementPhrases.push(
+            `${assistantName} configured and enabled`,
+            `${assistantName} is now configured and enabled`,
+            `successfully set up the ${assistantName}`,
+            `${assistantName} configured and ready`
+          );
+        }
         
         const foundPhrase = enablementPhrases.find(phrase => 
           responseTextLower.includes(phrase.toLowerCase())
@@ -227,10 +252,37 @@ class AgentEnablementService {
           }
           
           // Check if the agent name words appear before "configured and enabled"
+          // Handle both "Agent" and "Assistant" variations
           const agentWords = agentName.toLowerCase().split(/\s+/);
-          const hasAllWords = agentWords.every(word => 
-            word.length > 2 && responseTextLower.includes(word)
-          );
+          
+          // For Newsletter Agent, also check for "Newsletter Assistant"
+          let hasAllWords = false;
+          
+          if (agentName.toLowerCase().includes('agent')) {
+            // Check original name words
+            hasAllWords = agentWords.every(word => 
+              word.length > 2 && responseTextLower.includes(word)
+            );
+            
+            // If not found, try with "Assistant" instead of "Agent"
+            if (!hasAllWords) {
+              const assistantVariation = agentWords.map(word => 
+                word === 'agent' ? 'assistant' : word
+              );
+              hasAllWords = assistantVariation.every(word => 
+                word.length > 2 && responseTextLower.includes(word)
+              );
+              
+              if (hasAllWords) {
+                console.log(`🔄 AgentEnablementService: Matched ${agentName} using Assistant variation: ${assistantVariation.join(' ')}`);
+              }
+            }
+          } else {
+            // For non-agent names, check normally
+            hasAllWords = agentWords.every(word => 
+              word.length > 2 && responseTextLower.includes(word)
+            );
+          }
           
           if (hasAllWords) {
             console.log(`✅ AgentEnablementService: Found ${agentName} -> ${agentId} enablement via word matching in "configured and enabled" text`);
