@@ -409,6 +409,27 @@ class AgentEnablementService {
       console.log('🔍 actualData.agent_data exists:', !!actualData.agent_data);
       console.log('🔍 Full actualData:', actualData);
       
+      // If N8N didn't send structured format but we see enablement text, create it manually
+      if (typeof actualData === 'object' && actualData.agent_response && 
+          typeof actualData.agent_response === 'string' &&
+          (actualData.agent_response.includes('is now configured and enabled') ||
+           actualData.agent_response.includes('configured and enabled'))) {
+        console.log('🔄 AgentEnablementService: Creating structured format from enablement text');
+        
+        // Extract agent info from the text
+        const agentInfo = this.parseOnboardingResponse(actualData.agent_response);
+        if (agentInfo) {
+          const enablementData = {
+            finished: true,
+            agent_data: agentInfo,
+            user_id: actualData.user_id
+          };
+          
+          console.log('✅ AgentEnablementService: Created structured enablement from text:', enablementData);
+          return this.handleStructuredEnablement(enablementData);
+        }
+      }
+      
       if (typeof actualData === 'object' && actualData.finished === true && actualData.agent_data) {
         console.log('✅ AgentEnablementService: Processing structured agent enablement');
         
@@ -448,6 +469,38 @@ class AgentEnablementService {
       console.log('❌ AgentEnablementService: No agent enablement action detected - unsupported format');
     } catch (error) {
       console.error('❌ AgentEnablementService: Error handling onboarding response:', error);
+    }
+  }
+
+  /**
+   * Handle structured enablement format (with finished: true and agent_data)
+   */
+  private async handleStructuredEnablement(data: any): Promise<void> {
+    try {
+      const userId = data.user_id;
+      const agentData = data.agent_data;
+      
+      console.log(`🔧 AgentEnablementService: Processing structured enablement for ${agentData.agentId} (user: ${userId})`);
+      
+      // Direct database upsert
+      const { error } = await supabase
+        .from('assistant_personalizations')
+        .upsert({
+          user_id: userId,
+          assistant_id: agentData.agentId,
+          custom_name: agentData.customName,
+          is_enabled: true,
+          last_updated: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('❌ AgentEnablementService: Database error:', error);
+      } else {
+        console.log('✅ AgentEnablementService: Agent enabled successfully via structured format');
+        this.refreshAgentSidebar();
+      }
+    } catch (error) {
+      console.error('❌ AgentEnablementService: Error handling structured enablement:', error);
     }
   }
 
