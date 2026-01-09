@@ -97,6 +97,48 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
     return ChatHistoryService.formatDate(dateStr);
   };
 
+  // Clean HTML tags, JSON, and get readable text for preview
+  const cleanContentPreview = (content: NewsletterHistory | SocialContentHistory): string => {
+    let textContent = '';
+    
+    // Extract content based on type
+    if ('newsletter_content' in content) {
+      // Newsletter content
+      textContent = content.newsletter_content || '';
+    } else if ('social_content' in content) {
+      // Social content
+      textContent = content.social_content || '';
+    }
+    
+    // Try to extract readable content from JSON
+    if (textContent.trim().startsWith('{') || textContent.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(textContent);
+        
+        // For social media content, extract meaningful text
+        if (parsed.LinkedIn && parsed.LinkedIn.Post1 && parsed.LinkedIn.Post1.Caption) {
+          textContent = parsed.LinkedIn.Post1.Caption;
+        } else if (parsed.InstagramFacebook && parsed.InstagramFacebook.Post1 && parsed.InstagramFacebook.Post1.Caption) {
+          textContent = parsed.InstagramFacebook.Post1.Caption;
+        } else if (parsed.TikTokReels && parsed.TikTokReels.Post1 && parsed.TikTokReels.Post1.Caption) {
+          textContent = parsed.TikTokReels.Post1.Caption;
+        } else {
+          // Generic JSON - show descriptive text
+          textContent = "Social media content generated";
+        }
+      } catch {
+        // If JSON parsing fails, continue with text cleaning
+      }
+    }
+    
+    // Remove HTML tags
+    const withoutTags = textContent.replace(/<[^>]*>/g, ' ');
+    // Remove extra whitespace and normalize
+    const normalized = withoutTags.replace(/\s+/g, ' ').trim();
+    // Take first 60 characters for preview
+    return normalized.length > 60 ? normalized.substring(0, 60) + '...' : normalized;
+  };
+
   // Don't render anything for agents that don't generate content
   if (!shouldShowPreviousContent) {
     return null;
@@ -152,7 +194,7 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
                   </div>
                   
                   <p className="text-xs text-gray-500 mt-1">
-                    {formatCount(newsletters.length)}
+                    {formatCount(newsletters.length)}{newsletters.length > 0 && ` • ${cleanContentPreview(newsletters[0])}`}
                   </p>
                   
                   {newsletters.length > 0 && (
@@ -186,7 +228,7 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
                   </div>
                   
                   <p className="text-xs text-gray-500 mt-1">
-                    {formatCount(socialContent.length)}
+                    {formatCount(socialContent.length)}{socialContent.length > 0 && ` • ${cleanContentPreview(socialContent[0])}`}
                   </p>
                   
                   {socialContent.length > 0 && (
