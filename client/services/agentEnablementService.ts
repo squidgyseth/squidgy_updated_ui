@@ -54,31 +54,39 @@ class AgentEnablementService {
    * Enable an agent after Step 5 completion
    * This function is designed to be called from N8N webhook responses
    */
-  async enableAgentFromOnboarding(data: AgentEnablementData): Promise<boolean> {
+  async enableAgentFromOnboarding(data: AgentEnablementData, userId?: string): Promise<boolean> {
     try {
       console.log('🎯 AgentEnablementService: Enabling agent from onboarding:', data);
+      console.log('🎯 AgentEnablementService: Using provided userId:', userId);
 
-      // Get current user from auth
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('❌ AgentEnablementService: No authenticated user');
-        return false;
+      let actualUserId = userId;
+
+      // If no userId provided, fall back to auth lookup
+      if (!actualUserId) {
+        console.log('🔄 AgentEnablementService: No userId provided, falling back to auth lookup');
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.error('❌ AgentEnablementService: No authenticated user');
+          return false;
+        }
+
+        // Get the correct user_id from profiles table
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error('❌ AgentEnablementService: Error fetching profile:', profileError);
+          return false;
+        }
+
+        actualUserId = profile.user_id;
       }
-
-      // Get the correct user_id from profiles table
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError || !profile) {
-        console.error('❌ AgentEnablementService: Error fetching profile:', profileError);
-        return false;
-      }
-
-      const actualUserId = profile.user_id;
-      console.log(`🔍 AgentEnablementService: Using user_id from profiles: ${actualUserId}`);
+      
+      console.log(`🔍 AgentEnablementService: Using user_id: ${actualUserId}`);
 
       // Prepare agent data for onboarding service
       const agentData: OnboardingAgentData = {
@@ -380,7 +388,7 @@ class AgentEnablementService {
    * Main function to be called from N8N response handler
    * Handles both structured JSON and legacy text responses
    */
-  async handleOnboardingResponse(responseData: any): Promise<void> {
+  async handleOnboardingResponse(responseData: any, userId?: string): Promise<void> {
     try {
       console.log('🔍 AgentEnablementService: Received responseData:', responseData);
       console.log('🔍 AgentEnablementService: Response type:', typeof responseData);
@@ -397,16 +405,30 @@ class AgentEnablementService {
       if (typeof actualData === 'object' && actualData.finished === true && actualData.agent_data) {
         console.log('✅ AgentEnablementService: Processing structured agent enablement');
         
-        const agentData: AgentEnablementData = {
-          agentId: actualData.agent_data.agent_id,
-          customName: actualData.agent_data.agent_name,
-          communicationTone: actualData.agent_data.communication_tone,
-          targetAudience: actualData.agent_data.target_audience,
-          primaryGoals: actualData.agent_data.primary_goals,
-          brandVoice: actualData.agent_data.brand_voice
-        };
+        const userId = actualData.user_id;
+        const agentId = actualData.agent_data.agent_id;
+        const customName = actualData.agent_data.agent_name;
+        const communicationTone = actualData.agent_data.communication_tone;
+        
+        console.log(`🔧 AgentEnablementService: Enabling ${agentId} for user ${userId}`);
+        
+        // Direct database insert/update - SIMPLE!
+        const { error } = await supabase
+          .from('assistant_personalizations')
+          .upsert({
+            user_id: userId,
+            assistant_id: agentId,
+            custom_name: customName,
+            communication_tone: communicationTone,
+            is_enabled: true,
+            last_updated: new Date().toISOString()
+          });
 
-        await this.enableAgentFromOnboarding(agentData);
+        if (error) {
+          console.error('❌ AgentEnablementService: Database error:', error);
+        } else {
+          console.log('✅ AgentEnablementService: Agent enabled successfully');
+        }
         return;
       }
 
