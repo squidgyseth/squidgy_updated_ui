@@ -84,6 +84,7 @@ export interface AgentConfig {
     avatar?: string;
     pinned?: boolean;
     initial_message?: string;
+    sidebar_greeting?: string;
     capabilities?: string[];
     recent_actions?: string[];
   };

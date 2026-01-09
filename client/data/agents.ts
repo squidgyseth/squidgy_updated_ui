@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-09T16:25:22.565Z
+// Generated on: 2026-01-09T17:30:55.210Z
 
 export interface AgentConfig {
   agent: {
@@ -12,6 +12,7 @@ export interface AgentConfig {
     avatar?: string;
     pinned?: boolean;
     initial_message?: string;
+    sidebar_greeting?: string;
     capabilities?: string[];
     recent_actions?: string[];
   };
@@ -52,6 +53,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
       "pinned": true,
       "initial_message": "Hey! To proceed further with setup I need your website to analyse your company's values, tone, industry and etc. Please share your website URL below.",
+      "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
       "capabilities": [
         "Website analysis and company insights",
         "AI agent recommendation and setup",
@@ -683,6 +685,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
       "pinned": true,
       "initial_message": "Hey! To proceed further with setup I need your website to analyse your company's values, tone, industry and etc. Please share your website URL below.",
+      "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
       "capabilities": [
         "Website analysis and company insights",
         "AI agent recommendation and setup",
@@ -1049,6 +1052,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
         "pinned": true,
         "initial_message": "Hey! To proceed further with setup I need your website to analyse your company's values, tone, industry and etc. Please share your website URL below.",
+        "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
         "capabilities": [
           "Website analysis and company insights",
           "AI agent recommendation and setup",
