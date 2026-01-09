@@ -120,16 +120,63 @@ export default function PreviousSessions({
                   <div className="flex-1 min-w-0">
                     <div className="mb-1">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {formatDate(session.last_message_timestamp)} Session {index + 1}
+                        {(() => {
+                          // Generate descriptive title based on content type
+                          const getSessionTitle = (): string => {
+                            const date = formatDate(session.last_message_timestamp);
+                            const preview = session.last_message_preview;
+                            
+                            // Check if it's social media content
+                            if (preview.trim().startsWith('{')) {
+                              try {
+                                const parsed = JSON.parse(preview);
+                                if (parsed.LinkedIn || parsed.InstagramFacebook || parsed.TikTokReels) {
+                                  return `${date} - Social Media Posts`;
+                                }
+                              } catch {}
+                            }
+                            
+                            // Check if it's newsletter content  
+                            if (preview.includes('<html>') || preview.includes('<table>') || preview.includes('Newsletter')) {
+                              return `${date} - Newsletter`;
+                            }
+                            
+                            // Default session title
+                            return `${date} Session ${index + 1}`;
+                          };
+                          
+                          return getSessionTitle();
+                        })()}
                       </p>
                     </div>
                     
                     <p className="text-xs text-gray-600 line-clamp-2">
                       {(() => {
-                        // Clean HTML tags and get readable text
+                        // Clean HTML tags, JSON, and get readable text
                         const cleanPreview = (text: string): string => {
+                          let cleanText = text;
+                          
+                          // Try to extract readable content from JSON
+                          if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                            try {
+                              const parsed = JSON.parse(text);
+                              
+                              // For social media content, extract meaningful text
+                              if (parsed.LinkedIn && parsed.LinkedIn.Post1 && parsed.LinkedIn.Post1.Caption) {
+                                cleanText = parsed.LinkedIn.Post1.Caption;
+                              } else if (parsed.InstagramFacebook && parsed.InstagramFacebook.Post1 && parsed.InstagramFacebook.Post1.Caption) {
+                                cleanText = parsed.InstagramFacebook.Post1.Caption;
+                              } else {
+                                // Generic JSON - just show "Content generated" 
+                                cleanText = "Social media content generated";
+                              }
+                            } catch {
+                              // If JSON parsing fails, continue with text cleaning
+                            }
+                          }
+                          
                           // Remove HTML tags
-                          const withoutTags = text.replace(/<[^>]*>/g, ' ');
+                          const withoutTags = cleanText.replace(/<[^>]*>/g, ' ');
                           // Remove extra whitespace and normalize
                           const normalized = withoutTags.replace(/\s+/g, ' ').trim();
                           // Take first 80 characters for preview
