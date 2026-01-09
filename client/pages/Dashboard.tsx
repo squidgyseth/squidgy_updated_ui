@@ -65,15 +65,20 @@ export default function Index() {
         const enabledAgentsCount = await onboardingService.getEnabledAgentsCount(userId);
         
         console.log(`🔍 Dashboard: User ${userId} has ${enabledAgentsCount} enabled agents`);
+        console.log(`🔍 Dashboard: URL onboarding param: ${shouldShowOnboarding}`);
+        console.log(`🔍 Dashboard: Has seen onboarding: ${hasSeenOnboarding}`);
+        console.log(`🔍 Dashboard: Current URL: ${window.location.href}`);
         
         // Only show onboarding if:
         // 1. URL param explicitly requests it, OR
         // 2. User hasn't seen onboarding AND has 0 enabled agents
         if (shouldShowOnboarding || (!hasSeenOnboarding && enabledAgentsCount === 0)) {
           console.log('🎯 Dashboard: Showing onboarding modal');
+          console.log(`🎯 Dashboard: Reason - URL param: ${shouldShowOnboarding}, No onboarding seen: ${!hasSeenOnboarding}, Zero agents: ${enabledAgentsCount === 0}`);
           setShowOnboarding(true);
         } else {
           console.log('🚫 Dashboard: Not showing onboarding - user has enabled agents or has seen onboarding');
+          console.log(`🚫 Dashboard: Details - Agents count: ${enabledAgentsCount}, Has seen onboarding: ${hasSeenOnboarding}`);
         }
       } catch (error) {
         console.error('❌ Dashboard: Error checking onboarding status:', error);
