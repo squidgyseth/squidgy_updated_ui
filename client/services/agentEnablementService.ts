@@ -402,6 +402,13 @@ class AgentEnablementService {
       }
       
       // Handle structured format (object with finished: true)
+      console.log('🔍 AgentEnablementService: Checking structured format conditions:');
+      console.log('🔍 typeof actualData === object:', typeof actualData === 'object');
+      console.log('🔍 actualData.finished:', actualData.finished);
+      console.log('🔍 actualData.finished === true:', actualData.finished === true);
+      console.log('🔍 actualData.agent_data exists:', !!actualData.agent_data);
+      console.log('🔍 Full actualData:', actualData);
+      
       if (typeof actualData === 'object' && actualData.finished === true && actualData.agent_data) {
         console.log('✅ AgentEnablementService: Processing structured agent enablement');
         
