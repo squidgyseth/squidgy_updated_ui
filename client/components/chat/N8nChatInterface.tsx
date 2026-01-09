@@ -50,6 +50,7 @@ export default function N8nChatInterface({
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, { name: string; status: string }>>(new Map());
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null);
   const [showNewsletterSelector, setShowNewsletterSelector] = useState(false);
+  const [existingHistoryId, setExistingHistoryId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatHistoryService = ChatHistoryService.getInstance();
   const fileUploadService = FileUploadService.getInstance();
@@ -111,6 +112,32 @@ export default function N8nChatInterface({
       console.log('✅ Pre-filled message set in input');
     }
   }, []); // Empty dependency array - runs only once on mount
+
+  // Load existing history ID for content_repurposer agent
+  useEffect(() => {
+    if (agent.id === 'content_repurposer' && userId) {
+      loadExistingHistoryId();
+    }
+  }, [agent.id, userId]);
+
+  const loadExistingHistoryId = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('history_content_repurposer')
+        .select('id')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        setExistingHistoryId(data[0].id);
+      }
+    } catch (error) {
+      console.error('Error loading existing history ID:', error);
+    }
+  };
+
+  const getExistingHistoryId = () => existingHistoryId;
 
   const loadSessionMessages = async () => {
     console.log(`🔍 loadSessionMessages called with sessionId: ${sessionId}`);
@@ -423,7 +450,6 @@ export default function N8nChatInterface({
   const hasSocialMediaContent = (content: string): boolean => {
     try {
       const parsed = JSON.parse(content);
-      console.log('🔍 hasSocialMediaContent: Parsed content:', parsed);
       
       // Handle error structure with raw JSON content
       if (parsed && parsed.error && parsed.raw) {
@@ -432,7 +458,6 @@ export default function N8nChatInterface({
           const rawContent = parsed.raw.replace(/```json\n|\n```/g, '');
           const innerParsed = JSON.parse(rawContent);
           if (innerParsed && (innerParsed.LinkedIn || innerParsed.InstagramFacebook || innerParsed.TikTokReels || innerParsed.GeneralAssets)) {
-            console.log('🔍 hasSocialMediaContent: Found social media in raw content');
             return true;
           }
         } catch {
@@ -442,22 +467,17 @@ export default function N8nChatInterface({
       
       // Check for ContentRepurposerPosts structure
       if (Array.isArray(parsed) && parsed[0] && parsed[0].ContentRepurposerPosts) {
-        console.log('🔍 hasSocialMediaContent: Found ContentRepurposerPosts in array');
         return true;
       }
       if (parsed && parsed.ContentRepurposerPosts) {
-        console.log('🔍 hasSocialMediaContent: Found ContentRepurposerPosts');
         return true;
       }
       // Also check for direct social media keys
       if (parsed && (parsed.LinkedIn || parsed.InstagramFacebook || parsed.TikTokReels || parsed.GeneralAssets)) {
-        console.log('🔍 hasSocialMediaContent: Found direct social media keys');
         return true;
       }
-      console.log('🔍 hasSocialMediaContent: No social media content detected');
       return false;
-    } catch (error) {
-      console.log('🔍 hasSocialMediaContent: JSON parse failed:', error);
+    } catch {
       return false;
     }
   };
@@ -751,28 +771,18 @@ export default function N8nChatInterface({
                         }
                         
                         // For content_repurposer agent, check if content is social media and use SocialMediaPreview
-                        if (agent.id === 'content_repurposer') {
-                          const isSocialMedia = hasSocialMediaContent(message.content);
-                          console.log('🔍 N8nChatInterface: Content repurposer message detected');
-                          console.log('🔍 N8nChatInterface: Is social media content?', isSocialMedia);
-                          console.log('🔍 N8nChatInterface: Message content preview:', message.content.substring(0, 100) + '...');
+                        if (agent.id === 'content_repurposer' && hasSocialMediaContent(message.content)) {
+                          // Use existing history ID if available, otherwise fall back to message ID
+                          const historyId = message.content_repurposer_history_id || getExistingHistoryId() || message.id;
                           
-                          if (isSocialMedia) {
-                            // Use the correct historyId field that matches what the database expects
-                            const historyId = message.content_repurposer_history_id || message.id;
-                            console.log('🔍 N8nChatInterface: Using historyId:', historyId);
-                            console.log('🔍 N8nChatInterface: message.content_repurposer_history_id:', message.content_repurposer_history_id);
-                            console.log('🔍 N8nChatInterface: message.id:', message.id);
-                            
-                            return (
-                              <div className="social-media-preview-wrapper">
-                                <SocialMediaPreview 
-                                  content={message.content} 
-                                  historyId={historyId}
-                                />
-                              </div>
-                            );
-                          }
+                          return (
+                            <div className="social-media-preview-wrapper">
+                              <SocialMediaPreview 
+                                content={message.content} 
+                                historyId={historyId}
+                              />
+                            </div>
+                          );
                         }
                         
                         // Regular message display

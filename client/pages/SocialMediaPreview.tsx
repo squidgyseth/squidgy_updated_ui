@@ -264,6 +264,7 @@ export default function SocialMediaPreview() {
       }
 
       // Extract GeneralAssets from history data
+      let generalAssetsFound = false;
       if (historyData && historyData.length > 0) {
         try {
           const historyContent = typeof historyData[0].content === 'string' 
@@ -271,11 +272,26 @@ export default function SocialMediaPreview() {
             : historyData[0].content;
           
           if (historyContent && historyContent.GeneralAssets) {
-            console.log('📋 Found GeneralAssets:', historyContent.GeneralAssets);
             setGeneralAssets(historyContent.GeneralAssets);
+            generalAssetsFound = true;
           }
         } catch (error) {
           console.error('Error parsing history content for GeneralAssets:', error);
+        }
+      }
+
+      // If no GeneralAssets found in database, check localStorage
+      if (!generalAssetsFound) {
+        const localStorageContent = localStorage.getItem('socialMediaContent');
+        if (localStorageContent) {
+          try {
+            const parsedLocalContent = JSON.parse(localStorageContent);
+            if (parsedLocalContent && parsedLocalContent.GeneralAssets) {
+              setGeneralAssets(parsedLocalContent.GeneralAssets);
+            }
+          } catch (error) {
+            console.error('Error parsing localStorage content for GeneralAssets:', error);
+          }
         }
       }
 
@@ -287,7 +303,6 @@ export default function SocialMediaPreview() {
         // Try to load from localStorage as fallback
         const localStorageContent = localStorage.getItem('socialMediaContent');
         if (localStorageContent) {
-          console.log('📱 SocialMediaPreview: Raw localStorage content:', localStorageContent.substring(0, 200) + '...');
           try {
             // The content might already be a JSON string or a parsed object
             let parsedContent;
@@ -303,9 +318,7 @@ export default function SocialMediaPreview() {
               parsedContent = localStorageContent;
             }
             
-            console.log('📱 SocialMediaPreview: Parsed content:', parsedContent);
             const convertedPosts = convertLocalStorageContentToPosts(parsedContent);
-            console.log('📱 SocialMediaPreview: Converted posts:', convertedPosts);
             
             if (convertedPosts.length > 0) {
               setPosts(convertedPosts);
