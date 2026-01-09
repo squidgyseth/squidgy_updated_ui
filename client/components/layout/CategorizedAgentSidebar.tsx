@@ -177,7 +177,9 @@ export default function CategorizedAgentSidebar() {
 
   const handleAssistantClick = (assistant: Assistant) => {
     if (assistant.id) {
-      navigate(`/chat/${assistant.id}`);
+      navigate(`/chat/${assistant.id}`, {
+        state: { fromSidebar: true }
+      });
       setSelectedAssistant(assistant.id);
     }
   };

@@ -144,7 +144,7 @@ export default function DynamicAgentDashboard() {
     name: agentConfig.agent.name,
     tagline: agentConfig.agent.tagline || agentConfig.agent.description,
     avatar: agentConfig.agent.avatar,
-    introMessage: generateIntroMessage(agentConfig.agent),
+    introMessage: generateIntroMessage(agentConfig.agent, location.state?.fromSidebar),
     suggestionButtons: agentConfig.suggestions || []
   };
 
@@ -172,8 +172,13 @@ export default function DynamicAgentDashboard() {
 /**
  * Generate intro message based on agent configuration
  */
-function generateIntroMessage(agent: any): string {
-  const { initial_message } = agent;
+function generateIntroMessage(agent: any, fromSidebar?: boolean): string {
+  const { initial_message, sidebar_greeting } = agent;
+  
+  // Use sidebar_greeting when navigating from sidebar (if available), otherwise use initial_message
+  if (fromSidebar && sidebar_greeting) {
+    return sidebar_greeting;
+  }
   
   // Return the initial_message from YAML config
   return initial_message || '';
