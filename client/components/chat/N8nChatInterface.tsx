@@ -758,11 +758,17 @@ export default function N8nChatInterface({
                           console.log('🔍 N8nChatInterface: Message content preview:', message.content.substring(0, 100) + '...');
                           
                           if (isSocialMedia) {
+                            // Use the correct historyId field that matches what the database expects
+                            const historyId = message.content_repurposer_history_id || message.id;
+                            console.log('🔍 N8nChatInterface: Using historyId:', historyId);
+                            console.log('🔍 N8nChatInterface: message.content_repurposer_history_id:', message.content_repurposer_history_id);
+                            console.log('🔍 N8nChatInterface: message.id:', message.id);
+                            
                             return (
                               <div className="social-media-preview-wrapper">
                                 <SocialMediaPreview 
                                   content={message.content} 
-                                  historyId={message.content_repurposer_history_id || message.id}
+                                  historyId={historyId}
                                 />
                               </div>
                             );
