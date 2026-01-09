@@ -355,12 +355,13 @@ export default function N8nChatInterface({
         if (agent.id === 'personal_assistant') {
           console.log('🔍 N8N DEBUG: Personal Assistant detected, checking for agent enablement');
           const enablementService = AgentEnablementService.getInstance();
-          const responseText = structuredData || response.agent_response;
-          console.log('🔍 N8N DEBUG: Agent response for enablement check:', responseText);
+          // Pass the raw response which contains the structured data array
+          const enablementData = response; // This contains the array with finished:true
+          console.log('🔍 N8N DEBUG: Agent response for enablement check:', enablementData);
           
           try {
-            // Pass structured data if available, otherwise original response
-            await enablementService.handleOnboardingResponse(responseText);
+            // Pass the full response object which contains structured data
+            await enablementService.handleOnboardingResponse(enablementData);
             console.log('🔍 N8N DEBUG: AgentEnablementService called successfully');
           } catch (error) {
             console.error('❌ N8N DEBUG: Error calling AgentEnablementService:', error);
