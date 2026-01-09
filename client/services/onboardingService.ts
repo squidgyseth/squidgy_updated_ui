@@ -168,6 +168,31 @@ class OnboardingService {
   }
 
   /**
+   * Get count of enabled agents for a user
+   */
+  async getEnabledAgentsCount(userId: string): Promise<number> {
+    try {
+      console.log(`🔍 OnboardingService: Getting enabled agents count for user ${userId}`);
+      const { count, error } = await supabase
+        .from('assistant_personalizations')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_enabled', true);
+
+      if (error) {
+        console.error('❌ OnboardingService: Error counting enabled agents:', error);
+        return 0;
+      }
+
+      console.log(`✅ OnboardingService: Found ${count || 0} enabled agents`);
+      return count || 0;
+    } catch (error) {
+      console.error('❌ OnboardingService: Failed to count enabled agents:', error);
+      return 0;
+    }
+  }
+
+  /**
    * Check if an agent is enabled for a user
    */
   async isAgentEnabled(userId: string, agentId: string): Promise<boolean> {
