@@ -439,23 +439,36 @@ class AgentEnablementService {
         const communicationTone = actualData.agent_data.communication_tone;
         
         console.log(`🔧 AgentEnablementService: Enabling ${agentId} for user ${userId}`);
-        
-        // Direct database insert/update - SIMPLE!
-        const { error } = await supabase
+
+        // Validate required fields before database operation
+        if (!userId || !agentId) {
+          console.error('❌ AgentEnablementService: Missing required fields - userId:', userId, 'agentId:', agentId);
+          return;
+        }
+
+        const upsertData = {
+          user_id: userId,
+          assistant_id: agentId,
+          custom_name: customName || agentId,
+          communication_tone: communicationTone || 'professional',
+          is_enabled: true,
+          last_updated: new Date().toISOString()
+        };
+
+        console.log('🔧 AgentEnablementService: Upserting data:', upsertData);
+
+        // Direct database insert/update
+        const { error, data } = await supabase
           .from('assistant_personalizations')
-          .upsert({
-            user_id: userId,
-            assistant_id: agentId,
-            custom_name: customName,
-            communication_tone: communicationTone,
-            is_enabled: true,
-            last_updated: new Date().toISOString()
-          });
+          .upsert(upsertData)
+          .select();
 
         if (error) {
           console.error('❌ AgentEnablementService: Database error:', error);
+          console.error('❌ AgentEnablementService: Failed upsert data:', upsertData);
         } else {
-          console.log('✅ AgentEnablementService: Agent enabled successfully');
+          console.log('✅ AgentEnablementService: Agent enabled successfully, data:', data);
+          this.refreshAgentSidebar();
         }
         return;
       }
