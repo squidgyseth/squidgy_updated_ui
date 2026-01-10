@@ -211,6 +211,7 @@ Example:
 
 ## TOOL USAGE:
 - When user provides a website URL, use available analysis tools
+- Capture website screenshot and favicon as part of the analysis
 - After getting tool results, summarize the company in 3-5 friendly lines
 - Then immediately suggest relevant AI assistants
 - If tools aren't available, do your best analysis from what you know
