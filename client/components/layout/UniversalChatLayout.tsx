@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, Plus } from 'lucide-react';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useUser } from '../../hooks/useUser';
 import ChatHistory from '../chat/ChatHistory';
 import PreviousContent from '../chat/PreviousContent';
 import PreviousSessions from '../chat/PreviousSessions';
+import { ChatHistoryService } from '../../services/chatHistoryService';
 
 interface AgentConfig {
   id: string;
@@ -16,7 +17,6 @@ interface AgentConfig {
   avatar?: string;
   pinned?: boolean;
   capabilities?: string[];
-  recent_actions?: string[];
 }
 
 interface UniversalChatLayoutProps {
@@ -28,6 +28,71 @@ interface UniversalChatLayoutProps {
   currentSessionId?: string;
   onSessionSelect?: (sessionId: string) => void;
 }
+
+// Helper to format message into short informative action summary
+const formatRecentAction = (message: string, agentName: string): string => {
+  // Remove HTML tags
+  const cleanMessage = message.replace(/<[^>]*>/g, '').trim();
+  const lowerMessage = cleanMessage.toLowerCase();
+  
+  // Detect agent enablement/configuration completion - use the passed agent name
+  if (lowerMessage.includes('is now configured') || lowerMessage.includes('configured and ready') || lowerMessage.includes('is now fully configured') || lowerMessage.includes('enabled and ready')) {
+    return `${agentName} enabled`;
+  }
+  
+  // Detect notifications enabled
+  if (lowerMessage.includes('notifications enabled') || (lowerMessage.includes('notification') && lowerMessage.includes('enabled'))) {
+    return 'Notifications enabled';
+  }
+  
+  // Detect calendar connected
+  if (lowerMessage.includes('calendar connected') || (lowerMessage.includes('calendar') && lowerMessage.includes('connected'))) {
+    return 'Calendar connected';
+  }
+  
+  // Detect brand voice set
+  if (lowerMessage.includes('brand voice') || lowerMessage.includes('voice set')) {
+    return 'Brand voice configured';
+  }
+  
+  // Detect targeting configured
+  if (lowerMessage.includes('b2c targeting') || lowerMessage.includes('b2b targeting') || lowerMessage.includes('targeting configured')) {
+    return 'Targeting configured';
+  }
+  
+  // Detect goals aligned
+  if (lowerMessage.includes('goals aligned') || (lowerMessage.includes('goal') && lowerMessage.includes('aligned'))) {
+    return 'Goals configured';
+  }
+  
+  // Detect newsletter creation
+  if (lowerMessage.includes('newsletter') && (lowerMessage.includes('created') || lowerMessage.includes('generated') || lowerMessage.includes('ready'))) {
+    return 'Newsletter created';
+  }
+  
+  // Detect content repurposing
+  if (lowerMessage.includes('repurpos') || lowerMessage.includes('social media content') || lowerMessage.includes('posts generated')) {
+    return 'Content repurposed';
+  }
+  
+  // Detect website analysis
+  if (lowerMessage.includes('website') && lowerMessage.includes('analy')) {
+    return 'Website analyzed';
+  }
+  
+  // Detect onboarding/setup completion
+  if (lowerMessage.includes('fully configured and ready') || lowerMessage.includes('setup complete')) {
+    return 'Setup completed';
+  }
+  
+  // Detect chat/conversation started
+  if (lowerMessage.startsWith('hey') || lowerMessage.startsWith('hello') || lowerMessage.startsWith('hi ')) {
+    return 'Conversation started';
+  }
+  
+  // Default: short summary
+  return 'Activity recorded';
+};
 
 export default function UniversalChatLayout({ 
   agent, 
@@ -41,6 +106,41 @@ export default function UniversalChatLayout({
   const [isPinned, setIsPinned] = useState(agent.pinned || false);
   const { isSidebarOpen, toggleSidebar } = useSidebar();
   const { userId } = useUser();
+  const [recentActions, setRecentActions] = useState<string[]>([]);
+  const [isLoadingActions, setIsLoadingActions] = useState(false);
+
+  // Fetch real user activity from chat_history
+  useEffect(() => {
+    const fetchRecentActions = async () => {
+      if (!userId || !agent.id) {
+        return;
+      }
+
+      setIsLoadingActions(true);
+      try {
+        const chatHistoryService = ChatHistoryService.getInstance();
+        const sessions = await chatHistoryService.getUserAgentSessions(userId, agent.id, 5);
+        
+        if (sessions.length > 0) {
+          // Extract recent user messages as actions - use agent.name for correct agent identification
+          const actions = sessions
+            .filter(session => session.last_message)
+            .map(session => formatRecentAction(session.last_message, agent.name))
+            .slice(0, 4); // Limit to 4 recent actions
+          
+          if (actions.length > 0) {
+            setRecentActions(actions);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching recent actions:', error);
+      } finally {
+        setIsLoadingActions(false);
+      }
+    };
+
+    fetchRecentActions();
+  }, [userId, agent.id, currentSessionId]); // Re-fetch when session changes
 
   const handlePinToggle = () => {
     const newPinnedState = !isPinned;
@@ -235,27 +335,27 @@ export default function UniversalChatLayout({
           </div>
         )}
 
-        {/* Recent Actions Section - matching screenshots exactly */}
-        {agent.recent_actions && agent.recent_actions.length > 0 && (
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-center space-x-2 mb-4">
-              <Clock className="text-squidgy-primary" size={18} />
-              <h3 className="text-lg font-semibold text-gray-900">Recent Actions</h3>
-            </div>
-            <div className="space-y-3">
-              {agent.recent_actions.map((action, index) => (
-                <div key={index} className="flex items-start space-x-3 hover:bg-gray-50 rounded-lg p-2 -m-2 transition cursor-pointer">
-                  <div className="w-2 h-2 bg-squidgy-primary rounded-full mt-2 flex-shrink-0"></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-700 leading-relaxed">{action}</p>
-                  </div>
-                  <ChevronRight className="text-gray-400 mt-1 flex-shrink-0" size={14} />
-                </div>
-              ))}
-            </div>
+        {/* Recent Actions Section - dynamic from chat_history */}
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center space-x-2 mb-4">
+            <Clock className="text-squidgy-primary" size={18} />
+            <h3 className="text-lg font-semibold text-gray-900">Recent Actions</h3>
           </div>
-        )}
-
+          <div className="space-y-4">
+            {isLoadingActions ? (
+              <p className="text-sm text-gray-500">Loading recent activity...</p>
+            ) : recentActions.length > 0 ? (
+              recentActions.map((action, index) => (
+                <div key={index} className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-squidgy-primary rounded-full mt-1.5 flex-shrink-0"></div>
+                  <p className="text-sm text-gray-700">{action}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">No recent activity yet. Start chatting!</p>
+            )}
+          </div>
+        </div>
 
         {/* Previous Content Section */}
         <div className="px-6 py-2">
