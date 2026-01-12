@@ -156,13 +156,30 @@ export const sendToN8nWorkflow = async (
     
     try {
       const parsedResponse = JSON.parse(responseText);
+
+      // DEBUG: Log raw parsed response
+      console.log('🔍 n8nService: Raw parsed response type:', typeof parsedResponse);
+      console.log('🔍 n8nService: Is array?:', Array.isArray(parsedResponse));
+      console.log('🔍 n8nService: Raw parsed response:', parsedResponse);
+
       // N8N often returns responses wrapped in an array - unwrap if needed
       if (Array.isArray(parsedResponse) && parsedResponse.length > 0) {
-        console.log('🔄 n8nService: Unwrapping array response from N8N');
-        return parsedResponse[0];
+        const unwrapped = parsedResponse[0];
+        console.log('✅ n8nService: Unwrapped array response');
+        console.log('🔍 n8nService: Unwrapped has finished?:', unwrapped.finished);
+        console.log('🔍 n8nService: Unwrapped has agent_data?:', !!unwrapped.agent_data);
+        console.log('🔍 n8nService: Full unwrapped object:', JSON.stringify(unwrapped, null, 2));
+        return unwrapped;
       }
+
+      // Not an array - check if it has the expected properties
+      console.log('⚠️ n8nService: Response is NOT an array, returning as-is');
+      console.log('🔍 n8nService: Has finished?:', parsedResponse.finished);
+      console.log('🔍 n8nService: Has agent_data?:', !!parsedResponse.agent_data);
+
       return parsedResponse;
     } catch (parseError) {
+      console.error('❌ n8nService: JSON parse error:', parseError);
       // Return plain text response if not JSON
       return { response: responseText };
     }
