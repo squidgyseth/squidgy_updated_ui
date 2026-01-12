@@ -51,6 +51,7 @@ export default function N8nChatInterface({
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null);
   const [showNewsletterSelector, setShowNewsletterSelector] = useState(false);
   const [existingHistoryId, setExistingHistoryId] = useState<string | null>(null);
+  const [activeInteractiveButtons, setActiveInteractiveButtons] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatHistoryService = ChatHistoryService.getInstance();
   const fileUploadService = FileUploadService.getInstance();
@@ -425,6 +426,51 @@ export default function N8nChatInterface({
     return newFormatPattern.test(content) || oldFormatPattern.test(content);
   };
 
+  // Helper function to extract button texts from content
+  const extractButtonTexts = (content: string): string[] => {
+    const buttons: string[] = [];
+    const newFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
+    const oldFormatPattern = /\$\*\*\*\*([^*]+)\*\*\*\*\$/g;
+    
+    let match;
+    while ((match = newFormatPattern.exec(content)) !== null) {
+      if (!buttons.includes(match[1].trim())) {
+        buttons.push(match[1].trim());
+      }
+    }
+    if (buttons.length === 0) {
+      while ((match = oldFormatPattern.exec(content)) !== null) {
+        if (!buttons.includes(match[1].trim())) {
+          buttons.push(match[1].trim());
+        }
+      }
+    }
+    return buttons;
+  };
+
+  // Helper function to clean button patterns from content
+  const cleanButtonPatterns = (content: string): string => {
+    return content
+      .replace(/\$\$\*\*[^*]+\*\*\$\$/g, '')
+      .replace(/\$\*\*\*\*[^*]+\*\*\*\*\$/g, '')
+      .replace(/\n\s*\n\s*\n/g, '\n\n')
+      .trim();
+  };
+
+  // Update active interactive buttons when messages change
+  useEffect(() => {
+    // Find the last agent message with interactive buttons
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.sender === 'agent' && hasInteractiveButtons(msg.content)) {
+        setActiveInteractiveButtons(extractButtonTexts(msg.content));
+        return;
+      }
+    }
+    // No interactive buttons found, clear them
+    setActiveInteractiveButtons([]);
+  }, [messages]);
+
   // Helper function to detect if message contains HTML content (for newsletter agent)
   const hasHTMLContent = (content: string): boolean => {
     // Look for common HTML tags that indicate newsletter content
@@ -789,17 +835,10 @@ export default function N8nChatInterface({
                         // Regular message display
                         return (
                           <div className="bg-gray-100 rounded-lg px-4 py-2">
-                            {hasInteractiveButtons(message.content) ? (
-                              <InteractiveMessageButtons
-                                content={message.content}
-                                onButtonClick={handleButtonClick}
-                              />
-                            ) : (
-                              <LinkDetectingTextArea 
-                                content={message.content}
-                                className="text-text-primary whitespace-pre-wrap"
-                              />
-                            )}
+                            <LinkDetectingTextArea 
+                              content={hasInteractiveButtons(message.content) ? cleanButtonPatterns(message.content) : message.content}
+                              className="text-text-primary whitespace-pre-wrap"
+                            />
                           </div>
                         );
                       })()
@@ -913,8 +952,25 @@ export default function N8nChatInterface({
         </div>
       </form>
 
-      {/* Suggestion Buttons - Below Input Area */}
-      {agent.suggestionButtons && agent.suggestionButtons.length > 0 && messages.length <= 1 && (
+      {/* Interactive Buttons - Below Input Area */}
+      {activeInteractiveButtons.length > 0 && (
+        <div className="px-4 pb-4">
+          <div className="flex flex-wrap gap-2">
+            {activeInteractiveButtons.map((buttonText, index) => (
+              <button
+                key={index}
+                onClick={() => handleButtonClick(buttonText)}
+                className="px-3 py-1.5 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                {buttonText}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Suggestion Buttons - Below Input Area (only show when no interactive buttons and at start) */}
+      {activeInteractiveButtons.length === 0 && agent.suggestionButtons && agent.suggestionButtons.length > 0 && messages.length <= 1 && (
         <div className="px-4 pb-4">
           <div className="flex flex-wrap gap-2">
             {agent.suggestionButtons.map((suggestion, index) => (
