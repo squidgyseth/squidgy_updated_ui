@@ -278,6 +278,37 @@ export class ChatHistoryService {
   }
 
   /**
+   * Get recent messages for a user and specific agent (not grouped by session)
+   * Returns individual messages sorted by timestamp descending
+   */
+  async getRecentAgentMessages(
+    userId: string, 
+    agentId: string, 
+    limit: number = 4
+  ): Promise<{ message: string; timestamp: string; sender: string }[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_history')
+        .select('message, timestamp, sender')
+        .eq('user_id', userId)
+        .eq('agent_id', agentId)
+        .eq('sender', 'Agent') // Only get agent responses for recent actions
+        .order('timestamp', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Error fetching recent agent messages:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getRecentAgentMessages:', error);
+      return [];
+    }
+  }
+
+  /**
    * Get all sessions for a user (across all agents)
    */
   async getUserSessions(userId: string, limit: number = 20): Promise<ChatSession[]> {
