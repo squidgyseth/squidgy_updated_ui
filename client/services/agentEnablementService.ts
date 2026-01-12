@@ -26,15 +26,11 @@ class AgentEnablementService {
     return AgentEnablementService.instance;
   }
 
-  /**
-   * Build dynamic agent name to ID mapping from config files
-   */
   private buildAgentNameMapping(): void {
     try {
       const agentService = OptimizedAgentService.getInstance();
       const allAgents = agentService.getAllAgents();
       
-      // Build mapping from config files
       this.agentNameToIdMap = {};
       allAgents.forEach(config => {
         if (config.agent?.name && config.agent?.id) {
@@ -45,33 +41,23 @@ class AgentEnablementService {
       console.log('🔄 AgentEnablementService: Built dynamic agent mapping:', this.agentNameToIdMap);
     } catch (error) {
       console.error('❌ AgentEnablementService: Error building agent mapping:', error);
-      // Fallback to prevent crashes
       this.agentNameToIdMap = {};
     }
   }
 
-  /**
-   * Enable an agent after Step 5 completion
-   * This function is designed to be called from N8N webhook responses
-   */
   async enableAgentFromOnboarding(data: AgentEnablementData, userId?: string): Promise<boolean> {
     try {
       console.log('🎯 AgentEnablementService: Enabling agent from onboarding:', data);
-      console.log('🎯 AgentEnablementService: Using provided userId:', userId);
 
       let actualUserId = userId;
 
-      // If no userId provided, fall back to auth lookup
       if (!actualUserId) {
-        console.log('🔄 AgentEnablementService: No userId provided, falling back to auth lookup');
-        
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           console.error('❌ AgentEnablementService: No authenticated user');
           return false;
         }
 
-        // Get the correct user_id from profiles table
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('user_id')
@@ -85,10 +71,7 @@ class AgentEnablementService {
 
         actualUserId = profile.user_id;
       }
-      
-      console.log(`🔍 AgentEnablementService: Using user_id: ${actualUserId}`);
 
-      // Prepare agent data for onboarding service
       const agentData: OnboardingAgentData = {
         user_id: actualUserId,
         assistant_id: data.agentId,
@@ -100,19 +83,13 @@ class AgentEnablementService {
         is_enabled: true
       };
 
-      // Enable the agent
       const onboardingService = OnboardingService.getInstance();
       const success = await onboardingService.enableAgent(agentData);
 
       if (success) {
         console.log('✅ AgentEnablementService: Agent enabled successfully');
-        
-        // Refresh the sidebar to show the new agent
         this.refreshAgentSidebar();
-        
-        // Show notification if available
         this.showEnablementNotification(data.agentId, data.customName);
-        
         return true;
       } else {
         console.error('❌ AgentEnablementService: Failed to enable agent');
@@ -124,46 +101,46 @@ class AgentEnablementService {
     }
   }
 
-  /**
-   * Parse onboarding response for agent enablement
-   * This extracts agent data from N8N response patterns
-   */
   parseOnboardingResponse(responseText: string): AgentEnablementData | null {
     try {
-      console.log('🔍 AgentEnablementService: Parsing response text:', responseText.substring(0, 200) + '...');
-      console.log('🔍 AgentEnablementService: Full response text:', responseText);
-      
-      // Get all agents dynamically from config files
       const agentService = OptimizedAgentService.getInstance();
       const allAgents = agentService.getAllAgents();
-      
-      // Convert response to lowercase for flexible matching
       const responseTextLower = responseText.toLowerCase();
       
-      // Keywords that indicate agent enablement
+      // Alias mapping for agent names that differ from config names
+      const agentAliases: Record<string, string> = {
+        'content strategist': 'content_repurposer',
+        'content strategist assistant': 'content_repurposer',
+        'content strategist agent': 'content_repurposer'
+      };
+      
+      // Check for alias matches first
+      for (const [alias, agentId] of Object.entries(agentAliases)) {
+        if (responseTextLower.includes(alias) && 
+            (responseTextLower.includes('enabled') || responseTextLower.includes('configured'))) {
+          const config = allAgents.find(c => c.agent.id === agentId);
+          if (config) {
+            console.log(`✅ AgentEnablementService: Found ${alias} -> ${agentId} via alias mapping`);
+            return { agentId, customName: config.agent.name };
+          }
+        }
+      }
+      
       const enablementKeywords = ['enabled', 'configured', 'ready', 'available'];
       const enablementIndicators = ['✅', '✓', 'perfect!', 'great!', 'nice!'];
       
-      // Check for agent enablement using flexible keyword matching
       for (const config of allAgents) {
         const agentName = config.agent.name;
         const agentId = config.agent.id;
         
-        // Skip Personal Assistant - it's already enabled and pinned by default
-        if (agentId === 'personal_assistant') {
-          continue;
-        }
+        if (agentId === 'personal_assistant') continue;
         
-        // Extract key words from agent name for flexible matching
         const agentNameWords = agentName.toLowerCase().split(/\s+/);
         
-        // Check if response contains agent name words AND enablement keywords
-        // Handle both "Agent" and "Assistant" variations
         let hasAgentNameWords = agentNameWords.every(word => 
           word.length > 2 && responseTextLower.includes(word)
         );
         
-        // If not found and agent name contains "agent", try with "assistant"
         if (!hasAgentNameWords && agentName.toLowerCase().includes('agent')) {
           const assistantVariation = agentNameWords.map(word => 
             word === 'agent' ? 'assistant' : word
@@ -171,10 +148,6 @@ class AgentEnablementService {
           hasAgentNameWords = assistantVariation.every(word => 
             word.length > 2 && responseTextLower.includes(word)
           );
-          
-          if (hasAgentNameWords) {
-            console.log(`🔄 AgentEnablementService: Matched using Assistant variation: ${assistantVariation.join(' ')}`);
-          }
         }
         
         const hasEnablementKeyword = enablementKeywords.some(keyword => 
@@ -182,143 +155,52 @@ class AgentEnablementService {
         );
         
         const hasEnablementIndicator = enablementIndicators.some(indicator => 
-          responseText.includes(indicator) // Check original text for emojis
+          responseText.includes(indicator)
         );
         
-        // If we find agent name words + enablement keywords/indicators, consider it enabled
         if (hasAgentNameWords && (hasEnablementKeyword || hasEnablementIndicator)) {
-          console.log(`✅ AgentEnablementService: Found ${agentName} -> ${agentId} enablement via keyword matching`);
-          console.log(`🔍 Agent name words found: ${agentNameWords.join(', ')}`);
-          console.log(`🔍 Enablement keyword found: ${hasEnablementKeyword}`);
-          console.log(`🔍 Enablement indicator found: ${hasEnablementIndicator}`);
-          
-          return {
-            agentId: agentId,
-            customName: agentName
-          };
+          console.log(`✅ AgentEnablementService: Found ${agentName} -> ${agentId} enablement`);
+          return { agentId, customName: agentName };
         }
       }
 
-      console.log('❌ AgentEnablementService: No agent enablement pattern matched using flexible keyword matching');
-      console.log('🔍 AgentEnablementService: Available agents:', allAgents.map(a => a.agent.name));
-      console.log('🔍 AgentEnablementService: Response text to parse:', responseText.substring(0, 500));
-      
-      // Fallback: Look for specific phrases like "configured and enabled" or "successfully set up"
-      for (const config of allAgents) {
-        const agentName = config.agent.name;
-        const agentId = config.agent.id;
-        
-        // Skip Personal Assistant - it's already enabled and pinned by default
-        if (agentId === 'personal_assistant') {
-          continue;
-        }
-        
-        // Look for common enablement phrases in the text (SPECIFIC AGENT NAMES ONLY)
-        const enablementPhrases = [
-          `${agentName} configured and enabled`,
-          `${agentName} is now configured and enabled`,
-          `successfully set up the ${agentName}`,
-          `${agentName} configured and ready`,
-          `${agentName} Assistant configured and enabled`,
-          `${agentName} Agent configured and enabled`
-        ];
-        
-        // If agent name contains "Agent", also try "Assistant" variations
-        if (agentName.toLowerCase().includes('agent')) {
-          const assistantName = agentName.replace(/agent/gi, 'Assistant');
-          enablementPhrases.push(
-            `${assistantName} configured and enabled`,
-            `${assistantName} is now configured and enabled`,
-            `successfully set up the ${assistantName}`,
-            `${assistantName} configured and ready`
-          );
-        }
-        
-        const foundPhrase = enablementPhrases.find(phrase => 
-          responseTextLower.includes(phrase.toLowerCase())
-        );
-        
-        if (foundPhrase) {
-          console.log(`✅ AgentEnablementService: Found ${agentName} -> ${agentId} enablement via fallback phrase: "${foundPhrase}"`);
-          
-          return {
-            agentId: agentId,
-            customName: agentName
-          };
-        }
-      }
-      
-      // Special handling for common naming variations
       if (responseTextLower.includes('configured and enabled')) {
-        // Look for agent names with variations like "Newsletter Assistant" vs "Newsletter Agent"
         for (const config of allAgents) {
           const agentName = config.agent.name;
           const agentId = config.agent.id;
           
-          // Skip Personal Assistant - it's already enabled and pinned by default
-          if (agentId === 'personal_assistant') {
-            continue;
-          }
+          if (agentId === 'personal_assistant') continue;
           
-          // Check if the agent name words appear before "configured and enabled"
-          // Handle both "Agent" and "Assistant" variations
           const agentWords = agentName.toLowerCase().split(/\s+/);
+          let hasAllWords = agentWords.every(word => 
+            word.length > 2 && responseTextLower.includes(word)
+          );
           
-          // For Newsletter Agent, also check for "Newsletter Assistant"
-          let hasAllWords = false;
-          
-          if (agentName.toLowerCase().includes('agent')) {
-            // Check original name words
-            hasAllWords = agentWords.every(word => 
-              word.length > 2 && responseTextLower.includes(word)
+          if (!hasAllWords && agentName.toLowerCase().includes('agent')) {
+            const assistantVariation = agentWords.map(word => 
+              word === 'agent' ? 'assistant' : word
             );
-            
-            // If not found, try with "Assistant" instead of "Agent"
-            if (!hasAllWords) {
-              const assistantVariation = agentWords.map(word => 
-                word === 'agent' ? 'assistant' : word
-              );
-              hasAllWords = assistantVariation.every(word => 
-                word.length > 2 && responseTextLower.includes(word)
-              );
-              
-              if (hasAllWords) {
-                console.log(`🔄 AgentEnablementService: Matched ${agentName} using Assistant variation: ${assistantVariation.join(' ')}`);
-              }
-            }
-          } else {
-            // For non-agent names, check normally
-            hasAllWords = agentWords.every(word => 
+            hasAllWords = assistantVariation.every(word => 
               word.length > 2 && responseTextLower.includes(word)
             );
           }
           
           if (hasAllWords) {
-            console.log(`✅ AgentEnablementService: Found ${agentName} -> ${agentId} enablement via word matching in "configured and enabled" text`);
-            
-            return {
-              agentId: agentId,
-              customName: agentName
-            };
+            console.log(`✅ AgentEnablementService: Found ${agentName} -> ${agentId} via word matching`);
+            return { agentId, customName: agentName };
           }
         }
       }
       
-      console.log('❌ AgentEnablementService: No enablement patterns found with any method');
       return null;
-
     } catch (error) {
-      console.error('❌ AgentEnablementService: Error parsing onboarding response:', error);
+      console.error('❌ AgentEnablementService: Error parsing response:', error);
       return null;
     }
   }
 
-  /**
-   * Refresh the agent sidebar
-   */
   private refreshAgentSidebar(): void {
     try {
-      // Call the global refresh function exposed by the sidebar
       if ((window as any).refreshAgentSidebar) {
         (window as any).refreshAgentSidebar();
         console.log('🔄 AgentEnablementService: Refreshed agent sidebar');
@@ -328,9 +210,6 @@ class AgentEnablementService {
     }
   }
 
-  /**
-   * Show notification for agent enablement
-   */
   private showEnablementNotification(agentId: string, customName?: string): void {
     try {
       const agentName = customName || agentId.replace('_', ' ');
@@ -342,81 +221,48 @@ class AgentEnablementService {
         });
       }
       
-      // Also try to show a toast if available
       if ((window as any).showToast) {
         (window as any).showToast(`✅ ${agentName} enabled and ready!`, 'success');
       }
-      
-      console.log(`🎉 AgentEnablementService: ${agentName} enabled notification sent`);
     } catch (error) {
       console.error('❌ AgentEnablementService: Error showing notification:', error);
     }
   }
 
-  /**
-   * Check if agent enablement should be triggered from a response
-   */
   shouldTriggerEnablement(responseText: string): boolean {
-    // Simplified: just look for basic enablement indicators
     const triggerPatterns = [
       /is now configured/i,
       /is now enabled/i,
       /is now ready/i,
       /Agent is available/i
     ];
-
     return triggerPatterns.some(pattern => pattern.test(responseText));
   }
 
-  /**
-   * Refresh agent mapping from config files
-   * Call this when new agents are added
-   */
   refreshAgentMapping(): void {
-    console.log('🔄 AgentEnablementService: Refreshing agent mapping...');
     this.buildAgentNameMapping();
   }
 
-  /**
-   * Get current agent mapping (for debugging)
-   */
   getAgentMapping(): Record<string, string> {
     return { ...this.agentNameToIdMap };
   }
 
-  /**
-   * Main function to be called from N8N response handler
-   * Handles both structured JSON and legacy text responses
-   */
   async handleOnboardingResponse(responseData: any, userId?: string): Promise<void> {
     try {
       console.log('🔍 AgentEnablementService: Received responseData:', responseData);
-      console.log('🔍 AgentEnablementService: Response type:', typeof responseData);
-      console.log('🔍 AgentEnablementService: Response length:', typeof responseData === 'string' ? responseData.length : 'N/A');
       
-      // Handle N8N array format - extract first item if it's an array
       let actualData = responseData;
       if (Array.isArray(responseData) && responseData.length > 0) {
         actualData = responseData[0];
-        console.log('🔍 AgentEnablementService: Extracted data from array format:', actualData);
       }
       
-      // Handle structured format (object with finished: true)
-      console.log('🔍 AgentEnablementService: Checking structured format conditions:');
-      console.log('🔍 typeof actualData === object:', typeof actualData === 'object');
-      console.log('🔍 actualData.finished:', actualData.finished);
-      console.log('🔍 actualData.finished === true:', actualData.finished === true);
-      console.log('🔍 actualData.agent_data exists:', !!actualData.agent_data);
-      console.log('🔍 Full actualData:', actualData);
-      
-      // If N8N didn't send structured format but we see enablement text, create it manually
+      // If we see enablement text in agent_response, create structured format
       if (typeof actualData === 'object' && actualData.agent_response && 
           typeof actualData.agent_response === 'string' &&
           (actualData.agent_response.includes('is now configured and enabled') ||
            actualData.agent_response.includes('configured and enabled'))) {
         console.log('🔄 AgentEnablementService: Creating structured format from enablement text');
         
-        // Extract agent info from the text
         const agentInfo = this.parseOnboardingResponse(actualData.agent_response);
         if (agentInfo) {
           const enablementData = {
@@ -425,83 +271,73 @@ class AgentEnablementService {
             user_id: actualData.user_id
           };
           
-          console.log('✅ AgentEnablementService: Created structured enablement from text:', enablementData);
+          console.log('✅ AgentEnablementService: Created structured enablement:', enablementData);
           return this.handleStructuredEnablement(enablementData);
         }
       }
       
+      // Handle structured format (object with finished: true)
       if (typeof actualData === 'object' && actualData.finished === true && actualData.agent_data) {
         console.log('✅ AgentEnablementService: Processing structured agent enablement');
-        
-        const userId = actualData.user_id;
-        const agentId = actualData.agent_data.agent_id;
-        const customName = actualData.agent_data.agent_name;
-        const communicationTone = actualData.agent_data.communication_tone;
-        
-        console.log(`🔧 AgentEnablementService: Enabling ${agentId} for user ${userId}`);
-
-        // Validate required fields before database operation
-        if (!userId || !agentId) {
-          console.error('❌ AgentEnablementService: Missing required fields - userId:', userId, 'agentId:', agentId);
-          return;
-        }
-
-        const upsertData = {
-          user_id: userId,
-          assistant_id: agentId,
-          custom_name: customName || agentId,
-          communication_tone: communicationTone || 'professional',
-          is_enabled: true,
-          last_updated: new Date().toISOString()
-        };
-
-        console.log('🔧 AgentEnablementService: Upserting data:', upsertData);
-
-        // Direct database insert/update
-        const { error, data } = await supabase
-          .from('assistant_personalizations')
-          .upsert(upsertData)
-          .select();
-
-        if (error) {
-          console.error('❌ AgentEnablementService: Database error:', error);
-          console.error('❌ AgentEnablementService: Failed upsert data:', upsertData);
-        } else {
-          console.log('✅ AgentEnablementService: Agent enabled successfully, data:', data);
-          this.refreshAgentSidebar();
-        }
-        return;
+        return this.handleStructuredEnablement(actualData);
       }
 
       // Handle legacy text parsing
       if (typeof responseData === 'string') {
         console.log('🔄 AgentEnablementService: Using legacy text parsing');
-        return this.handleLegacyResponse(responseData);
+        const agentData = this.parseOnboardingResponse(responseData);
+        if (agentData) {
+          await this.enableAgentFromOnboarding(agentData);
+        }
+        return;
       }
 
-      console.log('❌ AgentEnablementService: No agent enablement action detected - unsupported format');
+      console.log('❌ AgentEnablementService: No agent enablement action detected');
     } catch (error) {
       console.error('❌ AgentEnablementService: Error handling onboarding response:', error);
     }
   }
 
-  /**
-   * Handle structured enablement format (with finished: true and agent_data)
-   */
   private async handleStructuredEnablement(data: any): Promise<void> {
     try {
-      const userId = data.user_id;
+      const passedUserId = data.user_id;
       const agentData = data.agent_data;
       
-      console.log(`🔧 AgentEnablementService: Processing structured enablement for ${agentData.agentId} (user: ${userId})`);
+      // Support both camelCase (from parseOnboardingResponse) and snake_case (from N8N)
+      const agentId = agentData.agentId || agentData.agent_id;
+      const customName = agentData.customName || agentData.agent_name;
       
-      // Direct database upsert
+      // IMPORTANT: Get the correct user_id from profiles table (same as sidebar uses)
+      // The passed userId might be the auth user id, but we need profile.user_id
+      let actualUserId = passedUserId;
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile?.user_id) {
+          actualUserId = profile.user_id;
+          console.log(`🔧 AgentEnablementService: Using profile.user_id: ${actualUserId} (passed was: ${passedUserId})`);
+        }
+      }
+      
+      console.log(`🔧 AgentEnablementService: Processing structured enablement for ${agentId} (user: ${actualUserId})`);
+      
+      if (!actualUserId || !agentId) {
+        console.error('❌ AgentEnablementService: Missing required fields - userId:', actualUserId, 'agentId:', agentId);
+        return;
+      }
+      
       const { error } = await supabase
         .from('assistant_personalizations')
         .upsert({
-          user_id: userId,
-          assistant_id: agentData.agentId,
-          custom_name: agentData.customName,
+          user_id: actualUserId,
+          assistant_id: agentId,
+          custom_name: customName,
           is_enabled: true,
           last_updated: new Date().toISOString()
         });
@@ -514,24 +350,6 @@ class AgentEnablementService {
       }
     } catch (error) {
       console.error('❌ AgentEnablementService: Error handling structured enablement:', error);
-    }
-  }
-
-  /**
-   * Legacy text-based parsing (fallback for old responses)
-   */
-  private async handleLegacyResponse(responseText: string): Promise<void> {
-    try {
-      if (!this.shouldTriggerEnablement(responseText)) {
-        return;
-      }
-
-      const agentData = this.parseOnboardingResponse(responseText);
-      if (agentData) {
-        await this.enableAgentFromOnboarding(agentData);
-      }
-    } catch (error) {
-      console.error('❌ AgentEnablementService: Error handling legacy response:', error);
     }
   }
 }

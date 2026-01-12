@@ -356,13 +356,16 @@ export default function N8nChatInterface({
         if (agent.id === 'personal_assistant') {
           console.log('🔍 N8N DEBUG: Personal Assistant detected, checking for agent enablement');
           const enablementService = AgentEnablementService.getInstance();
-          // Pass the raw response which contains the structured data array
-          const enablementData = response; // This contains the array with finished:true
+          // Ensure user_id is included in the enablement data
+          const enablementData = {
+            ...response,
+            user_id: response.user_id || userId // Use response user_id or fallback to component userId
+          };
           console.log('🔍 N8N DEBUG: Agent response for enablement check:', enablementData);
           
           try {
-            // Pass the full response object which contains structured data
-            await enablementService.handleOnboardingResponse(enablementData);
+            // Pass the full response object with user_id guaranteed
+            await enablementService.handleOnboardingResponse(enablementData, userId);
             console.log('🔍 N8N DEBUG: AgentEnablementService called successfully');
           } catch (error) {
             console.error('❌ N8N DEBUG: Error calling AgentEnablementService:', error);
@@ -459,15 +462,21 @@ export default function N8nChatInterface({
 
   // Update active interactive buttons when messages change
   useEffect(() => {
-    // Find the last agent message with interactive buttons
+    // Only show buttons from the LATEST agent message - clear if it has no buttons
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
-      if (msg.sender === 'agent' && hasInteractiveButtons(msg.content)) {
-        setActiveInteractiveButtons(extractButtonTexts(msg.content));
+      if (msg.sender === 'agent') {
+        // Found the latest agent message - check if it has buttons
+        if (hasInteractiveButtons(msg.content)) {
+          setActiveInteractiveButtons(extractButtonTexts(msg.content));
+        } else {
+          // Latest agent message has no buttons, clear them
+          setActiveInteractiveButtons([]);
+        }
         return;
       }
     }
-    // No interactive buttons found, clear them
+    // No agent messages found, clear buttons
     setActiveInteractiveButtons([]);
   }, [messages]);
 
