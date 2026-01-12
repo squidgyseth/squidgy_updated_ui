@@ -821,8 +821,8 @@ export default function N8nChatInterface({
                   ) : (
                     // Regular text message
                     <>
-                      <div className="bg-blue-500 text-white rounded-lg px-4 py-2">
-                        <p className="whitespace-pre-wrap">{message.content}</p>
+                      <div className="bg-blue-500 text-white rounded-lg px-4 py-2 overflow-hidden">
+                        <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.content}</p>
                       </div>
                       <span className="text-xs text-gray-500 mt-1 block">
                         {message.timestamp.toLocaleTimeString()}
