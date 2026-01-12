@@ -27,6 +27,8 @@ interface UniversalChatLayoutProps {
   onNewChat?: (agentId: string) => void;
   currentSessionId?: string;
   onSessionSelect?: (sessionId: string) => void;
+  onRecentActionUpdate?: (action: string) => void;
+  recentActionTrigger?: number; // Increment to trigger refresh
 }
 
 // Helper to format message into short informative action summary
@@ -101,13 +103,25 @@ export default function UniversalChatLayout({
   onSettingsClick,
   onNewChat,
   currentSessionId,
-  onSessionSelect
+  onSessionSelect,
+  recentActionTrigger
 }: UniversalChatLayoutProps) {
   const [isPinned, setIsPinned] = useState(agent.pinned || false);
   const { isSidebarOpen, toggleSidebar } = useSidebar();
   const { userId } = useUser();
   const [recentActions, setRecentActions] = useState<string[]>([]);
-  const [isLoadingActions, setIsLoadingActions] = useState(false);
+  const [isLoadingActions, setIsLoadingActions] = useState(true); // Only true on initial load
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+
+  // Function to add a new action to the top of the list (live update)
+  const addRecentAction = (message: string) => {
+    const newAction = formatRecentAction(message, agent.name);
+    setRecentActions(prev => {
+      // Add new action to top, remove last if more than 4
+      const updated = [newAction, ...prev];
+      return updated.slice(0, 4);
+    });
+  };
 
   // Fetch real user activity from chat_history
   useEffect(() => {
@@ -116,31 +130,33 @@ export default function UniversalChatLayout({
         return;
       }
 
-      setIsLoadingActions(true);
+      // Only show loading on initial load, not on refreshes
+      if (!hasLoadedOnce) {
+        setIsLoadingActions(true);
+      }
+      
       try {
         const chatHistoryService = ChatHistoryService.getInstance();
-        const sessions = await chatHistoryService.getUserAgentSessions(userId, agent.id, 5);
+        // Use getRecentAgentMessages to get individual messages, not grouped by session
+        const messages = await chatHistoryService.getRecentAgentMessages(userId, agent.id, 4);
         
-        if (sessions.length > 0) {
-          // Extract recent user messages as actions - use agent.name for correct agent identification
-          const actions = sessions
-            .filter(session => session.last_message)
-            .map(session => formatRecentAction(session.last_message, agent.name))
-            .slice(0, 4); // Limit to 4 recent actions
+        if (messages.length > 0) {
+          // Format each message as a recent action
+          const actions = messages
+            .map(msg => formatRecentAction(msg.message, agent.name));
           
-          if (actions.length > 0) {
-            setRecentActions(actions);
-          }
+          setRecentActions(actions);
         }
       } catch (error) {
         console.error('Error fetching recent actions:', error);
       } finally {
         setIsLoadingActions(false);
+        setHasLoadedOnce(true);
       }
     };
 
     fetchRecentActions();
-  }, [userId, agent.id, currentSessionId]); // Re-fetch when session changes
+  }, [userId, agent.id, currentSessionId, recentActionTrigger]); // Re-fetch when trigger changes
 
   const handlePinToggle = () => {
     const newPinnedState = !isPinned;

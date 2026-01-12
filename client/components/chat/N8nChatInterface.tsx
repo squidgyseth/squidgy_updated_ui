@@ -33,6 +33,7 @@ interface N8nChatInterfaceProps {
   className?: string;
   webhookUrl?: string; // Add webhook URL from agent config
   showAddNewMessage?: boolean; // Flag to show Add Another Assistant message
+  onMessageSent?: () => void; // Callback when a message is sent (for live Recent Actions update)
 }
 
 export default function N8nChatInterface({
@@ -41,7 +42,8 @@ export default function N8nChatInterface({
   sessionId: initialSessionId,
   className = '',
   webhookUrl,
-  showAddNewMessage = false
+  showAddNewMessage = false,
+  onMessageSent
 }: N8nChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -348,6 +350,9 @@ export default function N8nChatInterface({
         }
 
         setMessages(prev => [...prev, agentMessage]);
+
+        // Trigger Recent Actions refresh after agent response is saved
+        onMessageSent?.();
 
         console.log('🔍 N8N DEBUG: Agent response received from agent.id:', agent.id);
         console.log('🔍 N8N DEBUG: Response object:', response);
