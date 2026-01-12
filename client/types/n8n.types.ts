@@ -27,6 +27,16 @@ export interface N8nResponse {
   request_id: string;
   agent_response: string; // Can be plain text or HTML
   agent_status: 'Ready' | 'Waiting' | 'Nothing';
+  // Onboarding-specific fields (optional, only for Personal Assistant)
+  finished?: boolean;
+  agent_data?: {
+    agent_id: string;
+    agent_name: string;
+    communication_tone?: string;
+    target_audience?: string;
+    primary_goals?: string[];
+    brand_voice?: string;
+  };
 }
 
 /**

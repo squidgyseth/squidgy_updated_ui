@@ -96,6 +96,50 @@ export function useCompanyBranding(): CompanyBranding {
     };
 
     fetchCompanyBranding();
+
+    // Set up real-time subscription for website_analysis updates
+    const websiteChannel = supabase
+      .channel(`website_analysis_branding_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'website_analysis',
+          filter: `firm_user_id=eq.${userId}`,
+        },
+        (payload) => {
+          console.log('Website analysis updated (branding):', payload);
+          // Refetch branding when website_analysis changes
+          fetchCompanyBranding();
+        }
+      )
+      .subscribe();
+
+    // Set up real-time subscription for business_details updates
+    const businessChannel = supabase
+      .channel(`business_details_branding_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'business_details',
+          filter: `firm_user_id=eq.${userId}`,
+        },
+        (payload) => {
+          console.log('Business details updated (branding):', payload);
+          // Refetch branding when business_details changes
+          fetchCompanyBranding();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      websiteChannel.unsubscribe();
+      businessChannel.unsubscribe();
+    };
   }, [userId]);
 
   return branding;

@@ -155,7 +155,13 @@ export const sendToN8nWorkflow = async (
     }
     
     try {
-      return JSON.parse(responseText);
+      const parsedResponse = JSON.parse(responseText);
+      // N8N often returns responses wrapped in an array - unwrap if needed
+      if (Array.isArray(parsedResponse) && parsedResponse.length > 0) {
+        console.log('🔄 n8nService: Unwrapping array response from N8N');
+        return parsedResponse[0];
+      }
+      return parsedResponse;
     } catch (parseError) {
       // Return plain text response if not JSON
       return { response: responseText };
