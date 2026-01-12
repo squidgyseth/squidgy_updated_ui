@@ -167,6 +167,10 @@ export default function N8nChatInterface({
       return;
     }
 
+    // Get the actual auth user ID to ensure consistency with file uploads
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const authUserId = authUser?.id || userId;
+
     // If there's a file URL, include it in the message content
     const messageContent = fileUrl ? `${message}\n\nFile: ${fileName}\nURL: ${fileUrl}` : message;
 
@@ -195,8 +199,9 @@ export default function N8nChatInterface({
 
     try {
       // Send to n8n workflow with agent-specific webhook URL and newsletter_id if applicable
+      // Use authUserId to ensure consistency with file uploads (RLS policy uses auth.uid())
       const response = await sendToN8nWorkflow(
-        userId,
+        authUserId,
         messageContent, // Send the full message content including file info
         agent.id,
         sessionId,
@@ -273,7 +278,13 @@ export default function N8nChatInterface({
   };
 
   const handleButtonClick = (text: string) => {
-    handleSendMessage(text);
+    // For general_assistant: populate input field so user can edit before sending
+    // For other agents: send directly
+    if (agent.id === 'general_assistant') {
+      setInputValue(text);
+    } else {
+      handleSendMessage(text);
+    }
   };
 
   // Helper function to detect if message contains interactive buttons
@@ -594,6 +605,7 @@ export default function N8nChatInterface({
                           <InteractiveMessageButtons
                             content={message.content}
                             onButtonClick={handleButtonClick}
+                            agentId={agent.id}
                           />
                         ) : (
                           <LinkDetectingTextArea 

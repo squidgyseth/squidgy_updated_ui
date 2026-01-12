@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 interface InteractiveMessageButtonsProps {
   content: string;
   onButtonClick: (text: string) => void;
+  agentId?: string;
 }
 
 interface ButtonOption {
@@ -14,7 +15,7 @@ interface ButtonOption {
   fullText: string;
 }
 
-export default function InteractiveMessageButtons({ content, onButtonClick }: InteractiveMessageButtonsProps) {
+export default function InteractiveMessageButtons({ content, onButtonClick, agentId }: InteractiveMessageButtonsProps) {
   // Parse the content to find button patterns - flexible detection
   const parseButtonOptions = (text: string): ButtonOption[] => {
     const options: ButtonOption[] = [];
@@ -29,6 +30,24 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     
     const patterns = [pattern1, pattern2];
     
+    // Helper to check if this looks like data display vs actionable button
+    const isDataDisplay = (boldText: string, description: string): boolean => {
+      // Data display patterns: "Phone:", "Email:", "Revenue:", etc. followed by actual data
+      const dataLabelPattern = /^[A-Za-z\s]+:$/; // Ends with colon like "Phone:"
+      if (dataLabelPattern.test(boldText.trim())) {
+        return true;
+      }
+      // If bold text ends with colon and description looks like data (not a prompt)
+      if (boldText.trim().endsWith(':') && description && !description.includes('...') && !description.endsWith('?')) {
+        return true;
+      }
+      // If bold text is a single word label followed by colon
+      if (/^[A-Za-z]+:$/.test(boldText.trim())) {
+        return true;
+      }
+      return false;
+    };
+    
     patterns.forEach(pattern => {
       pattern.lastIndex = 0; // Reset regex
       let match;
@@ -37,6 +56,12 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
         
         // Check if this is likely an emoji (not just any character)
         const cleanEmoji = emoji.trim();
+        
+        // Skip if this looks like data display, not an actionable button (only for general_assistant)
+        if (agentId === 'general_assistant' && isDataDisplay(optionText, description || '')) {
+          continue;
+        }
+        
         if (cleanEmoji && !options.find(o => o.fullText === fullMatch.trim())) {
           options.push({
             emoji: cleanEmoji,
