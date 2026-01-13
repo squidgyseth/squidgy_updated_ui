@@ -555,6 +555,56 @@ export default function N8nChatInterface({
     return content;
   };
 
+  // Helper function to detect agent recommendations in Personal Assistant messages
+  const hasAgentRecommendations = (content: string): boolean => {
+    const lowerContent = content.toLowerCase();
+    // Check if message mentions selecting/configuring assistants
+    const hasSelectionPrompt = lowerContent.includes('select one') || 
+                               lowerContent.includes('choose one') ||
+                               lowerContent.includes('configuring one of these');
+    // Check if message has $$**...**$$ button patterns (agent recommendations)
+    const hasButtonPattern = /\$\$\*\*[^*]+\*\*\$\$/.test(content);
+    return hasSelectionPrompt || hasButtonPattern;
+  };
+
+  // Helper function to extract agent names from Personal Assistant recommendations
+  const extractAgentRecommendations = (content: string): string[] => {
+    const agents: string[] = [];
+    
+    // First, extract from $$**...**$$ button patterns
+    const buttonPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
+    let match;
+    while ((match = buttonPattern.exec(content)) !== null) {
+      // Extract agent name - remove emoji and description after dash
+      let agentText = match[1].trim();
+      // Remove leading emoji (any non-letter characters at start)
+      agentText = agentText.replace(/^[^\w\s]+\s*/, '');
+      // If there's a dash, take only the part before it (agent name)
+      if (agentText.includes(' - ')) {
+        agentText = agentText.split(' - ')[0].trim();
+      }
+      if (agentText && !agents.includes(agentText)) {
+        agents.push(agentText);
+      }
+    }
+    
+    // If no button patterns found, fall back to keyword detection
+    if (agents.length === 0) {
+      const lowerContent = content.toLowerCase();
+      if (lowerContent.includes('newsletter')) {
+        agents.push('Newsletter Agent');
+      }
+      if (lowerContent.includes('content repurpos') || lowerContent.includes('content strategist')) {
+        agents.push('Content Repurposer');
+      }
+      if (lowerContent.includes('solar sales')) {
+        agents.push('Solar Sales Assistant');
+      }
+    }
+    
+    return agents;
+  };
+
   // Helper function to detect if message contains HTML content (for newsletter agent)
   const hasHTMLContent = (content: string): boolean => {
     const htmlPatterns = [
@@ -955,6 +1005,31 @@ export default function N8nChatInterface({
                               </div>
                             </div>
                           );
+                        }
+                        
+                        // For personal_assistant, check for agent recommendations
+                        if (agent.id === 'personal_assistant' && hasAgentRecommendations(message.content)) {
+                          const agents = extractAgentRecommendations(message.content);
+                          if (agents.length > 0) {
+                            // Clean the message content - remove $$**...**$$ patterns
+                            const cleanedContent = cleanButtonPatterns(message.content);
+                            return (
+                              <div className="bg-gray-100 rounded-lg px-4 py-3">
+                                <p className="text-text-primary whitespace-pre-wrap mb-3">{cleanedContent}</p>
+                                <div className="space-y-2">
+                                  {agents.map((agentName, idx) => (
+                                    <button
+                                      key={idx}
+                                      onClick={() => handleSendMessage(agentName)}
+                                      className="w-full text-left px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium transition-colors"
+                                    >
+                                      {idx + 1}. {agentName}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
                         }
                         
                         // Regular message display
