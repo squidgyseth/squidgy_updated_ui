@@ -101,97 +101,70 @@ class AgentEnablementService {
     }
   }
 
+  /**
+   * Parse onboarding response for agent enablement
+   * Single fallback method: checks agent name from config + (agent/assistant) + enablement keywords
+   */
   parseOnboardingResponse(responseText: string): AgentEnablementData | null {
     try {
+      console.log('🔍 AgentEnablementService: Parsing response for agent enablement');
+
+      // Get all agents dynamically from config files
       const agentService = OptimizedAgentService.getInstance();
       const allAgents = agentService.getAllAgents();
-      const responseTextLower = responseText.toLowerCase();
-      
-      // Alias mapping for agent names that differ from config names
-      const agentAliases: Record<string, string> = {
-        'content strategist': 'content_repurposer',
-        'content strategist assistant': 'content_repurposer',
-        'content strategist agent': 'content_repurposer'
-      };
-      
-      // Check for alias matches first
-      for (const [alias, agentId] of Object.entries(agentAliases)) {
-        if (responseTextLower.includes(alias) && 
-            (responseTextLower.includes('enabled') || responseTextLower.includes('configured'))) {
-          const config = allAgents.find(c => c.agent.id === agentId);
-          if (config) {
-            console.log(`✅ AgentEnablementService: Found ${alias} -> ${agentId} via alias mapping`);
-            return { agentId, customName: config.agent.name };
-          }
-        }
+
+      // Convert response to lowercase for matching
+      const textLower = responseText.toLowerCase();
+
+      // Enablement keywords and indicators
+      const enablementKeywords = ['enabled', 'configured', 'ready', 'available', 'activated', 'set up'];
+      const enablementIndicators = ['✅', '✓', '🎉'];
+
+      // Check for "agent" or "assistant" word in text
+      const hasAgentOrAssistant = textLower.includes('agent') || textLower.includes('assistant');
+
+      // Check for enablement keyword or indicator
+      const hasEnablement = enablementKeywords.some(kw => textLower.includes(kw)) ||
+                           enablementIndicators.some(ind => responseText.includes(ind));
+
+      // If no enablement signals, exit early
+      if (!hasEnablement) {
+        console.log('❌ AgentEnablementService: No enablement keywords/indicators found');
+        return null;
       }
-      
-      const enablementKeywords = ['enabled', 'configured', 'ready', 'available'];
-      const enablementIndicators = ['✅', '✓', 'perfect!', 'great!', 'nice!'];
-      
+
+      // Check each agent from config
       for (const config of allAgents) {
         const agentName = config.agent.name;
         const agentId = config.agent.id;
-        
-        if (agentId === 'personal_assistant') continue;
-        
-        const agentNameWords = agentName.toLowerCase().split(/\s+/);
-        
-        let hasAgentNameWords = agentNameWords.every(word => 
-          word.length > 2 && responseTextLower.includes(word)
-        );
-        
-        if (!hasAgentNameWords && agentName.toLowerCase().includes('agent')) {
-          const assistantVariation = agentNameWords.map(word => 
-            word === 'agent' ? 'assistant' : word
-          );
-          hasAgentNameWords = assistantVariation.every(word => 
-            word.length > 2 && responseTextLower.includes(word)
-          );
+
+        // Skip Personal Assistant - already enabled by default
+        if (agentId === 'personal_assistant') {
+          continue;
         }
-        
-        const hasEnablementKeyword = enablementKeywords.some(keyword => 
-          responseTextLower.includes(keyword)
-        );
-        
-        const hasEnablementIndicator = enablementIndicators.some(indicator => 
-          responseText.includes(indicator)
-        );
-        
-        if (hasAgentNameWords && (hasEnablementKeyword || hasEnablementIndicator)) {
-          console.log(`✅ AgentEnablementService: Found ${agentName} -> ${agentId} enablement`);
-          return { agentId, customName: agentName };
+
+        // Get significant words from agent name (exclude "agent"/"assistant", keep words > 2 chars)
+        const nameWords = agentName.toLowerCase()
+          .split(/\s+/)
+          .filter(word => word.length > 2 && word !== 'agent' && word !== 'assistant');
+
+        // Check if ALL significant name words exist in the text
+        const hasAllNameWords = nameWords.every(word => textLower.includes(word));
+
+        // Match if: all name words found + (agent/assistant word OR just enablement)
+        if (hasAllNameWords && (hasAgentOrAssistant || hasEnablement)) {
+          console.log(`✅ AgentEnablementService: Matched "${agentName}" (${agentId})`);
+          console.log(`   Name words found: [${nameWords.join(', ')}]`);
+
+          return {
+            agentId: agentId,
+            customName: agentName
+          };
         }
       }
 
-      if (responseTextLower.includes('configured and enabled')) {
-        for (const config of allAgents) {
-          const agentName = config.agent.name;
-          const agentId = config.agent.id;
-          
-          if (agentId === 'personal_assistant') continue;
-          
-          const agentWords = agentName.toLowerCase().split(/\s+/);
-          let hasAllWords = agentWords.every(word => 
-            word.length > 2 && responseTextLower.includes(word)
-          );
-          
-          if (!hasAllWords && agentName.toLowerCase().includes('agent')) {
-            const assistantVariation = agentWords.map(word => 
-              word === 'agent' ? 'assistant' : word
-            );
-            hasAllWords = assistantVariation.every(word => 
-              word.length > 2 && responseTextLower.includes(word)
-            );
-          }
-          
-          if (hasAllWords) {
-            console.log(`✅ AgentEnablementService: Found ${agentName} -> ${agentId} via word matching`);
-            return { agentId, customName: agentName };
-          }
-        }
-      }
-      
+      console.log('❌ AgentEnablementService: No agent matched from config');
+      console.log('   Available agents:', allAgents.map(a => `${a.agent.name} (${a.agent.id})`).join(', '));
       return null;
     } catch (error) {
       console.error('❌ AgentEnablementService: Error parsing response:', error);
@@ -230,13 +203,12 @@ class AgentEnablementService {
   }
 
   shouldTriggerEnablement(responseText: string): boolean {
-    const triggerPatterns = [
-      /is now configured/i,
-      /is now enabled/i,
-      /is now ready/i,
-      /Agent is available/i
-    ];
-    return triggerPatterns.some(pattern => pattern.test(responseText));
+    const textLower = responseText.toLowerCase();
+    const enablementKeywords = ['enabled', 'configured', 'ready', 'available', 'activated', 'set up'];
+    const enablementIndicators = ['✅', '✓', '🎉'];
+
+    return enablementKeywords.some(kw => textLower.includes(kw)) ||
+           enablementIndicators.some(ind => responseText.includes(ind));
   }
 
   refreshAgentMapping(): void {
