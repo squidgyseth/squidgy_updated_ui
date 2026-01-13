@@ -4,7 +4,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "/Squidgy/Newsletter/MultiTopic",
+        "path": "/newsletter_multi",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -18,7 +18,7 @@
     {
       "parameters": {
         "operation": "get",
-        "tableId": "client_agent_knowledge_base_view",
+        "tableId": "vw_newsletter_multi_topic_llm",
         "filters": {
           "conditions": [
             {
@@ -30,9 +30,9 @@
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [-960, 180],
-      "id": "supabase-kb",
-      "name": "Supabase_kb",
+      "position": [-960, 300],
+      "id": "supabase-combined",
+      "name": "Supabase - Get All Data",
       "credentials": {
         "supabaseApi": {
           "id": "YOUR_SUPABASE_CREDENTIAL_ID",
@@ -42,42 +42,11 @@
     },
     {
       "parameters": {
-        "operation": "get",
-        "tableId": "vw_newsletter_topics_for_llm"
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [-960, 420],
-      "id": "supabase-topics",
-      "name": "Supabase_topics",
-      "credentials": {
-        "supabaseApi": {
-          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
-          "name": "Supabase account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "mergeByFields": {
-          "values": []
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [-720, 300],
-      "id": "merge-data",
-      "name": "Merge KB + Topics"
-    },
-    {
-      "parameters": {
-        "jsCode": "// ============================================================================\n// Multi-Topic Newsletter - Code Node (Simplified)\n// ============================================================================\n// Topics and questions now come pre-formatted from the database view\n// ============================================================================\n\n// Get webhook body\nconst webhookBody = $('Webhook').first().json.body;\n\n// Get Supabase KB data (user-specific)\nconst kbData = $('Supabase_kb').first().json || {};\n\n// Get Topics data (global - same for all users)\nconst topicsData = $('Supabase_topics').first().json || {};\n\n// Default conversation state\nconst defaultState = {\n  phase: 'topic_selection',\n  selected_topics: [],\n  current_topic_index: 0,\n  current_question_index: 0,\n  answers: {}\n};\n\nreturn [\n  {\n    json: {\n      // Webhook identifiers\n      user_id: webhookBody.user_id,\n      user_mssg: webhookBody.user_mssg,\n      session_id: webhookBody.session_id,\n      agent_name: webhookBody.agent_name,\n      timestamp_of_call_made: webhookBody.timestamp_of_call_made,\n      request_id: webhookBody.request_id,\n\n      // KB data (from client_agent_knowledge_base_view)\n      knowledge_base: kbData.knowledge_base || '',\n      knowledge_base_summary: (kbData.knowledge_base || '').substring(0, 2000),\n      website_url: kbData.website_url || '',\n      website_icon: kbData.favicon_url || '',\n      communication_tone: kbData.communication_tone || 'professional',\n      company_name: kbData.company_name || '',\n      newsletter_instructions: kbData.newsletter_questions || '',\n\n      // Topics data (from vw_newsletter_topics_for_llm - pre-formatted)\n      available_topics_display: topicsData.available_topics_display || '',\n      available_topics_text: topicsData.available_topics_text || '',\n      topics_with_questions: JSON.stringify(topicsData.topics_with_questions || [], null, 2),\n      topics_questions_formatted: topicsData.topics_questions_formatted || '',\n      topic_code_map: topicsData.topic_code_map || {},\n      total_topics: topicsData.total_topics || 7,\n\n      // Conversation state\n      conversation_state: JSON.stringify(defaultState, null, 2)\n    }\n  }\n];"
+        "jsCode": "// ============================================================================\n// Multi-Topic Newsletter - Code Node (Single Query Version)\n// ============================================================================\n// All data comes from vw_newsletter_multi_topic_llm (combined view)\n// ============================================================================\n\nconst webhookBody = $('Webhook').first().json.body;\nconst data = $('Supabase - Get All Data').first().json || {};\n\n// Default conversation state\nconst defaultState = {\n  phase: 'topic_selection',\n  selected_topics: [],\n  current_topic_index: 0,\n  current_question_index: 0,\n  answers: {}\n};\n\nreturn [\n  {\n    json: {\n      // Webhook identifiers\n      user_id: webhookBody.user_id,\n      user_mssg: webhookBody.user_mssg,\n      session_id: webhookBody.session_id,\n      agent_name: webhookBody.agent_name,\n      timestamp_of_call_made: webhookBody.timestamp_of_call_made,\n      request_id: webhookBody.request_id,\n\n      // KB data (from combined view)\n      knowledge_base: data.knowledge_base || '',\n      knowledge_base_summary: (data.knowledge_base || '').substring(0, 2000),\n      website_url: data.website_url || '',\n      website_icon: data.favicon_url || '',\n      communication_tone: data.communication_tone || 'professional',\n      newsletter_instructions: data.newsletter_questions || '',\n\n      // Topics data (from combined view)\n      available_topics_display: data.available_topics_display || '',\n      available_topics_text: data.available_topics_text || '',\n      topics_with_questions: JSON.stringify(data.topics_with_questions || [], null, 2),\n      topics_questions_formatted: data.topics_questions_formatted || '',\n      topic_code_map: data.topic_code_map || {},\n      total_topics: data.total_topics || 7,\n\n      // Conversation state\n      conversation_state: JSON.stringify(defaultState, null, 2)\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-480, 300],
+      "position": [-720, 300],
       "id": "code-prepare-data",
       "name": "Code - Prepare Data"
     },
@@ -90,7 +59,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.8,
-      "position": [-120, 300],
+      "position": [-360, 300],
       "id": "ai-agent-conversation",
       "name": "AI Agent - Conversation"
     },
@@ -103,7 +72,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
-      "position": [-120, 520],
+      "position": [-360, 520],
       "id": "llm-conversation",
       "name": "OpenRouter Chat Model",
       "credentials": {
@@ -121,7 +90,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
-      "position": [100, 520],
+      "position": [-140, 520],
       "id": "memory-conversation",
       "name": "Simple Memory"
     },
@@ -132,7 +101,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
-      "position": [100, 720],
+      "position": [-140, 720],
       "id": "output-parser",
       "name": "Structured Output Parser"
     },
@@ -163,7 +132,7 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [280, 300],
+      "position": [40, 300],
       "id": "if-ready",
       "name": "If Ready"
     },
@@ -175,24 +144,24 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [520, 420],
+      "position": [280, 420],
       "id": "respond-waiting",
       "name": "Respond - Waiting"
     },
     {
       "parameters": {
-        "jsCode": "// Prepare data for newsletter generation\nconst codeData = $('Code - Prepare Data').first().json;\nconst agentOutput = $('AI Agent - Conversation').first().json.output;\n\n// Parse state to get all answers\nconst state = agentOutput.state || {};\nconst allAnswers = state.answers || {};\nconst selectedTopics = state.selected_topics || [];\n\n// Parse topics_with_questions to get topic details\nlet topicsWithQuestions = [];\ntry {\n  topicsWithQuestions = JSON.parse(codeData.topics_with_questions);\n} catch (e) {\n  topicsWithQuestions = [];\n}\n\n// Map selected topics to their full details\nconst topicDetails = selectedTopics.map(topicCode => {\n  const topicInfo = topicsWithQuestions.find(t => t.topic_code === topicCode) || {};\n  return {\n    topic_code: topicCode,\n    topic_name: topicInfo.topic_name || topicCode,\n    emoji: topicInfo.emoji || '📧',\n    is_hero: selectedTopics.indexOf(topicCode) === 0,\n    answers: allAnswers[topicCode] || {},\n    questions: topicInfo.questions || []\n  };\n});\n\nreturn [\n  {\n    json: {\n      // Pass through identifiers\n      user_id: codeData.user_id,\n      session_id: codeData.session_id,\n      request_id: codeData.request_id,\n      \n      // Company context\n      company_name: codeData.company_name,\n      website_url: codeData.website_url,\n      website_icon: codeData.website_icon,\n      communication_tone: codeData.communication_tone,\n      knowledge_base: codeData.knowledge_base,\n      newsletter_instructions: codeData.newsletter_instructions,\n      \n      // Selected topics and answers\n      selected_topics: selectedTopics,\n      all_answers: JSON.stringify(allAnswers, null, 2),\n      topic_details: JSON.stringify(topicDetails, null, 2)\n    }\n  }\n];"
+        "jsCode": "// Prepare data for newsletter generation\nconst codeData = $('Code - Prepare Data').first().json;\nconst agentOutput = $('AI Agent - Conversation').first().json.output;\n\n// Parse state to get all answers\nconst state = agentOutput.state || {};\nconst allAnswers = state.answers || {};\nconst selectedTopics = state.selected_topics || [];\n\n// Parse topics_with_questions to get topic details\nlet topicsWithQuestions = [];\ntry {\n  topicsWithQuestions = JSON.parse(codeData.topics_with_questions);\n} catch (e) {\n  topicsWithQuestions = [];\n}\n\n// Map selected topics to their full details\nconst topicDetails = selectedTopics.map(topicCode => {\n  const topicInfo = topicsWithQuestions.find(t => t.topic_code === topicCode) || {};\n  return {\n    topic_code: topicCode,\n    topic_name: topicInfo.topic_name || topicCode,\n    emoji: topicInfo.emoji || '📧',\n    is_hero: selectedTopics.indexOf(topicCode) === 0,\n    answers: allAnswers[topicCode] || {},\n    questions: topicInfo.questions || []\n  };\n});\n\nreturn [\n  {\n    json: {\n      // Pass through identifiers\n      user_id: codeData.user_id,\n      session_id: codeData.session_id,\n      request_id: codeData.request_id,\n      \n      // Company context\n      website_url: codeData.website_url,\n      website_icon: codeData.website_icon,\n      communication_tone: codeData.communication_tone,\n      knowledge_base: codeData.knowledge_base,\n      newsletter_instructions: codeData.newsletter_instructions,\n      \n      // Selected topics and answers\n      selected_topics: selectedTopics,\n      all_answers: JSON.stringify(allAnswers, null, 2),\n      topic_details: JSON.stringify(topicDetails, null, 2)\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [520, 140],
+      "position": [280, 140],
       "id": "code-prepare-generation",
       "name": "Code - Prepare Generation"
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Generate a complete newsletter using the information gathered.\n\n## NEWSLETTER STRUCTURE\n\n### 1. HERO ARTICLE (300-400 words)\n- Use the FIRST selected topic as primary\n- Deep dive into the user's answers\n\n### 2. QUICK INSIGHTS (100-150 words each)\n- One for each ADDITIONAL selected topic\n- Summarize key points\n\n### 3. CTA SECTION (100-150 words)\n- Combine relevant calls-to-action\n\n### 4. FOOTER\n- Soft conclusion and brand signature\n\n---\n\n## SELECTED TOPICS\n{{ $json.selected_topics }}\n\n## TOPIC DETAILS WITH ANSWERS\n{{ $json.topic_details }}\n\n## ALL ANSWERS\n{{ $json.all_answers }}\n\n---\n\n## COMPANY CONTEXT\nCompany: {{ $json.company_name }}\nWebsite: {{ $json.website_url }}\nLogo: {{ $json.website_icon }}\nTone: {{ $json.communication_tone }}\n\nKnowledge Base:\n{{ $json.knowledge_base }}\n\n---\n\n## INSTRUCTIONS\n{{ $json.newsletter_instructions }}\n\n---\n\n## CRITICAL RULES\n1. NO PLACEHOLDERS - Use actual content\n2. NO IMAGE PLACEHOLDERS - Only include logo if provided\n3. RESPONSIVE HTML - Works in email clients\n4. INLINE STYLES - Email clients strip external CSS\n\n## OUTPUT\nGenerate complete HTML newsletter.\nJust the HTML - nothing else.",
+        "text": "=Generate a complete newsletter using the information gathered.\n\n## NEWSLETTER STRUCTURE\n\n### 1. HERO ARTICLE (300-400 words)\n- Use the FIRST selected topic as primary\n- Deep dive into the user's answers\n\n### 2. QUICK INSIGHTS (100-150 words each)\n- One for each ADDITIONAL selected topic\n- Summarize key points\n\n### 3. CTA SECTION (100-150 words)\n- Combine relevant calls-to-action\n\n### 4. FOOTER\n- Soft conclusion and brand signature\n\n---\n\n## SELECTED TOPICS\n{{ $json.selected_topics }}\n\n## TOPIC DETAILS WITH ANSWERS\n{{ $json.topic_details }}\n\n## ALL ANSWERS\n{{ $json.all_answers }}\n\n---\n\n## COMPANY CONTEXT\nWebsite: {{ $json.website_url }}\nLogo: {{ $json.website_icon }}\nTone: {{ $json.communication_tone }}\n\nKnowledge Base:\n{{ $json.knowledge_base }}\n\n---\n\n## INSTRUCTIONS\n{{ $json.newsletter_instructions }}\n\n---\n\n## CRITICAL RULES\n1. NO PLACEHOLDERS - Use actual content\n2. NO IMAGE PLACEHOLDERS - Only include logo if provided\n3. RESPONSIVE HTML - Works in email clients\n4. INLINE STYLES - Email clients strip external CSS\n\n## OUTPUT\nGenerate complete HTML newsletter.\nJust the HTML - nothing else.",
         "hasOutputParser": false,
         "options": {
           "systemMessage": "You are an elite newsletter writer. Generate complete, professional HTML newsletters.\n\nOUTPUT ONLY THE HTML - no markdown code blocks, no explanations."
@@ -200,7 +169,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.8,
-      "position": [760, 140],
+      "position": [520, 140],
       "id": "ai-agent-generator",
       "name": "AI Agent - Generator"
     },
@@ -213,7 +182,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
-      "position": [760, 360],
+      "position": [520, 360],
       "id": "llm-generator",
       "name": "OpenRouter Chat Model1",
       "credentials": {
@@ -229,7 +198,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1000, 140],
+      "position": [760, 140],
       "id": "code-clean-html",
       "name": "Code - Clean HTML"
     },
@@ -241,14 +210,14 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1240, 140],
+      "position": [1000, 140],
       "id": "respond-ready",
       "name": "Respond - Ready"
     },
     {
       "parameters": {
-        "content": "## Multi-Topic Newsletter Workflow\n\n**Flow:**\n1. Webhook receives request\n2. Fetch KB + Topics from Supabase\n3. AI Agent guides multi-topic selection\n4. Gather answers for each topic (one Q at a time)\n5. When Ready, generate combined newsletter\n\n**Key Features:**\n- Database-driven topics/questions\n- Multi-select (2-4 topics)\n- Progress tracking\n- Combined newsletter output",
-        "height": 380,
+        "content": "## Multi-Topic Newsletter Workflow (Simplified)\n\n**Flow:**\n1. Webhook receives request\n2. Single Supabase query (vw_newsletter_multi_topic_llm)\n3. AI Agent guides multi-topic selection\n4. Gather answers for each topic\n5. When Ready, generate combined newsletter\n\n**Single Query Returns:**\n- KB data (knowledge_base, website_url, etc.)\n- Topics data (available_topics_display, etc.)",
+        "height": 320,
         "width": 400
       },
       "type": "n8n-nodes-base.stickyNote",
@@ -259,27 +228,15 @@
     },
     {
       "parameters": {
-        "content": "## INPUT FORMAT\n\n```json\n{\n  \"user_id\": \"uuid\",\n  \"user_mssg\": \"user message\",\n  \"session_id\": \"session_id\",\n  \"agent_name\": \"newsletter\",\n  \"timestamp_of_call_made\": \"ISO timestamp\",\n  \"request_id\": \"unique_id\"\n}\n```",
-        "height": 280,
-        "width": 380
+        "content": "## N8N Query\n\n```sql\nSELECT * \nFROM vw_newsletter_multi_topic_llm\nWHERE user_id = '{{ user_id }}'\nLIMIT 1\n```\n\nReturns ALL data in one query!",
+        "height": 220,
+        "width": 300
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [-1600, 520],
-      "id": "sticky-input",
-      "name": "Sticky Note - Input"
-    },
-    {
-      "parameters": {
-        "content": "## OUTPUT FORMAT\n\n**Waiting (conversation):**\n```json\n{\n  \"user_id\": \"uuid\",\n  \"session_id\": \"...\",\n  \"agent_name\": \"newsletter\",\n  \"agent_response\": \"message\",\n  \"agent_status\": \"Waiting\",\n  \"state\": {...}\n}\n```\n\n**Ready (with newsletter):**\n```json\n{\n  \"agent_response\": \"<html>...</html>\",\n  \"agent_status\": \"Ready\"\n}\n```",
-        "height": 380,
-        "width": 400
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [1400, -80],
-      "id": "sticky-output",
-      "name": "Sticky Note - Output"
+      "position": [-1600, 460],
+      "id": "sticky-query",
+      "name": "Sticky Note - Query"
     }
   ],
   "connections": {
@@ -287,41 +244,14 @@
       "main": [
         [
           {
-            "node": "Supabase_kb",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Supabase_topics",
+            "node": "Supabase - Get All Data",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Supabase_kb": {
-      "main": [
-        [
-          {
-            "node": "Merge KB + Topics",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase_topics": {
-      "main": [
-        [
-          {
-            "node": "Merge KB + Topics",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge KB + Topics": {
+    "Supabase - Get All Data": {
       "main": [
         [
           {
