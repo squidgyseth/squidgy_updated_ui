@@ -353,7 +353,7 @@ export default function FacebookConnect() {
         <div className="p-5">
           <ChatInterface 
             agentName="Solar sales agent"
-            agentDescription="rmsenergy.com"
+            agentDescription=""
             context="facebook_setup"
           />
         </div>
