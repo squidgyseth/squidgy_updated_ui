@@ -465,29 +465,79 @@ export default function N8nChatInterface({
       .trim();
   };
 
-  // Update active interactive buttons when messages change
-  useEffect(() => {
-    // Only show buttons from the LATEST agent message - clear if it has no buttons
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const msg = messages[i];
-      if (msg.sender === 'agent') {
-        // Found the latest agent message - check if it has buttons
-        if (hasInteractiveButtons(msg.content)) {
-          setActiveInteractiveButtons(extractButtonTexts(msg.content));
-        } else {
-          // Latest agent message has no buttons, clear them
-          setActiveInteractiveButtons([]);
-        }
-        return;
-      }
+  // Helper function to detect numbered list options (e.g., "1. OPTION TEXT")
+  const hasNumberedOptions = (content: string): boolean => {
+    // Match patterns like "1. TEXT" or "1. TEXT" at start of line
+    const pattern = /^\d+\.\s+[A-Z][A-Z\s\/&\-]+$/gm;
+    const matches = content.match(pattern);
+    return matches !== null && matches.length >= 2; // At least 2 numbered options
+  };
+
+  // Helper function to extract numbered options from content
+  const extractNumberedOptions = (content: string): string[] => {
+    const options: string[] = [];
+    const pattern = /^(\d+)\.\s+([A-Z][A-Z\s\/&\-]+)$/gm;
+    let match;
+    while ((match = pattern.exec(content)) !== null) {
+      options.push(match[2].trim());
     }
-    // No agent messages found, clear buttons
-    setActiveInteractiveButtons([]);
-  }, [messages]);
+    return options;
+  };
+
+  // Helper function to get content without numbered options (intro text only)
+  const getContentWithoutNumberedOptions = (content: string): string => {
+    const lines = content.split('\n');
+    const introLines: string[] = [];
+    for (const line of lines) {
+      // Stop when we hit the first numbered option
+      if (/^\d+\.\s+[A-Z]/.test(line.trim())) {
+        break;
+      }
+      introLines.push(line);
+    }
+    return introLines.join('\n').trim();
+  };
+
+  // Helper function to detect inline comma-separated options (e.g., "OPTION A, OPTION B, or OPTION C?")
+  const hasInlineOptions = (content: string): boolean => {
+    // Look for pattern: ALL CAPS options separated by commas, ending with "or OPTION?"
+    const pattern = /[A-Z][A-Z\s\/&\-]+,\s+[A-Z][A-Z\s\/&\-]+.*,\s+or\s+[A-Z][A-Z\s\/&\-]+\?/;
+    return pattern.test(content);
+  };
+
+  // Helper function to extract inline options from content
+  const extractInlineOptions = (content: string): string[] => {
+    // Find the part with comma-separated options ending with "or X?"
+    const match = content.match(/([A-Z][A-Z\s\/&\-]+(?:,\s+[A-Z][A-Z\s\/&\-]+)+,\s+or\s+[A-Z][A-Z\s\/&\-]+)\?/);
+    if (!match) return [];
+    
+    const optionsStr = match[1];
+    // Split by ", or " first to get the last option
+    const parts = optionsStr.split(/,\s+or\s+/);
+    const lastOption = parts[1]?.trim();
+    const firstPart = parts[0];
+    
+    // Split the first part by commas
+    const options = firstPart.split(/,\s+/).map(o => o.trim()).filter(o => o.length > 0);
+    if (lastOption) {
+      options.push(lastOption);
+    }
+    
+    return options;
+  };
+
+  // Helper function to get content before inline options
+  const getContentBeforeInlineOptions = (content: string): string => {
+    // Find where the ALL CAPS options start
+    const match = content.match(/^(.*?)([A-Z][A-Z\s\/&\-]+,\s+[A-Z][A-Z\s\/&\-]+.*,\s+or\s+[A-Z][A-Z\s\/&\-]+\?)/s);
+    if (match) {
+      return match[1].trim();
+    }
+    return content;
+  };
 
   // Helper function to detect if message contains HTML content (for newsletter agent)
   const hasHTMLContent = (content: string): boolean => {
-    // Look for common HTML tags that indicate newsletter content
     const htmlPatterns = [
       /<html[\s>]/i,
       /<body[\s>]/i,
@@ -503,7 +553,6 @@ export default function N8nChatInterface({
       /<head[\s>]/i,
       /<!DOCTYPE/i
     ];
-    
     return htmlPatterns.some(pattern => pattern.test(content));
   };
 
@@ -833,15 +882,58 @@ export default function N8nChatInterface({
                         
                         // For content_repurposer agent, check if content is social media and use SocialMediaPreview
                         if (agent.id === 'content_repurposer' && hasSocialMediaContent(message.content)) {
-                          // Use existing history ID if available, otherwise fall back to message ID
                           const historyId = message.content_repurposer_history_id || getExistingHistoryId() || message.id;
-                          
                           return (
                             <div className="social-media-preview-wrapper">
-                              <SocialMediaPreview 
-                                content={message.content} 
-                                historyId={historyId}
-                              />
+                              <SocialMediaPreview content={message.content} historyId={historyId} />
+                            </div>
+                          );
+                        }
+                        
+                        // For newsletter agent, check for numbered options and make them clickable
+                        if (agent.id === 'newsletter' && hasNumberedOptions(message.content)) {
+                          const introText = getContentWithoutNumberedOptions(message.content);
+                          const options = extractNumberedOptions(message.content);
+                          return (
+                            <div className="bg-gray-100 rounded-lg px-4 py-3">
+                              {introText && (
+                                <p className="text-text-primary whitespace-pre-wrap mb-3">{introText}</p>
+                              )}
+                              <div className="space-y-2">
+                                {options.map((option, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => handleSendMessage(option)}
+                                    className="w-full text-left px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium transition-colors"
+                                  >
+                                    {idx + 1}. {option}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        // For newsletter agent, check for inline comma-separated options
+                        if (agent.id === 'newsletter' && hasInlineOptions(message.content)) {
+                          const introText = getContentBeforeInlineOptions(message.content);
+                          const options = extractInlineOptions(message.content);
+                          return (
+                            <div className="bg-gray-100 rounded-lg px-4 py-3">
+                              {introText && (
+                                <p className="text-text-primary whitespace-pre-wrap mb-3">{introText}</p>
+                              )}
+                              <div className="space-y-2">
+                                {options.map((option, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => handleSendMessage(option)}
+                                    className="w-full text-left px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium transition-colors"
+                                  >
+                                    {option}
+                                  </button>
+                                ))}
+                              </div>
                             </div>
                           );
                         }
@@ -866,13 +958,8 @@ export default function N8nChatInterface({
                 // User message display
                 <div>
                   {message.fileUpload ? (
-                    // File upload message
-                    <FileMessage 
-                      fileInfo={message.fileUpload} 
-                      timestamp={message.timestamp}
-                    />
+                    <FileMessage fileInfo={message.fileUpload} timestamp={message.timestamp} />
                   ) : (
-                    // Regular text message
                     <>
                       <div className="bg-blue-500 text-white rounded-lg px-4 py-2 overflow-hidden">
                         <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.content}</p>
