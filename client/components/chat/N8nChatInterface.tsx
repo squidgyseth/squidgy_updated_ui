@@ -55,13 +55,18 @@ export default function N8nChatInterface({
   const [existingHistoryId, setExistingHistoryId] = useState<string | null>(null);
   const [activeInteractiveButtons, setActiveInteractiveButtons] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatHistoryService = ChatHistoryService.getInstance();
   const fileUploadService = FileUploadService.getInstance();
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive and focus input
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    // Auto-focus input after messages update (new message sent or response received)
+    if (!isLoading) {
+      inputRef.current?.focus();
+    }
+  }, [messages, isLoading]);
 
   // Load messages for the current session
   useEffect(() => {
@@ -467,20 +472,34 @@ export default function N8nChatInterface({
 
   // Helper function to detect numbered list options (e.g., "1. OPTION TEXT")
   const hasNumberedOptions = (content: string): boolean => {
-    // Match patterns like "1. TEXT" or "1. TEXT" at start of line
-    const pattern = /^\d+\.\s+[A-Z][A-Z\s\/&\-]+$/gm;
-    const matches = content.match(pattern);
-    return matches !== null && matches.length >= 2; // At least 2 numbered options
+    // Split by lines and check each line for numbered option pattern
+    const lines = content.split('\n');
+    let count = 0;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // Match "1. UPPERCASE TEXT" pattern - allow any characters after the number
+      if (/^\d+\.\s+[A-Z]/.test(trimmed)) {
+        count++;
+        console.log('Matched line:', trimmed);
+      }
+    }
+    console.log('hasNumberedOptions check:', { lineCount: lines.length, matchCount: count, firstLines: lines.slice(0, 10) });
+    return count >= 2; // At least 2 numbered options
   };
 
   // Helper function to extract numbered options from content
   const extractNumberedOptions = (content: string): string[] => {
     const options: string[] = [];
-    const pattern = /^(\d+)\.\s+([A-Z][A-Z\s\/&\-]+)$/gm;
-    let match;
-    while ((match = pattern.exec(content)) !== null) {
-      options.push(match[2].trim());
+    const lines = content.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // Match "1. TEXT" and extract the text part (more flexible)
+      const match = trimmed.match(/^\d+\.\s+(.+)$/);
+      if (match && /^[A-Z]/.test(match[1])) {
+        options.push(match[1].trim());
+      }
     }
+    console.log('extractNumberedOptions:', options);
     return options;
   };
 
@@ -993,6 +1012,7 @@ export default function N8nChatInterface({
       <form onSubmit={handleSubmit} className="border-t border-gray-200 p-4">
         <div className="flex gap-3 items-end">
           <textarea
+            ref={inputRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={`Message ${agent.name}...`}

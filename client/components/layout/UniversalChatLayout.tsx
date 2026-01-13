@@ -67,6 +67,11 @@ const formatRecentAction = (message: string, agentName: string): string => {
     return 'Goals configured';
   }
   
+  // Detect newsletter preview (HTML content with newsletter structure)
+  if (message.includes('<html') || message.includes('<!DOCTYPE') || message.includes('<table') || (lowerMessage.includes('newsletter') && lowerMessage.includes('preview'))) {
+    return 'Newsletter preview';
+  }
+  
   // Detect newsletter creation
   if (lowerMessage.includes('newsletter') && (lowerMessage.includes('created') || lowerMessage.includes('generated') || lowerMessage.includes('ready'))) {
     return 'Newsletter created';
@@ -75,6 +80,16 @@ const formatRecentAction = (message: string, agentName: string): string => {
   // Detect content repurposing
   if (lowerMessage.includes('repurpos') || lowerMessage.includes('social media content') || lowerMessage.includes('posts generated')) {
     return 'Content repurposed';
+  }
+  
+  // Detect social media post creation
+  if (lowerMessage.includes('linkedin') || lowerMessage.includes('twitter') || lowerMessage.includes('instagram') || lowerMessage.includes('facebook')) {
+    return 'Social posts created';
+  }
+  
+  // Detect content generation
+  if (lowerMessage.includes('here\'s') || lowerMessage.includes('i\'ve created') || lowerMessage.includes('i\'ve generated') || lowerMessage.includes('draft')) {
+    return 'Content generated';
   }
   
   // Detect website analysis
@@ -87,12 +102,31 @@ const formatRecentAction = (message: string, agentName: string): string => {
     return 'Setup completed';
   }
   
+  // Detect questions asked by agent
+  if (lowerMessage.includes('would you like') || lowerMessage.includes('what would you') || lowerMessage.includes('which') || lowerMessage.endsWith('?')) {
+    return 'Question asked';
+  }
+  
+  // Detect generic acknowledgments (not useful as activity)
+  if (lowerMessage.startsWith('okay, got it') || lowerMessage.startsWith('okay got it') || lowerMessage.startsWith('ok, got it') || lowerMessage.startsWith('ok got it')) {
+    return 'Acknowledgment';
+  }
+  
   // Detect chat/conversation started
-  if (lowerMessage.startsWith('hey') || lowerMessage.startsWith('hello') || lowerMessage.startsWith('hi ')) {
+  if (lowerMessage.startsWith('hey') || lowerMessage.startsWith('hello') || lowerMessage.startsWith('hi ') || lowerMessage.includes('welcome') || lowerMessage.includes('great to') || lowerMessage.startsWith('okay, let\'s get started') || lowerMessage.startsWith('okay, let\'s start')) {
     return 'Conversation started';
   }
   
-  // Default: short summary
+  // Default: truncate the actual message to show something meaningful
+  if (cleanMessage.length > 0) {
+    // Get first sentence or first 50 chars
+    const firstSentence = cleanMessage.split(/[.!?]/)[0];
+    if (firstSentence && firstSentence.length > 0) {
+      return firstSentence.length > 50 ? firstSentence.substring(0, 47) + '...' : firstSentence;
+    }
+    return cleanMessage.length > 50 ? cleanMessage.substring(0, 47) + '...' : cleanMessage;
+  }
+  
   return 'Activity recorded';
 };
 
@@ -138,12 +172,15 @@ export default function UniversalChatLayout({
       try {
         const chatHistoryService = ChatHistoryService.getInstance();
         // Use getRecentAgentMessages to get individual messages, not grouped by session
-        const messages = await chatHistoryService.getRecentAgentMessages(userId, agent.id, 4);
+        // Fetch more than 4 to account for filtered "Question asked" entries
+        const messages = await chatHistoryService.getRecentAgentMessages(userId, agent.id, 10);
         
         if (messages.length > 0) {
-          // Format each message as a recent action
+          // Format each message as a recent action, filter out non-useful activities
           const actions = messages
-            .map(msg => formatRecentAction(msg.message, agent.name));
+            .map(msg => formatRecentAction(msg.message, agent.name))
+            .filter(action => !['Question asked', 'Acknowledgment', 'Conversation started', 'Activity recorded'].includes(action))
+            .slice(0, 4); // Take first 4 after filtering
           
           setRecentActions(actions);
         }
@@ -360,15 +397,18 @@ export default function UniversalChatLayout({
           <div className="space-y-4">
             {isLoadingActions ? (
               <p className="text-sm text-gray-500">Loading recent activity...</p>
-            ) : recentActions.length > 0 ? (
-              recentActions.map((action, index) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-squidgy-primary rounded-full mt-1.5 flex-shrink-0"></div>
-                  <p className="text-sm text-gray-700">{action}</p>
-                </div>
-              ))
             ) : (
-              <p className="text-sm text-gray-500">No recent activity yet. Start chatting!</p>
+              [...Array(4)].map((_, index) => {
+                const action = recentActions[index];
+                return (
+                  <div key={index} className="flex items-start space-x-3">
+                    <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${action ? 'bg-squidgy-primary' : 'bg-gray-300'}`}></div>
+                    <p className={`text-sm ${action ? 'text-gray-700' : 'text-gray-400'}`}>
+                      {action || '—'}
+                    </p>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
