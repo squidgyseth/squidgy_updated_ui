@@ -1,34 +1,25 @@
 -- ============================================================================
--- Multi-Topic Newsletter Database Schema (UPDATED)
+-- Multi-Topic Newsletter Database Schema (UPDATED v2)
 -- ============================================================================
 -- GENERIC system - topics are GLOBAL (shared by all users)
--- No per-user seeding required - just run this script once
---
--- Tables:
--- - newsletter_topics: Global topics (user_id NULL = default for all)
--- - newsletter_topic_questions: Questions for each topic
---
--- Views:
--- - vw_newsletter_topics_for_llm: Returns topics for any user
+-- Combined view joins topics with client KB for single N8N query
 -- ============================================================================
 
 -- ============================================================================
 -- Drop existing objects
 -- ============================================================================
-DROP VIEW IF EXISTS vw_newsletter_topic_questions_formatted CASCADE;
 DROP VIEW IF EXISTS vw_newsletter_topics_for_llm CASCADE;
+DROP VIEW IF EXISTS vw_newsletter_multi_topic_llm CASCADE;
 DROP TABLE IF EXISTS newsletter_topic_questions CASCADE;
 DROP TABLE IF EXISTS newsletter_topics CASCADE;
-DROP FUNCTION IF EXISTS seed_default_newsletter_topics(UUID);
 
 -- ============================================================================
 -- Table: newsletter_topics
 -- user_id = NULL means GLOBAL (available to all users)
--- user_id = specific UUID means custom topics for that user only
 -- ============================================================================
 CREATE TABLE newsletter_topics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID DEFAULT NULL,                 -- NULL = global/default for all users
+    user_id UUID DEFAULT NULL,
     topic_code VARCHAR(50) NOT NULL,
     topic_name VARCHAR(100) NOT NULL,
     topic_description TEXT,
@@ -65,7 +56,6 @@ CREATE INDEX idx_newsletter_questions_order ON newsletter_topic_questions(topic_
 
 -- ============================================================================
 -- INSERT GLOBAL TOPICS (user_id = NULL)
--- These are available to ALL users
 -- ============================================================================
 
 INSERT INTO newsletter_topics (user_id, topic_code, topic_name, emoji, display_order, is_hero_eligible, topic_description) VALUES
@@ -173,12 +163,12 @@ CROSS JOIN (VALUES
 WHERE topic_code = 'behind_scenes' AND user_id IS NULL;
 
 -- ============================================================================
--- View: vw_newsletter_topics_for_llm
--- Returns GLOBAL topics (user_id IS NULL) for any user query
--- If user has custom topics, those would override (future feature)
+-- View: vw_newsletter_multi_topic_llm
+-- COMBINED VIEW - Joins client KB with global topics
+-- Single query returns everything N8N needs
 -- ============================================================================
-CREATE OR REPLACE VIEW vw_newsletter_topics_for_llm AS
-WITH topic_questions AS (
+CREATE OR REPLACE VIEW vw_newsletter_multi_topic_llm AS
+WITH global_topics AS (
     SELECT
         nt.id AS topic_id,
         nt.topic_code,
@@ -205,71 +195,101 @@ WITH topic_questions AS (
     LEFT JOIN newsletter_topic_questions ntq
         ON ntq.topic_id = nt.id AND ntq.is_active = true
     WHERE nt.is_active = true
-      AND nt.user_id IS NULL  -- Global topics only
+      AND nt.user_id IS NULL
     GROUP BY nt.id, nt.topic_code, nt.topic_name, nt.topic_description,
              nt.emoji, nt.display_order, nt.is_hero_eligible,
              nt.min_words, nt.max_words
+),
+topics_aggregated AS (
+    SELECT
+        STRING_AGG(
+            display_order || '. $$**' || emoji || ' ' || topic_name || ' - ' || COALESCE(topic_description, '') || '**$$',
+            CHR(10) ORDER BY display_order
+        ) AS available_topics_display,
+
+        STRING_AGG(
+            display_order || '. ' || emoji || ' ' || topic_name,
+            CHR(10) ORDER BY display_order
+        ) AS available_topics_text,
+
+        JSONB_AGG(
+            JSONB_BUILD_OBJECT(
+                'index', display_order,
+                'topic_code', topic_code,
+                'topic_name', topic_name,
+                'description', topic_description,
+                'emoji', emoji,
+                'is_hero_eligible', is_hero_eligible,
+                'min_words', min_words,
+                'max_words', max_words,
+                'question_count', question_count,
+                'questions', questions
+            ) ORDER BY display_order
+        ) AS topics_with_questions,
+
+        STRING_AGG(
+            '### ' || display_order || '. ' || emoji || ' ' || topic_name || ' (code: ' || topic_code || ')' || CHR(10) ||
+            (
+                SELECT STRING_AGG(
+                    '   Q' || (q->>'order')::int || ': ' || (q->>'question') ||
+                    CASE WHEN q->>'hint' IS NOT NULL AND q->>'hint' != 'null'
+                         THEN ' (e.g., ' || (q->>'hint') || ')'
+                         ELSE ''
+                    END,
+                    CHR(10) ORDER BY (q->>'order')::int
+                )
+                FROM jsonb_array_elements(questions) AS q
+            ),
+            CHR(10) || CHR(10) ORDER BY display_order
+        ) AS topics_questions_formatted,
+
+        JSONB_OBJECT_AGG(
+            topic_code, topic_name ORDER BY display_order
+        ) AS topic_code_map,
+
+        COUNT(*) AS total_topics
+    FROM global_topics
 )
 SELECT
-    -- Formatted list for LLM display (button format)
-    STRING_AGG(
-        display_order || '. $$**' || emoji || ' ' || topic_name || ' - ' || COALESCE(topic_description, '') || '**$$',
-        CHR(10) ORDER BY display_order
-    ) AS available_topics_display,
+    -- From client_agent_knowledge_base_view
+    kb.user_id,
+    kb.session_id,
+    kb.knowledge_base,
+    kb.chat_history_id,
+    kb.agent_id,
+    kb.website_id,
+    kb.newsletter_questions,
+    kb.website_url,
+    kb.screenshot_url,
+    kb.favicon_url,
+    kb.newsletter_id,
+    kb.newsletter_content,
+    kb.content_repurposer_questions,
+    kb.avatar_style,
+    kb.communication_tone,
+    kb.is_enabled,
 
-    -- Simple numbered list (for voice/text)
-    STRING_AGG(
-        display_order || '. ' || emoji || ' ' || topic_name,
-        CHR(10) ORDER BY display_order
-    ) AS available_topics_text,
+    -- From topics_aggregated (global topics)
+    t.available_topics_display,
+    t.available_topics_text,
+    t.topics_with_questions,
+    t.topics_questions_formatted,
+    t.topic_code_map,
+    t.total_topics
 
-    -- Full JSON structure with questions
-    JSONB_AGG(
-        JSONB_BUILD_OBJECT(
-            'index', display_order,
-            'topic_code', topic_code,
-            'topic_name', topic_name,
-            'description', topic_description,
-            'emoji', emoji,
-            'is_hero_eligible', is_hero_eligible,
-            'min_words', min_words,
-            'max_words', max_words,
-            'question_count', question_count,
-            'questions', questions
-        ) ORDER BY display_order
-    ) AS topics_with_questions,
-
-    -- Formatted questions per topic (for direct prompt injection)
-    STRING_AGG(
-        '### ' || display_order || '. ' || emoji || ' ' || topic_name || ' (code: ' || topic_code || ')' || CHR(10) ||
-        (
-            SELECT STRING_AGG(
-                '   Q' || (q->>'order')::int || ': ' || (q->>'question') ||
-                CASE WHEN q->>'hint' IS NOT NULL AND q->>'hint' != 'null'
-                     THEN ' (e.g., ' || (q->>'hint') || ')'
-                     ELSE ''
-                END,
-                CHR(10) ORDER BY (q->>'order')::int
-            )
-            FROM jsonb_array_elements(questions) AS q
-        ),
-        CHR(10) || CHR(10) ORDER BY display_order
-    ) AS topics_questions_formatted,
-
-    -- Topic code to name mapping
-    JSONB_OBJECT_AGG(
-        topic_code, topic_name ORDER BY display_order
-    ) AS topic_code_map,
-
-    -- Count of available topics
-    COUNT(*) AS total_topics
-
-FROM topic_questions;
+FROM client_agent_knowledge_base_view kb
+CROSS JOIN topics_aggregated t;
 
 -- ============================================================================
--- VERIFICATION QUERIES (Run these to confirm data)
+-- USAGE IN N8N:
 -- ============================================================================
--- SELECT * FROM newsletter_topics;
--- SELECT * FROM newsletter_topic_questions;
--- SELECT * FROM vw_newsletter_topics_for_llm;
+-- Single query to get everything:
+--
+-- SELECT * FROM vw_newsletter_multi_topic_llm
+-- WHERE user_id = '{{ $json.body.user_id }}'
+-- LIMIT 1;
+--
+-- Returns:
+-- - All KB columns (knowledge_base, website_url, favicon_url, communication_tone, etc.)
+-- - All topic columns (available_topics_display, topics_questions_formatted, etc.)
 -- ============================================================================
