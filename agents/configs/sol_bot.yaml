@@ -5,7 +5,10 @@
 agent:
   # Unique identifier (no spaces, lowercase, use underscores)
   id: SOL
-  
+
+  # Emoji for display in UI and database
+  emoji: "☀️"
+
   # Display name shown in the sidebar
   name: Solar Sales Assistant
   

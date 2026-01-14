@@ -12,7 +12,10 @@ agent:
   # Unique identifier (no spaces, lowercase, use underscores)
   # Example: "newsletter_agent", "crm_manager", "lead_generator"
   id: content_repurposer
-  
+
+  # Emoji for display in UI and database
+  emoji: "🔄"
+
   # Display name shown in the sidebar
   # Example: "Newsletter Agent", "CRM Manager", "Lead Generator"
   name: Content Repurposer

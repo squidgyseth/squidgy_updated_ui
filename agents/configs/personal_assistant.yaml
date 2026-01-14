@@ -1,5 +1,6 @@
 agent:
   id: personal_assistant
+  emoji: "🤖"
   name: Personal Assistant
   category: GENERAL
   description: Your onboarding assistant for setting up AI agents
