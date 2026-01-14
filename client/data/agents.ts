@@ -1,10 +1,11 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-13T16:10:20.330Z
+// Generated on: 2026-01-14T17:01:16.904Z
 
 export interface AgentConfig {
   agent: {
     id: string;
     name: string;
+    emoji?: string;
     category: string;
     description: string;
     specialization?: string;
@@ -45,6 +46,7 @@ export const ALL_AGENTS: AgentConfig[] = [
   {
     "agent": {
       "id": "personal_assistant",
+      "emoji": "🤖",
       "name": "Personal Assistant",
       "category": "GENERAL",
       "description": "Your onboarding assistant for setting up AI agents",
@@ -109,6 +111,7 @@ export const ALL_AGENTS: AgentConfig[] = [
   {
     "agent": {
       "id": "newsletter",
+      "emoji": "📧",
       "name": "Newsletter Agent",
       "category": "MARKETING",
       "description": "Create and manage newsletters",
@@ -173,66 +176,74 @@ export const ALL_AGENTS: AgentConfig[] = [
   },
   {
     "agent": {
-      "id": "smm_assistant",
-      "name": "SMM Assistant",
+      "id": "newsletter_multi",
+      "emoji": "📰",
+      "name": "Newsletter Agent Multi",
       "category": "MARKETING",
-      "description": "Specializes in social media marketing, content creation, and trend analysis.",
+      "description": "Create and manage newsletters",
       "specialization": "Creative & Trendy",
-      "tagline": "Trend. Post. Analyze.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+      "tagline": "Content. Create. Distribute.",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+      "pinned": false,
+      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
-        "Content creation and optimization for all major social platforms",
-        "Trend analysis and hashtag research",
-        "Social media strategy development and planning",
-        "Engagement optimization and community management"
+        "Content creation and optimization for newsletters",
+        "PDF document processing and analysis",
+        "Speech-to-text content input",
+        "Newsletter template generation",
+        "Email marketing best practices"
       ],
       "recent_actions": [
-        "Created 15 Instagram post ideas for fashion brand",
-        "Analysed competitor performance",
-        "Generated trending hashtags for Q4 campaign",
-        "Developed content calendar for December"
-      ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant"
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "SMM Dashboard",
-          "path": "smm-dashboard",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
+        "Generated newsletter for Q4 product launch",
+        "Processed PDF content from marketing materials",
+        "Analyzed competitor newsletter performance"
       ]
     },
     "suggestions": [
-      "Create Instagram post ideas",
-      "Analyze competitor content",
-      "Write engaging captions",
-      "Generate trending hashtags",
-      "Plan content calendar",
-      "Optimize engagement strategy"
+      "Create newsletter content",
+      "Process PDF document",
+      "Generate email templates",
+      "Analyze newsletter performance",
+      "Design email layout",
+      "Optimize subject lines"
     ],
-    "personality": {
-      "tone": "creative",
-      "style": "trendy",
-      "approach": "data_driven"
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+      "pages": [
+        {
+          "name": "newsletter_liquid-blanch-17032840_page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "source": {
+            "type": "figma_deployed",
+            "url": "https://liquid-blanch-17032840.figma.site/"
+          }
+        }
+      ]
+    },
+    "ui_use": {
+      "pages": [
+        {
+          "name": "Newsletter Liquid-Blanch-17032840 Page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+        }
+      ],
+      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
     }
   },
   {
     "agent": {
       "id": "SOL",
+      "emoji": "☀️",
       "name": "Solar Sales Assistant",
       "category": "SALES",
       "description": "Solar sales expert - Calculate savings, design systems, close deals",
@@ -348,6 +359,7 @@ export const ALL_AGENTS: AgentConfig[] = [
   {
     "agent": {
       "id": "content_repurposer",
+      "emoji": "🔄",
       "name": "Content Repurposer",
       "category": "SALES",
       "description": "Repurpose content for different platforms and audiences",
@@ -412,130 +424,6 @@ export const ALL_AGENTS: AgentConfig[] = [
       "style": "helpful",
       "approach": "proactive"
     }
-  },
-  {
-    "agent": {
-      "id": "test_multi_agent",
-      "name": "Test Multi-Agent",
-      "category": "TESTING",
-      "description": "Testing multi-agent code generation system.",
-      "specialization": "Advanced Testing",
-      "tagline": "Test. Generate. Collaborate.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-      "capabilities": [
-        "Multi-agent code generation and testing",
-        "Advanced AI workflow collaboration",
-        "System integration testing",
-        "Performance optimization and analysis"
-      ],
-      "recent_actions": [
-        "Generated test suites for new features",
-        "Coordinated multi-agent workflows",
-        "Optimized system performance metrics",
-        "Validated integration pipelines"
-      ]
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Testing Dashboard",
-          "path": "testing-dashboard",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "Generate test cases",
-      "Run system diagnostics",
-      "Optimize performance",
-      "Create integration tests",
-      "Validate workflows",
-      "Analyze metrics"
-    ],
-    "personality": {
-      "tone": "technical",
-      "style": "analytical",
-      "approach": "systematic"
-    }
-  },
-  {
-    "agent": {
-      "id": "test_multi_page_agent",
-      "name": "Test Multi-Page Agent",
-      "category": "TESTING",
-      "description": "Testing multi-page functionality.",
-      "specialization": "Multi-Page Testing",
-      "tagline": "Navigate. Test. Validate.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-      "capabilities": [
-        "Multi-page navigation testing",
-        "Complex UI component validation",
-        "User journey optimization",
-        "Interface responsiveness testing"
-      ],
-      "recent_actions": [
-        "Tested multi-page navigation flows",
-        "Validated complex UI components",
-        "Optimized user experience paths",
-        "Analyzed interface responsiveness"
-      ]
-    },
-    "ui_use": {
-      "page_type": "multi_page",
-      "pages": [
-        {
-          "name": "Navigation Test",
-          "path": "navigation-test",
-          "order": 1,
-          "validated": true
-        },
-        {
-          "name": "UI Validation",
-          "path": "ui-validation",
-          "order": 2,
-          "validated": false
-        },
-        {
-          "name": "Performance Analysis",
-          "path": "performance-analysis",
-          "order": 3,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "Test navigation flows",
-      "Validate UI components",
-      "Optimize user journeys",
-      "Check responsiveness",
-      "Run page tests",
-      "Analyze performance"
-    ],
-    "personality": {
-      "tone": "professional",
-      "style": "methodical",
-      "approach": "comprehensive"
-    }
   }
 ];
 
@@ -544,6 +432,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
   "content_repurposer": {
     "agent": {
       "id": "content_repurposer",
+      "emoji": "🔄",
       "name": "Content Repurposer",
       "category": "SALES",
       "description": "Repurpose content for different platforms and audiences",
@@ -612,7 +501,74 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
   "newsletter": {
     "agent": {
       "id": "newsletter",
+      "emoji": "📧",
       "name": "Newsletter Agent",
+      "category": "MARKETING",
+      "description": "Create and manage newsletters",
+      "specialization": "Creative & Trendy",
+      "tagline": "Content. Create. Distribute.",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+      "pinned": false,
+      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+      "capabilities": [
+        "Content creation and optimization for newsletters",
+        "PDF document processing and analysis",
+        "Speech-to-text content input",
+        "Newsletter template generation",
+        "Email marketing best practices"
+      ],
+      "recent_actions": [
+        "Generated newsletter for Q4 product launch",
+        "Processed PDF content from marketing materials",
+        "Analyzed competitor newsletter performance"
+      ]
+    },
+    "suggestions": [
+      "Create newsletter content",
+      "Process PDF document",
+      "Generate email templates",
+      "Analyze newsletter performance",
+      "Design email layout",
+      "Optimize subject lines"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+      "pages": [
+        {
+          "name": "newsletter_liquid-blanch-17032840_page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "source": {
+            "type": "figma_deployed",
+            "url": "https://liquid-blanch-17032840.figma.site/"
+          }
+        }
+      ]
+    },
+    "ui_use": {
+      "pages": [
+        {
+          "name": "Newsletter Liquid-Blanch-17032840 Page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+        }
+      ],
+      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+    }
+  },
+  "newsletter_multi": {
+    "agent": {
+      "id": "newsletter_multi",
+      "emoji": "📰",
+      "name": "Newsletter Agent Multi",
       "category": "MARKETING",
       "description": "Create and manage newsletters",
       "specialization": "Creative & Trendy",
@@ -677,6 +633,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
   "personal_assistant": {
     "agent": {
       "id": "personal_assistant",
+      "emoji": "🤖",
       "name": "Personal Assistant",
       "category": "GENERAL",
       "description": "Your onboarding assistant for setting up AI agents",
@@ -738,68 +695,10 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "approach": "proactive"
     }
   },
-  "smm_assistant": {
-    "agent": {
-      "id": "smm_assistant",
-      "name": "SMM Assistant",
-      "category": "MARKETING",
-      "description": "Specializes in social media marketing, content creation, and trend analysis.",
-      "specialization": "Creative & Trendy",
-      "tagline": "Trend. Post. Analyze.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
-      "capabilities": [
-        "Content creation and optimization for all major social platforms",
-        "Trend analysis and hashtag research",
-        "Social media strategy development and planning",
-        "Engagement optimization and community management"
-      ],
-      "recent_actions": [
-        "Created 15 Instagram post ideas for fashion brand",
-        "Analysed competitor performance",
-        "Generated trending hashtags for Q4 campaign",
-        "Developed content calendar for December"
-      ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant"
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "SMM Dashboard",
-          "path": "smm-dashboard",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "Create Instagram post ideas",
-      "Analyze competitor content",
-      "Write engaging captions",
-      "Generate trending hashtags",
-      "Plan content calendar",
-      "Optimize engagement strategy"
-    ],
-    "personality": {
-      "tone": "creative",
-      "style": "trendy",
-      "approach": "data_driven"
-    }
-  },
   "SOL": {
     "agent": {
       "id": "SOL",
+      "emoji": "☀️",
       "name": "Solar Sales Assistant",
       "category": "SALES",
       "description": "Solar sales expert - Calculate savings, design systems, close deals",
@@ -911,130 +810,6 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
         "permit_databases"
       ]
     }
-  },
-  "test_multi_agent": {
-    "agent": {
-      "id": "test_multi_agent",
-      "name": "Test Multi-Agent",
-      "category": "TESTING",
-      "description": "Testing multi-agent code generation system.",
-      "specialization": "Advanced Testing",
-      "tagline": "Test. Generate. Collaborate.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-      "capabilities": [
-        "Multi-agent code generation and testing",
-        "Advanced AI workflow collaboration",
-        "System integration testing",
-        "Performance optimization and analysis"
-      ],
-      "recent_actions": [
-        "Generated test suites for new features",
-        "Coordinated multi-agent workflows",
-        "Optimized system performance metrics",
-        "Validated integration pipelines"
-      ]
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Testing Dashboard",
-          "path": "testing-dashboard",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "Generate test cases",
-      "Run system diagnostics",
-      "Optimize performance",
-      "Create integration tests",
-      "Validate workflows",
-      "Analyze metrics"
-    ],
-    "personality": {
-      "tone": "technical",
-      "style": "analytical",
-      "approach": "systematic"
-    }
-  },
-  "test_multi_page_agent": {
-    "agent": {
-      "id": "test_multi_page_agent",
-      "name": "Test Multi-Page Agent",
-      "category": "TESTING",
-      "description": "Testing multi-page functionality.",
-      "specialization": "Multi-Page Testing",
-      "tagline": "Navigate. Test. Validate.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-      "capabilities": [
-        "Multi-page navigation testing",
-        "Complex UI component validation",
-        "User journey optimization",
-        "Interface responsiveness testing"
-      ],
-      "recent_actions": [
-        "Tested multi-page navigation flows",
-        "Validated complex UI components",
-        "Optimized user experience paths",
-        "Analyzed interface responsiveness"
-      ]
-    },
-    "ui_use": {
-      "page_type": "multi_page",
-      "pages": [
-        {
-          "name": "Navigation Test",
-          "path": "navigation-test",
-          "order": 1,
-          "validated": true
-        },
-        {
-          "name": "UI Validation",
-          "path": "ui-validation",
-          "order": 2,
-          "validated": false
-        },
-        {
-          "name": "Performance Analysis",
-          "path": "performance-analysis",
-          "order": 3,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "Test navigation flows",
-      "Validate UI components",
-      "Optimize user journeys",
-      "Check responsiveness",
-      "Run page tests",
-      "Analyze performance"
-    ],
-    "personality": {
-      "tone": "professional",
-      "style": "methodical",
-      "approach": "comprehensive"
-    }
   }
 };
 
@@ -1044,6 +819,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     {
       "agent": {
         "id": "personal_assistant",
+        "emoji": "🤖",
         "name": "Personal Assistant",
         "category": "GENERAL",
         "description": "Your onboarding assistant for setting up AI agents",
@@ -1110,6 +886,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     {
       "agent": {
         "id": "newsletter",
+        "emoji": "📧",
         "name": "Newsletter Agent",
         "category": "MARKETING",
         "description": "Create and manage newsletters",
@@ -1174,61 +951,68 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     },
     {
       "agent": {
-        "id": "smm_assistant",
-        "name": "SMM Assistant",
+        "id": "newsletter_multi",
+        "emoji": "📰",
+        "name": "Newsletter Agent Multi",
         "category": "MARKETING",
-        "description": "Specializes in social media marketing, content creation, and trend analysis.",
+        "description": "Create and manage newsletters",
         "specialization": "Creative & Trendy",
-        "tagline": "Trend. Post. Analyze.",
-        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+        "tagline": "Content. Create. Distribute.",
+        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+        "pinned": false,
+        "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
         "capabilities": [
-          "Content creation and optimization for all major social platforms",
-          "Trend analysis and hashtag research",
-          "Social media strategy development and planning",
-          "Engagement optimization and community management"
+          "Content creation and optimization for newsletters",
+          "PDF document processing and analysis",
+          "Speech-to-text content input",
+          "Newsletter template generation",
+          "Email marketing best practices"
         ],
         "recent_actions": [
-          "Created 15 Instagram post ideas for fashion brand",
-          "Analysed competitor performance",
-          "Generated trending hashtags for Q4 campaign",
-          "Developed content calendar for December"
-        ]
-      },
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant"
-      },
-      "ui_use": {
-        "page_type": "single_page",
-        "pages": [
-          {
-            "name": "SMM Dashboard",
-            "path": "smm-dashboard",
-            "order": 1,
-            "validated": true
-          }
-        ]
-      },
-      "interface": {
-        "type": "chat",
-        "features": [
-          "text_input",
-          "file_upload",
-          "voice_input",
-          "suggestion_buttons"
+          "Generated newsletter for Q4 product launch",
+          "Processed PDF content from marketing materials",
+          "Analyzed competitor newsletter performance"
         ]
       },
       "suggestions": [
-        "Create Instagram post ideas",
-        "Analyze competitor content",
-        "Write engaging captions",
-        "Generate trending hashtags",
-        "Plan content calendar",
-        "Optimize engagement strategy"
+        "Create newsletter content",
+        "Process PDF document",
+        "Generate email templates",
+        "Analyze newsletter performance",
+        "Design email layout",
+        "Optimize subject lines"
       ],
-      "personality": {
-        "tone": "creative",
-        "style": "trendy",
-        "approach": "data_driven"
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
+        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+      },
+      "ui": {
+        "page_type": "standard",
+        "figma_url": "",
+        "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+        "pages": [
+          {
+            "name": "newsletter_liquid-blanch-17032840_page1",
+            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+            "order": 1,
+            "source": {
+              "type": "figma_deployed",
+              "url": "https://liquid-blanch-17032840.figma.site/"
+            }
+          }
+        ]
+      },
+      "ui_use": {
+        "pages": [
+          {
+            "name": "Newsletter Liquid-Blanch-17032840 Page1",
+            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+            "order": 1,
+            "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+          }
+        ],
+        "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
       }
     }
   ],
@@ -1236,6 +1020,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     {
       "agent": {
         "id": "SOL",
+        "emoji": "☀️",
         "name": "Solar Sales Assistant",
         "category": "SALES",
         "description": "Solar sales expert - Calculate savings, design systems, close deals",
@@ -1351,6 +1136,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     {
       "agent": {
         "id": "content_repurposer",
+        "emoji": "🔄",
         "name": "Content Repurposer",
         "category": "SALES",
         "description": "Repurpose content for different platforms and audiences",
@@ -1416,137 +1202,11 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "approach": "proactive"
       }
     }
-  ],
-  "TESTING": [
-    {
-      "agent": {
-        "id": "test_multi_agent",
-        "name": "Test Multi-Agent",
-        "category": "TESTING",
-        "description": "Testing multi-agent code generation system.",
-        "specialization": "Advanced Testing",
-        "tagline": "Test. Generate. Collaborate.",
-        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-        "capabilities": [
-          "Multi-agent code generation and testing",
-          "Advanced AI workflow collaboration",
-          "System integration testing",
-          "Performance optimization and analysis"
-        ],
-        "recent_actions": [
-          "Generated test suites for new features",
-          "Coordinated multi-agent workflows",
-          "Optimized system performance metrics",
-          "Validated integration pipelines"
-        ]
-      },
-      "ui_use": {
-        "page_type": "single_page",
-        "pages": [
-          {
-            "name": "Testing Dashboard",
-            "path": "testing-dashboard",
-            "order": 1,
-            "validated": true
-          }
-        ]
-      },
-      "interface": {
-        "type": "chat",
-        "features": [
-          "text_input",
-          "file_upload",
-          "voice_input",
-          "suggestion_buttons"
-        ]
-      },
-      "suggestions": [
-        "Generate test cases",
-        "Run system diagnostics",
-        "Optimize performance",
-        "Create integration tests",
-        "Validate workflows",
-        "Analyze metrics"
-      ],
-      "personality": {
-        "tone": "technical",
-        "style": "analytical",
-        "approach": "systematic"
-      }
-    },
-    {
-      "agent": {
-        "id": "test_multi_page_agent",
-        "name": "Test Multi-Page Agent",
-        "category": "TESTING",
-        "description": "Testing multi-page functionality.",
-        "specialization": "Multi-Page Testing",
-        "tagline": "Navigate. Test. Validate.",
-        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-        "capabilities": [
-          "Multi-page navigation testing",
-          "Complex UI component validation",
-          "User journey optimization",
-          "Interface responsiveness testing"
-        ],
-        "recent_actions": [
-          "Tested multi-page navigation flows",
-          "Validated complex UI components",
-          "Optimized user experience paths",
-          "Analyzed interface responsiveness"
-        ]
-      },
-      "ui_use": {
-        "page_type": "multi_page",
-        "pages": [
-          {
-            "name": "Navigation Test",
-            "path": "navigation-test",
-            "order": 1,
-            "validated": true
-          },
-          {
-            "name": "UI Validation",
-            "path": "ui-validation",
-            "order": 2,
-            "validated": false
-          },
-          {
-            "name": "Performance Analysis",
-            "path": "performance-analysis",
-            "order": 3,
-            "validated": true
-          }
-        ]
-      },
-      "interface": {
-        "type": "chat",
-        "features": [
-          "text_input",
-          "file_upload",
-          "voice_input",
-          "suggestion_buttons"
-        ]
-      },
-      "suggestions": [
-        "Test navigation flows",
-        "Validate UI components",
-        "Optimize user journeys",
-        "Check responsiveness",
-        "Run page tests",
-        "Analyze performance"
-      ],
-      "personality": {
-        "tone": "professional",
-        "style": "methodical",
-        "approach": "comprehensive"
-      }
-    }
   ]
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","newsletter","personal_assistant","smm_assistant","SOL","test_multi_agent","test_multi_page_agent"];
+export const AGENT_IDS: string[] = ["content_repurposer","newsletter","newsletter_multi","personal_assistant","SOL"];
 
 // Total count
-export const TOTAL_AGENTS = 7;
+export const TOTAL_AGENTS = 5;

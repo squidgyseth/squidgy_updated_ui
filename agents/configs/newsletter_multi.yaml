@@ -1,7 +1,7 @@
 agent:
-  id: newsletter
-  emoji: "📧"
-  name: Newsletter Agent
+  id: newsletter_multi
+  emoji: "📰"
+  name: Newsletter Agent Multi
   category: MARKETING
   description: Create and manage newsletters
   specialization: "Creative & Trendy"
