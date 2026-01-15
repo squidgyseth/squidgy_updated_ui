@@ -54,21 +54,39 @@ export function useCompanyBranding(): CompanyBranding {
           }
         }
 
+        // Helper function to check if text looks like error/debug output
+        const isErrorText = (text: string): boolean => {
+          if (!text) return false;
+          return text.includes('WEBSITE SCRAPING RESULTS') ||
+                 text.includes('================') ||
+                 text.includes('Status: error') ||
+                 text.includes('Total pages scraped:') ||
+                 text.includes('Depth Level:') ||
+                 text.includes('URL:') && text.includes('error') ||
+                 text.startsWith('ERROR:') ||
+                 text.length > 100; // Names shouldn't be this long
+        };
+
         // Extract company name with priority: business_name > business_domain > company_description > website_url
         let companyName = 'Squidgy';
-        
-        if (businessDetails?.business_name) {
+
+        if (businessDetails?.business_name && !isErrorText(businessDetails.business_name)) {
           // First priority: business_name from business_details table
           companyName = businessDetails.business_name;
-        } else if (websiteAnalysis?.business_domain) {
+        } else if (websiteAnalysis?.business_domain && !isErrorText(websiteAnalysis.business_domain)) {
           // Second priority: business_domain from website_analysis
           companyName = websiteAnalysis.business_domain;
-        } else if (websiteAnalysis?.company_description) {
+        } else if (websiteAnalysis?.company_description && !isErrorText(websiteAnalysis.company_description)) {
           // Third priority: extract from company_description
-          const nameMatch = websiteAnalysis.company_description.match(/^([^-|*•]+)/);
+          const desc = websiteAnalysis.company_description;
+          const nameMatch = desc.match(/^([^-|*•]+)/);
           if (nameMatch) {
-            companyName = nameMatch[1].trim();
-            companyName = companyName.replace(/^(company name:|name:)/i, '').trim();
+            let extractedName = nameMatch[1].trim();
+            extractedName = extractedName.replace(/^(company name:|name:)/i, '').trim();
+            // Only use if it's a reasonable length
+            if (extractedName.length <= 50 && !isErrorText(extractedName)) {
+              companyName = extractedName;
+            }
           }
         } else if (websiteAnalysis?.website_url) {
           // Last resort: extract from website URL
@@ -81,6 +99,11 @@ export function useCompanyBranding(): CompanyBranding {
           } catch (e) {
             console.log('Error parsing website URL:', e);
           }
+        }
+
+        // Final safety check - if companyName still looks like error text, use default
+        if (isErrorText(companyName)) {
+          companyName = 'Squidgy';
         }
 
         setBranding({

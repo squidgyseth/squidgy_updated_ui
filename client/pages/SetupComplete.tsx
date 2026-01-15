@@ -69,7 +69,7 @@ export default function SetupComplete() {
         <div className="p-5">
           <ChatInterface 
             agentName="Solar sales agent"
-            agentDescription="rmsenergy.com"
+            agentDescription=""
             context="setup_complete"
           />
         </div>

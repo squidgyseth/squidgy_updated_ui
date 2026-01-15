@@ -4,9 +4,64 @@ import fs from 'fs/promises';
 import path from 'path';
 import yaml from 'js-yaml';
 import { fileURLToPath } from 'url';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load environment variables from .env file
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+/**
+ * Upsert agents to Supabase personal_assistant_config table
+ * Only upserts records with config_type = 'assistants'
+ */
+async function upsertAgentsToSupabase(agents) {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('⚠️  Supabase credentials not found - skipping database sync');
+    return;
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // Transform agents to personal_assistant_config format
+  const records = agents.map(agent => ({
+    config_type: 'assistants',
+    code: agent.agent.id,
+    display_name: agent.agent.name,
+    emoji: agent.agent.emoji || '🤖',
+    description: agent.agent.description || null,
+    category: agent.agent.category || 'General'
+  }));
+
+  console.log(`\n🔄 Syncing ${records.length} agents to Supabase...`);
+
+  // Upsert each record (based on config_type + code unique constraint)
+  for (const record of records) {
+    try {
+      const { error } = await supabase
+        .from('personal_assistant_config')
+        .upsert(record, {
+          onConflict: 'config_type,code',
+          ignoreDuplicates: false
+        });
+
+      if (error) {
+        console.warn(`⚠️  Failed to upsert ${record.code}:`, error.message);
+      } else {
+        console.log(`   ✓ ${record.emoji} ${record.display_name} (${record.code})`);
+      }
+    } catch (err) {
+      console.warn(`⚠️  Error upserting ${record.code}:`, err.message);
+    }
+  }
+
+  console.log(`✅ Database sync complete\n`);
+}
 
 /**
  * Build-time script to pre-compile all YAML agents into optimized JSON
@@ -77,6 +132,7 @@ export interface AgentConfig {
   agent: {
     id: string;
     name: string;
+    emoji?: string;
     category: string;
     description: string;
     specialization?: string;
@@ -147,7 +203,10 @@ export const TOTAL_AGENTS = ${agents.length};
     }, null, 2));
     
     console.log(`📋 Also generated JSON: ${jsonOutput}`);
-    
+
+    // Sync agents to Supabase database
+    await upsertAgentsToSupabase(agents);
+
   } catch (error) {
     console.error('❌ Failed to build agents:', error);
     process.exit(1);

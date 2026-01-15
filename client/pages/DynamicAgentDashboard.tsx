@@ -23,6 +23,12 @@ export default function DynamicAgentDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [recentActionTrigger, setRecentActionTrigger] = useState(0);
+
+  // Callback to trigger recent actions refresh when a message is sent
+  const handleMessageSent = () => {
+    setRecentActionTrigger(prev => prev + 1);
+  };
 
   useEffect(() => {
     const loadAgentConfig = async () => {
@@ -63,10 +69,9 @@ export default function DynamicAgentDashboard() {
   
   const handleSettingsClick = (agentId: string) => {
     console.log(`Settings clicked for agent: ${agentId}`);
-    
-    // Navigate to personalisation settings with the selected agent
-    // This will open the AI Assistant Customization section with the agent pre-selected
-    navigationService.navigateToPersonalisationSettings(agentId);
+
+    // Navigate to agent settings page (voice input, file upload, instructions)
+    navigate(`/agent-settings/${agentId}`);
   };
 
   const handleNewChat = (agentId: string) => {
@@ -156,6 +161,7 @@ export default function DynamicAgentDashboard() {
       onNewChat={handleNewChat}
       currentSessionId={currentSessionId}
       onSessionSelect={handleSessionSelect}
+      recentActionTrigger={recentActionTrigger}
     >
       <N8nChatInterface
         key={currentSessionId} // Force re-render when session changes
@@ -164,6 +170,7 @@ export default function DynamicAgentDashboard() {
         sessionId={currentSessionId} // Use the current session ID
         webhookUrl={agentConfig.n8n?.webhook_url} // Pass the webhook URL from agent config
         showAddNewMessage={location.state?.showAddNewMessage}
+        onMessageSent={handleMessageSent}
       />
     </UniversalChatLayout>
   );

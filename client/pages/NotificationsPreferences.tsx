@@ -146,7 +146,7 @@ export default function NotificationsPreferences() {
             whatsapp: false,
             ghl: false,
           });
-          setNotificationEmail('info@rmsenergy.com');
+          setNotificationEmail('');
           setNotificationTypes({
             confirmations: true,
             reminders: true,
