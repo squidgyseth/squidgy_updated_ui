@@ -89,8 +89,8 @@ export default function N8nChatInterface({
 
   // Show newsletter selector for content_repurposer and handle OAuth callback
   useEffect(() => {
-    // Show newsletter selector for content_repurposer agent
-    if (agent.id === 'content_repurposer') {
+    // Show newsletter selector for content_repurposer agent (and content_repurposer_multi)
+    if (agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') {
       setShowNewsletterSelector(true);
     }
     
@@ -124,7 +124,7 @@ export default function N8nChatInterface({
 
   // Load existing history ID for content_repurposer agent
   useEffect(() => {
-    if (agent.id === 'content_repurposer' && userId) {
+    if ((agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') && userId) {
       loadExistingHistoryId();
     }
   }, [agent.id, userId]);
@@ -270,8 +270,8 @@ export default function N8nChatInterface({
   const handleSendMessage = async (message: string, fileUrl?: string, fileName?: string) => {
     if (!message.trim() || isLoading) return;
 
-    // For content_repurposer agent, enforce newsletter selection
-    if (agent.id === 'content_repurposer' && !selectedNewsletterId) {
+    // For content_repurposer agent (and content_repurposer_multi), enforce newsletter selection
+    if ((agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') && !selectedNewsletterId) {
       alert('📰 Please select a newsletter from the dropdown above before sending a message.');
       return;
     }
@@ -311,7 +311,7 @@ export default function N8nChatInterface({
         sessionId,
         userMessage.id,
         webhookUrl, // Pass the webhook URL from agent config
-        agent.id === 'content_repurposer' ? selectedNewsletterId || undefined : undefined, // Include newsletter_id for content_repurposer
+        (agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') ? selectedNewsletterId || undefined : undefined, // Include newsletter_id for content_repurposer
         conversationState // Pass conversation state for multi-turn agents like newsletter_multi
       );
 
@@ -898,7 +898,7 @@ export default function N8nChatInterface({
   return (
     <div className={`flex flex-col h-full ${className}`}>
       {/* Newsletter Selector for content_repurposer agent */}
-      {showNewsletterSelector && agent.id === 'content_repurposer' && (
+      {showNewsletterSelector && (agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') && (
         <div className="p-4 border-b">
           <NewsletterSelector
             onNewsletterSelect={(newsletterId) => {
@@ -947,8 +947,8 @@ export default function N8nChatInterface({
                     ) : (
                       // Regular message display with interactive buttons support
                       (() => {
-                        // For newsletter agent, check if content is HTML and use HTMLPreview
-                        if (agent.id === 'newsletter' && hasHTMLContent(message.content)) {
+                        // For newsletter agent (and newsletter_multi), check if content is HTML and use HTMLPreview
+                        if ((agent.id === 'newsletter' || agent.id === 'newsletter_multi') && hasHTMLContent(message.content)) {
                           return (
                             <div className="html-preview-wrapper">
                               <HTMLPreview content={message.content} />
@@ -957,8 +957,8 @@ export default function N8nChatInterface({
                           );
                         }
                         
-                        // For content_repurposer agent, check if content is social media and use SocialMediaPreview
-                        if (agent.id === 'content_repurposer' && hasSocialMediaContent(message.content)) {
+                        // For content_repurposer agent (and content_repurposer_multi), check if content is social media and use SocialMediaPreview
+                        if ((agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') && hasSocialMediaContent(message.content)) {
                           const historyId = message.content_repurposer_history_id || getExistingHistoryId() || message.id;
                           return (
                             <div className="social-media-preview-wrapper">
@@ -967,8 +967,8 @@ export default function N8nChatInterface({
                           );
                         }
                         
-                        // For newsletter agent, check for numbered options and make them clickable
-                        if (agent.id === 'newsletter' && hasNumberedOptions(message.content)) {
+                        // For newsletter agent (and newsletter_multi), check for numbered options and make them clickable
+                        if ((agent.id === 'newsletter' || agent.id === 'newsletter_multi') && hasNumberedOptions(message.content)) {
                           const introText = getContentWithoutNumberedOptions(message.content);
                           const options = extractNumberedOptions(message.content);
                           return (
@@ -991,8 +991,8 @@ export default function N8nChatInterface({
                           );
                         }
                         
-                        // For newsletter agent, check for inline comma-separated options
-                        if (agent.id === 'newsletter' && hasInlineOptions(message.content)) {
+                        // For newsletter agent (and newsletter_multi), check for inline comma-separated options
+                        if ((agent.id === 'newsletter' || agent.id === 'newsletter_multi') && hasInlineOptions(message.content)) {
                           const introText = getContentBeforeInlineOptions(message.content);
                           const options = extractInlineOptions(message.content);
                           return (
