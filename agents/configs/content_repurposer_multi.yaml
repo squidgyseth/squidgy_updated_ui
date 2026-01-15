@@ -10,22 +10,19 @@
 
 agent:
   # Unique identifier (no spaces, lowercase, use underscores)
-  # Example: "newsletter_agent", "crm_manager", "lead_generator"
-  id: content_repurposer
+  id: content_repurposer_multi
 
   # Emoji for display in UI and database
-  emoji: "🔄"
+  emoji: "✨"
 
   # Display name shown in the sidebar
-  # Example: "Newsletter Agent", "CRM Manager", "Lead Generator"
-  name: Content Repurposer
-  
+  name: Content Repurposer Multi
+
   # Category - Choose ONE from: MARKETING, SALES, HR, SUPPORT, OPERATIONS
-  category: SALES
-  
+  category: MARKETING
+
   # Short description for the sidebar (keep it brief)
-  # Example: "Create and manage newsletters", "Track customer interactions"
-  description: "Repurpose content for different platforms and audiences"
+  description: "Transform content into multiple platform formats"
   
   # Specialization badge shown in chat header and right panel (optional)
   # Example: "Creative & Trendy", "Data Expert", "Lead Specialist"
@@ -37,7 +34,7 @@ agent:
   
   # Avatar URL (optional - you can use dicebear API with any seed word)
   # Just change the seed= parameter to any word
-  avatar: "/Squidgy AI Assistants Avatars/15.png"
+  avatar: "/Squidgy AI Assistants Avatars/10.png"
   
   # Custom initial welcome message (REQUIRED - supports HTML)
   # Use <br> for line breaks (not \n), supports HTML links and formatting
@@ -47,19 +44,18 @@ agent:
   
   # Agent capabilities shown in right panel (list your agent's main features)
   capabilities:
-    - "Primary capability or main function"
-    - "Secondary feature or service provided"
-    - "Integration or special functionality"
-    - "Advanced feature or automation"
-    - "Additional service or tool"
-  
+    - "Multi-platform content transformation"
+    - "Social media post generation (LinkedIn, Twitter, Instagram)"
+    - "Blog to social media conversion"
+    - "Newsletter content repurposing"
+    - "Tone and style adaptation per platform"
+
   # Recent actions shown in right panel (can be examples or dynamic)
-  # These help users understand what the agent has done recently
   recent_actions:
-    - "Completed a recent task or project"
-    - "Generated content or performed analysis"
-    - "Processed user request or data"
-    - "Automated workflow or integration"
+    - "Converted blog post into 5 LinkedIn posts"
+    - "Generated Twitter thread from newsletter"
+    - "Created Instagram captions from article"
+    - "Adapted content for multiple audiences"
 
 # N8N Webhook Configuration
 n8n:
@@ -121,12 +117,12 @@ interface:
 
 # Suggestion buttons shown in chat interface
 suggestions:
-  - "First suggested action"
-  - "Second helpful prompt"
-  - "Third common task"
-  - "Fourth useful command"
-  - "Fifth popular request"
-  - "Sixth frequent operation"
+  - "Convert newsletter to social posts"
+  - "Create LinkedIn post from content"
+  - "Generate Twitter thread"
+  - "Adapt for Instagram"
+  - "Repurpose for multiple platforms"
+  - "Change tone for different audience"
 
 # Agent personality configuration
 personality:

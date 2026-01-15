@@ -223,7 +223,7 @@ export default function Index() {
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <img 
-                  src="https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64" 
+                  src="/Squidgy AI Assistants Avatars/1.png" 
                   alt="Personal Assistant icon" 
                   className="w-16 h-16 rounded-full"
                 />
