@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { AgentConfigService } from '../services/agentConfigService';
-import { Mic, MicOff, Upload, Send, File, X, ArrowLeft } from 'lucide-react';
+import { Mic, MicOff, Upload, Send, File, X, ArrowLeft, Trash2, FileText, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface KnowledgeEntry {
@@ -12,6 +12,14 @@ interface KnowledgeEntry {
   fileName?: string;
   timestamp: Date;
   status: 'pending' | 'processing' | 'completed' | 'failed';
+}
+
+interface PreviousFile {
+  id: string;
+  file_name: string;
+  file_url: string;
+  created_at: string;
+  file_type?: string;
 }
 
 export default function AgentSettings() {
@@ -28,6 +36,11 @@ export default function AgentSettings() {
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+
+  // Previously uploaded files state
+  const [previousFiles, setPreviousFiles] = useState<PreviousFile[]>([]);
+  const [loadingPreviousFiles, setLoadingPreviousFiles] = useState(true);
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   
   // Speech recognition
   const [recognition, setRecognition] = useState<any>(null);
@@ -62,6 +75,40 @@ export default function AgentSettings() {
 
     loadAgentConfig();
   }, [agentId]);
+
+  // Function to fetch previously uploaded files (reusable)
+  const fetchPreviousFiles = async (showLoading = true) => {
+    if (!userId || !agentId) {
+      setLoadingPreviousFiles(false);
+      return;
+    }
+
+    try {
+      if (showLoading) setLoadingPreviousFiles(true);
+      const { data, error } = await supabase
+        .from('knowledge_base')
+        .select('id, file_name, file_url, created_at, file_type')
+        .eq('firm_user_id', userId)
+        .eq('agent_id', agentId)
+        .not('file_name', 'is', null)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching previous files:', error);
+      } else {
+        setPreviousFiles(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching previous files:', error);
+    } finally {
+      setLoadingPreviousFiles(false);
+    }
+  };
+
+  // Fetch previously uploaded files on mount
+  useEffect(() => {
+    fetchPreviousFiles();
+  }, [userId, agentId]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -146,6 +193,51 @@ export default function AgentSettings() {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Delete previously uploaded file
+  const handleDeletePreviousFile = async (fileId: string, fileUrl: string) => {
+    if (!confirm('Are you sure you want to delete this file? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingFileId(fileId);
+    try {
+      // Extract file path from URL for Supabase storage deletion
+      const urlParts = fileUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+
+      // Delete from Supabase storage
+      const { error: storageError } = await supabase.storage
+        .from('newsletter')
+        .remove([fileName]);
+
+      if (storageError) {
+        console.error('Error deleting from storage:', storageError);
+        // Continue with database deletion even if storage fails
+      }
+
+      // Delete from knowledge_base table
+      const { error: dbError } = await supabase
+        .from('knowledge_base')
+        .delete()
+        .eq('id', fileId);
+
+      if (dbError) {
+        console.error('Error deleting from database:', dbError);
+        alert('Failed to delete file. Please try again.');
+        return;
+      }
+
+      // Update local state
+      setPreviousFiles(prev => prev.filter(file => file.id !== fileId));
+      console.log('File deleted successfully');
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      alert('Failed to delete file. Please try again.');
+    } finally {
+      setDeletingFileId(null);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!userId || !agentId || (!currentText.trim() && uploadedFiles.length === 0)) {
       return;
@@ -208,20 +300,20 @@ export default function AgentSettings() {
       // Show success/error feedback
       if (successCount === totalOperations) {
         console.log('All knowledge saved successfully!');
-        
+
         // Clear form
         setCurrentText('');
         setVoiceText('');
         accumulatedTextRef.current = '';
         setUploadedFiles([]);
-        
-        // Navigate back to agent chat page after short delay
-        setTimeout(() => {
-          navigate(`/chat/${agentId}`);
-        }, 1000);
-        
+
+        // Refresh the list of previously uploaded files
+        await fetchPreviousFiles(false);
+
       } else {
         console.error(`Only ${successCount}/${totalOperations} operations succeeded`);
+        // Still refresh to show any that were uploaded
+        await fetchPreviousFiles(false);
       }
       
     } catch (error) {
@@ -386,7 +478,7 @@ export default function AgentSettings() {
                   </div>
                   <h3 className="text-lg font-semibold text-green-800 text-center mb-2">Upload Files</h3>
                   <p className="text-sm text-green-600 text-center mb-4">
-                    PDF, TXT, or DOCX documents
+                    PDF, TXT, DOCX, or Markdown files
                   </p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
@@ -490,10 +582,74 @@ export default function AgentSettings() {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,.txt,.docx,.doc"
+                accept=".pdf,.txt,.docx,.doc,.md"
                 onChange={handleFileUpload}
                 className="hidden"
               />
+            </div>
+          </div>
+
+          {/* Previously Uploaded Files Section */}
+          <div className="mt-8 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-gray-600 to-gray-700 px-8 py-4">
+              <h2 className="text-xl font-bold text-white">Previously Uploaded Files</h2>
+              <p className="text-gray-200 text-sm">
+                Files you've uploaded for {agentConfig?.agent?.name}
+              </p>
+            </div>
+
+            <div className="p-6">
+              {loadingPreviousFiles ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="animate-spin text-gray-400" size={24} />
+                  <span className="ml-2 text-gray-500">Loading files...</span>
+                </div>
+              ) : previousFiles.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="mx-auto text-gray-300 mb-3" size={48} />
+                  <p className="text-gray-500">No files uploaded yet</p>
+                  <p className="text-gray-400 text-sm">Upload files above to train your agent</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {previousFiles.map((file) => (
+                    <div
+                      key={file.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-lg border border-gray-200">
+                          <FileText size={20} className="text-gray-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-800">{file.file_name}</p>
+                          <p className="text-xs text-gray-500">
+                            Uploaded {new Date(file.created_at).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeletePreviousFile(file.id, file.file_url)}
+                        disabled={deletingFileId === file.id}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                        title="Delete file"
+                      >
+                        {deletingFileId === file.id ? (
+                          <Loader2 className="animate-spin" size={18} />
+                        ) : (
+                          <Trash2 size={18} />
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
