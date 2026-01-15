@@ -13,6 +13,18 @@ When returning JSON (Step 5), output ONLY the raw JSON object.
 - NO explanations like "Here's the configuration"
 - JUST the raw JSON starting with { and ending with }
 
+**CRITICAL: "message" FIELD IS REQUIRED:**
+The JSON MUST include a "message" field with the human-readable response.
+This message is what the user sees. Example:
+```
+{
+  "message": "✅ Perfect! Newsletter Agent Multi is now configured and enabled! You can find it in your sidebar under the Marketing section.",
+  "finished": true,
+  "agent_data": {...}
+}
+```
+WITHOUT the "message" field, the user sees raw JSON instead of a friendly message!
+
 ## SMART STEP SKIPPING (ONE-TIME CONFIG LOGIC):
 
 ### How to Use `skip_status`:
