@@ -416,10 +416,10 @@ export default function AgentSettings() {
             />
             <div>
               <h1 className="text-xl font-semibold text-gray-800">
-                {agentConfig?.agent?.name} - Configurable Data
+                Configurable Data
               </h1>
               <p className="text-sm text-gray-600">
-                Configurable Data
+                Add information to help your agent learn about your preferences
               </p>
             </div>
           </div>
