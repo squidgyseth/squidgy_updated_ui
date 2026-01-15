@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-15T13:25:57.525Z
+// Generated on: 2026-01-15T14:29:09.224Z
 
 export interface AgentConfig {
   agent: {
@@ -307,6 +307,120 @@ export const ALL_AGENTS: AgentConfig[] = [
         }
       ],
       "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+    }
+  },
+  {
+    "agent": {
+      "id": "social_media_agent",
+      "emoji": "📱",
+      "name": "Social Media Manager",
+      "category": "MARKETING",
+      "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn",
+      "specialization": "Social Media Automation",
+      "tagline": "Consult. Confirm. Execute.",
+      "avatar": "/Squidgy AI Assistants Avatars/16.png",
+      "pinned": false,
+      "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
+      "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
+      "capabilities": [
+        "Multi-platform post scheduling (Facebook, Instagram, LinkedIn)",
+        "Content ideation and caption generation",
+        "Image and video post management",
+        "Story scheduling for Facebook and Instagram",
+        "Media file upload and storage management",
+        "UTC timezone conversion for global scheduling",
+        "Post deletion with safety confirmations"
+      ],
+      "recent_actions": [
+        "Scheduled 5 LinkedIn posts for the week",
+        "Created Instagram story campaign for product launch",
+        "Generated caption ideas for Facebook engagement post",
+        "Uploaded media files to storage for reuse"
+      ]
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Social Media Dashboard",
+          "path": "social-media-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons"
+      ]
+    },
+    "suggestions": [
+      "Schedule a post for LinkedIn",
+      "Create an Instagram image post",
+      "Generate caption ideas for Facebook",
+      "Schedule a story for Instagram",
+      "Upload media to storage",
+      "Show my scheduled posts"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_agent"
+    },
+    "personality": {
+      "tone": "professional",
+      "style": "helpful",
+      "approach": "consultative"
+    },
+    "platforms": {
+      "facebook": {
+        "accounts": [
+          "The Ai Team",
+          "Solair - Solar Energy Ai Assistant"
+        ],
+        "content_types": [
+          "text",
+          "image",
+          "video",
+          "story_image",
+          "story_video"
+        ]
+      },
+      "instagram": {
+        "accounts": [
+          "hiretheaiteam",
+          "Seth Ward"
+        ],
+        "content_types": [
+          "image",
+          "video",
+          "story_image",
+          "story_video"
+        ]
+      },
+      "linkedin": {
+        "accounts": [
+          "Seth Ward",
+          "The Ai Team"
+        ],
+        "content_types": [
+          "text",
+          "image",
+          "video"
+        ]
+      }
+    },
+    "media_handling": {
+      "max_file_size_mb": 25,
+      "supported_image_types": [
+        "image/png",
+        "image/jpeg"
+      ],
+      "supported_video_types": [
+        "video/mp4"
+      ]
     }
   },
   {
@@ -833,6 +947,120 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "approach": "proactive"
     }
   },
+  "social_media_agent": {
+    "agent": {
+      "id": "social_media_agent",
+      "emoji": "📱",
+      "name": "Social Media Manager",
+      "category": "MARKETING",
+      "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn",
+      "specialization": "Social Media Automation",
+      "tagline": "Consult. Confirm. Execute.",
+      "avatar": "/Squidgy AI Assistants Avatars/16.png",
+      "pinned": false,
+      "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
+      "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
+      "capabilities": [
+        "Multi-platform post scheduling (Facebook, Instagram, LinkedIn)",
+        "Content ideation and caption generation",
+        "Image and video post management",
+        "Story scheduling for Facebook and Instagram",
+        "Media file upload and storage management",
+        "UTC timezone conversion for global scheduling",
+        "Post deletion with safety confirmations"
+      ],
+      "recent_actions": [
+        "Scheduled 5 LinkedIn posts for the week",
+        "Created Instagram story campaign for product launch",
+        "Generated caption ideas for Facebook engagement post",
+        "Uploaded media files to storage for reuse"
+      ]
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Social Media Dashboard",
+          "path": "social-media-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons"
+      ]
+    },
+    "suggestions": [
+      "Schedule a post for LinkedIn",
+      "Create an Instagram image post",
+      "Generate caption ideas for Facebook",
+      "Schedule a story for Instagram",
+      "Upload media to storage",
+      "Show my scheduled posts"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_agent"
+    },
+    "personality": {
+      "tone": "professional",
+      "style": "helpful",
+      "approach": "consultative"
+    },
+    "platforms": {
+      "facebook": {
+        "accounts": [
+          "The Ai Team",
+          "Solair - Solar Energy Ai Assistant"
+        ],
+        "content_types": [
+          "text",
+          "image",
+          "video",
+          "story_image",
+          "story_video"
+        ]
+      },
+      "instagram": {
+        "accounts": [
+          "hiretheaiteam",
+          "Seth Ward"
+        ],
+        "content_types": [
+          "image",
+          "video",
+          "story_image",
+          "story_video"
+        ]
+      },
+      "linkedin": {
+        "accounts": [
+          "Seth Ward",
+          "The Ai Team"
+        ],
+        "content_types": [
+          "text",
+          "image",
+          "video"
+        ]
+      }
+    },
+    "media_handling": {
+      "max_file_size_mb": 25,
+      "supported_image_types": [
+        "image/png",
+        "image/jpeg"
+      ],
+      "supported_video_types": [
+        "video/mp4"
+      ]
+    }
+  },
   "SOL": {
     "agent": {
       "id": "SOL",
@@ -1221,6 +1449,120 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ],
         "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
       }
+    },
+    {
+      "agent": {
+        "id": "social_media_agent",
+        "emoji": "📱",
+        "name": "Social Media Manager",
+        "category": "MARKETING",
+        "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn",
+        "specialization": "Social Media Automation",
+        "tagline": "Consult. Confirm. Execute.",
+        "avatar": "/Squidgy AI Assistants Avatars/16.png",
+        "pinned": false,
+        "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
+        "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
+        "capabilities": [
+          "Multi-platform post scheduling (Facebook, Instagram, LinkedIn)",
+          "Content ideation and caption generation",
+          "Image and video post management",
+          "Story scheduling for Facebook and Instagram",
+          "Media file upload and storage management",
+          "UTC timezone conversion for global scheduling",
+          "Post deletion with safety confirmations"
+        ],
+        "recent_actions": [
+          "Scheduled 5 LinkedIn posts for the week",
+          "Created Instagram story campaign for product launch",
+          "Generated caption ideas for Facebook engagement post",
+          "Uploaded media files to storage for reuse"
+        ]
+      },
+      "ui_use": {
+        "page_type": "single_page",
+        "pages": [
+          {
+            "name": "Social Media Dashboard",
+            "path": "social-media-dashboard",
+            "order": 1,
+            "validated": true
+          }
+        ]
+      },
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "voice_input",
+          "suggestion_buttons"
+        ]
+      },
+      "suggestions": [
+        "Schedule a post for LinkedIn",
+        "Create an Instagram image post",
+        "Generate caption ideas for Facebook",
+        "Schedule a story for Instagram",
+        "Upload media to storage",
+        "Show my scheduled posts"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_agent"
+      },
+      "personality": {
+        "tone": "professional",
+        "style": "helpful",
+        "approach": "consultative"
+      },
+      "platforms": {
+        "facebook": {
+          "accounts": [
+            "The Ai Team",
+            "Solair - Solar Energy Ai Assistant"
+          ],
+          "content_types": [
+            "text",
+            "image",
+            "video",
+            "story_image",
+            "story_video"
+          ]
+        },
+        "instagram": {
+          "accounts": [
+            "hiretheaiteam",
+            "Seth Ward"
+          ],
+          "content_types": [
+            "image",
+            "video",
+            "story_image",
+            "story_video"
+          ]
+        },
+        "linkedin": {
+          "accounts": [
+            "Seth Ward",
+            "The Ai Team"
+          ],
+          "content_types": [
+            "text",
+            "image",
+            "video"
+          ]
+        }
+      },
+      "media_handling": {
+        "max_file_size_mb": 25,
+        "supported_image_types": [
+          "image/png",
+          "image/jpeg"
+        ],
+        "supported_video_types": [
+          "video/mp4"
+        ]
+      }
     }
   ],
   "SALES": [
@@ -1413,7 +1755,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","SOL"];
+export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","social_media_agent","SOL"];
 
 // Total count
-export const TOTAL_AGENTS = 6;
+export const TOTAL_AGENTS = 7;

@@ -61,18 +61,70 @@ export const maskUrlsInText = (text: string): string => {
 };
 
 /**
- * Converts markdown-style links to HTML anchor tags
- * Handles both complete [text](url) and incomplete [text]() formats
+ * Checks if a URL points to an image file
+ */
+export const isImageUrl = (url: string): boolean => {
+  if (!url) return false;
+  const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)(\?.*)?$/i;
+  const imageHosts = /(unsplash\.com|pexels\.com|pixabay\.com|imgur\.com|cloudinary\.com|imagekit\.io)/i;
+  return imageExtensions.test(url) || imageHosts.test(url);
+};
+
+/**
+ * Converts markdown formatting to HTML
+ * Handles bold (**text**), italic (*text*), and links
+ * Special handling for image links - renders them as clickable image previews
  */
 export const convertMarkdownLinksToHtml = (text: string): string => {
   if (!text) return text;
 
   let result = text;
 
-  // First handle complete markdown links [text](url)
+  // Handle bold text **text** - must be done before italic to avoid conflicts
+  result = result.replace(
+    /\*\*([^*]+)\*\*/g,
+    '<strong>$1</strong>'
+  );
+
+  // Handle italic text *text* (single asterisk, but not part of bold)
+  result = result.replace(
+    /(?<!\*)\*([^*]+)\*(?!\*)/g,
+    '<em>$1</em>'
+  );
+
+  // First handle markdown image links ![alt](url) - render as actual images
+  result = result.replace(
+    /!\[([^\]]*)\]\(([^)\s]+)\)/g,
+    (match, altText, url) => {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-block my-2">
+        <img src="${url}" alt="${altText || 'Image'}" class="max-w-full h-auto rounded-lg shadow-md hover:shadow-lg transition-shadow" style="max-height: 200px; object-fit: contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'color: #7c3aed; text-decoration: underline;\\'>${altText || 'View Image'}</span>';" />
+      </a>`;
+    }
+  );
+
+  // Handle markdown links that look like image links [!Image X](url) - common pattern from AI
+  result = result.replace(
+    /\[(!?Image\s*\d*[^\]]*)\]\(([^)\s]+)\)/gi,
+    (match, linkText, url) => {
+      if (isImageUrl(url)) {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-block my-2">
+          <img src="${url}" alt="${linkText}" class="max-w-full h-auto rounded-lg shadow-md hover:shadow-lg transition-shadow" style="max-height: 200px; object-fit: contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'color: #7c3aed; text-decoration: underline;\\'>${linkText}</span>';" />
+        </a>`;
+      }
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">${linkText}</a>`;
+    }
+  );
+
+  // Handle complete markdown links [text](url) - check if URL is an image
   result = result.replace(
     /\[([^\]]+)\]\(([^)\s]+)\)/g,
     (match, linkText, url) => {
+      // If URL is an image and link text suggests it's an image, show preview
+      if (isImageUrl(url) && /image|photo|picture|img|pic/i.test(linkText)) {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-block my-2">
+          <img src="${url}" alt="${linkText}" class="max-w-full h-auto rounded-lg shadow-md hover:shadow-lg transition-shadow" style="max-height: 200px; object-fit: contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'color: #7c3aed; text-decoration: underline;\\'>${linkText}</span>';" />
+        </a>`;
+      }
       return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">${linkText}</a>`;
     }
   );
