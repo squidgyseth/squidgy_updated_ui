@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   Building2, Upload, X, File, ChevronLeft, ChevronRight, Settings, CheckCircle
 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -64,7 +64,7 @@ export default function ComprehensiveOnboarding() {
   const { toast } = useToast();
   const { userId, isReady } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [loading, setLoading] = useState(false);
   const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -73,13 +73,13 @@ export default function ComprehensiveOnboarding() {
   const [currentConfigIndex, setCurrentConfigIndex] = useState(0);
   const [completedConfigurations, setCompletedConfigurations] = useState<Set<string>>(new Set());
   const [isConfigExpanded, setIsConfigExpanded] = useState(false);
-  
+
   const [progress] = useState<OnboardingProgress>({
     currentStep: 5,
     totalSteps: 6,
     stepTitles: ['Business Type', 'Support Areas', 'Choose Assistants', 'Personalize', 'Company Details', 'Welcome']
   });
-  
+
   const [data, setData] = useState<OnboardingData>({
     companyName: '',
     companyWebsite: '',
@@ -112,12 +112,12 @@ export default function ComprehensiveOnboarding() {
         // Load from agents.ts - this would need to be updated to include presetup_required field
         const response = await fetch('/agents-compiled.json');
         const agentsData = await response.json();
-        
+
         // Filter agents that have presetup_required: true
-        const presetupAgents = agentsData.agents?.filter((agent: any) => 
+        const presetupAgents = agentsData.agents?.filter((agent: any) =>
           agent.presetup_required === true || agent.agent?.presetup_required === true
         ) || [];
-        
+
         setAgents(presetupAgents);
       } catch (error) {
         console.error('Error loading agents:', error);
@@ -151,7 +151,7 @@ export default function ComprehensiveOnboarding() {
     }
 
     setAnalyzing(true);
-    
+
     try {
       // Call the website analysis webhook directly
       const response = await fetch('http://localhost:8000/api/analyze-website', {
@@ -170,18 +170,18 @@ export default function ComprehensiveOnboarding() {
       }
 
       const result = await response.json();
-      
+
       // Update extracted content and screenshot
       if (result.extracted_content) {
         setExtractedContent(result.extracted_content);
       }
-      
+
       if (result.screenshot_url) {
         setScreenshotUrl(result.screenshot_url);
       }
 
       setHasAnalyzed(true);
-      
+
       toast({
         title: "Website Analyzed",
         description: "Website content has been extracted successfully.",
@@ -216,15 +216,15 @@ export default function ComprehensiveOnboarding() {
     }
 
     setUploading(true);
-    
+
     const newMaterials: CompanyMaterial[] = [];
-    
+
     for (const file of files) {
       try {
         // Upload to Supabase storage first
         const timestamp = Date.now();
         const fileName = `${userId}_${timestamp}_${file.name}`;
-        
+
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('company')
           .upload(fileName, file);
@@ -245,7 +245,7 @@ export default function ComprehensiveOnboarding() {
 
         // Save to knowledge base using the same API as agent-settings
         const result = await saveCompanyMaterial(file, publicUrl);
-        
+
         if (result.success) {
           newMaterials.push({
             id: result.file_id || `${timestamp}-${Math.random()}`,
@@ -254,12 +254,12 @@ export default function ComprehensiveOnboarding() {
             type: file.type,
             file
           });
-          
+
           console.log('Company material saved successfully:', result.file_id);
         } else {
           throw new Error('Failed to save to knowledge base');
         }
-        
+
       } catch (error) {
         console.error('Failed to process file:', file.name, error);
         toast({
@@ -269,7 +269,7 @@ export default function ComprehensiveOnboarding() {
         });
       }
     }
-    
+
     if (newMaterials.length > 0) {
       updateData('uploadedMaterials', [...data.uploadedMaterials, ...newMaterials]);
       toast({
@@ -277,7 +277,7 @@ export default function ComprehensiveOnboarding() {
         description: `Successfully uploaded ${newMaterials.length} file(s)`,
       });
     }
-    
+
     setUploading(false);
   };
 
@@ -294,7 +294,7 @@ export default function ComprehensiveOnboarding() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     const files = Array.from(e.dataTransfer.files);
     processFiles(files);
   };
@@ -306,7 +306,7 @@ export default function ComprehensiveOnboarding() {
   const handleAgentSelection = (agentId: string, selected: boolean) => {
     if (selected) {
       updateData('selectedAgents', [...data.selectedAgents, agentId]);
-      
+
       // Add to configuration list if has presetup_required
       const agent = agents.find(a => a.agent.id === agentId);
       if (agent && (agent.agent.presetup_page || agent.presetup_page)) {
@@ -314,15 +314,15 @@ export default function ComprehensiveOnboarding() {
       }
     } else {
       updateData('selectedAgents', data.selectedAgents.filter(id => id !== agentId));
-      
+
       // Remove from configuration list
       setSelectedAgentsToConfig(prev => prev.filter(a => a.agent.id !== agentId));
-      
+
       // Remove config for deselected agent
       const newConfigs = { ...data.agentConfigs };
       delete newConfigs[agentId];
       updateData('agentConfigs', newConfigs);
-      
+
       // Remove from completed configurations
       setCompletedConfigurations(prev => {
         const newSet = new Set(prev);
@@ -370,22 +370,27 @@ export default function ComprehensiveOnboarding() {
     setLoading(true);
     try {
       // Save business details
-      await saveBusinessDetails(userId, {
+      // Save business details
+      await saveBusinessDetails({
+        firm_user_id: userId,
+        agent_id: 'SOL',
         business_name: data.companyName,
         business_email: data.businessEmail,
         phone_number: data.phoneNumber,
         country: data.country,
-        address: data.address,
+        address_line: data.address,
         city: data.city,
         state: data.state,
         postal_code: data.postalCode,
         emergency_numbers: [],
-        address_method: 'manual'
+        address_method: 'manual',
       });
 
       // Save website analysis
       if (data.companyWebsite) {
-        await saveWebsiteAnalysis(userId, {
+        await saveWebsiteAnalysis({
+          firm_user_id: userId,
+          agent_id: 'SOL',
           website_url: data.companyWebsite,
           company_description: data.companyDescription,
           value_proposition: '',
@@ -396,7 +401,7 @@ export default function ComprehensiveOnboarding() {
 
       // Agent configurations are saved by their respective presetup pages
       // Each agent's config page handles its own data persistence
-      
+
       // Company materials are uploaded immediately when selected (no need to process again)
 
       toast({
@@ -462,7 +467,7 @@ export default function ComprehensiveOnboarding() {
 
   const getAgentConfigComponent = (agent: AgentConfig) => {
     const presetupPage = agent.agent.presetup_page || agent.presetup_page;
-    
+
     // Dynamic component mapping based on presetup_page from YAML
     // This maps the presetup_page URL to the actual React component
     const componentMap: Record<string, () => Promise<{ default: React.ComponentType<any> }>> = {
@@ -479,7 +484,7 @@ export default function ComprehensiveOnboarding() {
 
   const renderAgentConfigPage = (agent: AgentConfig) => {
     const presetupPage = agent.agent.presetup_page || agent.presetup_page;
-    
+
     if (!presetupPage) {
       return (
         <div className="text-center py-8">
@@ -492,7 +497,7 @@ export default function ComprehensiveOnboarding() {
           <p className="text-gray-600 mb-4">
             No presetup page specified for this agent in YAML configuration.
           </p>
-          <Button 
+          <Button
             onClick={() => markConfigurationComplete(agent.agent.id)}
             className="bg-purple-600 hover:bg-purple-700"
           >
@@ -502,12 +507,12 @@ export default function ComprehensiveOnboarding() {
         </div>
       );
     }
-    
+
     const ComponentLoader = getAgentConfigComponent(agent);
-    
+
     if (ComponentLoader) {
       const LazyComponent = React.lazy(ComponentLoader);
-      
+
       return (
         <div className="w-full h-full">
           <Suspense fallback={
@@ -521,7 +526,7 @@ export default function ComprehensiveOnboarding() {
         </div>
       );
     }
-    
+
     // Fallback for agents with presetup_page but no implemented component
     return (
       <div className="text-center py-8">
@@ -534,7 +539,7 @@ export default function ComprehensiveOnboarding() {
         <p className="text-gray-600 mb-4">
           Configuration page ({presetupPage}) not yet implemented.
         </p>
-        <Button 
+        <Button
           onClick={() => markConfigurationComplete(agent.agent.id)}
           className="bg-purple-600 hover:bg-purple-700"
         >
@@ -561,9 +566,9 @@ export default function ComprehensiveOnboarding() {
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
               Screenshot captured
             </div>
-            <img 
-              src={screenshotUrl} 
-              alt="Website Screenshot" 
+            <img
+              src={screenshotUrl}
+              alt="Website Screenshot"
               className="w-full h-32 object-cover rounded-lg border border-gray-200"
             />
           </div>
@@ -716,28 +721,25 @@ export default function ComprehensiveOnboarding() {
         </p>
       </div>
 
-      <div 
-        className={`border-2 border-dashed rounded-lg p-8 transition-all ${
-          isDragging 
-            ? 'border-blue-400 bg-blue-50 scale-105' 
+      <div
+        className={`border-2 border-dashed rounded-lg p-8 transition-all ${isDragging
+            ? 'border-blue-400 bg-blue-50 scale-105'
             : uploading
-            ? 'border-green-400 bg-green-50'
-            : 'border-gray-300 bg-gray-50'
-        }`}
+              ? 'border-green-400 bg-green-50'
+              : 'border-gray-300 bg-gray-50'
+          }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
         <div className="text-center">
-          <div className={`w-12 h-12 bg-white rounded-lg flex items-center justify-center mx-auto mb-4 shadow-sm transition-colors ${
-            uploading ? 'bg-green-100' : isDragging ? 'bg-blue-100' : 'bg-white'
-          }`}>
+          <div className={`w-12 h-12 bg-white rounded-lg flex items-center justify-center mx-auto mb-4 shadow-sm transition-colors ${uploading ? 'bg-green-100' : isDragging ? 'bg-blue-100' : 'bg-white'
+            }`}>
             {uploading ? (
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
             ) : (
-              <Upload className={`h-6 w-6 transition-colors ${
-                isDragging ? 'text-blue-600' : 'text-blue-500'
-              }`} />
+              <Upload className={`h-6 w-6 transition-colors ${isDragging ? 'text-blue-600' : 'text-blue-500'
+                }`} />
             )}
           </div>
           <div className="mb-3">
@@ -850,7 +852,7 @@ export default function ComprehensiveOnboarding() {
     return (
       <div>
         {/* SOL Bot Header with Expand/Collapse */}
-        <div 
+        <div
           className="flex items-center gap-3 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200 cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => setIsConfigExpanded(!isConfigExpanded)}
         >
@@ -869,7 +871,7 @@ export default function ComprehensiveOnboarding() {
               {solBot.agent.description}
             </p>
           </div>
-          
+
           {/* Expand/Collapse Button */}
           <Button
             type="button"
