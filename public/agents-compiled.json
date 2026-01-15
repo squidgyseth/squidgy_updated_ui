@@ -209,7 +209,7 @@
         "description": "Create and manage newsletters",
         "specialization": "Creative & Trendy",
         "tagline": "Content. Create. Distribute.",
-        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter_multi",
         "pinned": false,
         "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
         "capabilities": [
@@ -666,7 +666,7 @@
         "description": "Create and manage newsletters",
         "specialization": "Creative & Trendy",
         "tagline": "Content. Create. Distribute.",
-        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter_multi",
         "pinned": false,
         "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
         "capabilities": [
@@ -1118,7 +1118,7 @@
           "description": "Create and manage newsletters",
           "specialization": "Creative & Trendy",
           "tagline": "Content. Create. Distribute.",
-          "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+          "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter_multi",
           "pinned": false,
           "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
           "capabilities": [
@@ -1366,6 +1366,6 @@
   },
   "meta": {
     "total": 6,
-    "buildTime": "2026-01-15T05:54:58.408Z"
+    "buildTime": "2026-01-15T06:08:52.912Z"
   }
 }
