@@ -608,6 +608,9 @@ export default function N8nChatInterface({
       if (lowerContent.includes('solar sales')) {
         agents.push('Solar Sales Assistant');
       }
+      if (lowerContent.includes('social media')) {
+        agents.push('Social Media Manager');
+      }
     }
     
     return agents;
