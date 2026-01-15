@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-15T05:54:58.407Z
+// Generated on: 2026-01-15T06:08:52.911Z
 
 export interface AgentConfig {
   agent: {
@@ -252,7 +252,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "description": "Create and manage newsletters",
       "specialization": "Creative & Trendy",
       "tagline": "Content. Create. Distribute.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter_multi",
       "pinned": false,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
@@ -711,7 +711,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "description": "Create and manage newsletters",
       "specialization": "Creative & Trendy",
       "tagline": "Content. Create. Distribute.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter_multi",
       "pinned": false,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
@@ -1165,7 +1165,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "description": "Create and manage newsletters",
         "specialization": "Creative & Trendy",
         "tagline": "Content. Create. Distribute.",
-        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter_multi",
         "pinned": false,
         "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
         "capabilities": [
