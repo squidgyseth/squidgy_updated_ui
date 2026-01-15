@@ -113,6 +113,12 @@ class AgentEnablementService {
       const agentService = OptimizedAgentService.getInstance();
       const allAgents = agentService.getAllAgents();
 
+      // IMPORTANT: Sort agents by name length (longest first) to match more specific agents first
+      // This ensures "Newsletter Agent Multi" is matched before "Newsletter Agent"
+      const sortedAgents = [...allAgents].sort((a, b) =>
+        b.agent.name.length - a.agent.name.length
+      );
+
       // Convert response to lowercase for matching
       const textLower = responseText.toLowerCase();
 
@@ -133,8 +139,8 @@ class AgentEnablementService {
         return null;
       }
 
-      // Check each agent from config
-      for (const config of allAgents) {
+      // Check each agent from config (sorted by name length, longest first)
+      for (const config of sortedAgents) {
         const agentName = config.agent.name;
         const agentId = config.agent.id;
 
@@ -227,14 +233,22 @@ class AgentEnablementService {
       if (Array.isArray(responseData) && responseData.length > 0) {
         actualData = responseData[0];
       }
-      
-      // If we see enablement text in agent_response, create structured format
-      if (typeof actualData === 'object' && actualData.agent_response && 
+
+      // PRIORITY 1: Handle structured format with agent_data (preferred - use exact data from N8N)
+      if (typeof actualData === 'object' && actualData.finished === true && actualData.agent_data) {
+        console.log('✅ AgentEnablementService: Processing structured agent enablement with agent_data');
+        console.log('   agent_id:', actualData.agent_data.agent_id);
+        console.log('   agent_name:', actualData.agent_data.agent_name);
+        return this.handleStructuredEnablement(actualData);
+      }
+
+      // PRIORITY 2: Fallback - parse enablement text when agent_data is not present
+      if (typeof actualData === 'object' && actualData.agent_response &&
           typeof actualData.agent_response === 'string' &&
           (actualData.agent_response.includes('is now configured and enabled') ||
            actualData.agent_response.includes('configured and enabled'))) {
-        console.log('🔄 AgentEnablementService: Creating structured format from enablement text');
-        
+        console.log('🔄 AgentEnablementService: Fallback - parsing enablement text (no agent_data found)');
+
         const agentInfo = this.parseOnboardingResponse(actualData.agent_response);
         if (agentInfo) {
           const enablementData = {
@@ -242,16 +256,10 @@ class AgentEnablementService {
             agent_data: agentInfo,
             user_id: actualData.user_id
           };
-          
-          console.log('✅ AgentEnablementService: Created structured enablement:', enablementData);
+
+          console.log('✅ AgentEnablementService: Created structured enablement from text:', enablementData);
           return this.handleStructuredEnablement(enablementData);
         }
-      }
-      
-      // Handle structured format (object with finished: true)
-      if (typeof actualData === 'object' && actualData.finished === true && actualData.agent_data) {
-        console.log('✅ AgentEnablementService: Processing structured agent enablement');
-        return this.handleStructuredEnablement(actualData);
       }
 
       // Handle legacy text parsing
