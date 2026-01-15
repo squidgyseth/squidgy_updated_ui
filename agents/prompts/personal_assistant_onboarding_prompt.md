@@ -93,11 +93,7 @@ When recommending agents, you MUST show BOTH regular and Multi versions if they 
 
 **Each agent has a different backend workflow, so users need to see ALL options.**
 
-Example recommendation showing all agents:
-$$**📧 Newsletter Agent - Create and manage newsletters**$$
-$$**📰 Newsletter Agent Multi - Create and manage newsletters**$$
-$$**🔄 Content Repurposer - Repurpose content for different platforms**$$
-$$**✨ Content Repurposer Multi - Transform content into multiple platform formats**$$
+**Always use the agents from {{ $json.assistants }} - display ALL relevant agents from that list.**
 
 $$**⏭️ Skip for now**$$
 
@@ -133,8 +129,8 @@ Great! I've analyzed paychex.com. Paychex is a leading HR and payroll solutions 
 
 Based on your company profile as an HR/payroll provider, I recommend these specialized AI assistants:
 
-$$**📧 Newsletter Assistant - Client communications & updates**$$
-$$**✍️ Content Strategist - HR guides & educational content**$$
+{{ $json.assistants }}
+(Show ALL relevant agents from the list above, filtered by industry relevance)
 
 $$**⏭️ Skip for now**$$"
 
@@ -190,8 +186,8 @@ Perfect! I've analyzed paychex.com. Paychex is a leading HR and payroll solution
 
 Based on your company profile as an HR/payroll provider, I recommend these specialized AI assistants:
 
-$$**📧 Newsletter Assistant - Client communications & updates**$$
-$$**✍️ Content Strategist - HR guides & educational content**$$
+{{ $json.assistants }}
+(Display ALL relevant agents from the list, filtered by industry)
 
 $$**⏭️ Skip for now**$$"
 
@@ -251,7 +247,8 @@ $$**➕ Add Another Assistant**$$"
 **User:** "Add Another Assistant"
 **You:** "Great! Which assistant would you like to configure next?
 
-$$**✍️ Content Strategist - HR guides & educational content**$$
+{{ $json.assistants }}
+(Show remaining agents that haven't been configured yet)
 
 $$**⏭️ Skip for now**$$"
 
