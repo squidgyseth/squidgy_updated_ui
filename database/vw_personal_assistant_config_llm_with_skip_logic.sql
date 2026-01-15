@@ -47,13 +47,11 @@ SELECT
       ORDER BY (('- '::text || pac.code::text) || ': '::text) || pac.display_name::text
     )
     WHEN pac.config_type::text = 'assistants'::text THEN string_agg(
-      DISTINCT CASE
-        WHEN pac.code != 'personal_assistant' THEN
-          (('$$**'::text || pac.emoji::text) || ' '::text || pac.display_name::text || ' - '::text || pac.description) || '**$$'::text
-        ELSE NULL
-      END,
+      CASE WHEN pac.code != 'personal_assistant' THEN
+        (('$$**'::text || pac.emoji::text) || ' '::text || pac.display_name::text || ' - '::text || pac.description) || '**$$'::text
+      ELSE NULL END,
       chr(10)
-      ORDER BY (('$$**'::text || pac.emoji::text) || ' '::text || pac.display_name::text || ' - '::text || pac.description) || '**$$'::text
+      ORDER BY pac.display_name
     )
     WHEN pac.config_type::text = ANY (
       ARRAY['brand_voices'::character varying::text, 'target_audiences'::character varying::text]
@@ -122,13 +120,11 @@ SELECT
   -- =========================================================================
   CASE
     WHEN pac.config_type::text = 'assistants'::text THEN string_agg(
-      DISTINCT CASE
-        WHEN pac.code != 'personal_assistant' THEN
-          (((('$$**'::text || pac.display_name::text) || '**$$ → ID: "'::text) || pac.code::text) || '" | Category: "'::text || COALESCE(pac.category, 'General'::character varying)::text) || '"'::text
-        ELSE NULL
-      END,
+      CASE WHEN pac.code != 'personal_assistant' THEN
+        (((('$$**'::text || pac.display_name::text) || '**$$ → ID: "'::text) || pac.code::text) || '" | Category: "'::text || COALESCE(pac.category, 'General'::character varying)::text) || '"'::text
+      ELSE NULL END,
       chr(10)
-      ORDER BY (((('$$**'::text || pac.display_name::text) || '**$$ → ID: "'::text) || pac.code::text) || '" | Category: "'::text || COALESCE(pac.category, 'General'::character varying)::text) || '"'::text
+      ORDER BY pac.display_name
     )
     ELSE NULL::text
   END AS agent_department_value,
