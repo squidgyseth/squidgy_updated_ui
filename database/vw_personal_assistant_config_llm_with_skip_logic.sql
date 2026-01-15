@@ -38,6 +38,7 @@ SELECT
 
   -- =========================================================================
   -- llm_input_string: Formatted options for LLM display
+  -- NOTE: Excludes 'personal_assistant' from assistants (it's the onboarding agent)
   -- =========================================================================
   CASE
     WHEN pac.config_type::text = 'business_types'::text THEN string_agg(
@@ -45,8 +46,17 @@ SELECT
       chr(10)
       ORDER BY (('- '::text || pac.code::text) || ': '::text) || pac.display_name::text
     )
+    WHEN pac.config_type::text = 'assistants'::text THEN string_agg(
+      DISTINCT CASE
+        WHEN pac.code != 'personal_assistant' THEN
+          (('$$**'::text || pac.emoji::text) || ' '::text || pac.display_name::text || ' - '::text || pac.description) || '**$$'::text
+        ELSE NULL
+      END,
+      chr(10)
+      ORDER BY (('$$**'::text || pac.emoji::text) || ' '::text || pac.display_name::text || ' - '::text || pac.description) || '**$$'::text
+    )
     WHEN pac.config_type::text = ANY (
-      ARRAY['assistants'::character varying::text, 'brand_voices'::character varying::text, 'target_audiences'::character varying::text]
+      ARRAY['brand_voices'::character varying::text, 'target_audiences'::character varying::text]
     ) THEN string_agg(
       DISTINCT (('$$**'::text || pac.emoji::text) || ' '::text || pac.display_name::text || ' - '::text || pac.description) || '**$$'::text,
       chr(10)
@@ -73,11 +83,13 @@ SELECT
 
   -- =========================================================================
   -- values_not_enabled: Assistants that are NOT enabled for this user
+  -- NOTE: Excludes 'personal_assistant' (it's always enabled by default)
   -- =========================================================================
   CASE
     WHEN pac.config_type::text = 'assistants'::text THEN string_agg(
       CASE
-        WHEN ap2.is_enabled = false OR ap2.assistant_id IS NULL THEN
+        WHEN (ap2.is_enabled = false OR ap2.assistant_id IS NULL)
+             AND pac.code != 'personal_assistant' THEN
           ('$$**'::text || pac.emoji::text || ' '::text || pac.display_name::text || ' - '::text || pac.description) || '**$$'::text
         ELSE NULL::text
       END,
@@ -89,11 +101,12 @@ SELECT
 
   -- =========================================================================
   -- values_enabled: Assistants that ARE enabled for this user
+  -- NOTE: Excludes 'personal_assistant' (it's the onboarding agent itself)
   -- =========================================================================
   CASE
     WHEN pac.config_type::text = 'assistants'::text THEN string_agg(
       CASE
-        WHEN ap2.is_enabled = true THEN
+        WHEN ap2.is_enabled = true AND pac.code != 'personal_assistant' THEN
           ('$$**'::text || pac.emoji::text || ' '::text || pac.display_name::text || ' - '::text || pac.description) || '**$$'::text
         ELSE NULL::text
       END,
@@ -105,10 +118,15 @@ SELECT
 
   -- =========================================================================
   -- agent_department_value: Agent ID mapping with categories for LLM
+  -- NOTE: Excludes 'personal_assistant' (it's the onboarding agent itself)
   -- =========================================================================
   CASE
     WHEN pac.config_type::text = 'assistants'::text THEN string_agg(
-      DISTINCT (((('$$**'::text || pac.display_name::text) || '**$$ → ID: "'::text) || pac.code::text) || '" | Category: "'::text || COALESCE(pac.category, 'General'::character varying)::text) || '"'::text,
+      DISTINCT CASE
+        WHEN pac.code != 'personal_assistant' THEN
+          (((('$$**'::text || pac.display_name::text) || '**$$ → ID: "'::text) || pac.code::text) || '" | Category: "'::text || COALESCE(pac.category, 'General'::character varying)::text) || '"'::text
+        ELSE NULL
+      END,
       chr(10)
       ORDER BY (((('$$**'::text || pac.display_name::text) || '**$$ → ID: "'::text) || pac.code::text) || '" | Category: "'::text || COALESCE(pac.category, 'General'::character varying)::text) || '"'::text
     )
