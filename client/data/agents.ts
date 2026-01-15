@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-15T07:30:51.400Z
+// Generated on: 2026-01-15T13:29:37.706Z
 
 export interface AgentConfig {
   agent: {
@@ -52,7 +52,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "description": "Your onboarding assistant for setting up AI agents",
       "specialization": "Onboarding Expert",
       "tagline": "Setup. Configure. Launch.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+      "avatar": "/Squidgy AI Assistants Avatars/1.png",
       "pinned": true,
       "initial_message": "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.",
       "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
@@ -117,7 +117,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "description": "Transform content into multiple platform formats",
       "specialization": "Content Repurposer",
       "tagline": "Repurpose. Convert. Deliver.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
+      "avatar": "/Squidgy AI Assistants Avatars/10.png",
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
         "Multi-platform content transformation",
@@ -186,7 +186,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "description": "Create and manage newsletters",
       "specialization": "Creative & Trendy",
       "tagline": "Content. Create. Distribute.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+      "avatar": "/Squidgy AI Assistants Avatars/4.png",
       "pinned": false,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
@@ -252,7 +252,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "description": "Create and manage newsletters",
       "specialization": "Creative & Trendy",
       "tagline": "Content. Create. Distribute.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter_multi",
+      "avatar": "/Squidgy AI Assistants Avatars/7.png",
       "pinned": false,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
@@ -318,7 +318,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "description": "Solar sales expert - Calculate savings, design systems, close deals",
       "specialization": "Solar Energy Expert",
       "tagline": "Illuminate. Calculate. Convert.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
+      "avatar": "/Squidgy AI Assistants Avatars/5.png",
       "pinned": true,
       "presetup_required": true,
       "presetup_page": "/solar-config",
@@ -434,7 +434,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "description": "Repurpose content for different platforms and audiences",
       "specialization": "Content Repurposer",
       "tagline": "Repurpose. Convert. Deliver.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
+      "avatar": "/Squidgy AI Assistants Avatars/15.png",
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
         "Primary capability or main function",
@@ -507,7 +507,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "description": "Repurpose content for different platforms and audiences",
       "specialization": "Content Repurposer",
       "tagline": "Repurpose. Convert. Deliver.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
+      "avatar": "/Squidgy AI Assistants Avatars/15.png",
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
         "Primary capability or main function",
@@ -576,7 +576,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "description": "Transform content into multiple platform formats",
       "specialization": "Content Repurposer",
       "tagline": "Repurpose. Convert. Deliver.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
+      "avatar": "/Squidgy AI Assistants Avatars/10.png",
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
         "Multi-platform content transformation",
@@ -645,7 +645,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "description": "Create and manage newsletters",
       "specialization": "Creative & Trendy",
       "tagline": "Content. Create. Distribute.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+      "avatar": "/Squidgy AI Assistants Avatars/4.png",
       "pinned": false,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
@@ -711,7 +711,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "description": "Create and manage newsletters",
       "specialization": "Creative & Trendy",
       "tagline": "Content. Create. Distribute.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter_multi",
+      "avatar": "/Squidgy AI Assistants Avatars/7.png",
       "pinned": false,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
@@ -777,7 +777,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "description": "Your onboarding assistant for setting up AI agents",
       "specialization": "Onboarding Expert",
       "tagline": "Setup. Configure. Launch.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+      "avatar": "/Squidgy AI Assistants Avatars/1.png",
       "pinned": true,
       "initial_message": "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.",
       "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
@@ -842,7 +842,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "description": "Solar sales expert - Calculate savings, design systems, close deals",
       "specialization": "Solar Energy Expert",
       "tagline": "Illuminate. Calculate. Convert.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
+      "avatar": "/Squidgy AI Assistants Avatars/5.png",
       "pinned": true,
       "presetup_required": true,
       "presetup_page": "/solar-config",
@@ -963,7 +963,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "description": "Your onboarding assistant for setting up AI agents",
         "specialization": "Onboarding Expert",
         "tagline": "Setup. Configure. Launch.",
-        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+        "avatar": "/Squidgy AI Assistants Avatars/1.png",
         "pinned": true,
         "initial_message": "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.",
         "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
@@ -1030,7 +1030,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "description": "Transform content into multiple platform formats",
         "specialization": "Content Repurposer",
         "tagline": "Repurpose. Convert. Deliver.",
-        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
+        "avatar": "/Squidgy AI Assistants Avatars/10.png",
         "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
         "capabilities": [
           "Multi-platform content transformation",
@@ -1099,7 +1099,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "description": "Create and manage newsletters",
         "specialization": "Creative & Trendy",
         "tagline": "Content. Create. Distribute.",
-        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+        "avatar": "/Squidgy AI Assistants Avatars/4.png",
         "pinned": false,
         "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
         "capabilities": [
@@ -1165,7 +1165,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "description": "Create and manage newsletters",
         "specialization": "Creative & Trendy",
         "tagline": "Content. Create. Distribute.",
-        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter_multi",
+        "avatar": "/Squidgy AI Assistants Avatars/7.png",
         "pinned": false,
         "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
         "capabilities": [
@@ -1233,7 +1233,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "description": "Solar sales expert - Calculate savings, design systems, close deals",
         "specialization": "Solar Energy Expert",
         "tagline": "Illuminate. Calculate. Convert.",
-        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
+        "avatar": "/Squidgy AI Assistants Avatars/5.png",
         "pinned": true,
         "presetup_required": true,
         "presetup_page": "/solar-config",
@@ -1349,7 +1349,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "description": "Repurpose content for different platforms and audiences",
         "specialization": "Content Repurposer",
         "tagline": "Repurpose. Convert. Deliver.",
-        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
+        "avatar": "/Squidgy AI Assistants Avatars/15.png",
         "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
         "capabilities": [
           "Primary capability or main function",

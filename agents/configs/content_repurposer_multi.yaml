@@ -34,7 +34,7 @@ agent:
   
   # Avatar URL (optional - you can use dicebear API with any seed word)
   # Just change the seed= parameter to any word
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer"
+  avatar: "/Squidgy AI Assistants Avatars/10.png"
   
   # Custom initial welcome message (REQUIRED - supports HTML)
   # Use <br> for line breaks (not \n), supports HTML links and formatting

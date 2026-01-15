@@ -25,7 +25,7 @@ agent:
   tagline: "Illuminate. Calculate. Convert."
   
   # Avatar URL (solar-themed avatar)
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238"
+  avatar: "/Squidgy AI Assistants Avatars/5.png"
   
   # Pin to top of category
   pinned: true
