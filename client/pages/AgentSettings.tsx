@@ -71,7 +71,7 @@ export default function AgentSettings() {
       
       recognitionInstance.continuous = true;
       recognitionInstance.interimResults = true;
-      recognitionInstance.lang = 'en-US';
+      recognitionInstance.lang = 'en-GB'; // UK English
       
       recognitionInstance.onresult = (event: any) => {
         let interimTranscript = '';
@@ -233,13 +233,14 @@ export default function AgentSettings() {
 
   const saveTextKnowledge = async (textContent: string) => {
     try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
       const formData = new FormData();
       formData.append('firm_user_id', userId);
       formData.append('agent_id', agentId);
       formData.append('agent_name', agentConfig?.agent?.name || 'Unknown Agent');
       formData.append('text_content', textContent);
 
-      const response = await fetch('http://localhost:8000/api/knowledge-base/text', {
+      const response = await fetch(`${backendUrl}/api/knowledge-base/text`, {
         method: 'POST',
         body: formData,
       });
@@ -257,6 +258,7 @@ export default function AgentSettings() {
 
   const saveFileKnowledge = async (file: File, fileUrl: string) => {
     try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
       const formData = new FormData();
       formData.append('firm_user_id', userId);
       formData.append('file_name', file.name);
@@ -264,7 +266,7 @@ export default function AgentSettings() {
       formData.append('agent_id', agentId);
       formData.append('agent_name', agentConfig?.agent?.name || 'Unknown Agent');
 
-      const response = await fetch('http://localhost:8000/api/knowledge-base/file', {
+      const response = await fetch(`${backendUrl}/api/knowledge-base/file`, {
         method: 'POST',
         body: formData,
       });
