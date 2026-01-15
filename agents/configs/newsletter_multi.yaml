@@ -32,10 +32,10 @@ suggestions:
   - "Design email layout"
   - "Optimize subject lines"
 
-n8n:
-  webhook_url: https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter
-  #https://n8n.theaiteam.uk/webhook/newsletter
-  image_generator_url: https://n8n.theaiteam.uk/webhook/image_generator
+  n8n:
+    webhook_url: https://n8n.theaiteam.uk/webhook/newsletter_multi
+    #https://n8n.theaiteam.uk/webhook/newsletter
+    image_generator_url: https://n8n.theaiteam.uk/webhook/image_generator
 ui:
   page_type: standard
   figma_url: ''
