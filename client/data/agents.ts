@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-14T17:05:00.542Z
+// Generated on: 2026-01-15T05:39:57.989Z
 
 export interface AgentConfig {
   agent: {
@@ -102,6 +102,75 @@ export const ALL_AGENTS: AgentConfig[] = [
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant"
     },
+    "personality": {
+      "tone": "professional",
+      "style": "helpful",
+      "approach": "proactive"
+    }
+  },
+  {
+    "agent": {
+      "id": "content_repurposer_multi",
+      "emoji": "✨",
+      "name": "Content Repurposer Multi",
+      "category": "MARKETING",
+      "description": "Transform content into multiple platform formats",
+      "specialization": "Content Repurposer",
+      "tagline": "Repurpose. Convert. Deliver.",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
+      "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
+      "capabilities": [
+        "Multi-platform content transformation",
+        "Social media post generation (LinkedIn, Twitter, Instagram)",
+        "Blog to social media conversion",
+        "Newsletter content repurposing",
+        "Tone and style adaptation per platform"
+      ],
+      "recent_actions": [
+        "Converted blog post into 5 LinkedIn posts",
+        "Generated Twitter thread from newsletter",
+        "Created Instagram captions from article",
+        "Adapted content for multiple audiences"
+      ]
+    },
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Your Agent Dashboard",
+          "path": "your-agent-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons"
+      ]
+    },
+    "suggestions": [
+      "Convert newsletter to social posts",
+      "Create LinkedIn post from content",
+      "Generate Twitter thread",
+      "Adapt for Instagram",
+      "Repurpose for multiple platforms",
+      "Change tone for different audience"
+    ],
     "personality": {
       "tone": "professional",
       "style": "helpful",
@@ -498,6 +567,75 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "approach": "proactive"
     }
   },
+  "content_repurposer_multi": {
+    "agent": {
+      "id": "content_repurposer_multi",
+      "emoji": "✨",
+      "name": "Content Repurposer Multi",
+      "category": "MARKETING",
+      "description": "Transform content into multiple platform formats",
+      "specialization": "Content Repurposer",
+      "tagline": "Repurpose. Convert. Deliver.",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
+      "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
+      "capabilities": [
+        "Multi-platform content transformation",
+        "Social media post generation (LinkedIn, Twitter, Instagram)",
+        "Blog to social media conversion",
+        "Newsletter content repurposing",
+        "Tone and style adaptation per platform"
+      ],
+      "recent_actions": [
+        "Converted blog post into 5 LinkedIn posts",
+        "Generated Twitter thread from newsletter",
+        "Created Instagram captions from article",
+        "Adapted content for multiple audiences"
+      ]
+    },
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Your Agent Dashboard",
+          "path": "your-agent-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons"
+      ]
+    },
+    "suggestions": [
+      "Convert newsletter to social posts",
+      "Create LinkedIn post from content",
+      "Generate Twitter thread",
+      "Adapt for Instagram",
+      "Repurpose for multiple platforms",
+      "Change tone for different audience"
+    ],
+    "personality": {
+      "tone": "professional",
+      "style": "helpful",
+      "approach": "proactive"
+    }
+  },
   "newsletter": {
     "agent": {
       "id": "newsletter",
@@ -885,6 +1023,75 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
   "MARKETING": [
     {
       "agent": {
+        "id": "content_repurposer_multi",
+        "emoji": "✨",
+        "name": "Content Repurposer Multi",
+        "category": "MARKETING",
+        "description": "Transform content into multiple platform formats",
+        "specialization": "Content Repurposer",
+        "tagline": "Repurpose. Convert. Deliver.",
+        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
+        "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
+        "capabilities": [
+          "Multi-platform content transformation",
+          "Social media post generation (LinkedIn, Twitter, Instagram)",
+          "Blog to social media conversion",
+          "Newsletter content repurposing",
+          "Tone and style adaptation per platform"
+        ],
+        "recent_actions": [
+          "Converted blog post into 5 LinkedIn posts",
+          "Generated Twitter thread from newsletter",
+          "Created Instagram captions from article",
+          "Adapted content for multiple audiences"
+        ]
+      },
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
+        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+      },
+      "ui": {
+        "page_type": "standard",
+        "figma_url": "",
+        "figma_deployed_url": "",
+        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
+      },
+      "ui_use": {
+        "page_type": "single_page",
+        "pages": [
+          {
+            "name": "Your Agent Dashboard",
+            "path": "your-agent-dashboard",
+            "order": 1,
+            "validated": true
+          }
+        ]
+      },
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "voice_input",
+          "suggestion_buttons"
+        ]
+      },
+      "suggestions": [
+        "Convert newsletter to social posts",
+        "Create LinkedIn post from content",
+        "Generate Twitter thread",
+        "Adapt for Instagram",
+        "Repurpose for multiple platforms",
+        "Change tone for different audience"
+      ],
+      "personality": {
+        "tone": "professional",
+        "style": "helpful",
+        "approach": "proactive"
+      }
+    },
+    {
+      "agent": {
         "id": "newsletter",
         "emoji": "📧",
         "name": "Newsletter Agent",
@@ -1206,7 +1413,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","newsletter","newsletter_multi","personal_assistant","SOL"];
+export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","SOL"];
 
 // Total count
-export const TOTAL_AGENTS = 5;
+export const TOTAL_AGENTS = 6;
