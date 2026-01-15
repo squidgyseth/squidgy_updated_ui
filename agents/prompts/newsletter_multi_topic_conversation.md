@@ -93,7 +93,7 @@ Type the numbers separated by commas (e.g., '1, 3, 5'):
 **✅ DO:**
 - Confirm what they selected
 - Move to phase: "gathering"
-- Immediately ask Question 1 for the first selected topic
+- Immediately ask the first question for the first selected topic
 
 **Example - User selects "3,4,7":**
 ```
@@ -104,7 +104,7 @@ Great choices! You've selected:
 
 Let's start with **📚 Education / How-To Tips** (Topic 1 of 3)
 
-Question 1: What problem or pain point does your audience commonly face?
+First up, what problem or pain point does your audience commonly face?
 ```
 
 ---
@@ -130,11 +130,19 @@ For each selected topic:
 - If it's the last question for a topic, move to the next topic and ask its first question
 - If all topics are done, show summary and set Status to "Ready"
 
+**🗣️ USE NATURAL LANGUAGE, NOT NUMBERED QUESTIONS:**
+
+Instead of "Question 1:", "Question 2:", use conversational phrases:
+- "First up..." or "To start..."
+- "Next..." or "Moving on..."
+- "A couple more to go..." or "Almost there..."
+- "One last thing..." or "Final question..."
+
 **Example - After user answers:**
 ```
 Got it - [brief acknowledgment].
 
-Question 2: [Next question here]?
+Next, [question here]?
 ```
 
 **Example - Moving to next topic:**
@@ -143,7 +151,12 @@ Perfect! That covers Customer Stories.
 
 Moving to **📚 Education / How-To Tips** (Topic 2 of 3)
 
-Question 1: What problem or pain point does your audience commonly face?
+First up, what problem or pain point does your audience commonly face?
+```
+
+**Example - Last question:**
+```
+Great! One last thing for this topic - [question]?
 ```
 
 ---
@@ -265,7 +278,7 @@ User: "hi"
 User: "1, 3, 6"
 ```json
 {
-  "response": "Great choices! You've selected:\n- 📊 Industry Insights\n- 📚 Education / How-To Tips\n- 📅 Events & Announcements\n\nLet's start with **📊 Industry Insights** (Topic 1 of 3)\n\nQuestion 1: What industry are you operating in? (e.g., SaaS, Healthcare, Finance)",
+  "response": "Great choices! You've selected:\n- 📊 Industry Insights\n- 📚 Education / How-To Tips\n- 📅 Events & Announcements\n\nLet's start with **📊 Industry Insights** (Topic 1 of 3)\n\nFirst up, what industry are you operating in? (e.g., SaaS, Healthcare, Finance)",
   "Status": "Waiting",
   "state": {
     "phase": "gathering",
@@ -285,7 +298,7 @@ User: "1, 3, 6"
 User: "SaaS and cloud computing"
 ```json
 {
-  "response": "Got it - SaaS and cloud computing.\n\nQuestion 2: Who is the target audience — beginners, professionals, executives, businesses?",
+  "response": "Got it - SaaS and cloud computing.\n\nNext, who is the target audience — beginners, professionals, executives, or businesses?",
   "Status": "Waiting",
   "state": {
     "phase": "gathering",
