@@ -6,7 +6,7 @@ agent:
   description: Your onboarding assistant for setting up AI agents
   specialization: "Onboarding Expert"
   tagline: "Setup. Configure. Launch."
-  avatar: "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64"
+  avatar: "/Squidgy AI Assistants Avatars/1.png"
   pinned: true
   initial_message: "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you."
   sidebar_greeting: "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?"
