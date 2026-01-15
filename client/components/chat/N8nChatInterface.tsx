@@ -54,6 +54,7 @@ export default function N8nChatInterface({
   const [showNewsletterSelector, setShowNewsletterSelector] = useState(false);
   const [existingHistoryId, setExistingHistoryId] = useState<string | null>(null);
   const [activeInteractiveButtons, setActiveInteractiveButtons] = useState<string[]>([]);
+  const [conversationState, setConversationState] = useState<Record<string, unknown> | undefined>(undefined); // State for multi-turn agents like newsletter_multi
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatHistoryService = ChatHistoryService.getInstance();
@@ -310,10 +311,17 @@ export default function N8nChatInterface({
         sessionId,
         userMessage.id,
         webhookUrl, // Pass the webhook URL from agent config
-        agent.id === 'content_repurposer' ? selectedNewsletterId || undefined : undefined // Include newsletter_id for content_repurposer
+        agent.id === 'content_repurposer' ? selectedNewsletterId || undefined : undefined, // Include newsletter_id for content_repurposer
+        conversationState // Pass conversation state for multi-turn agents like newsletter_multi
       );
 
       if (response) {
+        // Store conversation state for multi-turn agents (like newsletter_multi)
+        if (response.state) {
+          console.log('💾 Storing conversation state:', response.state);
+          setConversationState(response.state);
+        }
+
         // Parse response to handle structured JSON format
         let displayMessage = response.agent_response;
         let structuredData = null;
