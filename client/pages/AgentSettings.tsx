@@ -151,6 +151,44 @@ export default function AgentSettings() {
     fetchPreviousFiles();
   }, [userId, agentId]);
 
+  // Subscribe to realtime updates for file processing status changes
+  useEffect(() => {
+    if (!userId || !agentId) return;
+
+    const channel = supabase
+      .channel('file-processing-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'firm_users_knowledge_base',
+          filter: `firm_user_id=eq.${userId}`
+        },
+        (payload) => {
+          const updatedRecord = payload.new as any;
+
+          // Update the file in our local state if processing_status changed
+          if (updatedRecord.agent_id === agentId && updatedRecord.processing_status) {
+            setPreviousFiles(prev =>
+              prev.map(file =>
+                file.id === updatedRecord.id
+                  ? { ...file, processing_status: updatedRecord.processing_status }
+                  : file
+              )
+            );
+            console.log(`File ${updatedRecord.file_name} status updated to: ${updatedRecord.processing_status}`);
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, agentId]);
+
   // Initialize speech recognition
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
