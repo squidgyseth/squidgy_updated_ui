@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-15T13:25:57.525Z
+// Generated on: 2026-01-15T14:17:34.405Z
 
 export interface AgentConfig {
   agent: {
@@ -51,7 +51,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "description": "Build a comprehensive knowledge base from your documents, websites, and files.",
       "specialization": "Knowledge Base Builder",
       "tagline": "Upload. Extract. Learn.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+      "avatar": "/Squidgy AI Assistants Avatars/14.png",
       "pinned": true,
       "initial_message": "Hi there! I'm here to learn about your business so I can give you the best possible support.\n\nTo get started, could you share your company website? I'll review it to understand what you do, your products or services, and how you communicate with customers.\n\nYou can also upload any documents that help describe your business - like brochures, guides, or internal docs.\n\nThe more I know about you, the better I can help!",
       "capabilities": [
@@ -714,7 +714,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "description": "Build a comprehensive knowledge base from your documents, websites, and files.",
       "specialization": "Knowledge Base Builder",
       "tagline": "Upload. Extract. Learn.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+      "avatar": "/Squidgy AI Assistants Avatars/14.png",
       "pinned": true,
       "initial_message": "Hi there! I'm here to learn about your business so I can give you the best possible support.\n\nTo get started, could you share your company website? I'll review it to understand what you do, your products or services, and how you communicate with customers.\n\nYou can also upload any documents that help describe your business - like brochures, guides, or internal docs.\n\nThe more I know about you, the better I can help!",
       "capabilities": [
@@ -1102,7 +1102,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "description": "Build a comprehensive knowledge base from your documents, websites, and files.",
         "specialization": "Knowledge Base Builder",
         "tagline": "Upload. Extract. Learn.",
-        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+        "avatar": "/Squidgy AI Assistants Avatars/14.png",
         "pinned": true,
         "initial_message": "Hi there! I'm here to learn about your business so I can give you the best possible support.\n\nTo get started, could you share your company website? I'll review it to understand what you do, your products or services, and how you communicate with customers.\n\nYou can also upload any documents that help describe your business - like brochures, guides, or internal docs.\n\nThe more I know about you, the better I can help!",
         "capabilities": [
@@ -1623,7 +1623,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","general_assistant","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","SOL"];
+export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","general_assistant","newsletter","newsletter_multi","personal_assistant","SOL"];
 
 // Total count
-export const TOTAL_AGENTS = 6;
+export const TOTAL_AGENTS = 7;

@@ -5,6 +5,7 @@ import AgentResponseHandler from './AgentResponseHandler';
 import FileMessage from './FileMessage';
 import { sendToN8nWorkflow, generateRequestId, generateSessionId } from '../../lib/n8nService';
 import { ChatHistoryService } from '../../services/chatHistoryService';
+import { chatSessionService } from '../../services/chatSessionService';
 import { FileUploadService } from '../../services/fileUploadService';
 import { supabase } from '../../lib/supabase';
 import { createProxyUrl } from '../../utils/urlMasking';
@@ -51,6 +52,7 @@ export default function N8nChatInterface({
   const [activeInteractiveButtons, setActiveInteractiveButtons] = useState<string[]>([]);
   const [conversationState, setConversationState] = useState<Record<string, unknown> | undefined>(undefined); // State for multi-turn agents like newsletter_multi
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatHistoryService = ChatHistoryService.getInstance();
   const fileUploadService = FileUploadService.getInstance();
@@ -81,7 +83,7 @@ export default function N8nChatInterface({
       setInputValue("➕ Add Another Assistant");
     }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, agent.id, lastMessageCount]);
+  }, [messages, agent.id, showAddNewMessage]);
 
   // Handle scroll events (kept for potential future use)
   const handleScroll = () => {
@@ -453,8 +455,8 @@ export default function N8nChatInterface({
   // Helper function to detect if message contains interactive buttons
   const hasInteractiveButtons = (content: string): boolean => {
     // Look for the flexible button patterns
-    const pattern1 = /^(.{1,4})\s*\*\*([^*]+)\*\*\s*-\s*(.+)$/gmu;
-    const pattern2 = /^(.{1,4})\s*\*\*([^*]+)\*\*\s*$/gmu;
+    const newFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
+    const oldFormatPattern = /\$\*\*\*\*([^*]+)\*\*\*\*\$/g;
     
     return newFormatPattern.test(content) || oldFormatPattern.test(content);
   };
