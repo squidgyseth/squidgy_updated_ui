@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-15T05:54:36.249Z
+// Generated on: 2026-01-15T05:54:58.407Z
 
 export interface AgentConfig {
   agent: {
@@ -212,6 +212,72 @@ export const ALL_AGENTS: AgentConfig[] = [
     ],
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+      "pages": [
+        {
+          "name": "newsletter_liquid-blanch-17032840_page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "source": {
+            "type": "figma_deployed",
+            "url": "https://liquid-blanch-17032840.figma.site/"
+          }
+        }
+      ]
+    },
+    "ui_use": {
+      "pages": [
+        {
+          "name": "Newsletter Liquid-Blanch-17032840 Page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+        }
+      ],
+      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+    }
+  },
+  {
+    "agent": {
+      "id": "newsletter_multi",
+      "emoji": "📰",
+      "name": "Newsletter Agent Multi",
+      "category": "MARKETING",
+      "description": "Create and manage newsletters",
+      "specialization": "Creative & Trendy",
+      "tagline": "Content. Create. Distribute.",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+      "pinned": false,
+      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+      "capabilities": [
+        "Content creation and optimization for newsletters",
+        "PDF document processing and analysis",
+        "Speech-to-text content input",
+        "Newsletter template generation",
+        "Email marketing best practices"
+      ],
+      "recent_actions": [
+        "Generated newsletter for Q4 product launch",
+        "Processed PDF content from marketing materials",
+        "Analyzed competitor newsletter performance"
+      ]
+    },
+    "suggestions": [
+      "Create newsletter content",
+      "Process PDF document",
+      "Generate email templates",
+      "Analyze newsletter performance",
+      "Design email layout",
+      "Optimize subject lines"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/newsletter_multi",
       "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
     },
     "ui": {
@@ -636,6 +702,72 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
     }
   },
+  "newsletter_multi": {
+    "agent": {
+      "id": "newsletter_multi",
+      "emoji": "📰",
+      "name": "Newsletter Agent Multi",
+      "category": "MARKETING",
+      "description": "Create and manage newsletters",
+      "specialization": "Creative & Trendy",
+      "tagline": "Content. Create. Distribute.",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+      "pinned": false,
+      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+      "capabilities": [
+        "Content creation and optimization for newsletters",
+        "PDF document processing and analysis",
+        "Speech-to-text content input",
+        "Newsletter template generation",
+        "Email marketing best practices"
+      ],
+      "recent_actions": [
+        "Generated newsletter for Q4 product launch",
+        "Processed PDF content from marketing materials",
+        "Analyzed competitor newsletter performance"
+      ]
+    },
+    "suggestions": [
+      "Create newsletter content",
+      "Process PDF document",
+      "Generate email templates",
+      "Analyze newsletter performance",
+      "Design email layout",
+      "Optimize subject lines"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/newsletter_multi",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+      "pages": [
+        {
+          "name": "newsletter_liquid-blanch-17032840_page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "source": {
+            "type": "figma_deployed",
+            "url": "https://liquid-blanch-17032840.figma.site/"
+          }
+        }
+      ]
+    },
+    "ui_use": {
+      "pages": [
+        {
+          "name": "Newsletter Liquid-Blanch-17032840 Page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+        }
+      ],
+      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+    }
+  },
   "personal_assistant": {
     "agent": {
       "id": "personal_assistant",
@@ -1023,6 +1155,72 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ],
         "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
       }
+    },
+    {
+      "agent": {
+        "id": "newsletter_multi",
+        "emoji": "📰",
+        "name": "Newsletter Agent Multi",
+        "category": "MARKETING",
+        "description": "Create and manage newsletters",
+        "specialization": "Creative & Trendy",
+        "tagline": "Content. Create. Distribute.",
+        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
+        "pinned": false,
+        "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+        "capabilities": [
+          "Content creation and optimization for newsletters",
+          "PDF document processing and analysis",
+          "Speech-to-text content input",
+          "Newsletter template generation",
+          "Email marketing best practices"
+        ],
+        "recent_actions": [
+          "Generated newsletter for Q4 product launch",
+          "Processed PDF content from marketing materials",
+          "Analyzed competitor newsletter performance"
+        ]
+      },
+      "suggestions": [
+        "Create newsletter content",
+        "Process PDF document",
+        "Generate email templates",
+        "Analyze newsletter performance",
+        "Design email layout",
+        "Optimize subject lines"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/newsletter_multi",
+        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+      },
+      "ui": {
+        "page_type": "standard",
+        "figma_url": "",
+        "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+        "pages": [
+          {
+            "name": "newsletter_liquid-blanch-17032840_page1",
+            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+            "order": 1,
+            "source": {
+              "type": "figma_deployed",
+              "url": "https://liquid-blanch-17032840.figma.site/"
+            }
+          }
+        ]
+      },
+      "ui_use": {
+        "pages": [
+          {
+            "name": "Newsletter Liquid-Blanch-17032840 Page1",
+            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+            "order": 1,
+            "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+          }
+        ],
+        "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+      }
     }
   ],
   "SALES": [
@@ -1215,7 +1413,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","newsletter","personal_assistant","SOL"];
+export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","SOL"];
 
 // Total count
-export const TOTAL_AGENTS = 5;
+export const TOTAL_AGENTS = 6;
