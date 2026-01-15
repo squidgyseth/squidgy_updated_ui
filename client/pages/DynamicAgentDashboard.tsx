@@ -69,10 +69,9 @@ export default function DynamicAgentDashboard() {
   
   const handleSettingsClick = (agentId: string) => {
     console.log(`Settings clicked for agent: ${agentId}`);
-    
-    // Navigate to personalisation settings with the selected agent
-    // This will open the AI Assistant Customization section with the agent pre-selected
-    navigationService.navigateToPersonalisationSettings(agentId);
+
+    // Navigate to agent settings page (voice input, file upload, instructions)
+    navigate(`/agent-settings/${agentId}`);
   };
 
   const handleNewChat = (agentId: string) => {
