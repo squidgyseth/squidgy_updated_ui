@@ -429,17 +429,17 @@ export default function AgentSettings() {
       {/* Main Content - Figma Style Layout */}
       <div className="flex-1 bg-white">
         <div className="max-w-4xl mx-auto p-8">
-          {/* Content Input Section - Figma Style */}
+          {/* Custom Instructions Section - Figma Style */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             {/* Header Section */}
             <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-6">
-              <h2 className="text-2xl font-bold text-white mb-2">Add Your Content</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">Add Custom Instructions</h2>
               <p className="text-purple-100">
                 Share your knowledge with {agentConfig?.agent?.name} to get personalized assistance
               </p>
             </div>
 
-            {/* Content Input Area */}
+            {/* Custom Instructions Area */}
             <div className="p-8">
               {/* Input Methods */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -545,7 +545,7 @@ export default function AgentSettings() {
               {/* Main Text Input Area */}
               <div className="mb-6">
                 <label htmlFor="content-textarea" className="block text-lg font-semibold text-gray-800 mb-3">
-                  Content Input
+                  Custom Instructions
                 </label>
                 <textarea
                   id="content-textarea"
