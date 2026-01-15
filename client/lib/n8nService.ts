@@ -62,6 +62,7 @@ const generateSessionId = (userId: string, agentName: string): string => {
  * @param requestId - Optional request ID, will be generated if not provided
  * @param webhookUrl - Optional webhook URL from agent config, defaults to env variable
  * @param newsletterId - Optional newsletter ID for content_repurposer agent
+ * @param conversationState - Optional conversation state for multi-turn agents (newsletter_multi)
  * @returns Promise<N8nResponse | null>
  */
 export const sendToN8nWorkflow = async (
@@ -71,7 +72,8 @@ export const sendToN8nWorkflow = async (
   sessionId?: string,
   requestId?: string,
   webhookUrl?: string,
-  newsletterId?: string
+  newsletterId?: string,
+  conversationState?: Record<string, unknown>
 ): Promise<N8nResponse | null> => {
   // Use the provided webhook URL or fall back to the environment variable for Personal Assistant
   const n8nWebhookUrl = webhookUrl || N8N_WEBHOOK_BASE;
@@ -131,7 +133,8 @@ export const sendToN8nWorkflow = async (
     agent_name: agentName,
     timestamp_of_call_made: new Date().toISOString(),
     request_id: finalRequestId,
-    ...(newsletterId && { newsletter_id: newsletterId }) // Include newsletter_id only if provided
+    ...(newsletterId && { newsletter_id: newsletterId }), // Include newsletter_id only if provided
+    ...(conversationState && { state: conversationState }) // Include state for multi-turn conversations
   };
   
   try {
