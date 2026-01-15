@@ -113,11 +113,11 @@ export default function BusinessSettings() {
           console.log('🔍 Loaded business settings:', data);
           setSettings({
             companyName: data.company_name || '-',
-            industry: data.industry || '',
+            industry: '', // data.industry || '' YERİNE DİREKT BOŞ BIRAKTIK
             teamSize: data.team_size || 'manual',
             businessEmail: data.business_email || '',
             phoneNumber: data.phone_number || '',
-            emergencyNumber: '', // Not used in current form
+            emergencyNumber: '',
             country: data.country || 'US',
             addressMethod: data.address_method || 'manual',
             address: data.address || '',

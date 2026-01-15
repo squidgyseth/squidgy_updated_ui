@@ -1,12 +1,12 @@
 agent:
-  id: newsletter
-  emoji: "📧"
-  name: Newsletter Agent
+  id: newsletter_multi
+  emoji: "📰"
+  name: Newsletter Agent Multi
   category: MARKETING
   description: Create and manage newsletters
   specialization: "Creative & Trendy"
   tagline: "Content. Create. Distribute."
-  avatar: "/Squidgy AI Assistants Avatars/4.png"
+  avatar: "/Squidgy AI Assistants Avatars/7.png"
   pinned: false
   initial_message: 'Hey there! 👋 I''m here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I''ve got you covered. What would you like to work on today?'
   
@@ -33,9 +33,9 @@ suggestions:
   - "Optimize subject lines"
 
 n8n:
-  webhook_url: https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter
-  #https://n8n.theaiteam.uk/webhook/newsletter
+  webhook_url: https://n8n.theaiteam.uk/webhook/newsletter_multi
   image_generator_url: https://n8n.theaiteam.uk/webhook/image_generator
+
 ui:
   page_type: standard
   figma_url: ''
