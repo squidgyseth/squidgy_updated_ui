@@ -16,10 +16,12 @@ interface KnowledgeEntry {
 
 interface PreviousFile {
   id: string;
+  file_id: string;
   file_name: string;
   file_url: string;
   created_at: string;
-  file_type?: string;
+  processing_status?: string;
+  extracted_text?: string;
 }
 
 export default function AgentSettings() {
@@ -86,8 +88,8 @@ export default function AgentSettings() {
     try {
       if (showLoading) setLoadingPreviousFiles(true);
       const { data, error } = await supabase
-        .from('knowledge_base')
-        .select('id, file_name, file_url, created_at, file_type')
+        .from('firm_users_knowledge_base')
+        .select('id, file_id, file_name, file_url, created_at, processing_status, extracted_text')
         .eq('firm_user_id', userId)
         .eq('agent_id', agentId)
         .not('file_name', 'is', null)
@@ -215,9 +217,9 @@ export default function AgentSettings() {
         // Continue with database deletion even if storage fails
       }
 
-      // Delete from knowledge_base table
+      // Delete from firm_users_knowledge_base table
       const { error: dbError } = await supabase
-        .from('knowledge_base')
+        .from('firm_users_knowledge_base')
         .delete()
         .eq('id', fileId);
 
@@ -622,7 +624,20 @@ export default function AgentSettings() {
                           <FileText size={20} className="text-gray-600" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800">{file.file_name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-gray-800">{file.file_name}</p>
+                            {file.processing_status && file.processing_status !== 'completed' && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                file.processing_status === 'processing'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : file.processing_status === 'failed'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {file.processing_status}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500">
                             Uploaded {new Date(file.created_at).toLocaleDateString('en-GB', {
                               day: 'numeric',
