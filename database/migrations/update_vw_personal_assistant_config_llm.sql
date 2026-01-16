@@ -143,18 +143,29 @@ LEFT JOIN assistant_personalizations ap2 ON pac.code::text = ap2.assistant_id::t
 LEFT JOIN website_analysis wa ON wa.firm_user_id = p.user_id AND pac.config_type::text = 'assistants'::text AND wa.analysis_status::text = 'completed'::text
 GROUP BY p.user_id, pac.config_type, uos.has_completed_onboarding;
 
--- Recreate the dependent view vw_user_skip_status
+-- Recreate the dependent view vw_user_skip_status with correct ordering
 CREATE OR REPLACE VIEW public.vw_user_skip_status AS
 SELECT
     user_id,
     string_agg(
-        '- ' || config_type || ': ' ||
+        ('- '::text || config_type::text) || ': '::text ||
         CASE
-            WHEN skip_for_additional_agents = true THEN 'SKIP'
-            ELSE 'ASK'
+            WHEN skip_for_additional_agents = true THEN 'SKIP'::text
+            ELSE 'ASK'::text
         END,
         chr(10)
-        ORDER BY config_type
+        ORDER BY (
+            CASE config_type
+                WHEN 'assistants'::text THEN 1
+                WHEN 'brand_voices'::text THEN 2
+                WHEN 'target_audiences'::text THEN 3
+                WHEN 'primary_goals'::text THEN 4
+                WHEN 'business_types'::text THEN 5
+                WHEN 'calendar_types'::text THEN 6
+                WHEN 'notification_options'::text THEN 7
+                ELSE 8
+            END
+        )
     ) AS skip_status
 FROM vw_personal_assistant_config_llm
 GROUP BY user_id;
