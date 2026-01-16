@@ -35,6 +35,7 @@ interface N8nChatInterfaceProps {
   className?: string;
   webhookUrl?: string; // Add webhook URL from agent config
   showAddNewMessage?: boolean; // Flag to show Add Another Assistant message
+  addNewTimestamp?: number; // Timestamp to force re-trigger on every click
   onMessageSent?: () => void; // Callback when a message is sent (for live Recent Actions update)
 }
 
@@ -45,6 +46,7 @@ export default function N8nChatInterface({
   className = '',
   webhookUrl,
   showAddNewMessage = false,
+  addNewTimestamp,
   onMessageSent
 }: N8nChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -110,12 +112,12 @@ export default function N8nChatInterface({
     }
   };
 
-  // Set input text when showAddNewMessage is true
+  // Set input text when showAddNewMessage is true (timestamp forces re-trigger on every click)
   useEffect(() => {
     if (showAddNewMessage) {
       setInputValue("➕ Add Another Assistant");
     }
-  }, [showAddNewMessage]);
+  }, [showAddNewMessage, addNewTimestamp]);
 
   // Show newsletter selector for content_repurposer and handle OAuth callback
   useEffect(() => {
