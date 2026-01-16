@@ -271,35 +271,39 @@
     },
     {
       "agent": {
-        "id": "smm_assistant",
-        "name": "SMM Assistant",
+        "id": "social_media_agent",
+        "emoji": "📱",
+        "name": "Social Media Manager",
         "category": "MARKETING",
-        "description": "Specializes in social media marketing, content creation, and trend analysis.",
-        "specialization": "Creative & Trendy",
-        "tagline": "Trend. Post. Analyze.",
-        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+        "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn",
+        "specialization": "Social Media Automation",
+        "tagline": "Consult. Confirm. Execute.",
+        "avatar": "/Squidgy AI Assistants Avatars/16.png",
+        "pinned": false,
+        "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
+        "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
         "capabilities": [
-          "Content creation and optimization for all major social platforms",
-          "Trend analysis and hashtag research",
-          "Social media strategy development and planning",
-          "Engagement optimization and community management"
+          "Multi-platform post scheduling (Facebook, Instagram, LinkedIn)",
+          "Content ideation and caption generation",
+          "Image and video post management",
+          "Story scheduling for Facebook and Instagram",
+          "Media file upload and storage management",
+          "UTC timezone conversion for global scheduling",
+          "Post deletion with safety confirmations"
         ],
         "recent_actions": [
-          "Created 15 Instagram post ideas for fashion brand",
-          "Analysed competitor performance",
-          "Generated trending hashtags for Q4 campaign",
-          "Developed content calendar for December"
+          "Scheduled 5 LinkedIn posts for the week",
+          "Created Instagram story campaign for product launch",
+          "Generated caption ideas for Facebook engagement post",
+          "Uploaded media files to storage for reuse"
         ]
-      },
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant"
       },
       "ui_use": {
         "page_type": "single_page",
         "pages": [
           {
-            "name": "SMM Dashboard",
-            "path": "smm-dashboard",
+            "name": "Social Media Dashboard",
+            "path": "social-media-dashboard",
             "order": 1,
             "validated": true
           }
@@ -315,17 +319,68 @@
         ]
       },
       "suggestions": [
-        "Create Instagram post ideas",
-        "Analyze competitor content",
-        "Write engaging captions",
-        "Generate trending hashtags",
-        "Plan content calendar",
-        "Optimize engagement strategy"
+        "Schedule a post for LinkedIn",
+        "Create an Instagram image post",
+        "Generate caption ideas for Facebook",
+        "Schedule a story for Instagram",
+        "Upload media to storage",
+        "Show my scheduled posts"
       ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_agent"
+      },
       "personality": {
-        "tone": "creative",
-        "style": "trendy",
-        "approach": "data_driven"
+        "tone": "professional",
+        "style": "helpful",
+        "approach": "consultative"
+      },
+      "platforms": {
+        "facebook": {
+          "accounts": [
+            "The Ai Team",
+            "Solair - Solar Energy Ai Assistant"
+          ],
+          "content_types": [
+            "text",
+            "image",
+            "video",
+            "story_image",
+            "story_video"
+          ]
+        },
+        "instagram": {
+          "accounts": [
+            "hiretheaiteam",
+            "Seth Ward"
+          ],
+          "content_types": [
+            "image",
+            "video",
+            "story_image",
+            "story_video"
+          ]
+        },
+        "linkedin": {
+          "accounts": [
+            "Seth Ward",
+            "The Ai Team"
+          ],
+          "content_types": [
+            "text",
+            "image",
+            "video"
+          ]
+        }
+      },
+      "media_handling": {
+        "max_file_size_mb": 25,
+        "supported_image_types": [
+          "image/png",
+          "image/jpeg"
+        ],
+        "supported_video_types": [
+          "video/mp4"
+        ]
       }
     },
     {
@@ -855,37 +910,41 @@
         "approach": "proactive"
       }
     },
-    "smm_assistant": {
+    "social_media_agent": {
       "agent": {
-        "id": "smm_assistant",
-        "name": "SMM Assistant",
+        "id": "social_media_agent",
+        "emoji": "📱",
+        "name": "Social Media Manager",
         "category": "MARKETING",
-        "description": "Specializes in social media marketing, content creation, and trend analysis.",
-        "specialization": "Creative & Trendy",
-        "tagline": "Trend. Post. Analyze.",
-        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+        "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn",
+        "specialization": "Social Media Automation",
+        "tagline": "Consult. Confirm. Execute.",
+        "avatar": "/Squidgy AI Assistants Avatars/16.png",
+        "pinned": false,
+        "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
+        "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
         "capabilities": [
-          "Content creation and optimization for all major social platforms",
-          "Trend analysis and hashtag research",
-          "Social media strategy development and planning",
-          "Engagement optimization and community management"
+          "Multi-platform post scheduling (Facebook, Instagram, LinkedIn)",
+          "Content ideation and caption generation",
+          "Image and video post management",
+          "Story scheduling for Facebook and Instagram",
+          "Media file upload and storage management",
+          "UTC timezone conversion for global scheduling",
+          "Post deletion with safety confirmations"
         ],
         "recent_actions": [
-          "Created 15 Instagram post ideas for fashion brand",
-          "Analysed competitor performance",
-          "Generated trending hashtags for Q4 campaign",
-          "Developed content calendar for December"
+          "Scheduled 5 LinkedIn posts for the week",
+          "Created Instagram story campaign for product launch",
+          "Generated caption ideas for Facebook engagement post",
+          "Uploaded media files to storage for reuse"
         ]
-      },
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant"
       },
       "ui_use": {
         "page_type": "single_page",
         "pages": [
           {
-            "name": "SMM Dashboard",
-            "path": "smm-dashboard",
+            "name": "Social Media Dashboard",
+            "path": "social-media-dashboard",
             "order": 1,
             "validated": true
           }
@@ -901,17 +960,68 @@
         ]
       },
       "suggestions": [
-        "Create Instagram post ideas",
-        "Analyze competitor content",
-        "Write engaging captions",
-        "Generate trending hashtags",
-        "Plan content calendar",
-        "Optimize engagement strategy"
+        "Schedule a post for LinkedIn",
+        "Create an Instagram image post",
+        "Generate caption ideas for Facebook",
+        "Schedule a story for Instagram",
+        "Upload media to storage",
+        "Show my scheduled posts"
       ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_agent"
+      },
       "personality": {
-        "tone": "creative",
-        "style": "trendy",
-        "approach": "data_driven"
+        "tone": "professional",
+        "style": "helpful",
+        "approach": "consultative"
+      },
+      "platforms": {
+        "facebook": {
+          "accounts": [
+            "The Ai Team",
+            "Solair - Solar Energy Ai Assistant"
+          ],
+          "content_types": [
+            "text",
+            "image",
+            "video",
+            "story_image",
+            "story_video"
+          ]
+        },
+        "instagram": {
+          "accounts": [
+            "hiretheaiteam",
+            "Seth Ward"
+          ],
+          "content_types": [
+            "image",
+            "video",
+            "story_image",
+            "story_video"
+          ]
+        },
+        "linkedin": {
+          "accounts": [
+            "Seth Ward",
+            "The Ai Team"
+          ],
+          "content_types": [
+            "text",
+            "image",
+            "video"
+          ]
+        }
+      },
+      "media_handling": {
+        "max_file_size_mb": 25,
+        "supported_image_types": [
+          "image/png",
+          "image/jpeg"
+        ],
+        "supported_video_types": [
+          "video/mp4"
+        ]
       }
     },
     "SOL": {
@@ -1306,35 +1416,39 @@
       },
       {
         "agent": {
-          "id": "smm_assistant",
-          "name": "SMM Assistant",
+          "id": "social_media_agent",
+          "emoji": "📱",
+          "name": "Social Media Manager",
           "category": "MARKETING",
-          "description": "Specializes in social media marketing, content creation, and trend analysis.",
-          "specialization": "Creative & Trendy",
-          "tagline": "Trend. Post. Analyze.",
-          "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+          "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn",
+          "specialization": "Social Media Automation",
+          "tagline": "Consult. Confirm. Execute.",
+          "avatar": "/Squidgy AI Assistants Avatars/16.png",
+          "pinned": false,
+          "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
+          "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
           "capabilities": [
-            "Content creation and optimization for all major social platforms",
-            "Trend analysis and hashtag research",
-            "Social media strategy development and planning",
-            "Engagement optimization and community management"
+            "Multi-platform post scheduling (Facebook, Instagram, LinkedIn)",
+            "Content ideation and caption generation",
+            "Image and video post management",
+            "Story scheduling for Facebook and Instagram",
+            "Media file upload and storage management",
+            "UTC timezone conversion for global scheduling",
+            "Post deletion with safety confirmations"
           ],
           "recent_actions": [
-            "Created 15 Instagram post ideas for fashion brand",
-            "Analysed competitor performance",
-            "Generated trending hashtags for Q4 campaign",
-            "Developed content calendar for December"
+            "Scheduled 5 LinkedIn posts for the week",
+            "Created Instagram story campaign for product launch",
+            "Generated caption ideas for Facebook engagement post",
+            "Uploaded media files to storage for reuse"
           ]
-        },
-        "n8n": {
-          "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant"
         },
         "ui_use": {
           "page_type": "single_page",
           "pages": [
             {
-              "name": "SMM Dashboard",
-              "path": "smm-dashboard",
+              "name": "Social Media Dashboard",
+              "path": "social-media-dashboard",
               "order": 1,
               "validated": true
             }
@@ -1350,17 +1464,68 @@
           ]
         },
         "suggestions": [
-          "Create Instagram post ideas",
-          "Analyze competitor content",
-          "Write engaging captions",
-          "Generate trending hashtags",
-          "Plan content calendar",
-          "Optimize engagement strategy"
+          "Schedule a post for LinkedIn",
+          "Create an Instagram image post",
+          "Generate caption ideas for Facebook",
+          "Schedule a story for Instagram",
+          "Upload media to storage",
+          "Show my scheduled posts"
         ],
+        "n8n": {
+          "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_agent"
+        },
         "personality": {
-          "tone": "creative",
-          "style": "trendy",
-          "approach": "data_driven"
+          "tone": "professional",
+          "style": "helpful",
+          "approach": "consultative"
+        },
+        "platforms": {
+          "facebook": {
+            "accounts": [
+              "The Ai Team",
+              "Solair - Solar Energy Ai Assistant"
+            ],
+            "content_types": [
+              "text",
+              "image",
+              "video",
+              "story_image",
+              "story_video"
+            ]
+          },
+          "instagram": {
+            "accounts": [
+              "hiretheaiteam",
+              "Seth Ward"
+            ],
+            "content_types": [
+              "image",
+              "video",
+              "story_image",
+              "story_video"
+            ]
+          },
+          "linkedin": {
+            "accounts": [
+              "Seth Ward",
+              "The Ai Team"
+            ],
+            "content_types": [
+              "text",
+              "image",
+              "video"
+            ]
+          }
+        },
+        "media_handling": {
+          "max_file_size_mb": 25,
+          "supported_image_types": [
+            "image/png",
+            "image/jpeg"
+          ],
+          "supported_video_types": [
+            "video/mp4"
+          ]
         }
       }
     ],
@@ -1555,6 +1720,6 @@
   },
   "meta": {
     "total": 7,
-    "buildTime": "2026-01-16T10:26:19.452Z"
+    "buildTime": "2026-01-16T10:28:53.527Z"
   }
 }
