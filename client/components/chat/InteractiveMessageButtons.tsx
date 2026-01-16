@@ -91,29 +91,32 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
   const handleButtonClick = async (option: ButtonOption) => {
     // Check for special button types that need real functionality
     const buttonText = option.text.toLowerCase();
-    
-    // Start Chat with Agent navigation
+
+    // Start Chat with Agent - try navigation first, fallback to message
     if (buttonText.includes('start chat with')) {
-      // Extract agent name from button text: "Start Chat with Newsletter Agent" -> "newsletter"
+      // Extract agent name from button text: "Start Chat with Newsletter Agent Multi" -> "newsletter agent multi"
       const chatMatch = buttonText.match(/start chat with (.+)/);
       if (chatMatch) {
         const agentName = chatMatch[1].trim();
-        
-        // Use dynamic agent mapping service
+
+        // Try to get agent ID for navigation
         const agentId = agentMappingService.getAgentId(agentName);
-        
+
         if (agentId) {
           console.log(`🔗 Navigating to chat with agent: ${agentName} -> ${agentId}`);
           // Navigate to chat page
           window.location.href = `/chat/${agentId}`;
-          return; // Don't send to chat, handle the navigation
+          return;
         } else {
-          console.warn(`⚠️ No agent ID found for: "${agentName}"`);
-          // Fallback: send as regular message to continue conversation
+          console.warn(`⚠️ No agent ID found for: "${agentName}", sending message to AI instead`);
+          // Fallback: send message to AI - it will respond with sidebar instructions
           onButtonClick(option.text);
           return;
         }
       }
+      // If regex didn't match, send as message
+      onButtonClick(option.text);
+      return;
     }
     
     // Add Another Assistant - trigger onboarding flow

@@ -4,9 +4,15 @@ interface CompiledAgents {
   agents: AgentConfig[];
 }
 
+interface AgentInfo {
+  id: string;
+  name: string;
+  words: string[]; // Words from agent ID split by "_"
+}
+
 class AgentMappingService {
   private static instance: AgentMappingService;
-  private agentMap: Map<string, string> = new Map();
+  private agents: AgentInfo[] = [];
   private isLoaded = false;
 
   private constructor() {}
@@ -26,113 +32,67 @@ class AgentMappingService {
       const response = await fetch('/agents-compiled.json');
       const compiledAgents: CompiledAgents = await response.json();
 
-      // Create mapping from agent names to IDs
-      compiledAgents.agents.forEach(agentConfig => {
+      // Store agent info with ID words for dynamic matching
+      this.agents = compiledAgents.agents.map(agentConfig => {
         const { id, name } = agentConfig.agent;
-        
-        // Map both lowercase name and exact name for flexible matching
-        this.agentMap.set(name.toLowerCase(), id);
-        
-        // Also map common variations
-        const normalizedName = name.toLowerCase()
-          .replace(/\s+/g, ' ')
-          .replace(/assistant|agent/g, '')
-          .trim();
-        
-        if (normalizedName !== name.toLowerCase()) {
-          this.agentMap.set(normalizedName, id);
-        }
-        
-        // Map specific variations for better matching
-        if (name.toLowerCase().includes('newsletter')) {
-          this.agentMap.set('newsletter', id);
-          this.agentMap.set('newsletter agent', id);
-        }
-        
-        if (name.toLowerCase().includes('solar')) {
-          this.agentMap.set('solar sales', id);
-          this.agentMap.set('solar', id);
-          this.agentMap.set('sol', id);
-        }
-        
-        if (name.toLowerCase().includes('content')) {
-          this.agentMap.set('content strategist', id);
-          this.agentMap.set('content repurposer', id);
-          this.agentMap.set('content', id);
-        }
-        
-        if (name.toLowerCase().includes('smm') || name.toLowerCase().includes('social media')) {
-          this.agentMap.set('smm', id);
-          this.agentMap.set('social media', id);
-          this.agentMap.set('smm assistant', id);
-        }
-        
-        if (name.toLowerCase().includes('personal')) {
-          this.agentMap.set('personal', id);
-          this.agentMap.set('personal assistant', id);
-        }
+        // Split agent ID by "_" to get meaningful words
+        // e.g., "newsletter_multi" -> ["newsletter", "multi"]
+        // e.g., "content_repurposer" -> ["content", "repurposer"]
+        const words = id.toLowerCase().split('_').filter(w => w.length > 0);
+
+        console.log(`🔍 Agent: "${name}" (${id}) -> words: [${words.join(', ')}]`);
+
+        return { id, name, words };
       });
 
+      // Sort by word count descending - more specific agents first
+      // This ensures "newsletter_multi" matches before "newsletter"
+      this.agents.sort((a, b) => b.words.length - a.words.length);
+
       this.isLoaded = true;
-      console.log('🔍 Agent mappings loaded:', Array.from(this.agentMap.entries()));
+      console.log('🔍 Agent mappings loaded:', this.agents.map(a => `${a.name} (${a.id})`));
     } catch (error) {
       console.error('Failed to load agent mappings:', error);
-      
-      // Fallback to hardcoded mappings if file load fails
-      this.createFallbackMappings();
+      this.isLoaded = true; // Mark as loaded to prevent retry loops
     }
   }
 
-  private createFallbackMappings(): void {
-    const fallbackMappings = [
-      ['newsletter', 'newsletter'],
-      ['newsletter agent', 'newsletter'],
-      ['solar sales assistant', 'SOL'],
-      ['solar sales', 'SOL'],
-      ['sol', 'SOL'],
-      ['content strategist', 'content_repurposer'],
-      ['content repurposer', 'content_repurposer'],
-      ['smm assistant', 'smm_assistant'],
-      ['social media', 'smm_assistant'],
-      ['smm', 'smm_assistant'],
-      ['personal assistant', 'personal_assistant'],
-      ['personal', 'personal_assistant'],
-    ];
-
-    fallbackMappings.forEach(([name, id]) => {
-      this.agentMap.set(name.toLowerCase(), id);
-    });
-
-    this.isLoaded = true;
-    console.log('🔍 Fallback agent mappings loaded');
-  }
-
-  getAgentId(agentName: string): string | null {
+  getAgentId(targetText: string): string | null {
     if (!this.isLoaded) {
       console.warn('Agent mappings not loaded yet');
       return null;
     }
 
-    const normalizedName = agentName.toLowerCase().trim();
-    
-    // Try exact match first
-    if (this.agentMap.has(normalizedName)) {
-      return this.agentMap.get(normalizedName) || null;
-    }
+    // Lowercase the target text for matching
+    const textLower = targetText.toLowerCase().trim();
 
-    // Try partial matching for flexible search
-    for (const [mappedName, agentId] of this.agentMap.entries()) {
-      if (normalizedName.includes(mappedName) || mappedName.includes(normalizedName)) {
-        return agentId;
+    // Check if text contains "agent" or "assistant" (bonus confirmation)
+    const hasAgentWord = textLower.includes('agent') || textLower.includes('assistant');
+
+    console.log(`🔍 Finding agent for: "${targetText}"`);
+    console.log(`   Has agent/assistant word: ${hasAgentWord}`);
+
+    // Find the best matching agent
+    // Agents are sorted by word count (most specific first)
+    for (const agent of this.agents) {
+      // Check if ALL words from agent ID are present in the text
+      const allWordsMatch = agent.words.every(word => textLower.includes(word));
+
+      if (allWordsMatch && (hasAgentWord || agent.words.length >= 2)) {
+        // Match found! Either has "agent/assistant" word OR has multiple ID words
+        console.log(`✅ Matched: "${agent.name}" (${agent.id})`);
+        console.log(`   Words found: [${agent.words.join(', ')}]`);
+        return agent.id;
       }
     }
 
-    console.warn(`No agent ID found for: "${agentName}"`);
+    // No match found
+    console.warn(`❌ No agent ID found for: "${targetText}"`);
     return null;
   }
 
-  getAllMappings(): Map<string, string> {
-    return new Map(this.agentMap);
+  getAllAgents(): AgentInfo[] {
+    return [...this.agents];
   }
 }
 
