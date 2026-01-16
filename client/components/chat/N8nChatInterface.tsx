@@ -10,6 +10,7 @@ import { sendToN8nWorkflow, generateRequestId, generateSessionId } from '../../l
 import { ChatHistoryService } from '../../services/chatHistoryService';
 import { FileUploadService } from '../../services/fileUploadService';
 import { chatSessionService } from '../../services/chatSessionService';
+import { conversationStateService } from '../../services/conversationStateService';
 import { supabase } from '../../lib/supabase';
 import { createProxyUrl } from '../../utils/urlMasking';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
@@ -27,6 +28,7 @@ interface N8nChatInterfaceProps {
     tagline?: string;
     introMessage?: string;
     suggestionButtons?: string[];
+    uses_conversation_state?: boolean;  // From agent YAML config - enables multi-turn state persistence
   };
   userId: string;
   sessionId?: string;
@@ -73,12 +75,40 @@ export default function N8nChatInterface({
   useEffect(() => {
     console.log(`📨 N8nChatInterface: sessionId changed to: ${sessionId}`);
     console.log(`📨 N8nChatInterface: agentId: ${agent.id}, userId: ${userId}`);
-    
+
     // Clear existing messages immediately when session changes
     setMessages([]);
-    
+
     loadSessionMessages();
+
+    // Load conversation state from database for multi-turn agents
+    if (isMultiTurnAgent()) {
+      loadConversationState();
+    }
   }, [sessionId]);
+
+  // Check if agent supports multi-turn conversation state
+  // Configured via uses_conversation_state: true in agent YAML config
+  const isMultiTurnAgent = (): boolean => {
+    return agent.uses_conversation_state === true;
+  };
+
+  // Load conversation state from database
+  const loadConversationState = async () => {
+    try {
+      console.log(`🔄 Loading conversation state for session: ${sessionId}, agent: ${agent.id}`);
+      const state = await conversationStateService.getState(sessionId, agent.id);
+      if (state) {
+        console.log('✅ Loaded conversation state from DB:', state);
+        setConversationState(state);
+      } else {
+        console.log('📭 No existing conversation state found, will create on first response');
+        setConversationState(undefined);
+      }
+    } catch (error) {
+      console.error('❌ Error loading conversation state:', error);
+    }
+  };
 
   // Set input text when showAddNewMessage is true
   useEffect(() => {
@@ -317,9 +347,26 @@ export default function N8nChatInterface({
 
       if (response) {
         // Store conversation state for multi-turn agents (like newsletter_multi)
-        if (response.state) {
+        if (response.state && isMultiTurnAgent()) {
           console.log('💾 Storing conversation state:', response.state);
           setConversationState(response.state);
+
+          // Persist state to database for multi-turn agents
+          try {
+            // First ensure the state record exists (create if needed)
+            await conversationStateService.getOrCreateState(sessionId, agent.id, userId);
+            // Then update with the new state
+            const status = response.agent_status === 'Ready' ? 'completed' : 'active';
+            await conversationStateService.updateState(
+              sessionId,
+              agent.id,
+              response.state,
+              status as 'active' | 'completed' | 'abandoned'
+            );
+            console.log('✅ Conversation state saved to database');
+          } catch (stateError) {
+            console.error('❌ Error saving conversation state to database:', stateError);
+          }
         }
 
         // Parse response to handle structured JSON format

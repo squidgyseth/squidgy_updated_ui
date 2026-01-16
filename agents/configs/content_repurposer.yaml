@@ -19,13 +19,16 @@ agent:
   # Display name shown in the sidebar
   # Example: "Newsletter Agent", "CRM Manager", "Lead Generator"
   name: Content Repurposer
-  
+
   # Category - Choose ONE from: MARKETING, SALES, HR, SUPPORT, OPERATIONS
   category: SALES
-  
+
   # Short description for the sidebar (keep it brief)
   # Example: "Create and manage newsletters", "Track customer interactions"
   description: "Repurpose content for different platforms and audiences"
+
+  # Enable multi-turn conversation state persistence
+  uses_conversation_state: true
   
   # Specialization badge shown in chat header and right panel (optional)
   # Example: "Creative & Trendy", "Data Expert", "Lead Specialist"

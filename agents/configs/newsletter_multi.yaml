@@ -8,6 +8,7 @@ agent:
   tagline: "Content. Create. Distribute."
   avatar: "/Squidgy AI Assistants Avatars/7.png"
   pinned: false
+  uses_conversation_state: true  # Enables multi-turn conversation state persistence
   initial_message: 'Hey there! 👋 I''m here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I''ve got you covered. What would you like to work on today?'
   
   # Agent Capabilities
