@@ -1,5 +1,6 @@
 -- Update the view to check if user has ACTUALLY completed one-time config
 -- Instead of just checking if they have any enabled assistant
+-- Also uses correct button format: $$**...**$$
 
 CREATE OR REPLACE VIEW public.vw_personal_assistant_config_llm AS
 WITH user_onboarding_status AS (
@@ -29,7 +30,7 @@ SELECT
             string_agg(
                 CASE
                     WHEN pac.code::text <> 'personal_assistant'::text THEN
-                        (((('$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || ' - '::text) || pac.description || '**$'::text
+                        (((('$$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || ' - '::text) || pac.description || '**$$'::text
                     ELSE NULL::text
                 END,
                 chr(10)
@@ -37,23 +38,23 @@ SELECT
             )
         WHEN pac.config_type::text = ANY (ARRAY['brand_voices'::character varying::text, 'target_audiences'::character varying::text]) THEN
             string_agg(
-                DISTINCT ((((('$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || ' - '::text) || pac.description) || '**$'::text,
+                DISTINCT ((((('$$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || ' - '::text) || pac.description) || '**$$'::text,
                 chr(10)
-                ORDER BY (((((('$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || ' - '::text) || pac.description) || '**$'::text)
+                ORDER BY (((((('$$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || ' - '::text) || pac.description) || '**$$'::text)
             )
         WHEN pac.config_type::text = 'primary_goals'::text THEN
             string_agg(
-                DISTINCT (((('$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) ||
-                    CASE WHEN pac.description IS NOT NULL THEN ' - '::text || pac.description ELSE ''::text END) || '**$'::text,
+                DISTINCT (((('$$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) ||
+                    CASE WHEN pac.description IS NOT NULL THEN ' - '::text || pac.description ELSE ''::text END) || '**$$'::text,
                 chr(10)
-                ORDER BY ((((('$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) ||
-                    CASE WHEN pac.description IS NOT NULL THEN ' - '::text || pac.description ELSE ''::text END) || '**$'::text)
+                ORDER BY ((((('$$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) ||
+                    CASE WHEN pac.description IS NOT NULL THEN ' - '::text || pac.description ELSE ''::text END) || '**$$'::text)
             )
         WHEN pac.config_type::text = ANY (ARRAY['calendar_types'::character varying::text, 'notification_options'::character varying::text]) THEN
             string_agg(
-                DISTINCT ((('$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || '**$'::text,
+                DISTINCT ((('$$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || '**$$'::text,
                 chr(10)
-                ORDER BY (((('$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || '**$'::text)
+                ORDER BY (((('$$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || '**$$'::text)
             )
         ELSE NULL::text
     END AS llm_input_string,
@@ -62,7 +63,7 @@ SELECT
             string_agg(
                 CASE
                     WHEN (ap2.is_enabled = false OR ap2.assistant_id IS NULL) AND pac.code::text <> 'personal_assistant'::text THEN
-                        (((('$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || ' - '::text) || pac.description || '**$'::text
+                        (((('$$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || ' - '::text) || pac.description || '**$$'::text
                     ELSE NULL::text
                 END,
                 chr(10)
@@ -75,7 +76,7 @@ SELECT
             string_agg(
                 CASE
                     WHEN ap2.is_enabled = true AND pac.code::text <> 'personal_assistant'::text THEN
-                        (((('$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || ' - '::text) || pac.description || '**$'::text
+                        (((('$$**'::text || pac.emoji::text) || ' '::text) || pac.display_name::text) || ' - '::text) || pac.description || '**$$'::text
                     ELSE NULL::text
                 END,
                 chr(10)
@@ -88,7 +89,7 @@ SELECT
             string_agg(
                 CASE
                     WHEN pac.code::text <> 'personal_assistant'::text THEN
-                        (((('$**'::text || pac.display_name::text) || '**$ → ID: "'::text) || pac.code::text) || '" | Category: "'::text) || COALESCE(pac.category, 'General'::character varying)::text || '"'::text
+                        (((('$$**'::text || pac.display_name::text) || '**$$ → ID: "'::text) || pac.code::text) || '" | Category: "'::text) || COALESCE(pac.category, 'General'::character varying)::text || '"'::text
                     ELSE NULL::text
                 END,
                 chr(10)
@@ -99,7 +100,7 @@ SELECT
     CASE
         WHEN pac.config_type::text = 'assistants'::text THEN
             string_agg(
-                DISTINCT (((((((((((((('$**'::text || COALESCE(wa.company_name, 'Company'::text)) || '**$'::text) || chr(10)) || '  - Website: '::text) || wa.website_url::text) || chr(10)) || '  - Description: '::text) || COALESCE(wa.company_description, 'N/A'::text)) || chr(10)) || '  - Value Proposition: '::text) || COALESCE(wa.value_proposition, 'N/A'::text)) || chr(10)) || '  - Business Niche: '::text) || COALESCE(wa.business_niche, 'N/A'::text)) || chr(10) || '  - Tags: '::text || COALESCE(array_to_string(wa.tags, ', '::text), 'N/A'::text),
+                DISTINCT (((((((((((((((('$$**'::text || COALESCE(wa.company_name, 'Company'::text)) || '**$$'::text) || chr(10)) || '  - Website: '::text) || wa.website_url::text) || chr(10)) || '  - Description: '::text) || COALESCE(wa.company_description, 'N/A'::text)) || chr(10)) || '  - Value Proposition: '::text) || COALESCE(wa.value_proposition, 'N/A'::text)) || chr(10)) || '  - Business Niche: '::text) || COALESCE(wa.business_niche, 'N/A'::text)) || chr(10)) || '  - Tags: '::text) || COALESCE(array_to_string(wa.tags, ', '::text), 'N/A'::text),
                 chr(10) || chr(10)
             ) FILTER (WHERE wa.id IS NOT NULL)
         ELSE NULL::text
