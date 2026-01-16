@@ -282,15 +282,18 @@ class AgentEnablementService {
     try {
       const passedUserId = data.user_id;
       const agentData = data.agent_data;
-      
+
       // Support both camelCase (from parseOnboardingResponse) and snake_case (from N8N)
       const agentId = agentData.agentId || agentData.agent_id;
       const customName = agentData.customName || agentData.agent_name;
-      
+      const communicationTone = agentData.communication_tone || agentData.communicationTone;
+      const targetAudience = agentData.target_audience || agentData.targetAudience;
+      const primaryGoals = agentData.primary_goals || agentData.primaryGoals;
+
       // IMPORTANT: Get the correct user_id from profiles table (same as sidebar uses)
       // The passed userId might be the auth user id, but we need profile.user_id
       let actualUserId = passedUserId;
-      
+
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
@@ -298,26 +301,28 @@ class AgentEnablementService {
           .select('user_id')
           .eq('id', user.id)
           .single();
-        
+
         if (profile?.user_id) {
           actualUserId = profile.user_id;
           console.log(`🔧 AgentEnablementService: Using profile.user_id: ${actualUserId} (passed was: ${passedUserId})`);
         }
       }
-      
+
       console.log(`🔧 AgentEnablementService: Processing structured enablement for ${agentId} (user: ${actualUserId})`);
-      
+
       if (!actualUserId || !agentId) {
         console.error('❌ AgentEnablementService: Missing required fields - userId:', actualUserId, 'agentId:', agentId);
         return;
       }
-      
+
+      // Save agent to assistant_personalizations
       const { error } = await supabase
         .from('assistant_personalizations')
         .upsert({
           user_id: actualUserId,
           assistant_id: agentId,
           custom_name: customName,
+          communication_tone: communicationTone || 'professional',
           is_enabled: true,
           last_updated: new Date().toISOString()
         });
@@ -326,6 +331,39 @@ class AgentEnablementService {
         console.error('❌ AgentEnablementService: Database error:', error);
       } else {
         console.log('✅ AgentEnablementService: Agent enabled successfully via structured format');
+
+        // Save ONE-TIME config to profiles table (only if not "REUSE_EXISTING")
+        // This ensures first agent sets these values, additional agents skip
+        if (targetAudience && targetAudience !== 'REUSE_EXISTING') {
+          console.log('📝 AgentEnablementService: Saving one-time config to profiles (first agent)');
+
+          const profileUpdate: Record<string, any> = {};
+
+          if (targetAudience && targetAudience !== 'REUSE_EXISTING') {
+            profileUpdate.target_audience = targetAudience;
+          }
+
+          if (primaryGoals && primaryGoals !== 'REUSE_EXISTING') {
+            // Handle both array and string formats
+            profileUpdate.primary_goals = Array.isArray(primaryGoals) ? primaryGoals : [primaryGoals];
+          }
+
+          if (Object.keys(profileUpdate).length > 0) {
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .update(profileUpdate)
+              .eq('user_id', actualUserId);
+
+            if (profileError) {
+              console.error('❌ AgentEnablementService: Error saving one-time config to profiles:', profileError);
+            } else {
+              console.log('✅ AgentEnablementService: One-time config saved to profiles:', profileUpdate);
+            }
+          }
+        } else {
+          console.log('ℹ️ AgentEnablementService: Additional agent - skipping one-time config save (REUSE_EXISTING)');
+        }
+
         this.refreshAgentSidebar();
       }
     } catch (error) {
