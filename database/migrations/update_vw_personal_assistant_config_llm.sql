@@ -1,7 +1,27 @@
--- Update the view to check if user has ACTUALLY completed one-time config
--- Instead of just checking if they have any enabled assistant
--- Also uses correct button format: $$**...**$$
+-- ============================================================================
+-- Personal Assistant Config View with One-Time Setup Skip Logic
+-- ============================================================================
+-- This view adds two new columns to support smart step skipping:
+-- 1. is_one_time_config: Identifies config types that are one-time setup (not per-agent)
+-- 2. skip_for_additional_agents: True if user already completed onboarding, skip this config
+--
+-- One-Time Configs (skip after first agent):
+--   - business_types
+--   - target_audiences
+--   - primary_goals
+--   - calendar_types
+--   - notification_options
+--
+-- Per-Agent Configs (always ask):
+--   - brand_voices (each agent can have different tone)
+--   - assistants (always show available agents)
+-- ============================================================================
 
+-- Drop dependent views first, then recreate
+DROP VIEW IF EXISTS public.vw_user_skip_status CASCADE;
+DROP VIEW IF EXISTS public.vw_personal_assistant_config_llm CASCADE;
+
+-- Create the main view with correct logic and $$**...**$$ button format
 CREATE OR REPLACE VIEW public.vw_personal_assistant_config_llm AS
 WITH user_onboarding_status AS (
     SELECT
@@ -122,3 +142,19 @@ LEFT JOIN user_onboarding_status uos ON uos.user_id = p.user_id
 LEFT JOIN assistant_personalizations ap2 ON pac.code::text = ap2.assistant_id::text AND ap2.user_id = p.user_id AND pac.config_type::text = 'assistants'::text
 LEFT JOIN website_analysis wa ON wa.firm_user_id = p.user_id AND pac.config_type::text = 'assistants'::text AND wa.analysis_status::text = 'completed'::text
 GROUP BY p.user_id, pac.config_type, uos.has_completed_onboarding;
+
+-- Recreate the dependent view vw_user_skip_status
+CREATE OR REPLACE VIEW public.vw_user_skip_status AS
+SELECT
+    user_id,
+    string_agg(
+        '- ' || config_type || ': ' ||
+        CASE
+            WHEN skip_for_additional_agents = true THEN 'SKIP'
+            ELSE 'ASK'
+        END,
+        chr(10)
+        ORDER BY config_type
+    ) AS skip_status
+FROM vw_personal_assistant_config_llm
+GROUP BY user_id;
