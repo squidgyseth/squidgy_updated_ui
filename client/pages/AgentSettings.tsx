@@ -17,10 +17,12 @@ interface KnowledgeEntry {
 
 interface PreviousFile {
   id: string;
+  file_id: string;
   file_name: string;
   file_url: string;
   created_at: string;
-  file_type?: string;
+  processing_status?: string;
+  extracted_text?: string;
 }
 
 export default function AgentSettings() {
@@ -43,6 +45,10 @@ export default function AgentSettings() {
   const [previousFiles, setPreviousFiles] = useState<PreviousFile[]>([]);
   const [loadingPreviousFiles, setLoadingPreviousFiles] = useState(true);
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+
+  // Custom instructions state - track existing record for updates
+  const [customInstructionsId, setCustomInstructionsId] = useState<string | null>(null);
+  const [loadingCustomInstructions, setLoadingCustomInstructions] = useState(true);
   
   // Speech recognition
   const [recognition, setRecognition] = useState<any>(null);
@@ -78,7 +84,40 @@ export default function AgentSettings() {
     loadAgentConfig();
   }, [agentId]);
 
-  // Function to fetch previously uploaded files (reusable)
+  // Function to fetch existing custom instructions (text input)
+  const fetchCustomInstructions = async () => {
+    if (!userId || !agentId) {
+      setLoadingCustomInstructions(false);
+      return;
+    }
+
+    try {
+      setLoadingCustomInstructions(true);
+      // Custom instructions have file_name = "User Input" and empty file_url
+      const { data, error } = await supabase
+        .from('firm_users_knowledge_base')
+        .select('id, file_id, extracted_text')
+        .eq('firm_user_id', userId)
+        .eq('agent_id', agentId)
+        .eq('file_name', 'User Input')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('Error fetching custom instructions:', error);
+      } else if (data && data.length > 0) {
+        setCustomInstructionsId(data[0].id);
+        setCurrentText(data[0].extracted_text || '');
+        console.log('Loaded existing custom instructions');
+      }
+    } catch (error) {
+      console.error('Error fetching custom instructions:', error);
+    } finally {
+      setLoadingCustomInstructions(false);
+    }
+  };
+
+  // Function to fetch previously uploaded files (ONLY actual files, not text entries)
   const fetchPreviousFiles = async (showLoading = true) => {
     if (!userId || !agentId) {
       setLoadingPreviousFiles(false);
@@ -88,11 +127,12 @@ export default function AgentSettings() {
     try {
       if (showLoading) setLoadingPreviousFiles(true);
       const { data, error } = await supabase
-        .from('knowledge_base')
-        .select('id, file_name, file_url, created_at, file_type')
+        .from('firm_users_knowledge_base')
+        .select('id, file_id, file_name, file_url, created_at, processing_status, extracted_text')
         .eq('firm_user_id', userId)
         .eq('agent_id', agentId)
-        .not('file_name', 'is', null)
+        .neq('file_name', 'User Input')  // Exclude text entries
+        .neq('file_url', '')  // Only files with actual URLs
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -107,9 +147,48 @@ export default function AgentSettings() {
     }
   };
 
-  // Fetch previously uploaded files on mount
+  // Fetch custom instructions and files on mount
   useEffect(() => {
+    fetchCustomInstructions();
     fetchPreviousFiles();
+  }, [userId, agentId]);
+
+  // Subscribe to realtime updates for file processing status changes
+  useEffect(() => {
+    if (!userId || !agentId) return;
+
+    const channel = supabase
+      .channel('file-processing-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'firm_users_knowledge_base',
+          filter: `firm_user_id=eq.${userId}`
+        },
+        (payload) => {
+          const updatedRecord = payload.new as any;
+
+          // Update the file in our local state if processing_status changed
+          if (updatedRecord.agent_id === agentId && updatedRecord.processing_status) {
+            setPreviousFiles(prev =>
+              prev.map(file =>
+                file.id === updatedRecord.id
+                  ? { ...file, processing_status: updatedRecord.processing_status }
+                  : file
+              )
+            );
+            console.log(`File ${updatedRecord.file_name} status updated to: ${updatedRecord.processing_status}`);
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId, agentId]);
 
   // Initialize speech recognition
@@ -217,9 +296,9 @@ export default function AgentSettings() {
         // Continue with database deletion even if storage fails
       }
 
-      // Delete from knowledge_base table
+      // Delete from firm_users_knowledge_base table
       const { error: dbError } = await supabase
-        .from('knowledge_base')
+        .from('firm_users_knowledge_base')
         .delete()
         .eq('id', fileId);
 
@@ -303,19 +382,25 @@ export default function AgentSettings() {
       if (successCount === totalOperations) {
         console.log('All knowledge saved successfully!');
 
-        // Clear form
-        setCurrentText('');
+        // Clear voice state (but keep currentText - it's the persistent custom instructions)
         setVoiceText('');
         accumulatedTextRef.current = '';
+
+        // Clear uploaded files list
         setUploadedFiles([]);
 
-        // Refresh the list of previously uploaded files
-        await fetchPreviousFiles(false);
+        // Only refresh files list if files were uploaded
+        if (uploadedFiles.length > 0) {
+          await fetchPreviousFiles(false);
+        }
 
       } else {
         console.error(`Only ${successCount}/${totalOperations} operations succeeded`);
-        // Still refresh to show any that were uploaded
-        await fetchPreviousFiles(false);
+        // Still clear uploaded files and refresh if files were attempted
+        setUploadedFiles([]);
+        if (uploadedFiles.length > 0) {
+          await fetchPreviousFiles(false);
+        }
       }
       
     } catch (error) {
@@ -327,6 +412,25 @@ export default function AgentSettings() {
 
   const saveTextKnowledge = async (textContent: string) => {
     try {
+      // If we have an existing custom instructions record, update it
+      if (customInstructionsId) {
+        const { error } = await supabase
+          .from('firm_users_knowledge_base')
+          .update({
+            extracted_text: textContent,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', customInstructionsId);
+
+        if (error) {
+          throw new Error('Failed to update custom instructions');
+        }
+
+        console.log('Custom instructions updated successfully');
+        return { success: true, file_id: customInstructionsId };
+      }
+
+      // Otherwise create new via backend API
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
       const formData = new FormData();
       formData.append('firm_user_id', userId);
@@ -343,7 +447,23 @@ export default function AgentSettings() {
         throw new Error('Failed to save text knowledge');
       }
 
-      return await response.json();
+      const result = await response.json();
+
+      // Store the new ID for future updates
+      if (result.file_id) {
+        // Fetch the actual record ID
+        const { data } = await supabase
+          .from('firm_users_knowledge_base')
+          .select('id')
+          .eq('file_id', result.file_id)
+          .single();
+
+        if (data) {
+          setCustomInstructionsId(data.id);
+        }
+      }
+
+      return result;
     } catch (error) {
       console.error('Error saving text knowledge:', error);
       throw error;
@@ -549,24 +669,28 @@ export default function AgentSettings() {
                 <label htmlFor="content-textarea" className="block text-lg font-semibold text-gray-800 mb-3">
                   Custom Instructions
                 </label>
-                <textarea
-                  id="content-textarea"
-                  value={currentText}
-                  onChange={(e) => setCurrentText(e.target.value)}
-                  placeholder="Type your content here, or use voice input above..."
-                  className="w-full h-40 p-4 border-2 border-gray-200 rounded-xl resize-none focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all text-gray-800 leading-relaxed"
-                />
+                {loadingCustomInstructions ? (
+                  <div className="w-full h-40 p-4 border-2 border-gray-200 rounded-xl bg-gray-50 flex items-center justify-center">
+                    <Loader2 className="animate-spin text-gray-400 mr-2" size={20} />
+                    <span className="text-gray-500">Loading your instructions...</span>
+                  </div>
+                ) : (
+                  <textarea
+                    id="content-textarea"
+                    value={currentText}
+                    onChange={(e) => setCurrentText(e.target.value)}
+                    placeholder="Type your instructions here, or use voice input above. Your instructions will be saved and you can edit them anytime..."
+                    className="w-full h-40 p-4 border-2 border-gray-200 rounded-xl resize-none focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all text-gray-800 leading-relaxed"
+                  />
+                )}
               </div>
 
               {/* Submit Button */}
               <div className="text-center">
                 <button
                   onClick={handleSubmit}
-                  disabled={isUploading || (!currentText.trim() && uploadedFiles.length === 0)}
-                  className="inline-flex items-center gap-3 px-8 py-4 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
-                  style={{
-                    background: `linear-gradient(107deg, ${theme.gradientStart}, ${theme.gradientMid}, ${theme.gradientEnd})`
-                  }}
+                  disabled={isUploading || loadingCustomInstructions || (!currentText.trim() && uploadedFiles.length === 0)}
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
                 >
                   {isUploading ? (
                     <>
@@ -627,7 +751,20 @@ export default function AgentSettings() {
                           <FileText size={20} className="text-gray-600" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800">{file.file_name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-gray-800">{file.file_name}</p>
+                            {file.processing_status && file.processing_status !== 'completed' && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                file.processing_status === 'processing'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : file.processing_status === 'failed'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {file.processing_status}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500">
                             Uploaded {new Date(file.created_at).toLocaleDateString('en-GB', {
                               day: 'numeric',
