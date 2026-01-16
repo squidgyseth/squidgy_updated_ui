@@ -170,6 +170,7 @@ export default function DynamicAgentDashboard() {
         sessionId={currentSessionId} // Use the current session ID
         webhookUrl={agentConfig.n8n?.webhook_url} // Pass the webhook URL from agent config
         showAddNewMessage={location.state?.showAddNewMessage}
+        addNewTimestamp={location.state?.addNewTimestamp}
         onMessageSent={handleMessageSent}
       />
     </UniversalChatLayout>

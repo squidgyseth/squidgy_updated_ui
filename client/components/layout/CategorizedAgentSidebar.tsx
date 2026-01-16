@@ -185,10 +185,11 @@ export default function CategorizedAgentSidebar() {
   };
 
   const handleAddNew = () => {
-    navigate('/chat/personal_assistant', { 
-      state: { 
-        showAddNewMessage: true 
-      } 
+    navigate('/chat/personal_assistant', {
+      state: {
+        showAddNewMessage: true,
+        addNewTimestamp: Date.now() // Force re-trigger on every click
+      }
     });
   };
 
