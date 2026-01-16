@@ -89,13 +89,7 @@ Let's create your newsletter! Please select 2-4 topics you'd like to include.
 
 Type the numbers separated by commas (e.g., '1, 3, 5'):
 
-1. 📊 Industry Insights - Share trends, analysis, and expert perspectives on your industry
-2. 🏆 Customer Stories / Case Studies - Highlight customer success stories and testimonials
-3. 📚 Education / How-To Tips - Teach your audience something valuable with actionable tips
-4. 🔗 Curated Resources / Tools - Share useful articles, tools, and resources
-5. 🎁 Promotions & Offers - Announce special deals, discounts, or limited-time offers
-6. 📅 Events & Announcements - Promote upcoming events, webinars, or company news
-7. 🎬 Behind The Scenes - Share company culture, team stories, and authentic moments
+[PASTE ALL TOPICS FROM {{ $json.available_topics_display }} HERE]
 ```
 
 **DO NOT:**
@@ -105,7 +99,7 @@ Type the numbers separated by commas (e.g., '1, 3, 5'):
 - Pretend topics were already selected when selected_topics is empty
 
 **DO:**
-- Copy the ENTIRE topics list into your response
+- Copy the ENTIRE topics list from `{{ $json.available_topics_display }}` into your response
 - Show each topic with its number, emoji, name, and description
 - Let users see ALL options before asking them to choose
 
@@ -299,11 +293,11 @@ User: "hi" or "lets start" or "start"
 
 **State shows:** phase = "topic_selection", selected_topics = []
 
-**CORRECT RESPONSE (you MUST include the topics list):**
+**CORRECT RESPONSE (you MUST include the topics list from {{ $json.available_topics_display }}):**
 
 ```json
 {
-  "response": "Let's create your newsletter! Please select 2-4 topics you'd like to include.\n\nType the numbers separated by commas (e.g., '1, 3, 5'):\n\n1. 📊 Industry Insights - Share trends, analysis, and expert perspectives\n2. 🏆 Customer Stories / Case Studies - Highlight success stories\n3. 📚 Education / How-To Tips - Teach something valuable\n4. 🔗 Curated Resources / Tools - Share useful articles and tools\n5. 🎁 Promotions & Offers - Announce deals and discounts\n6. 📅 Events & Announcements - Promote upcoming events\n7. 🎬 Behind The Scenes - Share company culture and stories",
+  "response": "Let's create your newsletter! Please select 2-4 topics you'd like to include.\n\nType the numbers separated by commas (e.g., '1, 3, 5'):\n\n{{ $json.available_topics_display }}",
   "Status": "Waiting",
   "state": {
     "phase": "topic_selection",
