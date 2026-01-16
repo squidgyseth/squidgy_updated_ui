@@ -29,14 +29,17 @@ async function upsertAgentsToSupabase(agents) {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   // Transform agents to personal_assistant_config format
-  const records = agents.map(agent => ({
-    config_type: 'assistants',
-    code: agent.agent.id,
-    display_name: agent.agent.name,
-    emoji: agent.agent.emoji || '🤖',
-    description: agent.agent.description || null,
-    category: agent.agent.category || 'General'
-  }));
+  // Skip Personal Assistant - it's a system agent and shouldn't be synced
+  const records = agents
+    .filter(agent => agent.agent.id !== 'personal_assistant')
+    .map(agent => ({
+      config_type: 'assistants',
+      code: agent.agent.id,
+      display_name: agent.agent.name,
+      emoji: agent.agent.emoji || '🤖',
+      description: agent.agent.description || null,
+      category: agent.agent.category || 'General'
+    }));
 
   console.log(`\n🔄 Syncing ${records.length} agents to Supabase...`);
 
