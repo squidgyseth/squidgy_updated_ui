@@ -23,6 +23,9 @@ agent:
 
   # Short description for the sidebar (keep it brief)
   description: "Transform content into multiple platform formats"
+
+  # Enable multi-turn conversation state persistence
+  uses_conversation_state: true
   
   # Specialization badge shown in chat header and right panel (optional)
   # Example: "Creative & Trendy", "Data Expert", "Lead Specialist"

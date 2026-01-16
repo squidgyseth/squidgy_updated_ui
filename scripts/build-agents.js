@@ -142,6 +142,7 @@ export interface AgentConfig {
     tagline?: string;
     avatar?: string;
     pinned?: boolean;
+    uses_conversation_state?: boolean;  // Enables multi-turn conversation state persistence
     initial_message?: string;
     sidebar_greeting?: string;
     capabilities?: string[];
