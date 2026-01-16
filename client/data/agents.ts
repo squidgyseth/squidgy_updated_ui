@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-16T08:52:39.350Z
+// Generated on: 2026-01-16T10:26:19.451Z
 
 export interface AgentConfig {
   agent: {
@@ -311,6 +311,65 @@ export const ALL_AGENTS: AgentConfig[] = [
         }
       ],
       "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+    }
+  },
+  {
+    "agent": {
+      "id": "smm_assistant",
+      "name": "SMM Assistant",
+      "category": "MARKETING",
+      "description": "Specializes in social media marketing, content creation, and trend analysis.",
+      "specialization": "Creative & Trendy",
+      "tagline": "Trend. Post. Analyze.",
+      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+      "capabilities": [
+        "Content creation and optimization for all major social platforms",
+        "Trend analysis and hashtag research",
+        "Social media strategy development and planning",
+        "Engagement optimization and community management"
+      ],
+      "recent_actions": [
+        "Created 15 Instagram post ideas for fashion brand",
+        "Analysed competitor performance",
+        "Generated trending hashtags for Q4 campaign",
+        "Developed content calendar for December"
+      ]
+    },
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant"
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "SMM Dashboard",
+          "path": "smm-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons"
+      ]
+    },
+    "suggestions": [
+      "Create Instagram post ideas",
+      "Analyze competitor content",
+      "Write engaging captions",
+      "Generate trending hashtags",
+      "Plan content calendar",
+      "Optimize engagement strategy"
+    ],
+    "personality": {
+      "tone": "creative",
+      "style": "trendy",
+      "approach": "data_driven"
     }
   },
   {
@@ -842,6 +901,65 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "approach": "proactive"
     }
   },
+  "smm_assistant": {
+    "agent": {
+      "id": "smm_assistant",
+      "name": "SMM Assistant",
+      "category": "MARKETING",
+      "description": "Specializes in social media marketing, content creation, and trend analysis.",
+      "specialization": "Creative & Trendy",
+      "tagline": "Trend. Post. Analyze.",
+      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+      "capabilities": [
+        "Content creation and optimization for all major social platforms",
+        "Trend analysis and hashtag research",
+        "Social media strategy development and planning",
+        "Engagement optimization and community management"
+      ],
+      "recent_actions": [
+        "Created 15 Instagram post ideas for fashion brand",
+        "Analysed competitor performance",
+        "Generated trending hashtags for Q4 campaign",
+        "Developed content calendar for December"
+      ]
+    },
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant"
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "SMM Dashboard",
+          "path": "smm-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons"
+      ]
+    },
+    "suggestions": [
+      "Create Instagram post ideas",
+      "Analyze competitor content",
+      "Write engaging captions",
+      "Generate trending hashtags",
+      "Plan content calendar",
+      "Optimize engagement strategy"
+    ],
+    "personality": {
+      "tone": "creative",
+      "style": "trendy",
+      "approach": "data_driven"
+    }
+  },
   "SOL": {
     "agent": {
       "id": "SOL",
@@ -1233,6 +1351,65 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ],
         "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
       }
+    },
+    {
+      "agent": {
+        "id": "smm_assistant",
+        "name": "SMM Assistant",
+        "category": "MARKETING",
+        "description": "Specializes in social media marketing, content creation, and trend analysis.",
+        "specialization": "Creative & Trendy",
+        "tagline": "Trend. Post. Analyze.",
+        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+        "capabilities": [
+          "Content creation and optimization for all major social platforms",
+          "Trend analysis and hashtag research",
+          "Social media strategy development and planning",
+          "Engagement optimization and community management"
+        ],
+        "recent_actions": [
+          "Created 15 Instagram post ideas for fashion brand",
+          "Analysed competitor performance",
+          "Generated trending hashtags for Q4 campaign",
+          "Developed content calendar for December"
+        ]
+      },
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant"
+      },
+      "ui_use": {
+        "page_type": "single_page",
+        "pages": [
+          {
+            "name": "SMM Dashboard",
+            "path": "smm-dashboard",
+            "order": 1,
+            "validated": true
+          }
+        ]
+      },
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "voice_input",
+          "suggestion_buttons"
+        ]
+      },
+      "suggestions": [
+        "Create Instagram post ideas",
+        "Analyze competitor content",
+        "Write engaging captions",
+        "Generate trending hashtags",
+        "Plan content calendar",
+        "Optimize engagement strategy"
+      ],
+      "personality": {
+        "tone": "creative",
+        "style": "trendy",
+        "approach": "data_driven"
+      }
     }
   ],
   "SALES": [
@@ -1426,7 +1603,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","SOL"];
+export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","smm_assistant","SOL"];
 
 // Total count
-export const TOTAL_AGENTS = 6;
+export const TOTAL_AGENTS = 7;
