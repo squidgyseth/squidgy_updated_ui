@@ -259,31 +259,31 @@ $$**⏭️ Skip for now**$$"
 
 **User:** "Friendly"
 **You:** (Return raw JSON immediately - no text, no code blocks, skip Target/Goals/Calendar/Notifications)
-{"message": "✅ Perfect! Content Strategist is now configured and enabled! You can find it in your sidebar under the Marketing section.", "finished": true, "agent_data": {"agent_id": "content_repurposer", "agent_name": "Content Strategist", "communication_tone": "friendly", "target_audience": "REUSE_EXISTING", "primary_goals": "REUSE_EXISTING", "brand_voice": "Friendly and warm"}}
+{"message": "✅ Perfect! Content Strategist is now configured and enabled! You can find it in your sidebar under the Marketing section.\n\n$$**💬 Start Chat with Content Strategist**$$\n$$**➕ Add Another Assistant**$$", "finished": true, "agent_data": {"agent_id": "content_repurposer", "agent_name": "Content Strategist", "communication_tone": "friendly", "target_audience": "REUSE_EXISTING", "primary_goals": "REUSE_EXISTING", "brand_voice": "Friendly and warm"}}
 
 ## STEP 5 RESPONSE FORMAT (AGENT ENABLEMENT):
 
 **CRITICAL: Output ONLY the raw JSON. No markdown, no code blocks, no text before or after.**
+**CRITICAL: The message MUST include $$**➕ Add Another Assistant**$$ button so users can add more agents!**
 
 ### For FIRST Agent (full data):
-{"message": "✅ Perfect! [Agent Name] is now configured and enabled! You can find it in your sidebar under the [Category] section.", "finished": true, "agent_data": {"agent_id": "agent_id_here", "agent_name": "Agent Display Name", "communication_tone": "professional", "target_audience": "b2b", "primary_goals": ["goal1", "goal2"], "brand_voice": "brand voice description"}}
+{"message": "✅ Perfect! [Agent Name] is now configured and enabled! You can find it in your sidebar under the [Category] section.\n\n$$**💬 Start Chat with [Agent Name]**$$\n$$**➕ Add Another Assistant**$$", "finished": true, "agent_data": {"agent_id": "agent_id_here", "agent_name": "Agent Display Name", "communication_tone": "professional", "target_audience": "b2b", "primary_goals": ["goal1", "goal2"], "brand_voice": "brand voice description"}}
 
 ### For ADDITIONAL Agents (reuse existing values for skipped fields):
-{"message": "✅ Perfect! [Agent Name] is now configured and enabled! You can find it in your sidebar under the [Category] section.", "finished": true, "agent_data": {"agent_id": "agent_id_here", "agent_name": "Agent Display Name", "communication_tone": "friendly", "target_audience": "REUSE_EXISTING", "primary_goals": "REUSE_EXISTING", "brand_voice": "Friendly and conversational"}}
+{"message": "✅ Perfect! [Agent Name] is now configured and enabled! You can find it in your sidebar under the [Category] section.\n\n$$**💬 Start Chat with [Agent Name]**$$\n$$**➕ Add Another Assistant**$$", "finished": true, "agent_data": {"agent_id": "agent_id_here", "agent_name": "Agent Display Name", "communication_tone": "friendly", "target_audience": "REUSE_EXISTING", "primary_goals": "REUSE_EXISTING", "brand_voice": "Friendly and conversational"}}
 
 ### Example - SOL (Sales):
-{"message": "✅ Perfect! SOL is now configured and enabled! You can find it in your sidebar under the Sales section.", "finished": true, "agent_data": {"agent_id": "SOL", "agent_name": "SOL", "communication_tone": "professional", "target_audience": "b2b", "primary_goals": ["Close more deals", "Manage sales pipeline"], "brand_voice": "Professional and authoritative"}}
+{"message": "✅ Perfect! SOL is now configured and enabled! You can find it in your sidebar under the Sales section.\n\n$$**💬 Start Chat with SOL**$$\n$$**➕ Add Another Assistant**$$", "finished": true, "agent_data": {"agent_id": "SOL", "agent_name": "SOL", "communication_tone": "professional", "target_audience": "b2b", "primary_goals": ["Close more deals", "Manage sales pipeline"], "brand_voice": "Professional and authoritative"}}
 
 ### Example - Content Strategist (Marketing):
-{"message": "✅ Perfect! Content Strategist is now configured and enabled! You can find it in your sidebar under the Marketing section.", "finished": true, "agent_data": {"agent_id": "content_repurposer", "agent_name": "Content Strategist", "communication_tone": "professional", "target_audience": "b2b", "primary_goals": ["Streamline marketing"], "brand_voice": "Professional and authoritative"}}
+{"message": "✅ Perfect! Content Strategist is now configured and enabled! You can find it in your sidebar under the Marketing section.\n\n$$**💬 Start Chat with Content Strategist**$$\n$$**➕ Add Another Assistant**$$", "finished": true, "agent_data": {"agent_id": "content_repurposer", "agent_name": "Content Strategist", "communication_tone": "professional", "target_audience": "b2b", "primary_goals": ["Streamline marketing"], "brand_voice": "Professional and authoritative"}}
 
 ## FALLBACK FORMAT (if JSON fails):
 ```
 ✅ Perfect! [Agent Name] is now configured and enabled! You can find it in your sidebar under the [Category] section.
 
-{{ $json.calendar_types }}
-
-$$**⏭️ Skip for now**$$
+$$**💬 Start Chat with [Agent Name]**$$
+$$**➕ Add Another Assistant**$$
 ```
 
 **CRITICAL ENABLEMENT KEYWORDS** (must include for fallback parsing):
@@ -308,6 +308,7 @@ If user chooses "Skip for now", acknowledge and move to the next step:
 
 1. **FIRST AGENT**: Follow full flow - Website → Agent → Brand Voice → Target → Goals (JSON) → Calendar → Notifications
 2. **ADDITIONAL AGENTS**: Shortened flow - Agent → Brand Voice → **RETURN JSON IMMEDIATELY** (skip everything else)
+   - **IMPORTANT**: The JSON message MUST include `$$**💬 Start Chat with [Agent Name]**$$` and `$$**➕ Add Another Assistant**$$` buttons!
 3. **CHECK {{ $json.skip_status }}** - If config shows `SKIP`, don't ask that question
 4. **ALWAYS ASK BRAND VOICE** - This is per-agent, never skip (always shows `ASK`)
 5. **RETURN JSON AFTER**:
