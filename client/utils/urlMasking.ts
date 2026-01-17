@@ -32,11 +32,11 @@ export const createProxyUrl = (originalUrl: string, resourceType: 'avatar' | 'im
   const urlParts = originalUrl.split('/storage/v1/object/public/');
   if (urlParts.length > 1) {
     let filePath = urlParts[1];
-    
+
     // Remove any query parameters and handle them separately
     const [pathOnly, queryString] = filePath.split('?');
     filePath = pathOnly;
-    
+
     // Create a masked URL that goes through your backend
     // Don't double-encode if it's already encoded
     const encodedPath = filePath.includes('%') ? filePath : encodeURIComponent(filePath);
@@ -96,7 +96,7 @@ export const maskStorageUrlsInText = (text: string): string => {
 
   // First, handle markdown-style links
   let maskedText = convertMarkdownLinksToHtml(text);
-  
+
   // Replace different types of storage URLs with appropriate clickable labels
   // Handle both full URLs (with https://) and partial URLs (without protocol)
   maskedText = maskedText.replace(
@@ -106,15 +106,15 @@ export const maskStorageUrlsInText = (text: string): string => {
       return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Profile Image</a>`;
     }
   );
-  
+
   maskedText = maskedText.replace(
     /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/screenshots[^\s]*)/g,
     (match, urlPart) => {
       const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
-      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Screenshot</a>`;
+      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Open Screenshot</a>`;
     }
   );
-  
+
   maskedText = maskedText.replace(
     /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/images[^\s]*)/g,
     (match, urlPart) => {
@@ -122,7 +122,7 @@ export const maskStorageUrlsInText = (text: string): string => {
       return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Image</a>`;
     }
   );
-  
+
   maskedText = maskedText.replace(
     /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/documents[^\s]*)/g,
     (match, urlPart) => {
@@ -130,7 +130,7 @@ export const maskStorageUrlsInText = (text: string): string => {
       return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download Document</a>`;
     }
   );
-  
+
   // Handle favicon URLs specifically (they may be in /static/favicons/ folder)
   maskedText = maskedText.replace(
     /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/static\/favicons\/[^\s]*)/g,
@@ -139,7 +139,7 @@ export const maskStorageUrlsInText = (text: string): string => {
       return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Logo</a>`;
     }
   );
-  
+
   maskedText = maskedText.replace(
     /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/[^\s]*)/g,
     (match, urlPart) => {
@@ -147,7 +147,7 @@ export const maskStorageUrlsInText = (text: string): string => {
       return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download File</a>`;
     }
   );
-  
+
   // General Supabase URL masking with clickable links
   maskedText = maskedText.replace(
     /(?:https?:\/\/)?([^\s]*\.supabase\.co[^\s]*)/g,
@@ -170,7 +170,7 @@ export const createMaskedDownloadLink = (originalUrl: string, filename?: string)
 
   const proxyUrl = createProxyUrl(originalUrl, 'file');
   const displayName = filename || 'Download File';
-  
+
   return { url: proxyUrl, displayName };
 };
 
@@ -182,7 +182,7 @@ export const maskStorageUrlsWithProxy = (text: string): string => {
   if (!text) return text;
 
   let maskedText = text;
-  
+
   // Replace different types of storage URLs with proxy links
   maskedText = maskedText.replace(
     /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/(avatars[^\s]*))/g,
@@ -191,15 +191,15 @@ export const maskStorageUrlsWithProxy = (text: string): string => {
       return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Profile Image</a>`;
     }
   );
-  
+
   maskedText = maskedText.replace(
     /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/(screenshots[^\s]*))/g,
     (match, fullUrl, filePath) => {
       const proxyUrl = createProxyUrl(fullUrl, 'image');
-      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Screenshot</a>`;
+      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Open Screenshot</a>`;
     }
   );
-  
+
   maskedText = maskedText.replace(
     /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/(images[^\s]*))/g,
     (match, fullUrl, filePath) => {
@@ -207,7 +207,7 @@ export const maskStorageUrlsWithProxy = (text: string): string => {
       return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Image</a>`;
     }
   );
-  
+
   maskedText = maskedText.replace(
     /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/(documents[^\s]*))/g,
     (match, fullUrl, filePath) => {
@@ -215,7 +215,7 @@ export const maskStorageUrlsWithProxy = (text: string): string => {
       return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download Document</a>`;
     }
   );
-  
+
   maskedText = maskedText.replace(
     /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/([^\s]*))/g,
     (match, fullUrl, filePath) => {
@@ -223,7 +223,7 @@ export const maskStorageUrlsWithProxy = (text: string): string => {
       return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download File</a>`;
     }
   );
-  
+
   // General Supabase URL masking with proxy links
   maskedText = maskedText.replace(
     /(https?:\/\/[^\s]*\.supabase\.co[^\s]*)/g,
