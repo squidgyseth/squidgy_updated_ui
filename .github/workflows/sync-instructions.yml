@@ -1,0 +1,31 @@
+# Sync Agent Instructions to Vector Store
+# Automatically triggers N8N workflow when knowledge_base files change
+
+name: Sync Agent Instructions
+
+on:
+  push:
+    paths:
+      - 'knowledge_base/**'
+    branches:
+      - main
+      - dev
+
+jobs:
+  sync-instructions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger N8N Load Instructions Workflow
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${{ secrets.N8N_WEBHOOK_URL }}/webhook/load-instructions")
+          if [ "$response" -eq 200 ]; then
+            echo "Successfully triggered instruction sync"
+          else
+            echo "Warning: Received HTTP $response from N8N webhook"
+            exit 1
+          fi
+        env:
+          N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
+
+      - name: Log Success
+        run: echo "Agent instructions synced to vector store"

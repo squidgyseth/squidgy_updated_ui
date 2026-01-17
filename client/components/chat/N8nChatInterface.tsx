@@ -348,6 +348,32 @@ export default function N8nChatInterface({
       );
 
       if (response) {
+        // NEW: Handle redirect responses from Master Agent
+        if (response.routing?.should_redirect && response.routing?.target_url) {
+          console.log('🔀 Redirect response detected:', response.routing);
+
+          // Show the redirect message first
+          const redirectMessage: ChatMessage = {
+            id: response.request_id || generateRequestId(),
+            content: response.agent_response || `Redirecting you to ${response.routing.target_agent}...`,
+            sender: 'agent',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, redirectMessage]);
+
+          // Save redirect message to history
+          await saveMessageToHistory(redirectMessage.content, 'Agent', redirectMessage.timestamp);
+
+          // Redirect after a short delay to let user see the message
+          setTimeout(() => {
+            console.log('🚀 Navigating to:', response.routing.target_url);
+            window.location.href = response.routing.target_url;
+          }, 1500);
+
+          setIsLoading(false);
+          return; // Exit early - redirect will handle the rest
+        }
+
         // Store conversation state for multi-turn agents (like newsletter_multi)
         if (response.state && isMultiTurnAgent()) {
           console.log('💾 Storing conversation state:', response.state);

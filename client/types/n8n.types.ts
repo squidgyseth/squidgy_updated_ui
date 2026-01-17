@@ -46,6 +46,22 @@ export interface N8nResponse {
     primary_goals?: string[];
     brand_voice?: string;
   };
+  // Routing fields for Master Agent redirects
+  routing?: {
+    should_redirect: boolean;
+    target_agent: string;
+    target_url: string;
+    context_to_pass?: Record<string, unknown>;
+  };
+  // Actions tracking (optional)
+  actions_performed?: Array<{
+    action: string;
+    [key: string]: unknown;
+  }>;
+  actions_todo?: Array<{
+    action: string;
+    [key: string]: unknown;
+  }>;
 }
 
 /**

@@ -1,0 +1,76 @@
+{
+  "name": "SA_KB_Delete",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## SA_KB_Delete Workflow\n\nDelete specific content from KB.\n\n### Table: user_vector_knowledge_base\n\n### Flow:\n1. Search for matching content by text\n2. Delete matching rows\n\n### Called By:\n- Personal Assistant (Delete from KB tool)",
+        "height": 180,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [32, 32],
+      "typeVersion": 1,
+      "id": "note-overview",
+      "name": "Overview"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "userID", "type": "string" },
+            { "name": "category", "type": "string" },
+            { "name": "content_to_delete", "type": "string" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [32, 240],
+      "id": "trigger",
+      "name": "When Called"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM public.user_vector_knowledge_base \nWHERE user_id = '{{ $json.userID }}'\nAND category = '{{ $json.category }}'\nAND document ILIKE '%' || '{{ $json.content_to_delete }}' || '%'\nRETURNING id, document;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [280, 240],
+      "id": "delete-content",
+      "name": "Delete Matching Content",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const deleted = $input.all();\nconst deletedCount = deleted.length;\n\nreturn {\n  json: {\n    success: true,\n    action: 'kb_delete',\n    user_id: $('When Called').first().json.userID,\n    category: $('When Called').first().json.category,\n    deleted_count: deletedCount,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 240],
+      "id": "response",
+      "name": "Response"
+    }
+  ],
+  "connections": {
+    "When Called": {
+      "main": [[{ "node": "Delete Matching Content", "type": "main", "index": 0 }]]
+    },
+    "Delete Matching Content": {
+      "main": [[{ "node": "Response", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "2.0.0-explicit-columns",
+  "meta": { "templateCredsSetupCompleted": true },
+  "id": "SA_KB_Delete",
+  "tags": []
+}
