@@ -1,0 +1,776 @@
+{
+  "name": "SA_Personal_Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# Personal Assistant - Master Agent\n\n## Flow:\n1. Webhook receives request\n2. Load instructions from agent_instructions table\n3. Get AGENT config + USER PROFILE from Supabase (parallel)\n4. Pre-process request (combine all data)\n5. AI Agent decides: ANSWER, REDIRECT, ONBOARD, or CLARIFY\n6. Build response\n7. Return to webhook\n\n## Data Sources:\n- Instructions → agent_instructions vector store (agent_id='personal_assistant')\n- Agent config → Supabase (enabled_agents, assistants)\n- User profile → Supabase profiles table (brand_voice, target_audience, etc.)\n- User data → KB via RAG tool (on-demand)\n\n## User Settings Reuse (from profiles):\n- First agent: Collect all → Save to profiles via tool\n- 2nd+ agent: Show existing → Offer reuse or customize",
+        "height": 280,
+        "width": 400,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -200,
+        -100
+      ],
+      "typeVersion": 1,
+      "id": "overview-note",
+      "name": "Overview"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "personal_assistant",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ],
+      "id": "webhook-main",
+      "name": "PA Webhook",
+      "webhookId": "personal-assistant-main"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT document, source_file FROM public.agent_instructions\nWHERE agent_id = 'personal_assistant'\nORDER BY source_file;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        520,
+        300
+      ],
+      "id": "load-instructions",
+      "name": "Load Instructions",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "vw_personal_assistant_config_llm",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "agent",
+              "keyValue": "personal_assistant"
+            },
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('PA Webhook').item.json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        740,
+        300
+      ],
+      "id": "get-user-config",
+      "name": "Get Agent Config",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('PA Webhook').item.json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        740,
+        480
+      ],
+      "id": "get-user-settings",
+      "name": "Get User Profile",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pre-process: Combine data for AI Agent\nconst webhook = $('PA Webhook').first().json;\nconst instructionDocs = $('Load Instructions').all();\nconst config = $('Get Agent Config').first().json || {};\nconst userProfile = $('Get User Profile').first()?.json || null;\n\n// Combine all instruction documents from agent_instructions table\n// Format: ## source_file\\n\\ndocument content\\n\\n---\nlet combinedInstructions = '';\nfor (const item of instructionDocs) {\n  const doc = item.json;\n  if (doc.document) {\n    combinedInstructions += `## ${doc.source_file}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n  }\n}\n\n// Extract request data\nconst body = webhook.body || {};\nconst userId = body.user_id;\nconst sessionId = body.session_id;\nconst userMessage = body.user_mssg?.trim() || '';\nconst agentName = body.agent_name || 'personal_assistant';\nconst requestId = body.request_id || crypto.randomUUID();\n\n// Format user_settings from profiles table (null if not set)\n// Settings are considered SET if brand_voice exists (first field collected)\nlet userSettingsFormatted = null;\nif (userProfile && userProfile.brand_voice) {\n  userSettingsFormatted = {\n    brand_voice: userProfile.brand_voice,\n    target_audience: userProfile.target_audience,\n    primary_goals: userProfile.primary_goals || [],\n    calendar: userProfile.calendar_type,\n    notifications: userProfile.notifications_enabled ? 'enabled' : 'disabled'\n  };\n}\n\n// Build the data object for AI Agent\nreturn {\n  json: {\n    // Request info\n    user_id: userId,\n    session_id: sessionId,\n    user_mssg: userMessage,\n    agent_name: agentName,\n    request_id: requestId,\n    timestamp: new Date().toISOString(),\n    \n    // Instructions (loaded from agent_instructions vector store)\n    instructions: combinedInstructions || 'No instructions found.',\n    \n    // Agent/System config ONLY (user data comes from KB via RAG)\n    enabled_agents: config.enabled_agents || '',\n    assistants: config.assistants || '',\n    agent_department_value: config.agent_department_value || '',\n    \n    // User settings from profiles (for agent onboarding reuse)\n    user_settings: userSettingsFormatted\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        300
+      ],
+      "id": "pre-process",
+      "name": "Pre-Process"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1100,
+        520
+      ],
+      "id": "openai-model",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "xeFNBBSMiFQf7cQv",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Pre-Process').item.json.session_id }}",
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1260,
+        520
+      ],
+      "id": "session-memory",
+      "name": "Session Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1420,
+        640
+      ],
+      "id": "embeddings-rag",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "xeFNBBSMiFQf7cQv",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "tableName": "user_vector_knowledge_base",
+        "toolDescription": "Search the Knowledge Base for information about the user's business. Use this to answer questions about company details, contacts, products, services, etc. Query with natural language.",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "user_id",
+                "value": "={{ $('Pre-Process').item.json.user_id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        1420,
+        520
+      ],
+      "id": "vector-search-tool",
+      "name": "Vector Search (RAG)",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Save information to the Knowledge Base. Use when user provides business information, wants to update details, or asks you to remember something.\n\nCategories:\n- company_overview\n- icp_target_audience\n- branding_identity\n- messaging_positioning\n- product_services\n- sales_process\n- marketing_channels\n- development_technical\n- operations_workflows\n- contacts_stakeholders\n- customer_success\n- competitive_landscape",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "SA_RAG"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "userID": "={{ $('Pre-Process').item.json.user_id }}",
+            "category": "={{ $fromAI('category', 'The KB category to save to (e.g., company_overview, contacts_stakeholders)', 'string') }}",
+            "query": "={{ $fromAI('query', 'The information to save, formatted clearly', 'string') }}"
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1580,
+        520
+      ],
+      "id": "save-to-kb-tool",
+      "name": "Save to KB"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get configuration/setup details for a specific agent. Use when you need to check if an agent is configured, what settings it has, or before redirecting to an agent. Returns agent's enabled status, configuration settings (brand_voice, target_audience, tone, etc.).",
+        "operation": "get",
+        "tableId": "user_agent_customizations",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('Pre-Process').item.json.user_id }}"
+            },
+            {
+              "keyName": "agent_id",
+              "keyValue": "={{ $fromAI('agent_id', 'The agent ID to get setup for (e.g., newsletter_multi, content_repurposer, SOL)', 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        520
+      ],
+      "id": "get-agent-setup-tool",
+      "name": "Get Agent Setup",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Analyze a website URL to extract company information. Use when user provides their website URL. Returns company details, products, brand voice, etc.",
+        "method": "POST",
+        "url": "https://squidgy-backend-00f664bf1f3d.herokuapp.com/api/website/analysis_complete",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $fromAI('url', 'The website URL to analyze', 'string') }}"
+            },
+            {
+              "name": "firm_user_id",
+              "value": "={{ $('Pre-Process').item.json.user_id }}"
+            },
+            {
+              "name": "agent_id",
+              "value": "personal_assistant"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        1740,
+        520
+      ],
+      "id": "web-analysis-tool",
+      "name": "Web Analysis"
+    },
+    {
+      "parameters": {
+        "description": "Update specific information in the Knowledge Base. Use when user corrects or updates existing information (e.g., 'Actually I live in India, not Pakistan'). This does a granular update, not replacing the whole category.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "SA_KB_Update"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "userID": "={{ $('Pre-Process').item.json.user_id }}",
+            "category": "={{ $fromAI('category', 'The KB category (e.g., company, contacts)', 'string') }}",
+            "old_content": "={{ $fromAI('old_content', 'The incorrect/outdated information to find and replace', 'string') }}",
+            "new_content": "={{ $fromAI('new_content', 'The corrected/updated information', 'string') }}"
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [2060, 520],
+      "id": "update-kb-tool",
+      "name": "Update KB"
+    },
+    {
+      "parameters": {
+        "description": "Delete specific information from the Knowledge Base. Use when user wants to remove outdated or incorrect information completely.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "SA_KB_Delete"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "userID": "={{ $('Pre-Process').item.json.user_id }}",
+            "category": "={{ $fromAI('category', 'The KB category (e.g., company, products)', 'string') }}",
+            "content_to_delete": "={{ $fromAI('content_to_delete', 'The information to find and delete', 'string') }}"
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [2220, 520],
+      "id": "delete-kb-tool",
+      "name": "Delete from KB"
+    },
+    {
+      "parameters": {
+        "description": "Upload and process a file to store in the Knowledge Base. Supports .txt, .md, .json files. Use when user uploads or shares a file URL.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "SA_File_Upload"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "userID": "={{ $('Pre-Process').item.json.user_id }}",
+            "file_url": "={{ $fromAI('file_url', 'The URL of the file to upload', 'string') }}",
+            "file_name": "={{ $fromAI('file_name', 'The name of the file', 'string') }}",
+            "file_type": "={{ $fromAI('file_type', 'The file type (txt, md, json, pdf)', 'string') }}",
+            "category": "={{ $fromAI('category', 'The KB category to store under (e.g., documents, company)', 'string') }}"
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [2380, 520],
+      "id": "upload-file-tool",
+      "name": "Upload File"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Save user-level settings to profile after FIRST agent setup. Use ONLY when completing the first agent onboarding to store brand_voice, target_audience, primary_goals, calendar_type, and notifications at user level. These settings will be reused for subsequent agent setups.",
+        "operation": "update",
+        "tableId": "profiles",
+        "matchingColumns": ["user_id"],
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "user_id",
+              "fieldValue": "={{ $('Pre-Process').item.json.user_id }}"
+            },
+            {
+              "fieldName": "brand_voice",
+              "fieldValue": "={{ $fromAI('brand_voice', 'The selected brand voice (e.g., Professional and authoritative)', 'string') }}"
+            },
+            {
+              "fieldName": "target_audience",
+              "fieldValue": "={{ $fromAI('target_audience', 'The target audience description', 'string') }}"
+            },
+            {
+              "fieldName": "primary_goals",
+              "fieldValue": "={{ $fromAI('primary_goals', 'Array of primary goals (e.g., [\"Lead generation\", \"Thought leadership\"])', 'json') }}"
+            },
+            {
+              "fieldName": "calendar_type",
+              "fieldValue": "={{ $fromAI('calendar_type', 'Calendar connection type: google, outlook, or skip', 'string') }}"
+            },
+            {
+              "fieldName": "notifications_enabled",
+              "fieldValue": "={{ $fromAI('notifications_enabled', 'Enable notifications (true or false)', 'boolean') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [2540, 520],
+      "id": "save-user-settings-tool",
+      "name": "Save User Settings",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Enable an agent for the user by creating an entry in assistant_personalizations. Use this EVERY TIME an agent is enabled (both first agent and additional agents). Pass the communication_tone based on user's brand_voice setting or custom value if user customized.",
+        "operation": "upsert",
+        "tableId": "assistant_personalizations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "user_id",
+              "fieldValue": "={{ $('Pre-Process').item.json.user_id }}"
+            },
+            {
+              "fieldName": "assistant_id",
+              "fieldValue": "={{ $fromAI('assistant_id', 'The agent ID to enable (e.g., newsletter_multi, smm, content_repurposer)', 'string') }}"
+            },
+            {
+              "fieldName": "communication_tone",
+              "fieldValue": "={{ $fromAI('communication_tone', 'Communication tone for this agent (e.g., professional, friendly, casual)', 'string') }}"
+            },
+            {
+              "fieldName": "custom_instructions",
+              "fieldValue": "={{ $fromAI('custom_instructions', 'Any custom instructions for this agent (optional, can be empty string)', 'string') }}"
+            },
+            {
+              "fieldName": "is_enabled",
+              "fieldValue": true
+            }
+          ]
+        },
+        "options": {
+          "conflictTarget": ["user_id", "assistant_id"]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [2700, 520],
+      "id": "enable-agent-tool",
+      "name": "Enable Agent",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Pre-Process').item.json.user_mssg }}",
+        "options": {
+          "systemMessage": "={{ $('Pre-Process').item.json.instructions }}\n\n---\n\n## AGENT/SYSTEM CONFIG:\n\n### Enabled Agents:\n{{ $('Pre-Process').item.json.enabled_agents }}\n\n### Available Assistants:\n{{ $('Pre-Process').item.json.assistants }}\n\n### Agent ID Mapping:\n{{ $('Pre-Process').item.json.agent_department_value }}\n\n### User Settings (for agent onboarding reuse):\n{{ $('Pre-Process').item.json.user_settings ? JSON.stringify($('Pre-Process').item.json.user_settings, null, 2) : 'NOT SET - This is a first-time agent setup. Collect all settings and include user_settings in your response.' }}\n\n---\n\n## TOOLS:\n\n### Knowledge Base Tools:\n- **Vector Search** - Find info from KB (categories: website, branding, company, products, contacts, social_media, sales, marketing, operations, competitive)\n- **Save to KB** - Store NEW information\n- **Update KB** - Correct/update EXISTING info (granular, not whole category)\n- **Delete from KB** - Remove specific entry\n- **Upload File** - Process file (.txt, .md, .json) and store in KB\n\n### Agent Setup Tools:\n- **Save User Settings** - Save to profiles table (FIRST agent only: brand_voice, target_audience, etc.)\n- **Enable Agent** - Create entry in assistant_personalizations (EVERY agent: inserts with communication_tone)\n\n### Other Tools:\n- **Web Analysis** - Scrape and analyze website URL\n- **Get Agent Setup** - Check agent config before redirect/onboarding"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        1180,
+        300
+      ],
+      "id": "pa-ai-agent",
+      "name": "PA AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Response Builder: Format AI output for webhook response\nconst preProcess = $('Pre-Process').first().json;\nconst aiOutput = $input.first().json.output || $input.first().json.text || '';\n\n// Initialize all possible fields\nlet message = aiOutput;\nlet routing = null;\nlet finished = false;\nlet agentData = null;\nlet actionsPerformed = [];\nlet actionsTodo = [];\nlet preview = null;\nlet userSettings = null;\nlet reusedSettings = false;\n\ntry {\n  // Check if output is JSON\n  if (aiOutput.trim().startsWith('{')) {\n    const parsedOutput = JSON.parse(aiOutput);\n    \n    // Core fields\n    message = parsedOutput.message || parsedOutput.response || aiOutput;\n    routing = parsedOutput.routing || null;\n    finished = parsedOutput.finished || false;\n    agentData = parsedOutput.agent_data || null;\n    \n    // Actions tracking\n    actionsPerformed = parsedOutput.actions_performed || [];\n    actionsTodo = parsedOutput.actions_todo || [];\n    \n    // Content preview\n    preview = parsedOutput.preview || null;\n    \n    // User settings (for first agent setup)\n    userSettings = parsedOutput.user_settings || null;\n    reusedSettings = parsedOutput.reused_settings || false;\n  }\n} catch (e) {\n  // Not JSON, use as plain text\n  message = aiOutput;\n}\n\n// Build standardized response\nconst response = {\n  // Request tracking\n  user_id: preProcess.user_id,\n  session_id: preProcess.session_id,\n  agent_name: preProcess.agent_name,\n  timestamp_of_call_made: preProcess.timestamp,\n  request_id: preProcess.request_id,\n  \n  // Main response\n  agent_response: message,\n  \n  // Actions tracking (always include, even if empty)\n  actions_performed: actionsPerformed,\n  actions_todo: actionsTodo\n};\n\n// Add routing if present (for redirects)\nif (routing) {\n  response.routing = routing;\n}\n\n// Add preview if present (for content display)\nif (preview) {\n  response.preview = preview;\n}\n\n// Add agent_data if present (for onboarding completion)\nif (finished) {\n  response.finished = finished;\n  if (agentData) {\n    response.agent_data = agentData;\n  }\n}\n\n// Add user_settings if present (for first agent setup - backend will save)\nif (userSettings) {\n  response.user_settings = userSettings;\n}\n\n// Add reused_settings flag if agent reused existing settings\nif (reusedSettings) {\n  response.reused_settings = true;\n}\n\nreturn { json: response };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        300
+      ],
+      "id": "response-builder",
+      "name": "Response Builder"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1720,
+        300
+      ],
+      "id": "respond-webhook",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "content": "## Tools Available to AI Agent\n\n### KB Tools:\n1. **Vector Search** - Find data from KB\n2. **Save to KB** - Store new info\n3. **Update KB** - Granular update\n4. **Delete from KB** - Remove specific entry\n5. **Upload File** - Process & store files\n\n### Agent Setup Tools:\n6. **Save User Settings** - profiles table (FIRST agent)\n7. **Enable Agent** - assistant_personalizations (EVERY agent)\n\n### Other Tools:\n8. **Web Analysis** - Analyze website\n9. **Get Agent Setup** - Check agent config\n\n## Two-Tier Settings:\n- User-level: profiles table\n- Agent-level: assistant_personalizations table",
+        "height": 220,
+        "width": 300,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1380,
+        720
+      ],
+      "typeVersion": 1,
+      "id": "tools-note",
+      "name": "Tools Note"
+    }
+  ],
+  "connections": {
+    "PA Webhook": {
+      "main": [
+        [
+          {
+            "node": "Load Instructions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Instructions": {
+      "main": [
+        [
+          {
+            "node": "Get Agent Config",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get User Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Agent Config": {
+      "main": [
+        [
+          {
+            "node": "Pre-Process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Profile": {
+      "main": [
+        [
+          {
+            "node": "Pre-Process",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Pre-Process": {
+      "main": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Vector Search (RAG)",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Search (RAG)": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to KB": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Web Analysis": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Agent Setup": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update KB": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete from KB": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload File": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save User Settings": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enable Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PA AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Response Builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Builder": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v3.0.0-vector-instructions",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "SA_Personal_Assistant",
+  "tags": []
+}

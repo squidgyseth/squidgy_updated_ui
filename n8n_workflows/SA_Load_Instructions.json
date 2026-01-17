@@ -1,0 +1,182 @@
+{
+  "name": "SA_Load_Instructions",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## SA_Load_Instructions Workflow\n\nPopulates the agent_instructions vector store for ALL agents.\n\n### Triggers:\n- Manual Trigger (for testing)\n- Webhook: POST /webhook/load-instructions\n- GitHub Action (on push to knowledge_base/)\n\n### Flow:\n1. Load instruction files from GitHub\n2. Generate embeddings via OpenAI\n3. Upsert to agent_instructions table\n\n### Agents Loaded:\n- shared (6 files)\n- personal_assistant (7 files)\n- newsletter_multi (2 files)\n- content_repurposer (2 files)\n- smm (2 files)\n- sol (2 files)\n\nTotal: 21 instruction documents",
+        "height": 240,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [32, 32],
+      "typeVersion": 1,
+      "id": "note-overview",
+      "name": "Overview"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{}]
+        }
+      },
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [32, 300],
+      "id": "manual-trigger",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "load-instructions",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [32, 480],
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "webhookId": "load-instructions"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Define all instruction files to load\nconst baseUrl = 'https://raw.githubusercontent.com/Squidgy-AI/squidgy_updated_ui/main/knowledge_base';\n\nconst files = [\n  // ============================================\n  // SHARED FILES (for all child agents)\n  // ============================================\n  { agent_id: 'shared', source_file: 'security_rules.md', url: `${baseUrl}/shared/security_rules.md` },\n  { agent_id: 'shared', source_file: 'button_patterns.md', url: `${baseUrl}/shared/button_patterns.md` },\n  { agent_id: 'shared', source_file: 'response_format.md', url: `${baseUrl}/shared/response_format.md` },\n  { agent_id: 'shared', source_file: 'content_previews.md', url: `${baseUrl}/shared/content_previews.md` },\n  { agent_id: 'shared', source_file: 'actions_performed.md', url: `${baseUrl}/shared/actions_performed.md` },\n  { agent_id: 'shared', source_file: 'actions_todo.md', url: `${baseUrl}/shared/actions_todo.md` },\n  \n  // ============================================\n  // PERSONAL ASSISTANT (PA specific + shared minus actions)\n  // ============================================\n  { agent_id: 'personal_assistant', source_file: 'instructions.md', url: `${baseUrl}/agents/personal_assistant/instructions.md` },\n  { agent_id: 'personal_assistant', source_file: 'actions_performed.md', url: `${baseUrl}/agents/personal_assistant/actions_performed.md` },\n  { agent_id: 'personal_assistant', source_file: 'actions_todo.md', url: `${baseUrl}/agents/personal_assistant/actions_todo.md` },\n  { agent_id: 'personal_assistant', source_file: 'security_rules.md', url: `${baseUrl}/shared/security_rules.md` },\n  { agent_id: 'personal_assistant', source_file: 'button_patterns.md', url: `${baseUrl}/shared/button_patterns.md` },\n  { agent_id: 'personal_assistant', source_file: 'response_format.md', url: `${baseUrl}/shared/response_format.md` },\n  { agent_id: 'personal_assistant', source_file: 'content_previews.md', url: `${baseUrl}/shared/content_previews.md` },\n  \n  // ============================================\n  // NEWSLETTER MULTI\n  // ============================================\n  { agent_id: 'newsletter_multi', source_file: 'instructions.md', url: `${baseUrl}/agents/newsletter_multi/instructions.md` },\n  { agent_id: 'newsletter_multi', source_file: 'custom_instructions.md', url: `${baseUrl}/agents/newsletter_multi/custom_instructions.md` },\n  \n  // ============================================\n  // CONTENT REPURPOSER\n  // ============================================\n  { agent_id: 'content_repurposer', source_file: 'instructions.md', url: `${baseUrl}/agents/content_repurposer/instructions.md` },\n  { agent_id: 'content_repurposer', source_file: 'custom_instructions.md', url: `${baseUrl}/agents/content_repurposer/custom_instructions.md` },\n  \n  // ============================================\n  // SOCIAL MEDIA MANAGER (SMM)\n  // ============================================\n  { agent_id: 'smm', source_file: 'instructions.md', url: `${baseUrl}/agents/smm/instructions.md` },\n  { agent_id: 'smm', source_file: 'custom_instructions.md', url: `${baseUrl}/agents/smm/custom_instructions.md` },\n  \n  // ============================================\n  // SOLAR SALES ASSISTANT (SOL)\n  // ============================================\n  { agent_id: 'sol', source_file: 'instructions.md', url: `${baseUrl}/agents/sol/instructions.md` },\n  { agent_id: 'sol', source_file: 'custom_instructions.md', url: `${baseUrl}/agents/sol/custom_instructions.md` }\n];\n\nreturn files.map(f => ({ json: f }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [260, 300],
+      "id": "define-files",
+      "name": "Define Instruction Files"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [480, 300],
+      "id": "fetch-file",
+      "name": "Fetch File Content",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst prevData = $('Define Instruction Files').item.json;\n\n// Get the document content\nconst document = typeof input === 'string' ? input : (input.data || input.body || JSON.stringify(input));\n\nreturn {\n  json: {\n    agent_id: prevData.agent_id,\n    source_file: prevData.source_file,\n    document: document\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300],
+      "id": "prepare-document",
+      "name": "Prepare Document"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.openAiApi.apiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "text-embedding-ada-002"
+            },
+            {
+              "name": "input",
+              "value": "={{ $json.document }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [920, 300],
+      "id": "get-embedding",
+      "name": "Generate Embedding",
+      "credentials": {
+        "openAiApi": {
+          "id": "xeFNBBSMiFQf7cQv",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Delete existing entry if exists\nDELETE FROM public.agent_instructions\nWHERE agent_id = '{{ $('Prepare Document').item.json.agent_id }}'\n  AND source_file = '{{ $('Prepare Document').item.json.source_file }}';\n\n-- Insert new entry\nINSERT INTO public.agent_instructions (agent_id, source_file, document, embedding)\nVALUES (\n  '{{ $('Prepare Document').item.json.agent_id }}',\n  '{{ $('Prepare Document').item.json.source_file }}',\n  '{{ $('Prepare Document').item.json.document.replace(/'/g, \"''\").replace(/\\n/g, ' ') }}',\n  '{{ JSON.stringify($json.data[0].embedding) }}'\n)\nRETURNING id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1140, 300],
+      "id": "upsert-instruction",
+      "name": "Upsert Instruction",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nreturn {\n  json: {\n    success: true,\n    files_processed: items.length,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1360, 300],
+      "id": "summary",
+      "name": "Summary"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Define Instruction Files", "type": "main", "index": 0 }]]
+    },
+    "Webhook Trigger": {
+      "main": [[{ "node": "Define Instruction Files", "type": "main", "index": 0 }]]
+    },
+    "Define Instruction Files": {
+      "main": [[{ "node": "Fetch File Content", "type": "main", "index": 0 }]]
+    },
+    "Fetch File Content": {
+      "main": [[{ "node": "Prepare Document", "type": "main", "index": 0 }]]
+    },
+    "Prepare Document": {
+      "main": [[{ "node": "Generate Embedding", "type": "main", "index": 0 }]]
+    },
+    "Generate Embedding": {
+      "main": [[{ "node": "Upsert Instruction", "type": "main", "index": 0 }]]
+    },
+    "Upsert Instruction": {
+      "main": [[{ "node": "Summary", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "3.0.0-all-agents",
+  "meta": { "templateCredsSetupCompleted": true },
+  "id": "SA_Load_Instructions",
+  "tags": []
+}
