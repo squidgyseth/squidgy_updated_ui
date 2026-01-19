@@ -685,12 +685,6 @@ export default function N8nChatInterface({
       
       if (!file) return;
       
-      // Validate file size (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('File size must be less than 10MB');
-        return;
-      }
-      
       // Validate file type
       const allowedTypes = ['application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
       if (!allowedTypes.includes(file.type)) {
