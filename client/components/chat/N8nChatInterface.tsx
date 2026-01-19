@@ -149,6 +149,19 @@ export default function N8nChatInterface({
 
   const getExistingHistoryId = () => existingHistoryId;
 
+  // Helper function to parse file upload message content
+  const parseFileUploadMessage = (content: string): { fileName: string; fileUrl: string } | null => {
+    // Match pattern: "I've uploaded a file: filename\n\nFile: filename\nURL: url"
+    const fileMatch = content.match(/I've uploaded a file: (.+?)\n\nFile: .+?\nURL: (.+)/s);
+    if (fileMatch) {
+      return {
+        fileName: fileMatch[1].trim(),
+        fileUrl: fileMatch[2].trim()
+      };
+    }
+    return null;
+  };
+
   const loadSessionMessages = async () => {
     console.log(`🔍 loadSessionMessages called with sessionId: ${sessionId}`);
     if (!sessionId) {
@@ -164,12 +177,31 @@ export default function N8nChatInterface({
       
       if (existingMessages.length > 0) {
         // Convert database messages to ChatMessage format
-        const chatMessages: ChatMessage[] = existingMessages.map(msg => ({
-          id: msg.id,
-          content: msg.message,
-          sender: msg.sender.toLowerCase() as 'user' | 'agent',
-          timestamp: new Date(msg.timestamp)
-        }));
+        const chatMessages: ChatMessage[] = existingMessages.map(msg => {
+          const baseMessage: ChatMessage = {
+            id: msg.id,
+            content: msg.message,
+            sender: msg.sender.toLowerCase() as 'user' | 'agent',
+            timestamp: new Date(msg.timestamp)
+          };
+          
+          // Check if this is a file upload message (user messages only)
+          if (msg.sender.toLowerCase() === 'user') {
+            const fileInfo = parseFileUploadMessage(msg.message);
+            if (fileInfo) {
+              baseMessage.fileUpload = {
+                fileName: fileInfo.fileName,
+                fileUrl: fileInfo.fileUrl,
+                fileId: `file_${msg.id}`,
+                status: 'completed',
+                agentId: agent.id,
+                agentName: agent.name
+              };
+            }
+          }
+          
+          return baseMessage;
+        });
         
         console.log(`✅ Setting ${chatMessages.length} messages in state`);
         setMessages(chatMessages);
