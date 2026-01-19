@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Loader, Paperclip, Mic } from 'lucide-react';
+import { Send, Loader, Paperclip, Mic, Image as ImageIcon } from 'lucide-react';
 import type { N8nResponse, ChatMessage } from '../../types/n8n.types';
 import AgentResponseHandler from './AgentResponseHandler';
 import FileMessage from './FileMessage';
@@ -14,6 +14,7 @@ import NewsletterSelector from './NewsletterSelector';
 import InteractiveMessageButtons from './InteractiveMessageButtons';
 import { googleCalendarService } from '../../lib/googleCalendar';
 import { toast } from 'sonner';
+import MediaLibrary from '../media/MediaLibrary';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -44,6 +45,7 @@ export default function N8nChatInterface({
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, { name: string; status: string }>>(new Map());
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null);
   const [showNewsletterSelector, setShowNewsletterSelector] = useState(false);
+  const [showMediaLibrary, setShowMediaLibrary] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatHistoryService = ChatHistoryService.getInstance();
   const fileUploadService = FileUploadService.getInstance();
@@ -551,8 +553,28 @@ export default function N8nChatInterface({
     console.log('Microphone button clicked');
   };
 
+  const handleMediaLibraryClick = () => {
+    setShowMediaLibrary(true);
+  };
+
+  const handleImageSelect = (image: { id: string; url: string; name: string }) => {
+    // Insert the image markdown into the input
+    const imageMarkdown = `![${image.name}](${image.url})`;
+    setInputValue(prev => prev ? `${prev}\n${imageMarkdown}` : imageMarkdown);
+    toast.success(`Image "${image.name}" added to message`);
+  };
+
   return (
     <div className={`flex flex-col h-full ${className}`}>
+      {/* Media Library Modal */}
+      {showMediaLibrary && (
+        <MediaLibrary
+          onSelectImage={handleImageSelect}
+          onClose={() => setShowMediaLibrary(false)}
+          multiSelect={false}
+        />
+      )}
+      
       {/* Newsletter Selector for content_repurposer agent */}
       {showNewsletterSelector && agent.id === 'content_repurposer' && (
         <div className="p-4 border-b">
@@ -688,6 +710,18 @@ export default function N8nChatInterface({
               }
             }}
           />
+          
+          {/* Media Library Button - Only for social_media_scheduler */}
+          {agent.id === 'social_media_scheduler' && (
+            <button
+              type="button"
+              onClick={handleMediaLibraryClick}
+              className="p-3 bg-purple-100 hover:bg-purple-200 text-purple-600 rounded-xl transition-colors flex items-center justify-center"
+              title="Media Library"
+            >
+              <ImageIcon size={20} />
+            </button>
+          )}
           
           {/* Attachment Button */}
           <button
