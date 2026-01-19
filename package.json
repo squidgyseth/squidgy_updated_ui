@@ -39,6 +39,7 @@
     "html2canvas": "^1.4.1",
     "js-yaml": "^4.1.0",
     "jspdf": "^3.0.3",
+    "mammoth": "^1.11.0",
     "openai": "^6.2.0",
     "playwright": "^1.56.0",
     "posthog-js": "^1.277.0",

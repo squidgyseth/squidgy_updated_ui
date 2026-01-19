@@ -18,6 +18,7 @@ import InteractiveMessageButtons from './InteractiveMessageButtons';
 import { googleCalendarService } from '../../lib/googleCalendar';
 import { toast } from 'sonner';
 import AgentEnablementService from '../../services/agentEnablementService';
+import mammoth from 'mammoth';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -707,22 +708,54 @@ export default function N8nChatInterface({
     document.body.removeChild(fileInput);
   };
 
+  const extractTextFromDocx = async (file: File): Promise<{ text: string; file: File }> => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      const extractedText = result.value;
+      
+      console.log('Extracted text from DOCX:', extractedText.substring(0, 200) + '...');
+      
+      // Create a new .txt file with the extracted text
+      const txtFileName = file.name.replace(/\.docx$/i, '.txt');
+      const txtBlob = new Blob([extractedText], { type: 'text/plain' });
+      const txtFile = new File([txtBlob], txtFileName, { type: 'text/plain' });
+      
+      return { text: extractedText, file: txtFile };
+    } catch (error) {
+      console.error('Error extracting text from DOCX:', error);
+      throw new Error('Failed to extract text from DOCX file');
+    }
+  };
+
   const uploadFileToSupabase = async (file: File) => {
     try {
       const timestamp = Date.now();
-      const fileName = `${userId}_${timestamp}_${file.name}`;
+      let fileToUpload = file;
+      let originalFileName = file.name;
+      
+      // If it's a DOCX file, extract text and convert to TXT
+      if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
+          file.name.toLowerCase().endsWith('.docx')) {
+        console.log('DOCX file detected, extracting text...');
+        const { file: txtFile } = await extractTextFromDocx(file);
+        fileToUpload = txtFile;
+        console.log('Converted DOCX to TXT:', txtFile.name);
+      }
+      
+      const fileName = `${userId}_${timestamp}_${fileToUpload.name}`;
       
       console.log('Uploading file to Supabase...', fileName);
-      console.log('File details:', { name: file.name, size: file.size, type: file.type });
+      console.log('File details:', { name: fileToUpload.name, size: fileToUpload.size, type: fileToUpload.type });
       
       // Step 1: Upload to Supabase storage
       const { data, error } = await supabase.storage
         .from('newsletter')
-        .upload(fileName, file);
+        .upload(fileName, fileToUpload);
       
       if (error) {
         console.error('Supabase upload error:', error);
-        console.error('Error details:', { message: error.message, statusCode: error.statusCode });
+        console.error('Error details:', { message: error.message });
         throw new Error(`Upload failed: ${error.message}`);
       }
       
@@ -736,8 +769,8 @@ export default function N8nChatInterface({
     const fileUrl = urlData.publicUrl;
     console.log('File URL:', fileUrl);
     
-      // Step 3: Call backend processing endpoint
-      await callBackendProcessing(file.name, fileUrl);
+      // Step 3: Call backend processing endpoint (use original file name for display)
+      await callBackendProcessing(originalFileName, fileUrl);
     } catch (error) {
       console.error('Error in uploadFileToSupabase:', error);
       throw error; // Re-throw to be caught by the outer try-catch
