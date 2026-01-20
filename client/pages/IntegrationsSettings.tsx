@@ -988,7 +988,22 @@ export default function IntegrationsSettings() {
       });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        console.error('❌ API Error Response:', errorData);
+        console.error('❌ Request Body:', {
+          originId: page.originId,
+          platform: 'facebook',
+          type: 'page',
+          name: page.name,
+          avatar: page.avatar,
+          active: true,
+          deleted: false,
+          hasStatisticsPermissions: page.hasStatisticsPermissions || true,
+          buildingStatistics: page.buildingStatistics || false,
+          feedSubscribed: true,
+          connectionSource: 'social_media_posting'
+        });
+        throw new Error(`API error: ${response.status} - ${errorData?.message || 'Unknown error'}`);
       }
 
       const data = await response.json();
