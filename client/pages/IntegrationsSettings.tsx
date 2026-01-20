@@ -54,6 +54,7 @@ export default function IntegrationsSettings() {
   const [socialMediaOAuthId, setSocialMediaOAuthId] = useState<string | null>(null);
   const [showSocialMediaPages, setShowSocialMediaPages] = useState(false);
   const [socialMediaLoading, setSocialMediaLoading] = useState(false);
+  const [manualOAuthId, setManualOAuthId] = useState<string>('');
 
   useEffect(() => {
     getUserFirmId();
@@ -853,19 +854,51 @@ export default function IntegrationsSettings() {
         if (response.ok) {
           const data = await response.json();
           console.log('✅ Connected accounts response:', data);
+          console.log('⚠️ Note: traceId is NOT the OAuth ID. TraceId:', data.traceId);
           
-          // Check if we have a valid response structure with traceId
-          if (data.success && data.results !== undefined && data.traceId) {
-            const oAuthId = data.traceId;
-            console.log('✅ Using traceId as OAuth ID:', oAuthId);
-            console.log('🔗 Will fetch pages from:', `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook/accounts/${oAuthId}`);
-            
-            // Use the traceId directly to fetch Facebook pages
-            await fetchSocialMediaAccountsWithOAuthId(oAuthId);
-            setSocialMediaLoading(false);
-            return; // Stop polling
-          } else {
-            console.log('⏳ Waiting for valid response with traceId...');
+          // Check if we have a valid response - this means OAuth completed
+          if (data.success && data.results !== undefined) {
+            // Now fetch OAuth connections to get the REAL OAuth ID
+            try {
+              const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook`;
+              console.log('🔍 Fetching OAuth connections from:', oauthUrl);
+              
+              const oauthResponse = await fetch(oauthUrl, {
+                method: 'GET',
+                headers: {
+                  'authorization': `Bearer ${accessToken}`,
+                  'token-id': firebaseToken,
+                  'version': '2021-07-28',
+                  'channel': 'APP',
+                  'source': 'WEB_USER',
+                  'accept': 'application/json'
+                }
+              });
+
+              if (oauthResponse.ok) {
+                const oauthData = await oauthResponse.json();
+                console.log('✅ OAuth connections list:', oauthData);
+                
+                // Extract OAuth ID from the connections list
+                if (oauthData && Array.isArray(oauthData) && oauthData.length > 0) {
+                  const oAuthId = oauthData[0]._id || oauthData[0].id;
+                  console.log('✅ Found REAL OAuth ID:', oAuthId);
+                  console.log('🔗 Will fetch pages from:', `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook/accounts/${oAuthId}`);
+                  
+                  if (oAuthId) {
+                    await fetchSocialMediaAccountsWithOAuthId(oAuthId);
+                    setSocialMediaLoading(false);
+                    return; // Stop polling
+                  }
+                } else {
+                  console.warn('⚠️ No OAuth connections found yet, will retry...');
+                }
+              } else {
+                console.error('❌ OAuth connections request failed:', oauthResponse.status);
+              }
+            } catch (oauthError) {
+              console.error('❌ Error fetching OAuth connections:', oauthError);
+            }
           }
         }
         
