@@ -1755,7 +1755,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","social_media_agent","SOL"];
+export const AGENT_IDS: string[] = ["content_repurposer", "content_repurposer_multi", "newsletter", "newsletter_multi", "personal_assistant", "social_media_agent", "SOL"];
 
 // Total count
 export const TOTAL_AGENTS = 7;

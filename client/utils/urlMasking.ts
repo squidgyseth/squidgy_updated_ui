@@ -146,7 +146,6 @@ export const convertMarkdownLinksToHtml = (text: string): string => {
     /^#{4,6}\s+(.+)$/gm,
     '<h4 style="font-size: 1em; font-weight: 600; margin: 4px 0 2px 0; color: #6b7280;">$1</h4>'
   );
-
   // Handle bold text **text** - must be done before italic to avoid conflicts
   result = result.replace(
     /\*\*([^*]+)\*\*/g,
