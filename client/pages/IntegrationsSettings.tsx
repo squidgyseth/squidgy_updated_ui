@@ -909,7 +909,9 @@ export default function IntegrationsSettings() {
           'version': '2021-07-28',
           'channel': 'APP',
           'source': 'WEB_USER',
-          'accept': 'application/json'
+          'accept': 'application/json',
+          'accept-encoding': 'gzip, deflate, br, zstd',
+          'accept-language': 'en-US,en;q=0.9,en-GB;q=0.8'
         }
       });
 
