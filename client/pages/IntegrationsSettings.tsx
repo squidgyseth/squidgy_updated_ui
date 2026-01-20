@@ -854,41 +854,15 @@ export default function IntegrationsSettings() {
           const data = await response.json();
           console.log('✅ Connected accounts response:', data);
           
-          // Look for Facebook OAuth connections in the accounts
-          // The response has accounts array which may contain OAuth connection info
-          if (data.success && data.results) {
-            // Check if there are any accounts or if we need to look elsewhere for OAuth ID
-            // Based on the API, we might need to check a different structure
-            // Let's try to get OAuth connections from the facebook endpoint
-            const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook`;
+          // Extract traceId from the response - this is the OAuth ID we need
+          if (data.success && data.traceId) {
+            const oAuthId = data.traceId;
+            console.log('✅ Found OAuth ID (traceId):', oAuthId);
             
-            const oauthResponse = await fetch(oauthUrl, {
-              method: 'GET',
-              headers: {
-                'authorization': `Bearer ${accessToken}`,
-                'token-id': firebaseToken,
-                'version': '2021-07-28',
-                'channel': 'APP',
-                'source': 'WEB_USER',
-                'accept': 'application/json'
-              }
-            });
-
-            if (oauthResponse.ok) {
-              const oauthData = await oauthResponse.json();
-              console.log('✅ OAuth connections:', oauthData);
-              
-              // If we have OAuth connections, get the first one's ID
-              if (oauthData && Array.isArray(oauthData) && oauthData.length > 0) {
-                const oAuthId = oauthData[0]._id || oauthData[0].id;
-                if (oAuthId) {
-                  console.log('✅ Found OAuth ID:', oAuthId);
-                  await fetchSocialMediaAccountsWithOAuthId(oAuthId);
-                  setSocialMediaLoading(false);
-                  return; // Stop polling
-                }
-              }
-            }
+            // Use the traceId to fetch Facebook pages
+            await fetchSocialMediaAccountsWithOAuthId(oAuthId);
+            setSocialMediaLoading(false);
+            return; // Stop polling
           }
         }
         
