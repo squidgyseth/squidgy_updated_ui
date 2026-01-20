@@ -39,9 +39,14 @@ export default function IntegrationsSettings() {
   const [firmUserId, setFirmUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchGHLIntegrations();
     getUserFirmId();
   }, [user]);
+
+  useEffect(() => {
+    if (firmUserId) {
+      fetchGHLIntegrations();
+    }
+  }, [firmUserId]);
 
   const getUserFirmId = async () => {
     if (!user?.email) return;
@@ -94,7 +99,7 @@ export default function IntegrationsSettings() {
   }, [locationId, pitToken]);
 
   const fetchGHLIntegrations = async () => {
-    if (!user?.id) return;
+    if (!firmUserId) return;
     
     try {
       setLoading(true);
@@ -103,7 +108,7 @@ export default function IntegrationsSettings() {
       const { data, error: supabaseError } = await supabase
         .from('ghl_subaccounts')
         .select('*')
-        .eq('firm_user_id', user.id);
+        .eq('firm_user_id', firmUserId);
       
       if (supabaseError) {
         throw new Error(supabaseError.message);
@@ -327,13 +332,44 @@ export default function IntegrationsSettings() {
     }
   }, [firmUserId]);
 
-  const handleFacebookLogin = () => {
-    if (!facebookOAuthUrl) {
-      toast.error('OAuth URL not ready. Please wait...');
+  const handleFacebookLogin = async () => {
+    if (!firmUserId) {
+      toast.error('User ID not available. Please refresh the page.');
       return;
     }
-    console.log('🔗 Opening Facebook OAuth URL in new window');
-    window.open(facebookOAuthUrl, '_blank');
+    
+    setFacebookLoading(true);
+    try {
+      console.log('🔗 Starting OAuth with token interception...');
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      
+      const response = await fetch(`${backendUrl}/api/facebook/start-oauth-with-interception`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firm_user_id: firmUserId })
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.detail || 'Failed to start OAuth interception');
+      }
+      
+      if (result.success) {
+        toast.success('Browser opened with token interception. Please complete the Facebook login in the browser window.');
+        console.log('✅ OAuth interception started, session_id:', result.session_id);
+        
+        // Store session ID for status checking
+        sessionStorage.setItem('fb_oauth_session_id', result.session_id);
+      } else {
+        throw new Error(result.message || 'Failed to start OAuth');
+      }
+    } catch (error: any) {
+      console.error('❌ Error starting OAuth interception:', error);
+      toast.error(error.message || 'Failed to start OAuth interception');
+    } finally {
+      setFacebookLoading(false);
+    }
   };
 
   const handleFacebookNext = async () => {
