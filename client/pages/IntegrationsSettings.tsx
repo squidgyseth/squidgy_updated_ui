@@ -29,6 +29,7 @@ export default function IntegrationsSettings() {
   const [ghlUserId, setGhlUserId] = useState<string | null>(null);
   const [pitToken, setPitToken] = useState<string | null>(null);
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState<boolean>(false);
+  const [googleCalendarEmail, setGoogleCalendarEmail] = useState<string | null>(null);
   const [checkingCalendar, setCheckingCalendar] = useState<boolean>(false);
   const [facebookOAuthUrl, setFacebookOAuthUrl] = useState<string | null>(null);
   const [facebookDidLogin, setFacebookDidLogin] = useState<'yes' | 'no' | null>(null);
@@ -182,8 +183,19 @@ export default function IntegrationsSettings() {
                          userData.userCalendar[locationId] && 
                          Object.keys(userData.userCalendar[locationId]).length > 0;
       
+      // Extract email if calendar is connected
+      let calendarEmail = null;
+      if (hasCalendar && userData.userCalendar[locationId]) {
+        // The userCalendar object typically has the email as a key
+        const calendarKeys = Object.keys(userData.userCalendar[locationId]);
+        if (calendarKeys.length > 0) {
+          calendarEmail = calendarKeys[0]; // First key is usually the email
+        }
+      }
+      
       setGoogleCalendarConnected(hasCalendar);
-      console.log(`📅 Google Calendar connected: ${hasCalendar}`);
+      setGoogleCalendarEmail(calendarEmail);
+      console.log(`📅 Google Calendar connected: ${hasCalendar}`, calendarEmail ? `(${calendarEmail})` : '');
     } catch (error: any) {
       console.error('❌ Error checking Google Calendar:', error);
     } finally {
@@ -823,7 +835,7 @@ export default function IntegrationsSettings() {
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
                     {googleCalendarConnected 
-                      ? 'Your Google Calendar is connected and syncing'
+                      ? `Connected: ${googleCalendarEmail || 'Google Calendar'}`
                       : 'Connect your Google Calendar to sync events and appointments'
                     }
                   </p>
