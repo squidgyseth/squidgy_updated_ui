@@ -22,7 +22,7 @@
     "typecheck": "tsc",
     "agent:import": "node scripts/import-agent.js",
     "agent:create": "node scripts/create-agent-template.js",
-    "sync-instructions": "curl -X POST ${N8N_WEBHOOK_URL}/webhook/load-instructions || echo 'Warning: Could not sync instructions'"
+    "sync-instructions": "curl -X POST ${N8N_LOAD_INSTRUCTIONS_URL} || echo 'Warning: Could not sync instructions'"
   },
   "dependencies": {
     "@google-cloud/local-auth": "^3.0.1",
