@@ -33,8 +33,12 @@ export default function IntegrationsSettings() {
   const [facebookOAuthUrl, setFacebookOAuthUrl] = useState<string | null>(null);
   const [facebookDidLogin, setFacebookDidLogin] = useState<'yes' | 'no' | null>(null);
   const [facebookPages, setFacebookPages] = useState<any[]>([]);
+  const [facebookAdAccounts, setFacebookAdAccounts] = useState<any[]>([]);
   const [selectedFacebookPages, setSelectedFacebookPages] = useState<string[]>([]);
+  const [selectedFacebookAdAccounts, setSelectedFacebookAdAccounts] = useState<string[]>([]);
   const [showFacebookPages, setShowFacebookPages] = useState(false);
+  const [showAddPages, setShowAddPages] = useState(false);
+  const [showAddAdAccounts, setShowAddAdAccounts] = useState(false);
   const [facebookLoading, setFacebookLoading] = useState(false);
   const [firmUserId, setFirmUserId] = useState<string | null>(null);
   const [firebaseToken, setFirebaseToken] = useState<string | null>(null);
@@ -123,6 +127,56 @@ export default function IntegrationsSettings() {
       }
     } catch (error) {
       console.error('❌ Error fetching tokens:', error);
+    }
+  };
+
+  const fetchFacebookAdAccountsFromGHL = async () => {
+    if (!locationId || !firebaseToken || !accessToken) {
+      toast.error('Missing required tokens. Please wait for token refresh.');
+      return;
+    }
+    
+    setFacebookLoading(true);
+    try {
+      console.log('📊 Fetching Facebook Ad Accounts from GHL backend API...');
+      
+      const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/allAdAccounts`;
+      
+      const response = await fetch(`${ghlBackendUrl}?limit=100`, {
+        method: 'GET',
+        headers: {
+          'authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER',
+          'accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GHL API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Facebook Ad Accounts response:', data);
+      
+      const rawAccounts = data.adAccounts || [];
+      
+      // Map GHL response format to our UI format
+      const accounts = rawAccounts.map((account: any) => ({
+        id: account.facebookAdAccountId || account.id,
+        name: account.facebookAdAccountName || account.name,
+        ...account
+      }));
+      
+      setFacebookAdAccounts(accounts);
+      console.log(`✅ Found ${accounts.length} ad accounts`);
+    } catch (error: any) {
+      console.error('❌ Error fetching Facebook ad accounts:', error);
+      toast.error(error.message || 'Failed to fetch ad accounts');
+    } finally {
+      setFacebookLoading(false);
     }
   };
 
@@ -526,8 +580,11 @@ export default function IntegrationsSettings() {
   };
 
   const handleFacebookNext = async () => {
-    // Call the new frontend function that fetches directly from GHL backend API
-    await fetchFacebookPagesFromGHL();
+    // Fetch both pages and ad accounts
+    await Promise.all([
+      fetchFacebookPagesFromGHL(),
+      fetchFacebookAdAccountsFromGHL()
+    ]);
   };
 
   const handleFacebookPageToggle = (pageId: string) => {
