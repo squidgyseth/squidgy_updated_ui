@@ -973,10 +973,9 @@ export default function IntegrationsSettings() {
           'content-type': 'application/json'
         },
         body: JSON.stringify({
-          id: page.id,
-          name: page.name,
-          avatar: page.avatar,
-          isOwned: page.isOwned
+          originId: page.originId || page.id,
+          platform: 'facebook',
+          type: 'page'
         })
       });
 
