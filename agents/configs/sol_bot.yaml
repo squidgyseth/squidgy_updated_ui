@@ -5,9 +5,12 @@
 agent:
   # Unique identifier (no spaces, lowercase, use underscores)
   id: SOL
-  
+
+  # Emoji for display in UI and database
+  emoji: "☀️"
+
   # Display name shown in the sidebar
-  name: SOL Bot
+  name: Solar Sales Assistant
   
   # Category - SALES for solar sales
   category: SALES
@@ -22,7 +25,7 @@ agent:
   tagline: "Illuminate. Calculate. Convert."
   
   # Avatar URL (solar-themed avatar)
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238"
+  avatar: "/Squidgy AI Assistants Avatars/5.png"
   
   # Pin to top of category
   pinned: true

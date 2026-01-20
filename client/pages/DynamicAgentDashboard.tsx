@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import UniversalChatLayout from '../components/layout/UniversalChatLayout';
 import N8nChatInterface from '../components/chat/N8nChatInterface';
@@ -16,12 +16,19 @@ export default function DynamicAgentDashboard() {
   const { agentId } = useParams<{ agentId: string }>();
   const { userId, sessionId } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
   const configService = AgentConfigService.getInstance();
   
   const [agentConfig, setAgentConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [recentActionTrigger, setRecentActionTrigger] = useState(0);
+
+  // Callback to trigger recent actions refresh when a message is sent
+  const handleMessageSent = () => {
+    setRecentActionTrigger(prev => prev + 1);
+  };
 
   useEffect(() => {
     const loadAgentConfig = async () => {
@@ -62,16 +69,15 @@ export default function DynamicAgentDashboard() {
   
   const handleSettingsClick = (agentId: string) => {
     console.log(`Settings clicked for agent: ${agentId}`);
-    
-    // Navigate to personalisation settings with the selected agent
-    // This will open the AI Assistant Customization section with the agent pre-selected
-    navigationService.navigateToPersonalisationSettings(agentId);
+
+    // Navigate to agent settings page (voice input, file upload, instructions)
+    navigate(`/agent-settings/${agentId}`);
   };
 
   const handleNewChat = (agentId: string) => {
     console.log(`New chat clicked for agent: ${agentId}`);
     
-    // Generate a new session ID
+    // When user explicitly clicks "New Chat", always generate a fresh session
     const newSessionId = chatSessionService.generateSessionId(userId, agentId);
     setCurrentSessionId(newSessionId);
     
@@ -85,13 +91,26 @@ export default function DynamicAgentDashboard() {
     console.log(`✅ Current session ID updated to: ${sessionId}`);
   };
 
-  // Initialize with a new session when component loads
+  // Initialize with session persistence logic (1-hour timeout)
   useEffect(() => {
-    if (userId && agentId && !currentSessionId) {
-      const newSessionId = chatSessionService.generateSessionId(userId, agentId);
-      setCurrentSessionId(newSessionId);
-    }
-  }, [userId, agentId, currentSessionId]);
+    const initializeSession = async () => {
+      if (userId && agentId) {
+        try {
+          // Use session persistence logic - continue existing session within 1 hour or create new one
+          const sessionId = await chatSessionService.getOrCreateActiveSession(userId, agentId);
+          setCurrentSessionId(sessionId);
+          console.log(`🔄 DynamicAgentDashboard: Session initialized for ${agentId}: ${sessionId}`);
+        } catch (error) {
+          console.error(`❌ Error initializing session for ${agentId}:`, error);
+          // Fallback to creating new session
+          const newSessionId = chatSessionService.generateSessionId(userId, agentId);
+          setCurrentSessionId(newSessionId);
+        }
+      }
+    };
+    
+    initializeSession();
+  }, [userId, agentId]);
 
   // Loading state
   if (loading) {
@@ -130,7 +149,7 @@ export default function DynamicAgentDashboard() {
     name: agentConfig.agent.name,
     tagline: agentConfig.agent.tagline || agentConfig.agent.description,
     avatar: agentConfig.agent.avatar,
-    introMessage: generateIntroMessage(agentConfig.agent),
+    introMessage: generateIntroMessage(agentConfig.agent, location.state?.fromSidebar),
     suggestionButtons: agentConfig.suggestions || []
   };
 
@@ -142,6 +161,7 @@ export default function DynamicAgentDashboard() {
       onNewChat={handleNewChat}
       currentSessionId={currentSessionId}
       onSessionSelect={handleSessionSelect}
+      recentActionTrigger={recentActionTrigger}
     >
       <N8nChatInterface
         key={currentSessionId} // Force re-render when session changes
@@ -149,6 +169,8 @@ export default function DynamicAgentDashboard() {
         userId={userId}
         sessionId={currentSessionId} // Use the current session ID
         webhookUrl={agentConfig.n8n?.webhook_url} // Pass the webhook URL from agent config
+        showAddNewMessage={location.state?.showAddNewMessage}
+        onMessageSent={handleMessageSent}
       />
     </UniversalChatLayout>
   );
@@ -157,8 +179,13 @@ export default function DynamicAgentDashboard() {
 /**
  * Generate intro message based on agent configuration
  */
-function generateIntroMessage(agent: any): string {
-  const { initial_message } = agent;
+function generateIntroMessage(agent: any, fromSidebar?: boolean): string {
+  const { initial_message, sidebar_greeting } = agent;
+  
+  // Use sidebar_greeting when navigating from sidebar (if available), otherwise use initial_message
+  if (fromSidebar && sidebar_greeting) {
+    return sidebar_greeting;
+  }
   
   // Return the initial_message from YAML config
   return initial_message || '';

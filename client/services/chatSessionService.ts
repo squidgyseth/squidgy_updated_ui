@@ -233,6 +233,50 @@ class ChatSessionService {
     const random = Math.random().toString(36).substring(2, 15);
     return `${userId}_${agentId}_${timestamp}_${random}`;
   }
+
+  /**
+   * Get or create session with 1-hour persistence logic
+   * Returns existing session if active within 1 hour, otherwise creates new one
+   */
+  async getOrCreateActiveSession(userId: string, agentId: string): Promise<string> {
+    try {
+      console.log(`🔄 getOrCreateActiveSession: Checking for active session for userId=${userId}, agentId=${agentId}`);
+      
+      // Get the most recent session for this user+agent
+      const recentSessions = await this.getRecentSessions(userId, agentId, 1);
+      
+      if (recentSessions.length > 0) {
+        const mostRecentSession = recentSessions[0];
+        const lastActivity = new Date(mostRecentSession.last_message_timestamp);
+        const now = new Date();
+        const hoursSinceLastActivity = (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60);
+        
+        console.log(`⏱️ Last activity: ${lastActivity.toISOString()}`);
+        console.log(`⏱️ Hours since last activity: ${hoursSinceLastActivity.toFixed(2)}`);
+        
+        if (hoursSinceLastActivity < 1) {
+          console.log(`✅ Session still active within 1 hour, continuing session: ${mostRecentSession.session_id}`);
+          return mostRecentSession.session_id;
+        } else {
+          console.log(`⏰ Session expired (${hoursSinceLastActivity.toFixed(2)} hours), creating new session`);
+        }
+      } else {
+        console.log(`📭 No recent sessions found, creating new session`);
+      }
+      
+      // Create new session
+      const newSessionId = this.generateSessionId(userId, agentId);
+      console.log(`🆕 Created new session: ${newSessionId}`);
+      return newSessionId;
+      
+    } catch (error) {
+      console.error('❌ Error in getOrCreateActiveSession:', error);
+      // Fallback to creating new session
+      const newSessionId = this.generateSessionId(userId, agentId);
+      console.log(`🆘 Fallback: Created new session due to error: ${newSessionId}`);
+      return newSessionId;
+    }
+  }
 }
 
 export const chatSessionService = ChatSessionService.getInstance();

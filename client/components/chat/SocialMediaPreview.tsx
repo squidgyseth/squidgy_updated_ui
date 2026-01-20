@@ -56,6 +56,8 @@ export default function SocialMediaPreview({ content, historyId }: SocialMediaPr
 
   const handleOpenInNewWindow = () => {
     if (historyId) {
+      // Save content to localStorage for the preview page to use
+      localStorage.setItem('socialMediaContent', content);
       window.open(`/social-preview?history_id=${historyId}`, '_blank');
     }
   };
