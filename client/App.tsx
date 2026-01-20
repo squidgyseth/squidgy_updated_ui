@@ -38,6 +38,7 @@ import SolarConfig from "./pages/SolarConfig";
 import CalendarSetup from "./pages/CalendarSetup";
 import NotificationsPreferences from "./pages/NotificationsPreferences";
 import FacebookConnect from "./pages/FacebookConnect";
+import FacebookOAuthTest from "./pages/FacebookOAuthTest";
 import SetupComplete from "./pages/SetupComplete";
 import Dashboard from "./pages/Dashboard";
 import AccountSettings from "./pages/AccountSettings";
@@ -45,6 +46,7 @@ import AccountPage from "./pages/AccountPage";
 import BusinessSettings from "./pages/BusinessSettings";
 import TeamSettings from "./pages/TeamSettings";
 import PersonalisationSettings from "./pages/PersonalisationSettings";
+import IntegrationsSettings from "./pages/IntegrationsSettings";
 import BillingSettings from "./pages/BillingSettings";
 import Leads from "./pages/Leads";
 import TestEmailCheck from "./pages/TestEmailCheck";
@@ -208,6 +210,11 @@ const App = () => (
               <FacebookConnect />
             </ProtectedRoute>
           } />
+          <Route path="/facebook-oauth-test" element={
+            <ProtectedRoute>
+              <FacebookOAuthTest />
+            </ProtectedRoute>
+          } />
           <Route path="/setup-complete" element={
             <ProtectedRoute>
               <SetupComplete />
@@ -241,6 +248,11 @@ const App = () => (
           <Route path="/personalisation-settings" element={
             <ProtectedRoute>
               <PersonalisationSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/integrations-settings" element={
+            <ProtectedRoute>
+              <IntegrationsSettings />
             </ProtectedRoute>
           } />
           <Route path="/billing-settings" element={

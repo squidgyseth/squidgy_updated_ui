@@ -66,6 +66,7 @@ class YamlAgentLoader {
       'newsletter', 
       'smm_assistant',
       'content_repurposer',
+      'social_media_scheduler',
       'test_multi_agent',
       'test_multi_page_agent'
     ];

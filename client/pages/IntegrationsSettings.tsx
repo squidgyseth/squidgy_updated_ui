@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Zap, CheckCircle, XCircle, RefreshCw, ExternalLink } from 'lucide-react';
 import { useUser } from '../hooks/useUser';
 import { supabase } from '../lib/supabase';
+import { profilesApi } from '../lib/supabase-api';
+import { toast } from 'sonner';
 
 interface GHLIntegration {
   id: string;
@@ -28,10 +30,30 @@ export default function IntegrationsSettings() {
   const [pitToken, setPitToken] = useState<string | null>(null);
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState<boolean>(false);
   const [checkingCalendar, setCheckingCalendar] = useState<boolean>(false);
+  const [facebookOAuthUrl, setFacebookOAuthUrl] = useState<string | null>(null);
+  const [facebookDidLogin, setFacebookDidLogin] = useState<'yes' | 'no' | null>(null);
+  const [facebookPages, setFacebookPages] = useState<any[]>([]);
+  const [selectedFacebookPages, setSelectedFacebookPages] = useState<string[]>([]);
+  const [showFacebookPages, setShowFacebookPages] = useState(false);
+  const [facebookLoading, setFacebookLoading] = useState(false);
+  const [firmUserId, setFirmUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchGHLIntegrations();
+    getUserFirmId();
   }, [user]);
+
+  const getUserFirmId = async () => {
+    if (!user?.email) return;
+    try {
+      const { data: profile } = await profilesApi.getByEmail(user.email);
+      if (profile?.user_id) {
+        setFirmUserId(profile.user_id);
+      }
+    } catch (error) {
+      console.error('Error getting firm user ID:', error);
+    }
+  };
 
   useEffect(() => {
     if (locationId) {
@@ -211,94 +233,214 @@ export default function IntegrationsSettings() {
     }
   };
 
-  const handleFacebookInstagramConnect = async () => {
-    if (!locationId || !ghlUserId) {
-      alert('Unable to connect: Location ID or User ID not found. Please ensure you have a GHL subaccount set up.');
+  const generateLoggerId = (): string => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
+  const generateFacebookOAuthUrl = async () => {
+    if (!firmUserId) {
+      console.log('🔍 No firmUserId available');
       return;
     }
-    
+
+    console.log('🚀 Starting Facebook OAuth URL generation for firmUserId:', firmUserId);
+    setFacebookLoading(true);
     try {
-      // Show loading state
-      setCheckingCalendar(true);
-      console.log('[OAUTH] 🚀 Initiating admin automation to get OAuth URL...');
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
       
-      // Call backend to automate admin login and get OAuth URL
-      const response = await fetch('http://localhost:8000/api/ghl/oauth/facebook/get-url', {
+      const checkResponse = await fetch(`${backendUrl}/api/facebook/check-integration-status`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firm_user_id: firmUserId })
+      });
+      
+      const checkData = await checkResponse.json();
+      let fbLocationId = checkData.ghl_location_id;
+      
+      if (!fbLocationId) {
+        const ghlResponse = await fetch(`${backendUrl}/api/ghl/get-location-id`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firm_user_id: firmUserId })
+        });
+        
+        if (ghlResponse.ok) {
+          const ghlData = await ghlResponse.json();
+          fbLocationId = ghlData.location_id;
+        }
+      }
+      
+      if (!fbLocationId) {
+        toast.error('GHL account setup is still in progress. Please wait and try again.');
+        return;
+      }
+      
+      const response = await fetch(`${backendUrl}/api/facebook/extract-oauth-params`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          location_id: locationId,
-          user_id: ghlUserId
+          userId: firmUserId,
+          locationId: fbLocationId
         })
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to get OAuth URL from automation');
-      }
+      const data = await response.json();
       
-      const result = await response.json();
-      
-      if (!result.success || !result.oauth_url) {
-        throw new Error(result.message || 'Failed to capture OAuth URL');
-      }
-      
-      console.log('[OAUTH] ✅ OAuth URL captured, opening popup for user...');
-      const oauthUrl = result.oauth_url;
-      
-      // Open in a centered popup window
-      const width = 600;
-      const height = 700;
-      const left = (window.screen.width - width) / 2;
-      const top = (window.screen.height - height) / 2;
-      
-      const popup = window.open(
-        oauthUrl,
-        'FacebookInstagramOAuth',
-        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-      );
+      if (data.success && data.params) {
+        const enhancedScope = 'email,pages_show_list,pages_read_engagement,pages_manage_metadata,pages_manage_posts,pages_manage_engagement,pages_read_user_content,business_management,public_profile,read_insights,pages_manage_ads,leads_retrieval,ads_read,pages_messaging,ads_management,instagram_basic,instagram_manage_messages,instagram_manage_comments,catalog_management';
+        
+        const oauthParams = new URLSearchParams({
+          response_type: data.params.response_type || 'code',
+          client_id: data.params.client_id,
+          redirect_uri: 'https://services.leadconnectorhq.com/integrations/oauth/finish',
+          scope: enhancedScope,
+          state: JSON.stringify({
+            locationId: fbLocationId,
+            userId: fbLocationId,
+            type: 'facebook',
+            source: 'squidgy_integrations'
+          }),
+          logger_id: data.params.logger_id || generateLoggerId()
+        });
 
-      // Monitor popup for completion
-      if (popup) {
-        const pollTimer = setInterval(() => {
-          try {
-            // Check if popup is closed
-            if (popup.closed) {
-              clearInterval(pollTimer);
-              console.log('OAuth popup closed, refreshing connection status...');
-              setTimeout(() => {
-                checkGoogleCalendarConnection();
-              }, 2000);
-              return;
-            }
-
-            // Try to access popup URL to detect redirect to success page
-            try {
-              const popupUrl = popup.location.href;
-              // Check if redirected to success/completion page
-              if (popupUrl.includes('success') || popupUrl.includes('complete') || popupUrl.includes('callback')) {
-                console.log('OAuth success detected from URL:', popupUrl);
-                popup.close();
-                clearInterval(pollTimer);
-                setTimeout(() => {
-                  checkGoogleCalendarConnection();
-                }, 2000);
-              }
-            } catch (e) {
-              // Cross-origin error - popup is still on OAuth provider domain, continue polling
-            }
-          } catch (e) {
-            // Error accessing popup, it may be closed
-            clearInterval(pollTimer);
-          }
-        }, 500); // Check every 500ms
+        const finalOAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?${oauthParams.toString()}`;
+        setFacebookOAuthUrl(finalOAuthUrl);
+        console.log('✅ Successfully generated Facebook OAuth URL');
+      } else {
+        throw new Error('Invalid OAuth response from server');
       }
-    } catch (error) {
-      console.error('[OAUTH] ❌ Error during OAuth automation:', error);
-      alert(`Failed to initiate OAuth: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } catch (error: any) {
+      console.error('❌ Facebook OAuth generation error:', error);
+      toast.error(error.message || 'Failed to generate Facebook login');
     } finally {
-      setCheckingCalendar(false);
+      setFacebookLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (firmUserId && !facebookOAuthUrl && !showFacebookPages) {
+      generateFacebookOAuthUrl();
+    }
+  }, [firmUserId]);
+
+  const handleFacebookLogin = () => {
+    if (!facebookOAuthUrl) {
+      toast.error('OAuth URL not ready. Please wait...');
+      return;
+    }
+    console.log('🔗 Opening Facebook OAuth URL in new window');
+    window.open(facebookOAuthUrl, '_blank');
+  };
+
+  const handleFacebookNext = async () => {
+    if (facebookDidLogin !== 'yes') {
+      toast.error('Please confirm that you have logged into Facebook');
+      return;
+    }
+
+    setFacebookLoading(true);
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      
+      const response = await fetch(`${backendUrl}/api/facebook/get-pages-from-integration`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firm_user_id: firmUserId })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          toast.error('Please complete Facebook OAuth first by clicking the "Log into Facebook" button.');
+          return;
+        }
+        if (response.status === 400 && result.detail?.includes('Missing tokens')) {
+          toast.error('Facebook OAuth not completed yet. Please try the OAuth login again.');
+          return;
+        }
+        throw new Error(result.detail || result.message || 'Failed to fetch pages');
+      }
+
+      if (result.success && result.pages && result.pages.length > 0) {
+        setFacebookPages(result.pages);
+        setShowFacebookPages(true);
+        toast.success(`Found ${result.pages.length} Facebook pages!`);
+      } else {
+        throw new Error(result.message || 'No Facebook pages found for your account');
+      }
+    } catch (error: any) {
+      console.error('❌ Error loading Facebook pages:', error);
+      toast.error(error.message || 'Failed to load Facebook pages');
+    } finally {
+      setFacebookLoading(false);
+    }
+  };
+
+  const handleFacebookPageToggle = (pageId: string) => {
+    setSelectedFacebookPages(prev => {
+      if (prev.includes(pageId)) {
+        return prev.filter(id => id !== pageId);
+      } else {
+        return [...prev, pageId];
+      }
+    });
+  };
+
+  const handleFacebookConnectFinish = async () => {
+    if (selectedFacebookPages.length === 0) {
+      toast.error('Please select at least one page');
+      return;
+    }
+
+    setFacebookLoading(true);
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      
+      const response = await fetch(`${backendUrl}/api/facebook/connect-selected-pages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          selected_page_ids: selectedFacebookPages
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.detail || result.message || 'Failed to connect pages');
+      }
+
+      if (result.success) {
+        const connectedCount = result.connected_pages?.length || 0;
+        const totalCount = result.total_selected || selectedFacebookPages.length;
+        
+        if (connectedCount === totalCount) {
+          toast.success(`Successfully connected all ${totalCount} Facebook pages!`);
+        } else if (connectedCount > 0) {
+          toast.success(`Connected ${connectedCount} of ${totalCount} Facebook pages.`);
+        } else {
+          toast.success('Facebook pages saved!');
+        }
+        
+        // Reset state
+        setShowFacebookPages(false);
+        setFacebookDidLogin(null);
+        setSelectedFacebookPages([]);
+        setFacebookPages([]);
+      } else {
+        throw new Error(result.message || 'Failed to connect pages');
+      }
+    } catch (error: any) {
+      console.error('Error saving pages:', error);
+      toast.error(error.message || 'Failed to connect pages');
+    } finally {
+      setFacebookLoading(false);
     }
   };
 
@@ -437,46 +579,136 @@ export default function IntegrationsSettings() {
           </Card>
 
           {/* Facebook / Instagram Integration */}
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow col-span-1 md:col-span-2 lg:col-span-3">
             <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <div className="w-20 h-20 mx-auto rounded-lg flex overflow-hidden">
-                  {/* Split logo: Half Facebook (blue), Half Instagram (gradient) */}
-                  <div className="w-1/2 bg-blue-600 flex items-center justify-center">
-                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                    </svg>
+              {!showFacebookPages ? (
+                <div className="max-w-2xl mx-auto space-y-6">
+                  <div className="text-center space-y-4">
+                    <div className="w-20 h-20 mx-auto rounded-lg flex overflow-hidden">
+                      <div className="w-1/2 bg-blue-600 flex items-center justify-center">
+                        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                      </div>
+                      <div className="w-1/2 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
+                        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg text-gray-900">Facebook / Instagram</h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Connect your Facebook account and Instagram for social media management
+                      </p>
+                    </div>
                   </div>
-                  <div className="w-1/2 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
-                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                    </svg>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-700">Click the button below to log into your Facebook account in a separate window. Return to this page after completing the login.</p>
                   </div>
+
+                  <Button 
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                    onClick={handleFacebookLogin}
+                    disabled={facebookLoading || !facebookOAuthUrl}
+                  >
+                    Log into Facebook
+                  </Button>
+
+                  <div className="space-y-3">
+                    <p className="font-semibold text-gray-800">Did you successfully log into Facebook?</p>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-3 cursor-pointer p-3 border-2 rounded-lg hover:bg-gray-50 transition-colors" style={{ borderColor: facebookDidLogin === 'yes' ? '#3b82f6' : '#e5e7eb' }}>
+                        <input
+                          type="radio"
+                          name="facebookDidLogin"
+                          value="yes"
+                          checked={facebookDidLogin === 'yes'}
+                          onChange={() => setFacebookDidLogin('yes')}
+                          className="w-4 h-4 text-blue-500"
+                        />
+                        <span className="text-gray-800">Yes, I completed the Facebook login</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer p-3 border-2 rounded-lg hover:bg-gray-50 transition-colors" style={{ borderColor: facebookDidLogin === 'no' ? '#3b82f6' : '#e5e7eb' }}>
+                        <input
+                          type="radio"
+                          name="facebookDidLogin"
+                          value="no"
+                          checked={facebookDidLogin === 'no'}
+                          onChange={() => setFacebookDidLogin('no')}
+                          className="w-4 h-4 text-blue-500"
+                        />
+                        <span className="text-gray-800">No, I need to try again</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <Button 
+                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                    onClick={handleFacebookNext}
+                    disabled={facebookLoading || facebookDidLogin !== 'yes'}
+                  >
+                    {facebookLoading ? 'Loading Pages...' : 'Next - Fetch My Pages'}
+                  </Button>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900">Facebook / Instagram</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Connect your Facebook account and Instagram for social media management
-                  </p>
+              ) : (
+                <div className="max-w-4xl mx-auto space-y-6">
+                  <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                      <div>
+                        <p className="font-semibold text-green-800">Facebook Connected</p>
+                        <p className="text-sm text-green-600">Found {facebookPages.length} pages</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowFacebookPages(false);
+                        setFacebookDidLogin(null);
+                        setFacebookPages([]);
+                        setSelectedFacebookPages([]);
+                      }}
+                    >
+                      Start Over
+                    </Button>
+                  </div>
+
+                  <div>
+                    <p className="font-semibold text-gray-800 mb-4">Select the Facebook pages you want to connect</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
+                      {facebookPages.map((page) => (
+                        <label 
+                          key={page.id} 
+                          className="flex items-center gap-3 cursor-pointer p-4 border-2 rounded-lg hover:bg-gray-50 transition-colors"
+                          style={{ borderColor: selectedFacebookPages.includes(page.id) ? '#8b5cf6' : '#e5e7eb' }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedFacebookPages.includes(page.id)}
+                            onChange={() => handleFacebookPageToggle(page.id)}
+                            className="w-4 h-4 text-purple-500"
+                          />
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-800">{page.name}</p>
+                            <p className="text-xs text-gray-500">ID: {page.id}</p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Button 
+                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                    onClick={handleFacebookConnectFinish}
+                    disabled={facebookLoading || selectedFacebookPages.length === 0}
+                  >
+                    {facebookLoading ? 'Connecting...' : `Connect ${selectedFacebookPages.length} Page${selectedFacebookPages.length !== 1 ? 's' : ''}`}
+                  </Button>
                 </div>
-                <Button 
-                  className="w-full bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700 text-white"
-                  onClick={handleFacebookInstagramConnect}
-                  disabled={loading || !locationId || !ghlUserId}
-                >
-                  {loading ? 'Loading...' : 'Connect'}
-                </Button>
-                {!loading && (!locationId || !ghlUserId) && (
-                  <p className="text-xs text-red-500">
-                    Please set up a GHL subaccount first
-                  </p>
-                )}
-                {(!loading && locationId && ghlUserId) && (
-                  <p className="text-xs text-gray-400">
-                    Connect your Instagram account with a Facebook Page
-                  </p>
-                )}
-              </div>
+              )}
             </CardContent>
           </Card>
 
