@@ -1075,7 +1075,9 @@ export default function IntegrationsSettings() {
       const requestBody = {
         originId: originId,
         platform: socialMediaPlatform,
-        type: socialMediaPlatform === 'facebook' ? 'page' : 'account'
+        type: socialMediaPlatform === 'facebook' ? 'page' : 'account',
+        name: page.name || '',
+        avatar: page.avatar || ''
       };
 
       console.log('📤 POST request body:', requestBody);
