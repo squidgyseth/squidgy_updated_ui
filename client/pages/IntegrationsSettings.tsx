@@ -797,11 +797,22 @@ export default function IntegrationsSettings() {
       `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
     );
 
-    // Listen for OAuth completion
+    // Listen for messages from the popup (OAuth callback may send OAuth ID)
+    const messageHandler = (event: MessageEvent) => {
+      if (event.data && event.data.oAuthId) {
+        console.log('✅ Received OAuth ID from popup:', event.data.oAuthId);
+        window.removeEventListener('message', messageHandler);
+        fetchSocialMediaAccountsWithOAuthId(event.data.oAuthId);
+      }
+    };
+    window.addEventListener('message', messageHandler);
+
+    // Also check for popup closure as fallback
     const checkPopup = setInterval(() => {
       if (popup && popup.closed) {
         clearInterval(checkPopup);
-        // After OAuth, fetch the accounts
+        window.removeEventListener('message', messageHandler);
+        // After OAuth, try to fetch OAuth connections and then accounts
         fetchSocialMediaAccounts();
       }
     }, 1000);
