@@ -44,9 +44,38 @@ export default function IntegrationsSettings() {
 
   useEffect(() => {
     if (firmUserId) {
+      refreshFirebaseToken();
       fetchGHLIntegrations();
     }
   }, [firmUserId]);
+
+  const refreshFirebaseToken = async () => {
+    if (!firmUserId) return;
+    
+    try {
+      console.log('🔄 Checking Firebase token freshness...');
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      
+      const response = await fetch(`${backendUrl}/api/ghl/refresh-firebase-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firm_user_id: firmUserId })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        if (result.token_refreshed) {
+          console.log('✅ Firebase token refresh started in background');
+        } else {
+          console.log(`✅ Firebase token is fresh (age: ${result.token_age_minutes} minutes)`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing Firebase token:', error);
+      // Don't show error to user - this is a background operation
+    }
+  };
 
   const getUserFirmId = async () => {
     if (!user?.email) return;
