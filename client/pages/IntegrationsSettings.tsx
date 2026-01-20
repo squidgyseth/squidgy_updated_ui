@@ -1451,13 +1451,13 @@ export default function IntegrationsSettings() {
                     <p className="text-sm text-gray-500 mt-1">
                       Connect Facebook pages for social media posting
                     </p>
-                    {connectedSocialMediaAccounts.length > 0 && (
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook').length > 0 && (
                       <div className="mt-3 space-y-2">
                         <Badge variant="default" className="bg-green-500">
-                          {connectedSocialMediaAccounts.length} Page{connectedSocialMediaAccounts.length !== 1 ? 's' : ''} Connected
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook').length} Page{connectedSocialMediaAccounts.filter(a => a.platform === 'facebook').length !== 1 ? 's' : ''} Connected
                         </Badge>
                         <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {connectedSocialMediaAccounts.map((account) => (
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook').map((account) => (
                             <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
                               <img 
                                 src={account.avatar} 
