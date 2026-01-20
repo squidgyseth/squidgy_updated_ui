@@ -88,25 +88,35 @@ export default function IntegrationsSettings() {
       console.log('🔑 Fetching tokens from database...');
       
       // Fetch from ghl_subaccounts table
-      const { data, error } = await supabase
+      const { data: ghlData, error: ghlError } = await supabase
         .from('ghl_subaccounts')
         .select('"Firebase Token", PIT_Token, ghl_location_id')
         .eq('firm_user_id', firmUserId)
         .single();
       
-      if (error) throw error;
+      if (ghlError) throw ghlError;
       
-      if (data) {
-        const fbToken = data['Firebase Token'];
-        const pitTok = data['PIT_Token'];
-        const locId = data['ghl_location_id'];
+      // Also fetch access_token from facebook_integrations table
+      const { data: fbData } = await supabase
+        .from('facebook_integrations')
+        .select('access_token')
+        .eq('firm_user_id', firmUserId)
+        .single();
+      
+      if (ghlData) {
+        const fbToken = ghlData['Firebase Token'];
+        const pitTok = ghlData['PIT_Token'];
+        const locId = ghlData['ghl_location_id'];
+        const accessTok = fbData?.access_token || pitTok; // Use access_token if available, fallback to PIT
         
         setFirebaseToken(fbToken);
-        setAccessToken(pitTok);
+        setAccessToken(accessTok);
+        setPitToken(pitTok);
         setLocationId(locId);
         
         console.log('✅ Tokens fetched:', {
           hasFirebaseToken: !!fbToken,
+          hasAccessToken: !!accessTok,
           hasPITToken: !!pitTok,
           locationId: locId
         });
