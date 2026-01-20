@@ -973,9 +973,17 @@ export default function IntegrationsSettings() {
           'content-type': 'application/json'
         },
         body: JSON.stringify({
-          originId: page.originId || page.id,
+          originId: page.originId,
           platform: 'facebook',
-          type: 'page'
+          type: 'page',
+          name: page.name,
+          avatar: page.avatar,
+          active: true,
+          deleted: false,
+          hasStatisticsPermissions: page.hasStatisticsPermissions || true,
+          buildingStatistics: page.buildingStatistics || false,
+          feedSubscribed: true,
+          connectionSource: 'social_media_posting'
         })
       });
 
