@@ -1,6 +1,10 @@
 # Actions Todo (Child Agents)
 
+<!-- KEYWORDS: pending, next steps, remaining, actions todo, awaiting, waiting for user, selection needed, input needed, approval needed, confirmation needed, step pending, what's next, upcoming tasks, user action required -->
+
 Standard todos for ALL child agents (Newsletter, Content Repurposer, SOL, etc.).
+
+**RETRIEVAL TRIGGERS:** Use this document when listing pending tasks, showing next steps, indicating what user needs to do, or tracking remaining work in a workflow.
 
 **Note:** Personal Assistant has elevated todos in `agents/personal_assistant/actions.md`
 

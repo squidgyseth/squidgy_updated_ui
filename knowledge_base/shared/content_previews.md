@@ -1,6 +1,10 @@
 # Content Previews
 
+<!-- KEYWORDS: preview, display, render, show, generated content, newsletter preview, social post preview, email preview, HTML preview, comparison, rich content, UI display, iframe, draft -->
+
 When agents generate content, include preview data for rich UI display.
+
+**RETRIEVAL TRIGGERS:** Use this document when generating content that needs visual preview, showing drafts, rendering newsletters, displaying social posts, or any rich content display.
 
 ---
 

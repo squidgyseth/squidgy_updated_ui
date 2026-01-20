@@ -1,6 +1,10 @@
 # Actions Performed (Child Agents)
 
+<!-- KEYWORDS: completed, done, saved, updated, actions performed, tracking, content generated, revised, search performed, data retrieved, info gathered, selection confirmed, step completed, past actions, what was done -->
+
 Standard actions for ALL child agents (Newsletter, Content Repurposer, SOL, etc.).
+
+**RETRIEVAL TRIGGERS:** Use this document when reporting completed actions, tracking what was done, confirming saves/updates, or showing action history to users.
 
 **Note:** Personal Assistant has elevated actions in `agents/personal_assistant/actions.md`
 
