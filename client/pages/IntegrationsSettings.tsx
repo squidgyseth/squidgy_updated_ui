@@ -114,7 +114,7 @@ export default function IntegrationsSettings() {
       // Fetch from ghl_subaccounts table
       const { data: ghlData, error: ghlError } = await supabase
         .from('ghl_subaccounts')
-        .select('"Firebase Token", PIT_Token, ghl_location_id')
+        .select('"Firebase Token", PIT_Token, ghl_location_id, ghl_user_id, soma_ghl_user_id')
         .eq('firm_user_id', firmUserId)
         .single();
       
@@ -131,18 +131,21 @@ export default function IntegrationsSettings() {
         const fbToken = ghlData['Firebase Token'];
         const pitTok = ghlData['PIT_Token'];
         const locId = ghlData['ghl_location_id'];
+        const mainUserId = ghlData['ghl_user_id']; // Main GHL user ID (not Soma user)
         const accessTok = fbData?.access_token || pitTok; // Use access_token if available, fallback to PIT
         
         setFirebaseToken(fbToken);
         setAccessToken(accessTok);
         setPitToken(pitTok);
         setLocationId(locId);
+        setGhlUserId(mainUserId); // Set the main GHL user ID for calendar check
         
         console.log('✅ Tokens fetched:', {
           hasFirebaseToken: !!fbToken,
           hasAccessToken: !!accessTok,
           hasPITToken: !!pitTok,
-          locationId: locId
+          locationId: locId,
+          ghlUserId: mainUserId
         });
       }
     } catch (error) {
