@@ -961,6 +961,9 @@ export default function IntegrationsSettings() {
         throw new Error('Page not found');
       }
 
+      console.log('📄 Page object:', page);
+      console.log('📄 Page originId:', page.originId);
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
