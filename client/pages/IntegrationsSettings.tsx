@@ -833,13 +833,12 @@ export default function IntegrationsSettings() {
     const pollForAccounts = async () => {
       try {
         attempts++;
-        console.log(`📱 Polling for social media accounts (attempt ${attempts}/${maxAttempts})...`);
+        console.log(`📱 Polling for social media OAuth connections (attempt ${attempts}/${maxAttempts})...`);
         
-        // Try to fetch OAuth connections to get the OAuth ID
-        // We'll need to check if there's a recent OAuth connection
-        const oauthListUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook`;
+        // First, fetch connected accounts to get OAuth connections
+        const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts`;
         
-        const response = await fetch(oauthListUrl, {
+        const response = await fetch(accountsUrl, {
           method: 'GET',
           headers: {
             'authorization': `Bearer ${accessToken}`,
@@ -853,21 +852,47 @@ export default function IntegrationsSettings() {
 
         if (response.ok) {
           const data = await response.json();
-          console.log('✅ OAuth connections response:', data);
+          console.log('✅ Connected accounts response:', data);
           
-          // If we have OAuth connections, get the first one's ID
-          if (data && data.length > 0) {
-            const oAuthId = data[0]._id || data[0].id;
-            if (oAuthId) {
-              console.log('✅ Found OAuth ID:', oAuthId);
-              await fetchSocialMediaAccountsWithOAuthId(oAuthId);
-              setSocialMediaLoading(false);
-              return; // Stop polling
+          // Look for Facebook OAuth connections in the accounts
+          // The response has accounts array which may contain OAuth connection info
+          if (data.success && data.results) {
+            // Check if there are any accounts or if we need to look elsewhere for OAuth ID
+            // Based on the API, we might need to check a different structure
+            // Let's try to get OAuth connections from the facebook endpoint
+            const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook`;
+            
+            const oauthResponse = await fetch(oauthUrl, {
+              method: 'GET',
+              headers: {
+                'authorization': `Bearer ${accessToken}`,
+                'token-id': firebaseToken,
+                'version': '2021-07-28',
+                'channel': 'APP',
+                'source': 'WEB_USER',
+                'accept': 'application/json'
+              }
+            });
+
+            if (oauthResponse.ok) {
+              const oauthData = await oauthResponse.json();
+              console.log('✅ OAuth connections:', oauthData);
+              
+              // If we have OAuth connections, get the first one's ID
+              if (oauthData && Array.isArray(oauthData) && oauthData.length > 0) {
+                const oAuthId = oauthData[0]._id || oauthData[0].id;
+                if (oAuthId) {
+                  console.log('✅ Found OAuth ID:', oAuthId);
+                  await fetchSocialMediaAccountsWithOAuthId(oAuthId);
+                  setSocialMediaLoading(false);
+                  return; // Stop polling
+                }
+              }
             }
           }
         }
         
-        // If we haven't found accounts yet and haven't exceeded max attempts, poll again
+        // If we haven't found OAuth connection yet and haven't exceeded max attempts, poll again
         if (attempts < maxAttempts) {
           setTimeout(pollForAccounts, 5000); // Poll every 5 seconds
         } else {
