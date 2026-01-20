@@ -157,7 +157,14 @@ export default function IntegrationsSettings() {
       const data = await response.json();
       console.log('✅ Facebook pages response:', data);
       
-      const pages = data.results?.accounts || [];
+      const rawPages = data.pages || [];
+      
+      // Map GHL response format to our UI format
+      const pages = rawPages.map((page: any) => ({
+        id: page.facebookPageId,
+        name: page.facebookPageName,
+        ...page
+      }));
       
       if (pages.length === 0) {
         toast.info('No Facebook pages found. Please connect your Facebook pages in GoHighLevel first.');
