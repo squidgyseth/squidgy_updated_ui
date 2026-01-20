@@ -65,6 +65,13 @@ export default function IntegrationsSettings() {
     }
   }, [locationId, firebaseToken, accessToken]);
 
+  useEffect(() => {
+    // Auto-check Google Calendar connection when tokens and ghlUserId are available
+    if (ghlUserId && locationId && firebaseToken && accessToken) {
+      checkGoogleCalendarConnection();
+    }
+  }, [ghlUserId, locationId, firebaseToken, accessToken]);
+
   const refreshFirebaseToken = async () => {
     if (!firmUserId) return;
     
@@ -137,6 +144,50 @@ export default function IntegrationsSettings() {
       }
     } catch (error) {
       console.error('❌ Error fetching tokens:', error);
+    }
+  };
+
+  const checkGoogleCalendarConnection = async () => {
+    if (!ghlUserId || !firebaseToken || !accessToken) {
+      return;
+    }
+    
+    setCheckingCalendar(true);
+    try {
+      console.log('📅 Checking Google Calendar connection...');
+      
+      const userUrl = `https://backend.leadconnectorhq.com/users/${ghlUserId}`;
+      
+      const response = await fetch(userUrl, {
+        method: 'GET',
+        headers: {
+          'authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER',
+          'accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GHL API error: ${response.status}`);
+      }
+      
+      const userData = await response.json();
+      console.log('✅ User data response:', userData);
+      
+      // Check if userCalendar field has data for this location
+      const hasCalendar = userData.userCalendar && 
+                         userData.userCalendar[locationId] && 
+                         Object.keys(userData.userCalendar[locationId]).length > 0;
+      
+      setGoogleCalendarConnected(hasCalendar);
+      console.log(`📅 Google Calendar connected: ${hasCalendar}`);
+    } catch (error: any) {
+      console.error('❌ Error checking Google Calendar:', error);
+    } finally {
+      setCheckingCalendar(false);
     }
   };
 
