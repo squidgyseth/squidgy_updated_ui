@@ -71,10 +71,15 @@ export default function IntegrationsSettings() {
 
   useEffect(() => {
     // Auto-fetch Facebook pages and ad accounts when tokens are available
+    // Only fetch if we have valid tokens (skip if 401 errors occur)
     if (locationId && firebaseToken && accessToken && !showFacebookPages) {
       Promise.all([
-        fetchFacebookPagesFromGHL(),
-        fetchFacebookAdAccountsFromGHL()
+        fetchFacebookPagesFromGHL().catch(err => {
+          console.log('⚠️ Skipping Facebook pages auto-fetch:', err.message);
+        }),
+        fetchFacebookAdAccountsFromGHL().catch(err => {
+          console.log('⚠️ Skipping Facebook ad accounts auto-fetch:', err.message);
+        })
       ]);
     }
   }, [locationId, firebaseToken, accessToken]);
