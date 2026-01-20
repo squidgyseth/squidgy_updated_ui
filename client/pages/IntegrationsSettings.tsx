@@ -945,20 +945,48 @@ export default function IntegrationsSettings() {
           const data = await response.json();
           console.log('✅ Connected accounts response:', data);
           
-          // Check if we have any accounts with oauthId (Facebook and Instagram share the same OAuth ID)
+          // Check if OAuth completed by looking for any accounts
           if (data.success && data.results && data.results.accounts && data.results.accounts.length > 0) {
-            // Get the oauthId from any account (they all share the same OAuth ID)
-            const oAuthId = data.results.accounts[0].oauthId;
-            
-            if (oAuthId) {
-              console.log(`✅ Found OAuth ID from accounts:`, oAuthId);
-              console.log(`🔗 Will fetch ${platform} accounts from:`, `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`);
+            // Now fetch platform-specific OAuth connections to get the correct OAuth ID
+            try {
+              const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}`;
+              console.log(`🔍 Fetching ${platform} OAuth connections from:`, oauthUrl);
               
-              await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
-              setSocialMediaLoading(false);
-              return; // Stop polling
-            } else {
-              console.warn('⚠️ Account found but no oauthId, will retry...');
+              const oauthResponse = await fetch(oauthUrl, {
+                method: 'GET',
+                headers: {
+                  'authorization': `Bearer ${accessToken}`,
+                  'token-id': firebaseToken,
+                  'version': '2021-07-28',
+                  'channel': 'APP',
+                  'source': 'WEB_USER',
+                  'accept': 'application/json'
+                }
+              });
+
+              if (oauthResponse.ok) {
+                const oauthData = await oauthResponse.json();
+                console.log(`✅ ${platform} OAuth connections list:`, oauthData);
+                
+                // Extract OAuth ID from the connections list
+                if (oauthData && Array.isArray(oauthData) && oauthData.length > 0) {
+                  const oAuthId = oauthData[0]._id || oauthData[0].id;
+                  console.log(`✅ Found ${platform} OAuth ID:`, oAuthId);
+                  console.log(`🔗 Will fetch ${platform} accounts from:`, `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`);
+                  
+                  if (oAuthId) {
+                    await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
+                    setSocialMediaLoading(false);
+                    return; // Stop polling
+                  }
+                } else {
+                  console.warn(`⚠️ No ${platform} OAuth connections found yet, will retry...`);
+                }
+              } else {
+                console.error(`❌ ${platform} OAuth connections request failed:`, oauthResponse.status);
+              }
+            } catch (oauthError) {
+              console.error(`❌ Error fetching ${platform} OAuth connections:`, oauthError);
             }
           } else {
             console.log('⏳ No accounts found yet, waiting for OAuth completion...');
