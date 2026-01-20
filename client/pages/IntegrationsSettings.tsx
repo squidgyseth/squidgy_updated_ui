@@ -945,26 +945,20 @@ export default function IntegrationsSettings() {
           const data = await response.json();
           console.log('✅ Connected accounts response:', data);
           
-          // Check if we have accounts with oauthId for the specific platform
+          // Check if we have any accounts with oauthId (Facebook and Instagram share the same OAuth ID)
           if (data.success && data.results && data.results.accounts && data.results.accounts.length > 0) {
-            // Filter accounts by platform and get the oauthId
-            const platformAccounts = data.results.accounts.filter((acc: any) => acc.platform === platform);
+            // Get the oauthId from any account (they all share the same OAuth ID)
+            const oAuthId = data.results.accounts[0].oauthId;
             
-            if (platformAccounts.length > 0) {
-              const oAuthId = platformAccounts[0].oauthId;
+            if (oAuthId) {
+              console.log(`✅ Found OAuth ID from accounts:`, oAuthId);
+              console.log(`🔗 Will fetch ${platform} accounts from:`, `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`);
               
-              if (oAuthId) {
-                console.log(`✅ Found ${platform} OAuth ID from accounts:`, oAuthId);
-                console.log('🔗 Will fetch pages from:', `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`);
-                
-                await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
-                setSocialMediaLoading(false);
-                return; // Stop polling
-              } else {
-                console.warn(`⚠️ ${platform} account found but no oauthId, will retry...`);
-              }
+              await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
+              setSocialMediaLoading(false);
+              return; // Stop polling
             } else {
-              console.log(`⏳ No ${platform} accounts found yet, waiting for OAuth completion...`);
+              console.warn('⚠️ Account found but no oauthId, will retry...');
             }
           } else {
             console.log('⏳ No accounts found yet, waiting for OAuth completion...');
