@@ -964,6 +964,15 @@ export default function IntegrationsSettings() {
       console.log('📄 Page object:', page);
       console.log('📄 Page originId:', page.originId);
 
+      // Extract originId - ensure it's a string
+      const originId = String(page.originId || page.id || '').trim();
+      
+      if (!originId) {
+        throw new Error('Page originId is missing');
+      }
+
+      console.log('📄 Using originId:', originId);
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -976,7 +985,7 @@ export default function IntegrationsSettings() {
           'content-type': 'application/json'
         },
         body: JSON.stringify({
-          originId: page.originId,
+          originId: originId,
           platform: 'facebook',
           type: 'page',
           name: page.name,
