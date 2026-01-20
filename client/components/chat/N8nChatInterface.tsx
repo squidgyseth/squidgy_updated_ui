@@ -709,7 +709,7 @@ export default function N8nChatInterface({
     // Create file input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.pdf,.txt,.docx';
+    fileInput.accept = '.pdf,.txt,.docx,.md,.jpg,.jpeg,.png';
     fileInput.style.display = 'none';
     
     fileInput.onchange = async (e) => {
@@ -719,9 +719,12 @@ export default function N8nChatInterface({
       if (!file) return;
       
       // Validate file type
-      const allowedTypes = ['application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-      if (!allowedTypes.includes(file.type)) {
-        alert('Only PDF, TXT, and DOCX files are supported');
+      const allowedTypes = ['application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/markdown', 'image/jpeg', 'image/png'];
+      // Also check file extension for .md files (some browsers report different MIME types)
+      const isMarkdownFile = file.name.toLowerCase().endsWith('.md');
+      const isImageFile = /\.(jpg|jpeg|png)$/i.test(file.name);
+      if (!allowedTypes.includes(file.type) && !isMarkdownFile && !isImageFile) {
+        alert('Only PDF, TXT, DOCX, MD, JPG, and PNG files are supported');
         return;
       }
       
