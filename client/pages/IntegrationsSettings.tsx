@@ -30,6 +30,8 @@ export default function IntegrationsSettings() {
   const [pitToken, setPitToken] = useState<string | null>(null);
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState<boolean>(false);
   const [googleCalendarEmail, setGoogleCalendarEmail] = useState<string | null>(null);
+  const [ghlUserName, setGhlUserName] = useState<string | null>(null);
+  const [ghlUserEmail, setGhlUserEmail] = useState<string | null>(null);
   const [checkingCalendar, setCheckingCalendar] = useState<boolean>(false);
   const [facebookOAuthUrl, setFacebookOAuthUrl] = useState<string | null>(null);
   const [facebookDidLogin, setFacebookDidLogin] = useState<'yes' | 'no' | null>(null);
@@ -178,12 +180,19 @@ export default function IntegrationsSettings() {
       const userData = await response.json();
       console.log('✅ User data response:', userData);
       
+      // Extract user name and email from response
+      const userName = userData.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim();
+      const userEmail = userData.email;
+      
+      setGhlUserName(userName);
+      setGhlUserEmail(userEmail);
+      
       // Check if userCalendar field has data for this location
       const hasCalendar = userData.userCalendar && 
                          userData.userCalendar[locationId] && 
                          Object.keys(userData.userCalendar[locationId]).length > 0;
       
-      // Extract email if calendar is connected
+      // Extract calendar email if calendar is connected
       let calendarEmail = null;
       if (hasCalendar && userData.userCalendar[locationId]) {
         // The userCalendar object typically has the email as a key
@@ -196,6 +205,7 @@ export default function IntegrationsSettings() {
       setGoogleCalendarConnected(hasCalendar);
       setGoogleCalendarEmail(calendarEmail);
       console.log(`📅 Google Calendar connected: ${hasCalendar}`, calendarEmail ? `(${calendarEmail})` : '');
+      console.log(`👤 User: ${userName} (${userEmail})`);
     } catch (error: any) {
       console.error('❌ Error checking Google Calendar:', error);
     } finally {
@@ -833,12 +843,16 @@ export default function IntegrationsSettings() {
                       <Badge variant="default" className="bg-green-500">Connected</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {googleCalendarConnected 
-                      ? `Connected: ${googleCalendarEmail || 'Google Calendar'}`
-                      : 'Connect your Google Calendar to sync events and appointments'
-                    }
-                  </p>
+                  {googleCalendarConnected ? (
+                    <div className="text-sm text-gray-600 mt-1">
+                      <p className="font-medium">{ghlUserName}</p>
+                      <p className="text-xs text-gray-500">{googleCalendarEmail || ghlUserEmail}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect your Google Calendar to sync events and appointments
+                    </p>
+                  )}
                 </div>
                 <Button 
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
