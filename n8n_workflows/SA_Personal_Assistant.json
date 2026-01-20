@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "# Personal Assistant - Master Agent\n\n## Flow:\n1. Webhook receives request\n2. Load instructions from agent_instructions table\n3. Get AGENT config + USER PROFILE from Supabase (parallel)\n4. Pre-process request (combine all data)\n5. AI Agent decides: ANSWER, REDIRECT, ONBOARD, or CLARIFY\n6. Build response\n7. Return to webhook\n\n## Data Sources:\n- Instructions → agent_instructions vector store (agent_id='personal_assistant')\n- Agent config → Supabase (enabled_agents, assistants)\n- User profile → Supabase profiles table (brand_voice, target_audience, etc.)\n- User data → KB via RAG tool (on-demand)\n\n## User Settings Reuse (from profiles):\n- First agent: Collect all → Save to profiles via tool\n- 2nd+ agent: Show existing → Offer reuse or customize",
+        "content": "# Personal Assistant - Master Agent\n\n## Flow:\n1. Webhook receives request\n2. Load CORE instructions (security_rules + instructions.md)\n3. RAG search for CONTEXTUAL instructions based on user query\n4. Get AGENT config + USER PROFILE from Supabase (parallel)\n5. Pre-process request (combine all data)\n6. AI Agent decides: ANSWER, REDIRECT, ONBOARD, or CLARIFY\n7. Build response\n8. Return to webhook\n\n## Instruction Loading (Hybrid):\n- ALWAYS: security_rules.md, instructions.md (Tier 1)\n- RAG: button_patterns, response_format, content_previews, actions_* (Tier 2)\n\n## User Settings Reuse (from profiles):\n- First agent: Collect all → Save to profiles via tool\n- 2nd+ agent: Show existing → Offer reuse or customize",
         "height": 280,
         "width": 400,
         "color": 6
@@ -37,7 +37,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT document, source_file FROM public.agent_instructions\nWHERE agent_id = 'personal_assistant'\nORDER BY source_file;",
+        "query": "-- TIER 1: Always loaded (core instructions)\nSELECT document, source_file FROM public.agent_instructions\nWHERE agent_id = 'personal_assistant'\n  AND source_file IN ('security_rules.md', 'instructions.md')\nORDER BY source_file;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -46,8 +46,31 @@
         520,
         300
       ],
-      "id": "load-instructions",
-      "name": "Load Instructions",
+      "id": "load-core-instructions",
+      "name": "Load Core Instructions",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- TIER 2: Contextual instructions (keyword-based retrieval)\n-- Always includes button_patterns.md + relevant docs based on user message\nSELECT document, source_file, relevance_score FROM (\n  -- Always include button_patterns (most responses need buttons)\n  SELECT document, source_file, 100 as relevance_score\n  FROM public.agent_instructions\n  WHERE agent_id = 'personal_assistant' AND source_file = 'button_patterns.md'\n  \n  UNION ALL\n  \n  -- Include response_format if redirect/routing/format keywords\n  SELECT document, source_file, 80 as relevance_score\n  FROM public.agent_instructions\n  WHERE agent_id = 'personal_assistant' \n    AND source_file = 'response_format.md'\n    AND LOWER('{{ $('PA Webhook').item.json.body.user_mssg }}') ~ '(redirect|route|format|json|enable|setup|agent)'\n  \n  UNION ALL\n  \n  -- Include content_previews if content generation keywords\n  SELECT document, source_file, 70 as relevance_score\n  FROM public.agent_instructions\n  WHERE agent_id = 'personal_assistant'\n    AND source_file = 'content_previews.md'\n    AND LOWER('{{ $('PA Webhook').item.json.body.user_mssg }}') ~ '(preview|draft|newsletter|content|create|generate|show)'\n  \n  UNION ALL\n  \n  -- Include actions tracking if action keywords\n  SELECT document, source_file, 60 as relevance_score\n  FROM public.agent_instructions\n  WHERE agent_id = 'personal_assistant'\n    AND source_file IN ('actions_performed.md', 'actions_todo.md')\n    AND LOWER('{{ $('PA Webhook').item.json.body.user_mssg }}') ~ '(done|completed|saved|next|pending|step|progress)'\n) matched_docs\nORDER BY relevance_score DESC\nLIMIT 2;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        520,
+        480
+      ],
+      "id": "load-contextual-instructions",
+      "name": "Load Contextual Instructions (RAG)",
       "credentials": {
         "postgres": {
           "id": "9VZuQcfK90oMX16w",
@@ -120,7 +143,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Pre-process: Combine data for AI Agent\nconst webhook = $('PA Webhook').first().json;\nconst instructionDocs = $('Load Instructions').all();\nconst config = $('Get Agent Config').first().json || {};\nconst userProfile = $('Get User Profile').first()?.json || null;\n\n// Combine all instruction documents from agent_instructions table\n// Format: ## source_file\\n\\ndocument content\\n\\n---\nlet combinedInstructions = '';\nfor (const item of instructionDocs) {\n  const doc = item.json;\n  if (doc.document) {\n    combinedInstructions += `## ${doc.source_file}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n  }\n}\n\n// Extract request data\nconst body = webhook.body || {};\nconst userId = body.user_id;\nconst sessionId = body.session_id;\nconst userMessage = body.user_mssg?.trim() || '';\nconst agentName = body.agent_name || 'personal_assistant';\nconst requestId = body.request_id || crypto.randomUUID();\n\n// Format user_settings from profiles table (null if not set)\n// Settings are considered SET if brand_voice exists (first field collected)\nlet userSettingsFormatted = null;\nif (userProfile && userProfile.brand_voice) {\n  userSettingsFormatted = {\n    brand_voice: userProfile.brand_voice,\n    target_audience: userProfile.target_audience,\n    primary_goals: userProfile.primary_goals || [],\n    calendar: userProfile.calendar_type,\n    notifications: userProfile.notifications_enabled ? 'enabled' : 'disabled'\n  };\n}\n\n// Build the data object for AI Agent\nreturn {\n  json: {\n    // Request info\n    user_id: userId,\n    session_id: sessionId,\n    user_mssg: userMessage,\n    agent_name: agentName,\n    request_id: requestId,\n    timestamp: new Date().toISOString(),\n    \n    // Instructions (loaded from agent_instructions vector store)\n    instructions: combinedInstructions || 'No instructions found.',\n    \n    // Agent/System config ONLY (user data comes from KB via RAG)\n    enabled_agents: config.enabled_agents || '',\n    assistants: config.assistants || '',\n    agent_department_value: config.agent_department_value || '',\n    \n    // User settings from profiles (for agent onboarding reuse)\n    user_settings: userSettingsFormatted\n  }\n};"
+        "jsCode": "// Pre-process: Combine data for AI Agent\nconst webhook = $('PA Webhook').first().json;\nconst coreInstructions = $('Load Core Instructions').all();\nconst contextualInstructions = $('Load Contextual Instructions (RAG)').all();\nconst config = $('Get Agent Config').first().json || {};\nconst userProfile = $('Get User Profile').first()?.json || null;\n\n// TIER 1: Core instructions (always loaded)\n// security_rules.md + instructions.md\nlet coreSection = '## CORE INSTRUCTIONS (Always Active)\\n\\n';\nfor (const item of coreInstructions) {\n  const doc = item.json;\n  if (doc.document) {\n    coreSection += `### ${doc.source_file}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n  }\n}\n\n// TIER 2: Contextual instructions (RAG retrieved based on relevance)\n// button_patterns, response_format, content_previews, actions_*\nlet contextSection = '';\nif (contextualInstructions.length > 0) {\n  contextSection = '## CONTEXTUAL INSTRUCTIONS (Retrieved for this query)\\n\\n';\n  for (const item of contextualInstructions) {\n    const doc = item.json;\n    if (doc.document) {\n      const similarity = doc.similarity ? ` (relevance: ${(doc.similarity * 100).toFixed(0)}%)` : '';\n      contextSection += `### ${doc.source_file}${similarity}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n    }\n  }\n}\n\n// Combine instructions\nconst combinedInstructions = coreSection + contextSection;\n\n// Extract request data\nconst body = webhook.body || {};\nconst userId = body.user_id;\nconst sessionId = body.session_id;\nconst userMessage = body.user_mssg?.trim() || '';\nconst agentName = body.agent_name || 'personal_assistant';\nconst requestId = body.request_id || crypto.randomUUID();\n\n// Format user_settings from profiles table (null if not set)\nlet userSettingsFormatted = null;\nif (userProfile && userProfile.brand_voice) {\n  userSettingsFormatted = {\n    brand_voice: userProfile.brand_voice,\n    target_audience: userProfile.target_audience,\n    primary_goals: userProfile.primary_goals || [],\n    calendar: userProfile.calendar_type,\n    notifications: userProfile.notifications_enabled ? 'enabled' : 'disabled'\n  };\n}\n\n// Build the data object for AI Agent\nreturn {\n  json: {\n    // Request info\n    user_id: userId,\n    session_id: sessionId,\n    user_mssg: userMessage,\n    agent_name: agentName,\n    request_id: requestId,\n    timestamp: new Date().toISOString(),\n    \n    // Instructions (hybrid: core always + contextual RAG)\n    instructions: combinedInstructions || 'No instructions found.',\n    \n    // Agent/System config ONLY (user data comes from KB via RAG)\n    enabled_agents: config.enabled_agents || '',\n    assistants: config.assistants || '',\n    agent_department_value: config.agent_department_value || '',\n    \n    // User settings from profiles (for agent onboarding reuse)\n    user_settings: userSettingsFormatted\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -552,14 +575,25 @@
       "main": [
         [
           {
-            "node": "Load Instructions",
+            "node": "Load Core Instructions",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Load Instructions": {
+    "Load Core Instructions": {
+      "main": [
+        [
+          {
+            "node": "Load Contextual Instructions (RAG)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Contextual Instructions (RAG)": {
       "main": [
         [
           {
@@ -767,7 +801,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "v3.0.0-vector-instructions",
+  "versionId": "v4.0.0-hybrid-instructions",
   "meta": {
     "templateCredsSetupCompleted": true
   },

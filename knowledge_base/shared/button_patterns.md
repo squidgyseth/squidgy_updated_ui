@@ -1,6 +1,10 @@
 # Button Patterns
 
+<!-- KEYWORDS: buttons, clickable, options, $$, emoji, navigation, actions, confirmation, setup, choices, selectable, interactive, user choices, button syntax, button format -->
+
 Standard button formatting patterns for all Squidgy agents.
+
+**RETRIEVAL TRIGGERS:** Use this document when response involves showing clickable options, buttons, user choices, or interactive elements.
 
 ---
 

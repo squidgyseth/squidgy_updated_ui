@@ -1,6 +1,10 @@
 # Shared Response Format
 
+<!-- KEYWORDS: JSON, output, format, structure, response, redirect, routing, agent enablement, confirmation, text formatting, tone, categories, KB categories -->
+
 All Squidgy agents must follow this response format for consistency.
+
+**RETRIEVAL TRIGGERS:** Use this document when formatting JSON output, routing responses, redirect logic, or structuring agent responses.
 
 ---
 
