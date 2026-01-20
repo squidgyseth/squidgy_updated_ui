@@ -30,6 +30,8 @@ export default function IntegrationsSettings() {
   const [pitToken, setPitToken] = useState<string | null>(null);
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState<boolean>(false);
   const [googleCalendarEmail, setGoogleCalendarEmail] = useState<string | null>(null);
+  const [outlookCalendarConnected, setOutlookCalendarConnected] = useState<boolean>(false);
+  const [outlookCalendarEmail, setOutlookCalendarEmail] = useState<string | null>(null);
   const [ghlUserName, setGhlUserName] = useState<string | null>(null);
   const [ghlUserEmail, setGhlUserEmail] = useState<string | null>(null);
   const [checkingCalendar, setCheckingCalendar] = useState<boolean>(false);
@@ -183,28 +185,44 @@ export default function IntegrationsSettings() {
       const googleCalendars = calendarData.thirdPartyCalendars?.google || {};
       const hasGoogleCalendar = Object.keys(googleCalendars).length > 0;
       
-      // Extract calendar email and user info
-      let calendarEmail = null;
+      // Check if Outlook calendar is connected
+      const outlookCalendars = calendarData.thirdPartyCalendars?.outlook || {};
+      const hasOutlookCalendar = Object.keys(outlookCalendars).length > 0;
+      
+      // Extract Google calendar email and user info
+      let googleEmail = null;
       let userName = null;
       
       if (hasGoogleCalendar) {
         // Get the first email key from google calendars
         const emailKeys = Object.keys(googleCalendars);
         if (emailKeys.length > 0) {
-          calendarEmail = emailKeys[0];
-          const calendars = googleCalendars[calendarEmail];
+          googleEmail = emailKeys[0];
+          const calendars = googleCalendars[googleEmail];
           if (calendars && calendars.length > 0) {
             userName = calendars[0].accountName;
           }
         }
       }
       
-      setGoogleCalendarConnected(hasGoogleCalendar);
-      setGoogleCalendarEmail(calendarEmail);
-      setGhlUserName(userName);
-      setGhlUserEmail(calendarEmail);
+      // Extract Outlook calendar email
+      let outlookEmail = null;
+      if (hasOutlookCalendar) {
+        const emailKeys = Object.keys(outlookCalendars);
+        if (emailKeys.length > 0) {
+          outlookEmail = emailKeys[0];
+        }
+      }
       
-      console.log(`📅 Google Calendar connected: ${hasGoogleCalendar}`, calendarEmail ? `(${calendarEmail})` : '');
+      setGoogleCalendarConnected(hasGoogleCalendar);
+      setGoogleCalendarEmail(googleEmail);
+      setOutlookCalendarConnected(hasOutlookCalendar);
+      setOutlookCalendarEmail(outlookEmail);
+      setGhlUserName(userName);
+      setGhlUserEmail(googleEmail);
+      
+      console.log(`📅 Google Calendar connected: ${hasGoogleCalendar}`, googleEmail ? `(${googleEmail})` : '');
+      console.log(`📅 Outlook Calendar connected: ${hasOutlookCalendar}`, outlookEmail ? `(${outlookEmail})` : '');
     } catch (error: any) {
       console.error('❌ Error checking Google Calendar:', error);
     } finally {
@@ -1018,25 +1036,41 @@ export default function IntegrationsSettings() {
           <Card className="hover:shadow-lg transition-shadow">
             <CardContent className="pt-6">
               <div className="text-center space-y-4">
-                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 relative">
                   <img 
                     src="https://img.icons8.com/color/480/outlook-calendar.png" 
                     alt="Outlook Calendar"
                     className="w-full h-full object-contain"
                   />
+                  {outlookCalendarConnected && (
+                    <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                  )}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg text-gray-900">Outlook Calendar</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Connect your Outlook Calendar to sync events and appointments
-                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <h3 className="font-semibold text-lg text-gray-900">Outlook Calendar</h3>
+                    {outlookCalendarConnected && (
+                      <Badge variant="default" className="bg-green-500">Connected</Badge>
+                    )}
+                  </div>
+                  {outlookCalendarConnected ? (
+                    <div className="text-sm text-gray-600 mt-1">
+                      <p className="text-xs text-gray-500">{outlookCalendarEmail}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect your Outlook Calendar to sync events and appointments
+                    </p>
+                  )}
                 </div>
                 <Button 
                   className="w-full bg-blue-500 hover:bg-blue-600 text-white"
                   onClick={handleOutlookCalendarConnect}
-                  disabled={loading || !locationId || !ghlUserId}
+                  disabled={loading || !locationId || !ghlUserId || checkingCalendar}
                 >
-                  {loading ? 'Loading...' : 'Connect Outlook Calendar'}
+                  {checkingCalendar ? 'Checking...' : loading ? 'Loading...' : outlookCalendarConnected ? 'Reconnect Outlook Calendar' : 'Connect Outlook Calendar'}
                 </Button>
                 {!loading && (!locationId || !ghlUserId) && (
                   <p className="text-xs text-red-500">
