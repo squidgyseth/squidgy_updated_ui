@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { googleCalendarService } from '../../lib/googleCalendar';
 import { toast } from 'sonner';
+import AgentMappingService from '../../services/agentMappingService';
 
 interface InteractiveMessageButtonsProps {
   content: string;
@@ -15,50 +16,66 @@ interface ButtonOption {
 }
 
 export default function InteractiveMessageButtons({ content, onButtonClick }: InteractiveMessageButtonsProps) {
+  const agentMappingService = AgentMappingService.getInstance();
+
+  // Load agent mappings on component mount
+  useEffect(() => {
+    agentMappingService.loadAgentMappings();
+  }, []);
   // Parse the content to find button patterns - flexible detection
   const parseButtonOptions = (text: string): ButtonOption[] => {
+    console.log('🔍 InteractiveMessageButtons: Parsing content:', text);
     const options: ButtonOption[] = [];
     
-    // Multiple patterns to catch various button formats:
+    // Handle both formats: $$**TEXT**$$ (new) and $**TEXT**$ (old)
+    const newFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
+    const oldFormatPattern = /\$\*\*\*\*([^*]+)\*\*\*\*\$/g;
     
-    // Pattern 1: emoji **Text** - description (main format)
-    const pattern1 = /^(.{1,4})\s*\*\*([^*]+)\*\*\s*-\s*(.+)$/gmu;
+    // Try new format first
+    let match;
+    while ((match = newFormatPattern.exec(text)) !== null) {
+      const [fullMatch, buttonText] = match;
+      
+      // Avoid duplicates
+      if (!options.find(o => o.text === buttonText.trim())) {
+        options.push({
+          emoji: '', // No emoji needed
+          text: buttonText.trim(),
+          description: '',
+          fullText: fullMatch
+        });
+      }
+    }
     
-    // Pattern 2: emoji **Text** (without description)
-    const pattern2 = /^(.{1,4})\s*\*\*([^*]+)\*\*\s*$/gmu;
-    
-    const patterns = [pattern1, pattern2];
-    
-    patterns.forEach(pattern => {
-      pattern.lastIndex = 0; // Reset regex
-      let match;
-      while ((match = pattern.exec(text)) !== null) {
-        const [fullMatch, emoji, optionText, description] = match;
+    // If no buttons found with new format, try old format
+    if (options.length === 0) {
+      while ((match = oldFormatPattern.exec(text)) !== null) {
+        const [fullMatch, buttonText] = match;
         
-        // Check if this is likely an emoji (not just any character)
-        const cleanEmoji = emoji.trim();
-        if (cleanEmoji && !options.find(o => o.fullText === fullMatch.trim())) {
+        // Avoid duplicates
+        if (!options.find(o => o.text === buttonText.trim())) {
           options.push({
-            emoji: cleanEmoji,
-            text: optionText.trim(),
-            description: description ? description.trim() : '',
-            fullText: fullMatch.trim()
+            emoji: '', // No emoji needed
+            text: buttonText.trim(),
+            description: '',
+            fullText: fullMatch
           });
         }
       }
-    });
+    }
     
+    console.log('🔍 InteractiveMessageButtons: Found button options:', options);
     return options;
   };
 
   // Remove button patterns from content to show clean text
-  const cleanContent = (text: string, options: ButtonOption[]): string => {
-    let cleaned = text;
-    options.forEach(option => {
-      cleaned = cleaned.replace(option.fullText, '');
-    });
+  const cleanContent = (text: string): string => {
+    // Remove both formats: $$**TEXT**$$ and $**TEXT**$
+    let cleaned = text
+      .replace(/\$\$\*\*[^*]+\*\*\$\$/g, '') // New format
+      .replace(/\$\*\*\*\*[^*]+\*\*\*\*\$/g, ''); // Old format
     
-    // Clean up extra newlines and whitespace
+    // Clean up extra whitespace and empty lines
     return cleaned
       .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace triple+ newlines with double
       .replace(/^\s+|\s+$/g, '') // Trim start/end whitespace
@@ -66,11 +83,44 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
   };
 
   const buttonOptions = parseButtonOptions(content);
-  const textContent = cleanContent(content, buttonOptions);
+  const textContent = cleanContent(content);
+  
+  console.log('🔍 InteractiveMessageButtons: Clean text content:', textContent);
+  console.log('🔍 InteractiveMessageButtons: Button options count:', buttonOptions.length);
 
   const handleButtonClick = async (option: ButtonOption) => {
     // Check for special button types that need real functionality
     const buttonText = option.text.toLowerCase();
+    
+    // Start Chat with Agent navigation
+    if (buttonText.includes('start chat with')) {
+      // Extract agent name from button text: "Start Chat with Newsletter Agent" -> "newsletter"
+      const chatMatch = buttonText.match(/start chat with (.+)/);
+      if (chatMatch) {
+        const agentName = chatMatch[1].trim();
+        
+        // Use dynamic agent mapping service
+        const agentId = agentMappingService.getAgentId(agentName);
+        
+        if (agentId) {
+          console.log(`🔗 Navigating to chat with agent: ${agentName} -> ${agentId}`);
+          // Navigate to chat page
+          window.location.href = `/chat/${agentId}`;
+          return; // Don't send to chat, handle the navigation
+        } else {
+          console.warn(`⚠️ No agent ID found for: "${agentName}"`);
+          // Fallback: send as regular message to continue conversation
+          onButtonClick(option.text);
+          return;
+        }
+      }
+    }
+    
+    // Add Another Assistant - trigger onboarding flow
+    if (buttonText.includes('add another assistant') || buttonText.includes('add assistant')) {
+      onButtonClick('Add Another Assistant');
+      return;
+    }
     
     // Google Calendar connection
     if (buttonText.includes('google calendar') || buttonText === 'connect calendar') {

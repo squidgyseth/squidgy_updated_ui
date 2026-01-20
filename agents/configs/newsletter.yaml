@@ -1,12 +1,13 @@
 agent:
   id: newsletter
+  emoji: "📧"
   name: Newsletter Agent
   category: MARKETING
   description: Create and manage newsletters
   specialization: "Creative & Trendy"
   tagline: "Content. Create. Distribute."
-  avatar: https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter
-  pinned: true
+  avatar: "/Squidgy AI Assistants Avatars/4.png"
+  pinned: false
   initial_message: 'Hey there! 👋 I''m here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I''ve got you covered. What would you like to work on today?'
   
   # Agent Capabilities

@@ -1,9 +1,44 @@
+import { useState, useEffect } from 'react';
+import { ChatHistoryService, ChatSession } from '../../services/chatHistoryService';
+import { AGENTS_BY_ID } from '../../data/agents';
+
 interface AssistantDetailsProps {
   assistant: string;
+  agentId?: string;
+  userId?: string;
   onClose: () => void;
 }
 
-export default function AssistantDetails({ assistant, onClose }: AssistantDetailsProps) {
+// Helper to map assistant display name to agent ID
+const getAgentIdFromName = (name: string): string | null => {
+  const nameToIdMap: Record<string, string> = {
+    'Personal Assistant': 'personal_assistant',
+    'SMM Assistant': 'smm_assistant',
+    'Content Strategist': 'content_repurposer',
+    'Newsletter Agent': 'newsletter',
+    'Solar Sales Assistant': 'SOL',
+    'Lead Generator': 'lead_generator',
+    'CRM Updater': 'crm_updater',
+    'Recruiter Assistant': 'recruiter_assistant',
+    'Onboarding Coach': 'onboarding_coach'
+  };
+  return nameToIdMap[name] || null;
+};
+
+// Helper to format message for display (truncate long messages)
+const formatRecentAction = (message: string): string => {
+  // Remove HTML tags
+  const cleanMessage = message.replace(/<[^>]*>/g, '');
+  // Truncate to 80 characters
+  if (cleanMessage.length > 80) {
+    return cleanMessage.substring(0, 77) + '...';
+  }
+  return cleanMessage;
+};
+
+export default function AssistantDetails({ assistant, agentId, userId, onClose }: AssistantDetailsProps) {
+  const [recentActions, setRecentActions] = useState<string[]>([]);
+  const [isLoadingActions, setIsLoadingActions] = useState(false);
   const assistantInfo = {
     "Personal Assistant": {
       name: "Personal Assistant",
@@ -16,7 +51,7 @@ export default function AssistantDetails({ assistant, onClose }: AssistantDetail
         "Email drafting and communication support",
         "Document organization and file management"
       ],
-      recentActions: [
+      defaultRecentActions: [
         "Organized calendar for next week's meetings",
         "Researched market trends for quarterly report"
       ]
@@ -32,7 +67,7 @@ export default function AssistantDetails({ assistant, onClose }: AssistantDetail
         "Social media strategy development and planning",
         "Engagement optimization and community management"
       ],
-      recentActions: [
+      defaultRecentActions: [
         "Created 15 Instagram post ideas for fashion brand",
         "Analysed competitor performance"
       ]
@@ -48,7 +83,7 @@ export default function AssistantDetails({ assistant, onClose }: AssistantDetail
         "SEO optimization and keyword research",
         "Content performance analysis and optimization"
       ],
-      recentActions: [
+      defaultRecentActions: [
         "Developed 3-month content calendar for tech startup",
         "Repurposed blog posts into 20 social media pieces"
       ]
@@ -64,7 +99,7 @@ export default function AssistantDetails({ assistant, onClose }: AssistantDetail
         "Cold outreach campaign development and execution",
         "Sales funnel optimization and conversion tracking"
       ],
-      recentActions: [
+      defaultRecentActions: [
         "Generated 150 qualified leads for B2B software company",
         "Optimized email sequences increasing conversion by 25%"
       ]
@@ -80,7 +115,7 @@ export default function AssistantDetails({ assistant, onClose }: AssistantDetail
         "CRM workflow automation and optimization",
         "Data migration and system integration"
       ],
-      recentActions: [
+      defaultRecentActions: [
         "Cleaned and updated 5,000 customer records",
         "Automated lead scoring workflow in Salesforce"
       ]
@@ -96,7 +131,7 @@ export default function AssistantDetails({ assistant, onClose }: AssistantDetail
         "Interview scheduling and coordination",
         "Recruitment analytics and hiring process optimization"
       ],
-      recentActions: [
+      defaultRecentActions: [
         "Sourced 50 qualified candidates for senior developer role",
         "Streamlined interview process reducing time-to-hire by 30%"
       ]
@@ -112,12 +147,60 @@ export default function AssistantDetails({ assistant, onClose }: AssistantDetail
         "Training schedule coordination and progress tracking",
         "Employee feedback collection and process improvement"
       ],
-      recentActions: [
+      defaultRecentActions: [
         "Designed comprehensive onboarding program for remote team",
         "Reduced new hire time-to-productivity by 40%"
       ]
     }
   }[assistant];
+
+  // Fetch real user activity from chat_history
+  useEffect(() => {
+    const fetchRecentActions = async () => {
+      // Determine the agent ID to use
+      const effectiveAgentId = agentId || getAgentIdFromName(assistant);
+      
+      if (!userId || !effectiveAgentId) {
+        // No user or agent ID, use defaults
+        if (assistantInfo?.defaultRecentActions) {
+          setRecentActions(assistantInfo.defaultRecentActions);
+        }
+        return;
+      }
+
+      setIsLoadingActions(true);
+      try {
+        const chatHistoryService = ChatHistoryService.getInstance();
+        const sessions = await chatHistoryService.getUserAgentSessions(userId, effectiveAgentId, 5);
+        
+        if (sessions.length > 0) {
+          // Extract recent user messages as actions
+          const actions = sessions
+            .filter(session => session.last_message)
+            .map(session => formatRecentAction(session.last_message))
+            .slice(0, 4); // Limit to 4 recent actions
+          
+          if (actions.length > 0) {
+            setRecentActions(actions);
+          } else if (assistantInfo?.defaultRecentActions) {
+            setRecentActions(assistantInfo.defaultRecentActions);
+          }
+        } else if (assistantInfo?.defaultRecentActions) {
+          // No history, use defaults
+          setRecentActions(assistantInfo.defaultRecentActions);
+        }
+      } catch (error) {
+        console.error('Error fetching recent actions:', error);
+        if (assistantInfo?.defaultRecentActions) {
+          setRecentActions(assistantInfo.defaultRecentActions);
+        }
+      } finally {
+        setIsLoadingActions(false);
+      }
+    };
+
+    fetchRecentActions();
+  }, [userId, agentId, assistant, assistantInfo?.defaultRecentActions]);
 
   if (!assistantInfo) return null;
 
@@ -206,12 +289,18 @@ export default function AssistantDetails({ assistant, onClose }: AssistantDetail
         </div>
         
         <div className="space-y-4">
-          {assistantInfo.recentActions.map((action, index) => (
-            <div key={index} className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-squidgy-primary rounded-full mt-2.5 flex-shrink-0" />
-              <span className="text-sm text-black leading-5">{action}</span>
-            </div>
-          ))}
+          {isLoadingActions ? (
+            <div className="text-sm text-gray-500">Loading recent activity...</div>
+          ) : recentActions.length > 0 ? (
+            recentActions.map((action, index) => (
+              <div key={index} className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-squidgy-primary rounded-full mt-2.5 flex-shrink-0" />
+                <span className="text-sm text-black leading-5">{action}</span>
+              </div>
+            ))
+          ) : (
+            <div className="text-sm text-gray-500">No recent activity yet</div>
+          )}
         </div>
       </div>
     </div>

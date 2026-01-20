@@ -5,11 +5,13 @@ import CategorizedAgentSidebar from "./CategorizedAgentSidebar";
 import EnhancedChatArea from "./EnhancedChatArea";
 import AssistantDetails from "./AssistantDetails";
 import { SidebarProvider, useSidebar } from "../../contexts/SidebarContext";
+import { useUser } from "../../hooks/useUser";
 
 function MainLayoutContent() {
   const location = useLocation();
   const [selectedAssistant, setSelectedAssistant] = useState("Personal Assistant");
   const { isSidebarOpen } = useSidebar();
+  const { userId } = useUser();
   
   // Check if we're on a specific agent page that uses UniversalChatLayout
   const isOnAgentPage = location.pathname.includes('/chat/') && location.pathname !== '/chat';
@@ -41,6 +43,7 @@ function MainLayoutContent() {
           <div className="hidden xl:block">
             <AssistantDetails
               assistant={selectedAssistant}
+              userId={userId}
               onClose={() => setIsDetailsPanelOpen(false)}
             />
           </div>

@@ -12,7 +12,10 @@ agent:
   # Unique identifier (no spaces, lowercase, use underscores)
   # Example: "newsletter_agent", "crm_manager", "lead_generator"
   id: content_repurposer
-  
+
+  # Emoji for display in UI and database
+  emoji: "🔄"
+
   # Display name shown in the sidebar
   # Example: "Newsletter Agent", "CRM Manager", "Lead Generator"
   name: Content Repurposer
@@ -34,7 +37,7 @@ agent:
   
   # Avatar URL (optional - you can use dicebear API with any seed word)
   # Just change the seed= parameter to any word
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer"
+  avatar: "/Squidgy AI Assistants Avatars/15.png"
   
   # Custom initial welcome message (REQUIRED - supports HTML)
   # Use <br> for line breaks (not \n), supports HTML links and formatting

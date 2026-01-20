@@ -224,7 +224,7 @@ export class LeadService {
           city: 'London',
           postal_code: 'SW1A 1AA',
           country: 'UK',
-          industry: 'Renewable Energy',
+          industry: '',
           notes: 'Interested in full roof installation, has previous experience with renewables',
           tags: ['solar', 'roof-installation', 'qualified']
         },

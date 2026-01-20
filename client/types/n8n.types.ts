@@ -14,6 +14,7 @@ export interface N8nRequest {
   timestamp_of_call_made: string;
   request_id: string;
   newsletter_id?: string; // Optional newsletter ID for content_repurposer agent
+  state?: Record<string, unknown>; // Conversation state for multi-turn agents (newsletter_multi)
 }
 
 /**
@@ -27,6 +28,24 @@ export interface N8nResponse {
   request_id: string;
   agent_response: string; // Can be plain text or HTML
   agent_status: 'Ready' | 'Waiting' | 'Nothing';
+  // Conversation state for multi-turn agents (newsletter_multi)
+  state?: {
+    phase: 'topic_selection' | 'gathering' | 'ready';
+    selected_topics: string[];
+    current_topic_index: number;
+    current_question_index: number;
+    answers: Record<string, Record<string, string>>;
+  };
+  // Onboarding-specific fields (optional, only for Personal Assistant)
+  finished?: boolean;
+  agent_data?: {
+    agent_id: string;
+    agent_name: string;
+    communication_tone?: string;
+    target_audience?: string;
+    primary_goals?: string[];
+    brand_voice?: string;
+  };
 }
 
 /**

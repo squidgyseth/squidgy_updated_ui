@@ -4,10 +4,12 @@ import HTMLPreview from './HTMLPreview';
 import SocialMediaLink from './SocialMediaLink';
 import SocialMediaPreview from './SocialMediaPreview';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
+import EnableContentRepurposerButton from './EnableContentRepurposerButton';
 
 interface AgentResponseHandlerProps {
   response: N8nResponse;
   className?: string;
+  onAnswerQuestion?: (answer: string) => void;
 }
 
 /**
@@ -18,7 +20,8 @@ interface AgentResponseHandlerProps {
  */
 export default function AgentResponseHandler({ 
   response, 
-  className = ''
+  className = '',
+  onAnswerQuestion
 }: AgentResponseHandlerProps) {
   
   // Check if response is social media content
@@ -68,6 +71,15 @@ export default function AgentResponseHandler({
               content={response.agent_response} 
               historyId={response.request_id}
             />
+          </div>
+        );
+      }
+      // Always use HTMLPreview for newsletter agent (shows proper newsletter view)
+      if (response.agent_name === 'newsletter') {
+        return (
+          <div className={`agent-response ready-state ${className}`}>
+            <HTMLPreview content={response.agent_response} />
+            <EnableContentRepurposerButton />
           </div>
         );
       }

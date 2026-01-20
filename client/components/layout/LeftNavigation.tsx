@@ -219,8 +219,8 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
           </span>
         </button>
         
-        {/* Onboarding Icon */}
-        <button 
+        {/* Onboarding Icon - Hidden */}
+        {/* <button 
           onClick={handleOnboardingClick}
           className={`flex flex-col items-center p-2 w-full hover:bg-gray-100 rounded-lg transition-colors ${
             activePage === 'onboarding' ? 'bg-gray-50' : ''
@@ -242,7 +242,7 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
           <span className="text-squidgy-text text-[9px] font-normal leading-4 text-center w-[46px]">
             Onboarding
           </span>
-        </button>
+        </button> */}
         
         {/* Menu Icon - Hidden for now */}
         {/* <div className="flex flex-col items-center p-2 w-full">

@@ -54,21 +54,39 @@ export function useCompanyBranding(): CompanyBranding {
           }
         }
 
+        // Helper function to check if text looks like error/debug output
+        const isErrorText = (text: string): boolean => {
+          if (!text) return false;
+          return text.includes('WEBSITE SCRAPING RESULTS') ||
+                 text.includes('================') ||
+                 text.includes('Status: error') ||
+                 text.includes('Total pages scraped:') ||
+                 text.includes('Depth Level:') ||
+                 text.includes('URL:') && text.includes('error') ||
+                 text.startsWith('ERROR:') ||
+                 text.length > 100; // Names shouldn't be this long
+        };
+
         // Extract company name with priority: business_name > business_domain > company_description > website_url
         let companyName = 'Squidgy';
-        
-        if (businessDetails?.business_name) {
+
+        if (businessDetails?.business_name && !isErrorText(businessDetails.business_name)) {
           // First priority: business_name from business_details table
           companyName = businessDetails.business_name;
-        } else if (websiteAnalysis?.business_domain) {
+        } else if (websiteAnalysis?.business_domain && !isErrorText(websiteAnalysis.business_domain)) {
           // Second priority: business_domain from website_analysis
           companyName = websiteAnalysis.business_domain;
-        } else if (websiteAnalysis?.company_description) {
+        } else if (websiteAnalysis?.company_description && !isErrorText(websiteAnalysis.company_description)) {
           // Third priority: extract from company_description
-          const nameMatch = websiteAnalysis.company_description.match(/^([^-|*•]+)/);
+          const desc = websiteAnalysis.company_description;
+          const nameMatch = desc.match(/^([^-|*•]+)/);
           if (nameMatch) {
-            companyName = nameMatch[1].trim();
-            companyName = companyName.replace(/^(company name:|name:)/i, '').trim();
+            let extractedName = nameMatch[1].trim();
+            extractedName = extractedName.replace(/^(company name:|name:)/i, '').trim();
+            // Only use if it's a reasonable length
+            if (extractedName.length <= 50 && !isErrorText(extractedName)) {
+              companyName = extractedName;
+            }
           }
         } else if (websiteAnalysis?.website_url) {
           // Last resort: extract from website URL
@@ -81,6 +99,11 @@ export function useCompanyBranding(): CompanyBranding {
           } catch (e) {
             console.log('Error parsing website URL:', e);
           }
+        }
+
+        // Final safety check - if companyName still looks like error text, use default
+        if (isErrorText(companyName)) {
+          companyName = 'Squidgy';
         }
 
         setBranding({
@@ -96,6 +119,50 @@ export function useCompanyBranding(): CompanyBranding {
     };
 
     fetchCompanyBranding();
+
+    // Set up real-time subscription for website_analysis updates
+    const websiteChannel = supabase
+      .channel(`website_analysis_branding_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'website_analysis',
+          filter: `firm_user_id=eq.${userId}`,
+        },
+        (payload) => {
+          console.log('Website analysis updated (branding):', payload);
+          // Refetch branding when website_analysis changes
+          fetchCompanyBranding();
+        }
+      )
+      .subscribe();
+
+    // Set up real-time subscription for business_details updates
+    const businessChannel = supabase
+      .channel(`business_details_branding_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'business_details',
+          filter: `firm_user_id=eq.${userId}`,
+        },
+        (payload) => {
+          console.log('Business details updated (branding):', payload);
+          // Refetch branding when business_details changes
+          fetchCompanyBranding();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      websiteChannel.unsubscribe();
+      businessChannel.unsubscribe();
+    };
   }, [userId]);
 
   return branding;

@@ -36,30 +36,30 @@ function TagChip({ label, onRemove }: { label: string; onRemove: () => void }) {
 // Helper function to properly format website URLs
 const formatWebsiteUrl = (url: string): string => {
   if (!url.trim()) return url;
-  
+
   let formattedUrl = url;
-  
+
   // Add https:// if no protocol
   if (!formattedUrl.startsWith('http')) {
     formattedUrl = `https://${formattedUrl}`;
   }
-  
+
   try {
     const urlObj = new URL(formattedUrl);
     const hostname = urlObj.hostname.toLowerCase();
-    
+
     // Only add www. if:
     // 1. It doesn't already have www.
     // 2. It's not already a subdomain (no dots before the main domain)
     // 3. It's not localhost or an IP address
-    if (!hostname.startsWith('www.') && 
-        hostname.split('.').length === 2 && // Only domain.tld format
-        !hostname.includes('localhost') &&
-        !/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) { // Not an IP address
+    if (!hostname.startsWith('www.') &&
+      hostname.split('.').length === 2 && // Only domain.tld format
+      !hostname.includes('localhost') &&
+      !/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) { // Not an IP address
       urlObj.hostname = `www.${hostname}`;
       formattedUrl = urlObj.toString();
     }
-    
+
     return formattedUrl;
   } catch (error) {
     // If URL parsing fails, return as-is
@@ -88,7 +88,8 @@ export default function WebsiteDetailsOnboarding() {
   const [progressStep, setProgressStep] = useState("");
   const [progressSteps, setProgressSteps] = useState<string[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
-  
+  const [isScreenshotModalOpen, setIsScreenshotModalOpen] = useState(false);
+
   // Function to add progress step
   const addProgressStep = (step: string) => {
     setProgressStep(step);
@@ -114,7 +115,7 @@ export default function WebsiteDetailsOnboarding() {
         console.log('🔍 WebsiteDetails: Not ready yet, waiting...');
         return;
       }
-      
+
       try {
         // Load flow configuration
         const flowConfig = await flowLoader.getFlowConfig();
@@ -143,7 +144,7 @@ export default function WebsiteDetailsOnboarding() {
             setBusinessNiche(websiteData.business_niche || "");
             setTags(websiteData.tags || []);
             setScreenshotUrl(websiteData.screenshot_url || "");
-            
+
             // Handle favicon URL and clean up any trailing characters
             if (websiteData.favicon_url) {
               let cleanFaviconUrl = websiteData.favicon_url;
@@ -152,7 +153,7 @@ export default function WebsiteDetailsOnboarding() {
               }
               setFaviconUrl(cleanFaviconUrl);
             }
-            
+
             setDataLoaded(true);
           }
         }
@@ -169,30 +170,30 @@ export default function WebsiteDetailsOnboarding() {
   useEffect(() => {
     const handleWebsiteAnalysisComplete = (event: CustomEvent) => {
       const { url, result } = event.detail;
-      
+
       // Update URL field if it matches
       if (url) {
         setWebsiteUrl(url);
       }
-      
+
       // Update form fields with analysis results if available
       if (result.company_name) setCompanyName(result.company_name);
       if (result.company_description) setCompanyDescription(result.company_description);
       if (result.value_proposition) setValueProposition(result.value_proposition);
       if (result.business_niche) setBusinessNiche(result.business_niche);
       if (result.tags && Array.isArray(result.tags)) setTags(result.tags);
-      
+
       // Update screenshot URL state if provided
       if (result.screenshot_url) {
         setScreenshotUrl(result.screenshot_url);
         console.log('✅ Screenshot URL updated from WebSocket event:', result.screenshot_url);
       }
-      
+
       toast.success("Website analyzed successfully from chat");
     };
 
     window.addEventListener('websiteAnalysisComplete', handleWebsiteAnalysisComplete as EventListener);
-    
+
     return () => {
       window.removeEventListener('websiteAnalysisComplete', handleWebsiteAnalysisComplete as EventListener);
     };
@@ -202,26 +203,26 @@ export default function WebsiteDetailsOnboarding() {
   const parseAgentResponse = (agentResponse: string) => {
     try {
       console.log('🔍 Parsing agent response:', agentResponse);
-      
+
       // Try to parse as JSON first (new format)
       try {
         const jsonData = JSON.parse(agentResponse);
-        
+
         // Check if it's the new JSON format
         if (jsonData && typeof jsonData === 'object') {
           console.log('🔍 Detected JSON format response:', jsonData);
-          
+
           // Extract data from JSON structure
           const companyName = jsonData.company_name || '';
           const companyDescription = jsonData.description || '';
-          const valueProposition = Array.isArray(jsonData.takeaways) 
-            ? jsonData.takeaways.join('. ') 
+          const valueProposition = Array.isArray(jsonData.takeaways)
+            ? jsonData.takeaways.join('. ')
             : (jsonData.takeaways || '');
           const businessNiche = jsonData.niche || '';
           const tags = Array.isArray(jsonData.tags) ? jsonData.tags : [];
           const screenshotUrl = jsonData.screenshot_url || '';
           const faviconUrl = jsonData.favicon_url || '';
-          
+
           return {
             companyName,
             companyDescription,
@@ -235,20 +236,20 @@ export default function WebsiteDetailsOnboarding() {
       } catch (jsonError) {
         console.log('🔍 Not JSON format, falling back to text parsing');
       }
-      
+
       // Fallback to original text parsing for legacy format
       // First extract URLs before cleaning
       // Extract screenshot URL from the original response (before cleaning)
       const screenshotMatch = agentResponse.match(/https?:\/\/[^\s]*supabase[^\s]*\/screenshots\/[^\s)]*/i) ||
-                             agentResponse.match(/(https?:\/\/[^\s]+\.(png|jpg|jpeg|webp))/i);
-      
+        agentResponse.match(/(https?:\/\/[^\s]+\.(png|jpg|jpeg|webp))/i);
+
       // Extract favicon URL from the original response (before cleaning) 
       const faviconMatch = agentResponse.match(/https?:\/\/[^\s]*supabase[^\s]*\/favicons\/[^\s)]*/i) ||
-                          agentResponse.match(/https?:\/\/[^\s]*favicon[^\s)]*/i);
-      
+        agentResponse.match(/https?:\/\/[^\s]*favicon[^\s)]*/i);
+
       console.log('🔍 Screenshot match result:', screenshotMatch);
       console.log('🔍 Favicon match result:', faviconMatch);
-      
+
       // Clean the response by removing ALL HTML and markdown links first
       let cleanedResponse = agentResponse
         .replace(/<a[^>]*>.*?<\/a>/gi, '') // Remove all HTML anchor tags and their content
@@ -264,20 +265,20 @@ export default function WebsiteDetailsOnboarding() {
         .replace(/- Favicon:.*$/i, '') // Remove favicon line
         .replace(/\n+/g, ' ') // Replace multiple newlines with space
         .replace(/\s+/g, ' '); // Normalize whitespace
-      
+
       // Look for company description
-      const companyMatch = cleanedResponse.match(/company name:\s*([^|.]+?)(?:\.|$)/i) || 
-                          cleanedResponse.match(/description:\s*([^|.]+?)(?:\.|$)/i) ||
-                          cleanedResponse.match(/what.*company.*does[:\s]*([^|.]+?)(?:\.|$)/i);
-      
+      const companyMatch = cleanedResponse.match(/company name:\s*([^|.]+?)(?:\.|$)/i) ||
+        cleanedResponse.match(/description:\s*([^|.]+?)(?:\.|$)/i) ||
+        cleanedResponse.match(/what.*company.*does[:\s]*([^|.]+?)(?:\.|$)/i);
+
       // Look for value proposition/takeaways
       const valueMatch = cleanedResponse.match(/takeaways:\s*([^|.]+?)(?:\.|$)/i) ||
-                        cleanedResponse.match(/value proposition[:\s]*([^|.]+?)(?:\.|$)/i);
-      
+        cleanedResponse.match(/value proposition[:\s]*([^|.]+?)(?:\.|$)/i);
+
       // Look for business niche - extract only until period or end of line
       const nicheMatch = cleanedResponse.match(/niche:\s*([^|.]+?)(?:\.|$)/i) ||
-                        cleanedResponse.match(/market[:\s]*([^|.]+?)(?:\.|$)/i);
-      
+        cleanedResponse.match(/market[:\s]*([^|.]+?)(?:\.|$)/i);
+
       // Look for tags and limit to top 5
       const tagsMatch = cleanedResponse.match(/tags:\s*([^|.]+?)(?:\.|$)/i);
       let extractedTags: string[] = [];
@@ -286,7 +287,7 @@ export default function WebsiteDetailsOnboarding() {
         // Limit to top 5 tags only
         extractedTags = allTags.slice(0, 5);
       }
-      
+
       // Helper to clean extracted values
       const cleanExtractedValue = (value: string | null) => {
         if (!value) return null;
@@ -294,7 +295,7 @@ export default function WebsiteDetailsOnboarding() {
           .replace(/\s+/g, ' ') // Normalize whitespace
           .trim();
       };
-      
+
       return {
         companyName: null, // No company name in legacy format
         companyDescription: cleanExtractedValue(companyMatch ? companyMatch[1] : null),
@@ -332,7 +333,7 @@ export default function WebsiteDetailsOnboarding() {
     setAnalyzing(true);
     setScreenshotLoading(true);
     clearProgress();
-    
+
     // Clear all previous form data before starting new analysis
     setCompanyName("");
     setCompanyDescription("");
@@ -341,7 +342,7 @@ export default function WebsiteDetailsOnboarding() {
     setTags([]);
     setScreenshotUrl("");
     setFaviconUrl("");
-    
+
     // Add detailed progress steps
     const progressSteps = [
       { message: '🔍 Finding website...', delay: 500 },
@@ -365,7 +366,7 @@ export default function WebsiteDetailsOnboarding() {
 
     // Start progress steps (don't await so it runs parallel to actual work)
     showProgressSteps();
-    
+
     try {
       // Format the website URL properly
       const formattedUrl = formatWebsiteUrl(websiteUrl);
@@ -385,23 +386,23 @@ export default function WebsiteDetailsOnboarding() {
       };
 
       console.log('Sending N8N webhook request:', n8nPayload);
-      
+
       // Call N8N webhook
       const n8nResponse = await callN8NWebhook(n8nPayload);
-      
+
       console.log('N8N webhook response:', n8nResponse);
-      
+
       // Parse the agent response to extract business information
       if (n8nResponse.agent_response) {
         const parsedData = parseAgentResponse(n8nResponse.agent_response);
-        
+
         // Update form fields with extracted data (always set, even if empty)
         setCompanyName(parsedData.companyName || "");
         setCompanyDescription(parsedData.companyDescription || "");
         setValueProposition(parsedData.valueProposition || "");
         setBusinessNiche(parsedData.businessNiche || "");
         setTags(parsedData.tags || []);
-        
+
         // Update screenshot URL state (React will handle UI update)
         if (parsedData.screenshotUrl) {
           setScreenshotUrl(parsedData.screenshotUrl);
@@ -409,7 +410,7 @@ export default function WebsiteDetailsOnboarding() {
         } else {
           console.log('⚠️ No screenshot URL found in agent response');
         }
-        
+
         // Update favicon URL state
         if (parsedData.faviconUrl) {
           setFaviconUrl(parsedData.faviconUrl);
@@ -417,7 +418,7 @@ export default function WebsiteDetailsOnboarding() {
         } else {
           console.log('⚠️ No favicon URL found in agent response');
         }
-        
+
         toast.success('Website analyzed successfully');
       } else {
         throw new Error('No agent response received from N8N webhook');
@@ -439,11 +440,11 @@ export default function WebsiteDetailsOnboarding() {
 
   const handleAnalyzeWebsite = async () => {
     if (!isReady || !websiteUrl.trim()) return;
-    
+
     setAnalyzing(true);
     setScreenshotLoading(true);
     clearProgress();
-    
+
     // Clear all previous form data before starting new analysis
     setCompanyName("");
     setCompanyDescription("");
@@ -452,7 +453,7 @@ export default function WebsiteDetailsOnboarding() {
     setTags([]);
     setScreenshotUrl("");
     setFaviconUrl("");
-    
+
     // Add detailed progress steps
     const progressStepsList = [
       { message: '🔍 Finding website...', delay: 500 },
@@ -476,11 +477,11 @@ export default function WebsiteDetailsOnboarding() {
 
     // Start progress steps (don't await so it runs parallel to actual work)
     showProgressSteps();
-    
+
     try {
       // Format the website URL properly
       const formattedUrl = formatWebsiteUrl(websiteUrl);
-      
+
       if (!userId) {
         toast.error("Please log in to analyze websites");
         return;
@@ -501,23 +502,23 @@ export default function WebsiteDetailsOnboarding() {
       };
 
       console.log('Sending N8N webhook request:', n8nPayload);
-      
+
       // Call N8N webhook
       const n8nResponse = await callN8NWebhook(n8nPayload);
-      
+
       console.log('N8N webhook response:', n8nResponse);
-      
+
       // Parse the agent response to extract business information
       if (n8nResponse.agent_response) {
         const parsedData = parseAgentResponse(n8nResponse.agent_response);
-        
+
         // Update form fields with extracted data (always set, even if empty)
         setCompanyName(parsedData.companyName || "");
         setCompanyDescription(parsedData.companyDescription || "");
         setValueProposition(parsedData.valueProposition || "");
         setBusinessNiche(parsedData.businessNiche || "");
         setTags(parsedData.tags || []);
-        
+
         // Update screenshot URL state (React will handle UI update)
         if (parsedData.screenshotUrl) {
           setScreenshotUrl(parsedData.screenshotUrl);
@@ -525,7 +526,7 @@ export default function WebsiteDetailsOnboarding() {
         } else {
           console.log('⚠️ No screenshot URL found in agent response');
         }
-        
+
         // Update favicon URL state
         if (parsedData.faviconUrl) {
           setFaviconUrl(parsedData.faviconUrl);
@@ -533,7 +534,7 @@ export default function WebsiteDetailsOnboarding() {
         } else {
           console.log('⚠️ No favicon URL found in agent response');
         }
-        
+
         toast.success("Website analyzed successfully");
       } else {
         throw new Error('No agent response received from N8N webhook');
@@ -573,10 +574,10 @@ export default function WebsiteDetailsOnboarding() {
       toast.error('Authentication required. Please log in and try again.');
       return;
     }
-    
+
     setLoading(true);
     try {
-      
+
       // Save website analysis data to database
       toast.success('Saving website analysis...');
 
@@ -605,10 +606,10 @@ export default function WebsiteDetailsOnboarding() {
         ...websiteAnalysisData,
         isAnalyzeButton: true // Continue button includes screenshots/favicons
       });
-      
+
       console.log('[Newsletter] saveWebsiteAnalysis result:', savedData);
       console.log('[Newsletter] savedData.id:', savedData?.id);
-      
+
       // Fire webhook asynchronously (doesn't block the UI)
       // This runs in the background without delaying navigation
       if (savedData?.id) {
@@ -622,24 +623,24 @@ export default function WebsiteDetailsOnboarding() {
           business_niche: businessNiche.trim(),
           ghl_user_id: profile?.ghl_user_id || user?.id || '' // Get from profile/user if available
         });
-        
+
         console.log('[Newsletter] Webhook triggered in background for newsletter questions generation');
       } else {
         console.error('[Newsletter] Cannot fire webhook - no saved website analysis ID available');
         console.log('[Newsletter] savedData:', savedData);
       }
-      
+
       toast.success('Website analysis saved!');
 
       // Update onboarding progress
-      const existingData = await onboardingDataService.getOnboardingProgress(userId) || {};
-      const existingCompletedSteps = existingData.completed_steps || [];
-      const updatedCompletedSteps = existingCompletedSteps.includes(5) 
-        ? existingCompletedSteps 
+      const existingData = await onboardingDataService.getOnboardingProgress(userId);
+      const existingCompletedSteps = existingData?.completed_steps || [];
+      const updatedCompletedSteps = existingCompletedSteps.includes(5)
+        ? existingCompletedSteps
         : [...existingCompletedSteps, 5];
-      
+
       await onboardingDataService.saveOnboardingProgress({
-        ...existingData,
+        ...(existingData || {}),
         user_id: userId,
         current_step: 6,
         completed_steps: updatedCompletedSteps,
@@ -682,7 +683,6 @@ export default function WebsiteDetailsOnboarding() {
       onContinue={isReady && userId ? handleContinue : undefined}
       onBack={handleBack}
       continueText="Continue"
-      showActions={true}
       continueDisabled={!isReady || !userId}
     >
       {/* Form */}
@@ -717,7 +717,7 @@ export default function WebsiteDetailsOnboarding() {
                 )}
               </div>
             )}
-            
+
             {/* Screenshot Loading Placeholder */}
             {analyzing && !screenshotUrl && (
               <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
@@ -732,10 +732,10 @@ export default function WebsiteDetailsOnboarding() {
                 </div>
               </div>
             )}
-            
+
             {/* Screenshot Image */}
             {(!analyzing && screenshotUrl) && (
-              <img 
+              <img
                 src={screenshotUrl}
                 alt={`${websiteUrl} website screenshot`}
                 className="w-full h-64 object-cover rounded-lg"
@@ -746,7 +746,7 @@ export default function WebsiteDetailsOnboarding() {
                 }}
               />
             )}
-            
+
             {/* Screenshot Placeholder */}
             {(!analyzing && !screenshotUrl) && (
               <div className="w-full h-64 bg-gray-50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
@@ -779,7 +779,7 @@ export default function WebsiteDetailsOnboarding() {
               onChange={(e) => setWebsiteUrl(e.target.value)}
               className="flex-1"
             />
-            <Button 
+            <Button
               onClick={handleAnalyzeWebsite}
               disabled={!websiteUrl.trim() || analyzing || !isReady}
               className="bg-blue-600 hover:bg-blue-700"
@@ -794,33 +794,31 @@ export default function WebsiteDetailsOnboarding() {
               )}
             </Button>
           </div>
-          
+
           {/* Progress Steps Display */}
           {analyzing && progressSteps.length > 0 && (
             <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
               <div className="text-xs font-medium text-gray-700 mb-2">Analysis Progress:</div>
               <div className="space-y-1">
                 {progressSteps.slice(-4).map((step, index) => (
-                  <div 
-                    key={index} 
-                    className={`text-xs flex items-center ${
-                      index === progressSteps.slice(-4).length - 1 
-                        ? 'text-blue-600 font-medium' 
-                        : 'text-gray-500'
-                    }`}
+                  <div
+                    key={index}
+                    className={`text-xs flex items-center ${index === progressSteps.slice(-4).length - 1
+                      ? 'text-blue-600 font-medium'
+                      : 'text-gray-500'
+                      }`}
                   >
-                    <div className={`w-1.5 h-1.5 rounded-full mr-2 ${
-                      index === progressSteps.slice(-4).length - 1 
-                        ? 'bg-blue-600' 
-                        : 'bg-gray-400'
-                    }`}></div>
+                    <div className={`w-1.5 h-1.5 rounded-full mr-2 ${index === progressSteps.slice(-4).length - 1
+                      ? 'bg-blue-600'
+                      : 'bg-gray-400'
+                      }`}></div>
                     {step}
                   </div>
                 ))}
               </div>
             </div>
           )}
-          
+
           <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200 mt-2">
             💡 <strong>Tip:</strong> Click "Analyze Website" to automatically extract your business information from your website!
           </div>
@@ -875,22 +873,29 @@ export default function WebsiteDetailsOnboarding() {
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="flex flex-wrap gap-4">
                 {screenshotUrl && (
-                  <a 
-                    href={screenshotUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-4 py-2 bg-squidgy-purple text-white rounded-lg hover:bg-squidgy-purple/90 transition-colors"
+                  <div
+                    onClick={() => setIsScreenshotModalOpen(true)}
+                    className="group relative cursor-pointer overflow-hidden rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md hover:border-squidgy-purple/50 w-40 h-24 bg-gray-100"
+                    title="Click to expand screenshot"
                   >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    View Screenshot
-                  </a>
+                    <img
+                      src={screenshotUrl}
+                      alt="Screenshot thumbnail"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10 flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 bg-white/90 rounded-full p-1.5 shadow-sm transition-opacity transform scale-90 group-hover:scale-100">
+                        <svg className="w-4 h-4 text-squidgy-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
                 )}
                 {faviconUrl && (
-                  <a 
-                    href={faviconUrl} 
-                    target="_blank" 
+                  <a
+                    href={faviconUrl}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
@@ -924,7 +929,7 @@ export default function WebsiteDetailsOnboarding() {
               <ChevronDown className="w-5 h-5" />
             </button>
           </div>
-          
+
           {/* Tags Display */}
           <div className="flex flex-wrap gap-2">
             {tags.map((tag, index) => (
@@ -938,6 +943,29 @@ export default function WebsiteDetailsOnboarding() {
         </div>
 
       </div>
+
+      {/* Full Screen Screenshot Modal */}
+      {isScreenshotModalOpen && screenshotUrl && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setIsScreenshotModalOpen(false)}
+        >
+          <div className="relative max-w-[95vw] max-h-[95vh] focus:outline-none" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setIsScreenshotModalOpen(false)}
+              className="absolute -top-12 right-0 p-2 text-white/80 hover:text-white transition-colors rounded-full hover:bg-white/10"
+              aria-label="Close preview"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            <img
+              src={screenshotUrl}
+              alt="Website Full Screenshot"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </OnboardingLayout>
   );
 }

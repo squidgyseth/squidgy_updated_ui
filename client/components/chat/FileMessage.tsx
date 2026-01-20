@@ -12,6 +12,10 @@ export default function FileMessage({ fileInfo, timestamp }: FileMessageProps) {
   const [showPreview, setShowPreview] = useState(false);
   const fileUploadService = FileUploadService.getInstance();
 
+  const isImageFile = (fileName: string): boolean => {
+    return /\.(jpg|jpeg|png)$/i.test(fileName);
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
@@ -84,7 +88,15 @@ export default function FileMessage({ fileInfo, timestamp }: FileMessageProps) {
 
         {/* Content */}
         <div className="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
-          {fileInfo.status === 'completed' && fileInfo.extractedText ? (
+          {isImageFile(fileInfo.fileName) ? (
+            <div className="flex items-center justify-center">
+              <img 
+                src={fileInfo.fileUrl} 
+                alt={fileInfo.fileName}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+              />
+            </div>
+          ) : fileInfo.status === 'completed' && fileInfo.extractedText ? (
             <div className="prose max-w-none">
               <h4 className="text-lg font-semibold mb-3">Extracted Text:</h4>
               <div className="bg-gray-50 p-4 rounded-lg">
@@ -120,6 +132,19 @@ export default function FileMessage({ fileInfo, timestamp }: FileMessageProps) {
   return (
     <>
       <div className={`max-w-xs border rounded-lg p-3 ${getStatusColor(fileInfo.status)}`}>
+        {/* Image thumbnail for image files */}
+        {isImageFile(fileInfo.fileName) && (
+          <div 
+            className="mb-2 cursor-pointer"
+            onClick={handlePreview}
+          >
+            <img 
+              src={fileInfo.fileUrl} 
+              alt={fileInfo.fileName}
+              className="w-full max-h-32 object-cover rounded-lg"
+            />
+          </div>
+        )}
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 mt-1">
             {fileUploadService.getFileTypeIcon(fileInfo.fileName)}
