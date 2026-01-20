@@ -332,43 +332,32 @@ export default function IntegrationsSettings() {
     }
   }, [firmUserId]);
 
-  const handleFacebookLogin = async () => {
-    if (!firmUserId) {
-      toast.error('User ID not available. Please refresh the page.');
+  const handleFacebookLogin = () => {
+    if (!facebookOAuthUrl) {
+      toast.error('OAuth URL not ready. Please refresh the page.');
       return;
     }
     
-    setFacebookLoading(true);
-    try {
-      console.log('🔗 Starting OAuth with token interception...');
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      
-      const response = await fetch(`${backendUrl}/api/facebook/start-oauth-with-interception`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firm_user_id: firmUserId })
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.detail || 'Failed to start OAuth interception');
-      }
-      
-      if (result.success) {
-        toast.success('Browser opened with token interception. Please complete the Facebook login in the browser window.');
-        console.log('✅ OAuth interception started, session_id:', result.session_id);
-        
-        // Store session ID for status checking
-        sessionStorage.setItem('fb_oauth_session_id', result.session_id);
-      } else {
-        throw new Error(result.message || 'Failed to start OAuth');
-      }
-    } catch (error: any) {
-      console.error('❌ Error starting OAuth interception:', error);
-      toast.error(error.message || 'Failed to start OAuth interception');
-    } finally {
-      setFacebookLoading(false);
+    console.log('🔗 Opening Facebook OAuth popup...');
+    
+    // Open OAuth URL in popup window
+    const width = 600;
+    const height = 700;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+    
+    const popup = window.open(
+      facebookOAuthUrl,
+      'Facebook OAuth',
+      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+    );
+    
+    if (popup) {
+      toast.success('Facebook login window opened. Please complete the login and return here.');
+      console.log('✅ OAuth popup opened successfully');
+    } else {
+      toast.error('Popup blocked! Please allow popups for this site and try again.');
+      console.error('❌ Popup was blocked by browser');
     }
   };
 
