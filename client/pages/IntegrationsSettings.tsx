@@ -136,9 +136,9 @@ export default function IntegrationsSettings() {
     try {
       console.log('📄 Fetching Facebook pages from GHL backend API...');
       
-      const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/pages`;
+      const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/allPages`;
       
-      const response = await fetch(`${ghlBackendUrl}?getAll=true`, {
+      const response = await fetch(`${ghlBackendUrl}?limit=100`, {
         method: 'GET',
         headers: {
           'authorization': `Bearer ${accessToken}`,
