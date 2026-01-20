@@ -37,6 +37,8 @@ export default function IntegrationsSettings() {
   const [showFacebookPages, setShowFacebookPages] = useState(false);
   const [facebookLoading, setFacebookLoading] = useState(false);
   const [firmUserId, setFirmUserId] = useState<string | null>(null);
+  const [firebaseToken, setFirebaseToken] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
     getUserFirmId();
@@ -70,10 +72,93 @@ export default function IntegrationsSettings() {
         } else {
           console.log(`✅ Firebase token is fresh (age: ${result.token_age_minutes} minutes)`);
         }
+        // After refresh check, fetch the tokens
+        await fetchTokensFromDatabase();
       }
     } catch (error) {
       console.error('❌ Error refreshing Firebase token:', error);
       // Don't show error to user - this is a background operation
+    }
+  };
+
+  const fetchTokensFromDatabase = async () => {
+    if (!firmUserId) return;
+    
+    try {
+      console.log('🔑 Fetching tokens from database...');
+      
+      // Fetch from ghl_subaccounts table
+      const { data, error } = await supabase
+        .from('ghl_subaccounts')
+        .select('"Firebase Token", PIT_Token, ghl_location_id')
+        .eq('firm_user_id', firmUserId)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        const fbToken = data['Firebase Token'];
+        const pitTok = data['PIT_Token'];
+        const locId = data['ghl_location_id'];
+        
+        setFirebaseToken(fbToken);
+        setAccessToken(pitTok);
+        setLocationId(locId);
+        
+        console.log('✅ Tokens fetched:', {
+          hasFirebaseToken: !!fbToken,
+          hasPITToken: !!pitTok,
+          locationId: locId
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error fetching tokens:', error);
+    }
+  };
+
+  const fetchFacebookPagesFromGHL = async () => {
+    if (!locationId || !firebaseToken || !accessToken) {
+      toast.error('Missing required tokens. Please wait for token refresh.');
+      return;
+    }
+    
+    setFacebookLoading(true);
+    try {
+      console.log('📄 Fetching Facebook pages from GHL backend API...');
+      
+      const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/allPages`;
+      
+      const response = await fetch(`${ghlBackendUrl}?limit=100`, {
+        method: 'GET',
+        headers: {
+          'authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GHL API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Facebook pages response:', data);
+      
+      const pages = data.pages || [];
+      
+      if (pages.length === 0) {
+        toast.info('No Facebook pages found. Please connect your Facebook pages in GoHighLevel first.');
+      } else {
+        setFacebookPages(pages);
+        setShowFacebookPages(true);
+        toast.success(`Found ${pages.length} Facebook pages`);
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching Facebook pages:', error);
+      toast.error(error.message || 'Failed to fetch Facebook pages');
+    } finally {
+      setFacebookLoading(false);
     }
   };
 
@@ -422,48 +507,8 @@ export default function IntegrationsSettings() {
   };
 
   const handleFacebookNext = async () => {
-    if (facebookDidLogin !== 'yes') {
-      toast.error('Please confirm that you have logged into Facebook');
-      return;
-    }
-
-    setFacebookLoading(true);
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      
-      const response = await fetch(`${backendUrl}/api/facebook/get-pages-from-integration`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firm_user_id: firmUserId })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          toast.error('Please complete Facebook OAuth first by clicking the "Log into Facebook" button.');
-          return;
-        }
-        if (response.status === 400 && result.detail?.includes('Missing tokens')) {
-          toast.error('Facebook OAuth not completed yet. Please try the OAuth login again.');
-          return;
-        }
-        throw new Error(result.detail || result.message || 'Failed to fetch pages');
-      }
-
-      if (result.success && result.pages && result.pages.length > 0) {
-        setFacebookPages(result.pages);
-        setShowFacebookPages(true);
-        toast.success(`Found ${result.pages.length} Facebook pages!`);
-      } else {
-        throw new Error(result.message || 'No Facebook pages found for your account');
-      }
-    } catch (error: any) {
-      console.error('❌ Error loading Facebook pages:', error);
-      toast.error(error.message || 'Failed to load Facebook pages');
-    } finally {
-      setFacebookLoading(false);
-    }
+    // Call the new frontend function that fetches directly from GHL backend API
+    await fetchFacebookPagesFromGHL();
   };
 
   const handleFacebookPageToggle = (pageId: string) => {
