@@ -157,7 +157,7 @@ export default function IntegrationsSettings() {
       const data = await response.json();
       console.log('✅ Facebook pages response:', data);
       
-      const pages = data.pages || [];
+      const pages = data.results?.accounts || [];
       
       if (pages.length === 0) {
         toast.info('No Facebook pages found. Please connect your Facebook pages in GoHighLevel first.');
@@ -539,47 +539,56 @@ export default function IntegrationsSettings() {
       return;
     }
 
+    if (!locationId || !firebaseToken || !accessToken) {
+      toast.error('Missing required tokens');
+      return;
+    }
+
     setFacebookLoading(true);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      console.log('🔗 Connecting selected pages to GHL...');
       
-      const response = await fetch(`${backendUrl}/api/facebook/connect-selected-pages`, {
+      // Get full page data for selected pages
+      const selectedPagesData = facebookPages.filter(page => 
+        selectedFacebookPages.includes(page.id)
+      );
+      
+      // POST to GHL backend API to connect pages
+      const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/pages`;
+      
+      const response = await fetch(ghlBackendUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER',
+          'content-type': 'application/json',
+          'accept': 'application/json'
+        },
         body: JSON.stringify({
-          firm_user_id: firmUserId,
-          selected_page_ids: selectedFacebookPages
+          pages: selectedPagesData
         })
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.detail || result.message || 'Failed to connect pages');
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to connect pages: ${response.status}`);
       }
 
-      if (result.success) {
-        const connectedCount = result.connected_pages?.length || 0;
-        const totalCount = result.total_selected || selectedFacebookPages.length;
-        
-        if (connectedCount === totalCount) {
-          toast.success(`Successfully connected all ${totalCount} Facebook pages!`);
-        } else if (connectedCount > 0) {
-          toast.success(`Connected ${connectedCount} of ${totalCount} Facebook pages.`);
-        } else {
-          toast.success('Facebook pages saved!');
-        }
-        
-        // Reset state
-        setShowFacebookPages(false);
-        setFacebookDidLogin(null);
-        setSelectedFacebookPages([]);
-        setFacebookPages([]);
-      } else {
-        throw new Error(result.message || 'Failed to connect pages');
-      }
+      const result = await response.json();
+      console.log('✅ Pages connected successfully:', result);
+      
+      toast.success(`Successfully connected ${selectedFacebookPages.length} Facebook page${selectedFacebookPages.length !== 1 ? 's' : ''}!`);
+      
+      // Reset state
+      setShowFacebookPages(false);
+      setFacebookDidLogin(null);
+      setSelectedFacebookPages([]);
+      setFacebookPages([]);
     } catch (error: any) {
-      console.error('Error saving pages:', error);
+      console.error('❌ Error connecting pages:', error);
       toast.error(error.message || 'Failed to connect pages');
     } finally {
       setFacebookLoading(false);
