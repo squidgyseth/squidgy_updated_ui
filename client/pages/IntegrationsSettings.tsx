@@ -1047,7 +1047,7 @@ export default function IntegrationsSettings() {
     }
   };
 
-  const connectSocialMediaPage = async (pageId: string) => {
+  const connectSocialMediaPage = async (page: any) => {
     if (!locationId || !firebaseToken || !accessToken || !socialMediaOAuthId) {
       toast.error('Missing required information');
       return;
@@ -1055,17 +1055,13 @@ export default function IntegrationsSettings() {
 
     setSocialMediaLoading(true);
     try {
-      console.log(`🔗 Connecting ${socialMediaPlatform} page:`, pageId);
+      console.log(`🔗 Connecting ${socialMediaPlatform} account:`, page);
       
       const url = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${socialMediaPlatform}/accounts/${socialMediaOAuthId}`;
       
-      const page = socialMediaPages.find(p => p.id === pageId);
-      if (!page) {
-        throw new Error('Page not found');
-      }
-
-      console.log('📄 Page object:', page);
-      console.log('📄 Page originId:', page.originId);
+      console.log('📄 Page/Account object:', page);
+      console.log('📄 Page/Account originId:', page.originId);
+      console.log('📄 Page/Account id:', page.id);
 
       // Extract originId - ensure it's a string
       const originId = String(page.originId || page.id || '').trim();
@@ -1557,8 +1553,15 @@ export default function IntegrationsSettings() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Facebook Social Media Pages</CardTitle>
-                  <CardDescription>Select pages to connect for social media posting</CardDescription>
+                  <CardTitle>
+                    {socialMediaPlatform === 'instagram' ? 'Instagram Social Media Accounts' : 'Facebook Social Media Pages'}
+                  </CardTitle>
+                  <CardDescription>
+                    {socialMediaPlatform === 'instagram' 
+                      ? 'Select Instagram accounts to connect for social media posting'
+                      : 'Select pages to connect for social media posting'
+                    }
+                  </CardDescription>
                 </div>
                 <Button
                   variant="ghost"
@@ -1572,13 +1575,13 @@ export default function IntegrationsSettings() {
             <CardContent>
               {socialMediaLoading ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">Loading pages...</p>
+                  <p className="text-gray-500">Loading {socialMediaPlatform === 'instagram' ? 'accounts' : 'pages'}...</p>
                 </div>
               ) : socialMediaPages.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No pages available. Please complete OAuth first.</p>
+                  <p className="text-gray-500">No {socialMediaPlatform === 'instagram' ? 'accounts' : 'pages'} available. Please complete OAuth first.</p>
                   <p className="text-sm text-gray-400 mt-2">
-                    After OAuth, you'll need to provide the OAuth ID to fetch pages.
+                    After OAuth, you'll need to provide the OAuth ID to fetch {socialMediaPlatform === 'instagram' ? 'accounts' : 'pages'}.
                   </p>
                 </div>
               ) : (
@@ -1610,14 +1613,11 @@ export default function IntegrationsSettings() {
                         ) : (
                           <Button
                             size="sm"
-                            onClick={() => connectSocialMediaPage(page.id)}
-                            disabled={socialMediaLoading || !page.isOwned}
+                            onClick={() => connectSocialMediaPage(page)}
+                            disabled={socialMediaLoading}
                           >
                             Connect
                           </Button>
-                        )}
-                        {!page.isOwned && (
-                          <span className="text-xs text-gray-400">Not owned</span>
                         )}
                       </div>
                     </div>
