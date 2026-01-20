@@ -1076,6 +1076,14 @@ export default function IntegrationsSettings() {
 
       console.log('📄 Using originId:', originId);
 
+      const requestBody = {
+        originId: originId,
+        platform: socialMediaPlatform,
+        type: socialMediaPlatform === 'facebook' ? 'page' : 'account'
+      };
+
+      console.log('📤 POST request body:', requestBody);
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -1087,37 +1095,13 @@ export default function IntegrationsSettings() {
           'accept': 'application/json',
           'content-type': 'application/json'
         },
-        body: JSON.stringify({
-          originId: originId,
-          platform: socialMediaPlatform,
-          type: socialMediaPlatform === 'facebook' ? 'page' : 'account',
-          name: page.name,
-          avatar: page.avatar,
-          active: true,
-          deleted: false,
-          hasStatisticsPermissions: page.hasStatisticsPermissions || true,
-          buildingStatistics: page.buildingStatistics || false,
-          feedSubscribed: true,
-          connectionSource: 'social_media_posting'
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         console.error('❌ API Error Response:', errorData);
-        console.error('❌ Request Body:', {
-          originId: originId,
-          platform: socialMediaPlatform,
-          type: socialMediaPlatform === 'facebook' ? 'page' : 'account',
-          name: page.name,
-          avatar: page.avatar,
-          active: true,
-          deleted: false,
-          hasStatisticsPermissions: page.hasStatisticsPermissions || true,
-          buildingStatistics: page.buildingStatistics || false,
-          feedSubscribed: true,
-          connectionSource: 'social_media_posting'
-        });
+        console.error('❌ Request Body:', requestBody);
         throw new Error(`API error: ${response.status} - ${errorData?.message || 'Unknown error'}`);
       }
 
