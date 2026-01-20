@@ -926,8 +926,8 @@ export default function IntegrationsSettings() {
         attempts++;
         console.log(`📱 Polling for social media OAuth connections (attempt ${attempts}/${maxAttempts})...`);
         
-        // Fetch connected accounts with fetchAll=true to get accounts with oauthId
-        const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
+        // Fetch connected accounts to get accounts with oauthId for the specific platform
+        const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts`;
         
         const response = await fetch(accountsUrl, {
           method: 'GET',
@@ -945,20 +945,26 @@ export default function IntegrationsSettings() {
           const data = await response.json();
           console.log('✅ Connected accounts response:', data);
           
-          // Check if we have accounts with oauthId
+          // Check if we have accounts with oauthId for the specific platform
           if (data.success && data.results && data.results.accounts && data.results.accounts.length > 0) {
-            // Extract oauthId from the first account
-            const oAuthId = data.results.accounts[0].oauthId;
+            // Filter accounts by platform and get the oauthId
+            const platformAccounts = data.results.accounts.filter((acc: any) => acc.platform === platform);
             
-            if (oAuthId) {
-              console.log('✅ Found OAuth ID from accounts:', oAuthId);
-              console.log('🔗 Will fetch pages from:', `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`);
+            if (platformAccounts.length > 0) {
+              const oAuthId = platformAccounts[0].oauthId;
               
-              await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
-              setSocialMediaLoading(false);
-              return; // Stop polling
+              if (oAuthId) {
+                console.log(`✅ Found ${platform} OAuth ID from accounts:`, oAuthId);
+                console.log('🔗 Will fetch pages from:', `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`);
+                
+                await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
+                setSocialMediaLoading(false);
+                return; // Stop polling
+              } else {
+                console.warn(`⚠️ ${platform} account found but no oauthId, will retry...`);
+              }
             } else {
-              console.warn('⚠️ Account found but no oauthId, will retry...');
+              console.log(`⏳ No ${platform} accounts found yet, waiting for OAuth completion...`);
             }
           } else {
             console.log('⏳ No accounts found yet, waiting for OAuth completion...');
