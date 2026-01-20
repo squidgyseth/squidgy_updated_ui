@@ -336,7 +336,7 @@ export default function UniversalChatLayout({
           </div>
 
           {/* Onboarding Section - Compact & Secondary */}
-          <div className="px-3 pb-2">
+          <div className="px-3 pb-1">
             <button
               onClick={handleSettingsClick}
               className="w-full flex items-center justify-between p-2 bg-purple-50/50 hover:bg-purple-50 rounded-md transition cursor-pointer border border-purple-100/50 group"
@@ -354,7 +354,7 @@ export default function UniversalChatLayout({
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar bg-gray-50/50">
 
           {/* Previous Sessions - Priority Content */}
-          <div className="px-3 pt-1 pb-1">
+          <div className="px-3 pt-0 pb-1">
             <div className="bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm p-2.5 min-h-[52px] flex flex-col justify-center">
               <PreviousSessions
                 agentId={agent.id}
