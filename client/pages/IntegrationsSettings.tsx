@@ -200,9 +200,9 @@ export default function IntegrationsSettings() {
     try {
       console.log('📄 Fetching Facebook pages from GHL backend API...');
       
-      const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/allPages`;
-      
-      const response = await fetch(`${ghlBackendUrl}?limit=100`, {
+      // First, get connected pages
+      const connectedPagesUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/pages`;
+      const connectedResponse = await fetch(`${connectedPagesUrl}?getAll=true`, {
         method: 'GET',
         headers: {
           'authorization': `Bearer ${accessToken}`,
@@ -214,29 +214,47 @@ export default function IntegrationsSettings() {
         }
       });
       
-      if (!response.ok) {
-        throw new Error(`GHL API error: ${response.status}`);
+      let connectedPages = [];
+      if (connectedResponse.ok) {
+        const connectedData = await connectedResponse.json();
+        console.log('✅ Connected pages response:', connectedData);
+        connectedPages = connectedData.pages || [];
       }
       
-      const data = await response.json();
-      console.log('✅ Facebook pages response:', data);
+      // Then, get all available pages
+      const allPagesUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/allPages`;
+      const allPagesResponse = await fetch(`${allPagesUrl}?limit=100`, {
+        method: 'GET',
+        headers: {
+          'authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER',
+          'accept': 'application/json'
+        }
+      });
       
-      const rawPages = data.pages || [];
+      if (!allPagesResponse.ok) {
+        throw new Error(`GHL API error: ${allPagesResponse.status}`);
+      }
       
-      // Map GHL response format to our UI format
+      const allPagesData = await allPagesResponse.json();
+      console.log('✅ All available pages response:', allPagesData);
+      
+      const rawPages = allPagesData.pages || [];
+      const connectedPageIds = new Set(connectedPages.map((p: any) => p.facebookPageId));
+      
+      // Map GHL response format to our UI format and mark connected pages
       const pages = rawPages.map((page: any) => ({
         id: page.facebookPageId,
         name: page.facebookPageName,
+        isConnected: connectedPageIds.has(page.facebookPageId),
         ...page
       }));
       
-      if (pages.length === 0) {
-        toast.info('No Facebook pages found. Please connect your Facebook pages in GoHighLevel first.');
-      } else {
-        setFacebookPages(pages);
-        setShowFacebookPages(true);
-        toast.success(`Found ${pages.length} Facebook pages`);
-      }
+      setFacebookPages(pages);
+      console.log(`✅ Found ${pages.length} total pages (${connectedPages.length} connected)`);
     } catch (error: any) {
       console.error('❌ Error fetching Facebook pages:', error);
       toast.error(error.message || 'Failed to fetch Facebook pages');
@@ -840,7 +858,12 @@ export default function IntegrationsSettings() {
                   {facebookPages.length > 0 && (
                     <div className="mt-2 text-xs text-gray-600">
                       <p className="font-medium">Pages:</p>
-                      <p>{facebookPages.map(p => p.name).join(', ')}</p>
+                      {facebookPages.filter(p => p.isConnected).map(p => (
+                        <div key={p.id} className="flex items-center gap-1 text-green-600">
+                          <CheckCircle className="w-3 h-3" />
+                          <span>{p.name}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                   {facebookAdAccounts.length > 0 && (
@@ -901,17 +924,26 @@ export default function IntegrationsSettings() {
                       {facebookPages.map((page) => (
                         <label 
                           key={page.id} 
-                          className="flex items-center gap-3 cursor-pointer p-4 border-2 rounded-lg hover:bg-gray-50 transition-colors"
-                          style={{ borderColor: selectedFacebookPages.includes(page.id) ? '#8b5cf6' : '#e5e7eb' }}
+                          className={`flex items-center gap-3 cursor-pointer p-4 border-2 rounded-lg hover:bg-gray-50 transition-colors ${page.isConnected ? 'bg-green-50' : ''}`}
+                          style={{ borderColor: page.isConnected ? '#10b981' : (selectedFacebookPages.includes(page.id) ? '#8b5cf6' : '#e5e7eb') }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={selectedFacebookPages.includes(page.id)}
-                            onChange={() => handleFacebookPageToggle(page.id)}
-                            className="w-4 h-4 text-purple-500"
-                          />
+                          {page.isConnected ? (
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <input
+                              type="checkbox"
+                              checked={selectedFacebookPages.includes(page.id)}
+                              onChange={() => handleFacebookPageToggle(page.id)}
+                              className="w-4 h-4 text-purple-500"
+                            />
+                          )}
                           <div className="flex-1">
-                            <p className="font-medium text-gray-800">{page.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-gray-800">{page.name}</p>
+                              {page.isConnected && (
+                                <Badge variant="default" className="bg-green-500 text-xs">Connected</Badge>
+                              )}
+                            </div>
                             <p className="text-xs text-gray-500">ID: {page.id}</p>
                           </div>
                         </label>
