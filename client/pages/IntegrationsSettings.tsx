@@ -827,6 +827,47 @@ export default function IntegrationsSettings() {
     }, 1000);
   };
 
+  const handleSocialMediaInstagramConnect = () => {
+    if (!locationId || !ghlUserId) {
+      alert('Unable to connect: Location ID or User ID not found. Please ensure you have a GHL subaccount set up.');
+      return;
+    }
+    
+    const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/instagram/start?locationId=${locationId}&userId=${ghlUserId}&loginType=instagram`;
+    
+    // Open in a centered popup window
+    const width = 600;
+    const height = 700;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    
+    const popup = window.open(
+      oauthUrl,
+      'InstagramSocialMediaOAuth',
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+    );
+
+    // Listen for messages from the popup (OAuth callback may send OAuth ID)
+    const messageHandler = (event: MessageEvent) => {
+      if (event.data && event.data.oAuthId) {
+        console.log('✅ Received Instagram OAuth ID from popup:', event.data.oAuthId);
+        window.removeEventListener('message', messageHandler);
+        fetchSocialMediaAccountsWithOAuthId(event.data.oAuthId);
+      }
+    };
+    window.addEventListener('message', messageHandler);
+
+    // Also check for popup closure as fallback
+    const checkPopup = setInterval(() => {
+      if (popup && popup.closed) {
+        clearInterval(checkPopup);
+        window.removeEventListener('message', messageHandler);
+        // After OAuth, try to fetch OAuth connections and then accounts
+        fetchSocialMediaAccounts();
+      }
+    }, 1000);
+  };
+
   const fetchConnectedSocialMediaAccounts = async () => {
     if (!locationId || !firebaseToken || !accessToken) {
       return;
@@ -1395,8 +1436,12 @@ export default function IntegrationsSettings() {
             <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="pt-6">
                 <div className="text-center space-y-4">
-                  <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center p-2">
-                    <Facebook className="w-12 h-12 text-white" />
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://techstory.in/wp-content/uploads/2023/09/Facebook_Logo_2019-1024x1024.png" 
+                      alt="Facebook"
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg text-gray-900">Facebook Social Media</h3>
@@ -1433,6 +1478,62 @@ export default function IntegrationsSettings() {
                     disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
                   >
                     {socialMediaLoading ? 'Loading...' : 'Connect Facebook'}
+                  </Button>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Instagram Social Media Posting */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://static.vecteezy.com/system/resources/previews/018/930/413/non_2x/instagram-logo-instagram-icon-transparent-free-png.png" 
+                      alt="Instagram"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">Instagram Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect Instagram accounts for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram').length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram').length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'instagram').length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram').map((account) => (
+                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img 
+                                src={account.avatar} 
+                                alt={account.name}
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
+                                <p className="text-xs text-gray-500">Instagram Account</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
+                    onClick={handleSocialMediaInstagramConnect}
+                    disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                  >
+                    {socialMediaLoading ? 'Loading...' : 'Connect Instagram'}
                   </Button>
                   {!loading && (!locationId || !ghlUserId) && (
                     <p className="text-xs text-red-500">
