@@ -151,7 +151,7 @@ export default function IntegrationsSettings() {
   };
 
   const checkGoogleCalendarConnection = async () => {
-    if (!ghlUserId || !firebaseToken || !accessToken) {
+    if (!ghlUserId || !locationId || !firebaseToken || !accessToken) {
       return;
     }
     
@@ -159,12 +159,11 @@ export default function IntegrationsSettings() {
     try {
       console.log('📅 Checking Google Calendar connection...');
       
-      const userUrl = `https://backend.leadconnectorhq.com/users/${ghlUserId}`;
+      const calendarUrl = `https://services.leadconnectorhq.com/calendars/connections/calendars?locationId=${locationId}&userId=${ghlUserId}`;
       
-      const response = await fetch(userUrl, {
+      const response = await fetch(calendarUrl, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -177,35 +176,35 @@ export default function IntegrationsSettings() {
         throw new Error(`GHL API error: ${response.status}`);
       }
       
-      const userData = await response.json();
-      console.log('✅ User data response:', userData);
+      const calendarData = await response.json();
+      console.log('✅ Calendar connections response:', calendarData);
       
-      // Extract user name and email from response
-      const userName = userData.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim();
-      const userEmail = userData.email;
+      // Check if Google calendar is connected
+      const googleCalendars = calendarData.thirdPartyCalendars?.google || {};
+      const hasGoogleCalendar = Object.keys(googleCalendars).length > 0;
       
-      setGhlUserName(userName);
-      setGhlUserEmail(userEmail);
-      
-      // Check if userCalendar field has data for this location
-      const hasCalendar = userData.userCalendar && 
-                         userData.userCalendar[locationId] && 
-                         Object.keys(userData.userCalendar[locationId]).length > 0;
-      
-      // Extract calendar email if calendar is connected
+      // Extract calendar email and user info
       let calendarEmail = null;
-      if (hasCalendar && userData.userCalendar[locationId]) {
-        // The userCalendar object typically has the email as a key
-        const calendarKeys = Object.keys(userData.userCalendar[locationId]);
-        if (calendarKeys.length > 0) {
-          calendarEmail = calendarKeys[0]; // First key is usually the email
+      let userName = null;
+      
+      if (hasGoogleCalendar) {
+        // Get the first email key from google calendars
+        const emailKeys = Object.keys(googleCalendars);
+        if (emailKeys.length > 0) {
+          calendarEmail = emailKeys[0];
+          const calendars = googleCalendars[calendarEmail];
+          if (calendars && calendars.length > 0) {
+            userName = calendars[0].accountName;
+          }
         }
       }
       
-      setGoogleCalendarConnected(hasCalendar);
+      setGoogleCalendarConnected(hasGoogleCalendar);
       setGoogleCalendarEmail(calendarEmail);
-      console.log(`📅 Google Calendar connected: ${hasCalendar}`, calendarEmail ? `(${calendarEmail})` : '');
-      console.log(`👤 User: ${userName} (${userEmail})`);
+      setGhlUserName(userName);
+      setGhlUserEmail(calendarEmail);
+      
+      console.log(`📅 Google Calendar connected: ${hasGoogleCalendar}`, calendarEmail ? `(${calendarEmail})` : '');
     } catch (error: any) {
       console.error('❌ Error checking Google Calendar:', error);
     } finally {
