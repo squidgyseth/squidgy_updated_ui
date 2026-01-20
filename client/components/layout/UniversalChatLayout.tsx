@@ -335,18 +335,34 @@ export default function UniversalChatLayout({
             </button>
           </div>
 
-          {/* Onboarding Section - Compact & Secondary */}
-          <div className="px-3 pb-1">
-            <button
-              onClick={handleSettingsClick}
-              className="w-full flex items-center justify-between p-2 bg-purple-50/50 hover:bg-purple-50 rounded-md transition cursor-pointer border border-purple-100/50 group"
-            >
-              <div className="flex items-center space-x-2">
-                <div className="w-1 h-1 bg-purple-500 rounded-full animate-pulse"></div>
-                <span className="text-[11px] text-purple-700 font-medium group-hover:text-purple-800">Complete AI Setup</span>
-              </div>
-              <ChevronRight className="text-purple-300 group-hover:text-purple-500" size={12} />
-            </button>
+          {/* Onboarding Section - Fixed */}
+          <div className="px-3 pb-3 pt-2">
+            <h3 className="text-[10px] font-bold text-gray-600 uppercase tracking-wider pl-1 mb-2">Onboarding</h3>
+            <div className="space-y-1.5">
+              {/* Configurable Data Row */}
+              <button
+                onClick={handleSettingsClick}
+                className="w-full flex items-center justify-between p-2.5 bg-white border border-gray-100 rounded-lg shadow-sm hover:bg-gray-50 transition group"
+              >
+                <span className="text-[11px] font-bold text-gray-700">Configurable Data</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded-full border border-red-100 font-bold leading-none">Setup Required</span>
+                  <ChevronRight size={12} className="text-gray-300 group-hover:text-purple-500" />
+                </div>
+              </button>
+
+              {/* Integration Setup Row */}
+              <button
+                onClick={handleSettingsClick}
+                className="w-full flex items-center justify-between p-2.5 bg-white border border-gray-100 rounded-lg shadow-sm hover:bg-gray-50 transition group"
+              >
+                <span className="text-[11px] font-bold text-gray-700">Integration Setup</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded-full border border-red-100 font-bold leading-none">Setup Required</span>
+                  <ChevronRight size={12} className="text-gray-300 group-hover:text-purple-500" />
+                </div>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -355,7 +371,7 @@ export default function UniversalChatLayout({
 
           {/* Previous Sessions - Priority Content */}
           <div className="px-3 pt-0 pb-1">
-            <div className="bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm p-2.5 min-h-[52px] flex flex-col justify-center">
+            <div className="bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm px-2.5 py-2 min-h-[45px] flex flex-col justify-center">
               <PreviousSessions
                 agentId={agent.id}
                 currentSessionId={currentSessionId}
@@ -372,7 +388,7 @@ export default function UniversalChatLayout({
               isOpen={openSection === 'capabilities'}
               onToggle={() => toggleSection('capabilities')}
               preview={
-                <div className="flex flex-wrap gap-2 mt-1">
+                <div className="flex flex-wrap gap-x-2.5 gap-y-1 mt-1">
                   {agent.capabilities && agent.capabilities.length > 0 ? (
                     <>
                       {agent.capabilities.slice(0, 2).map((cap, i) => (
@@ -450,7 +466,7 @@ export default function UniversalChatLayout({
               isOpen={openSection === 'content'}
               onToggle={() => toggleSection('content')}
               preview={
-                <p className="text-[10px] text-gray-500 mt-1">View recent items</p>
+                <p className="text-[10px] text-gray-600 font-medium mt-1">View recent items</p>
               }
             >
               <div className="-mx-1">
