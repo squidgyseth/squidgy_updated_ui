@@ -836,8 +836,8 @@ export default function IntegrationsSettings() {
         attempts++;
         console.log(`📱 Polling for social media OAuth connections (attempt ${attempts}/${maxAttempts})...`);
         
-        // First, fetch connected accounts to get OAuth connections
-        const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts`;
+        // Fetch connected accounts with fetchAll=true to get accounts with oauthId
+        const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
         
         const response = await fetch(accountsUrl, {
           method: 'GET',
@@ -854,51 +854,24 @@ export default function IntegrationsSettings() {
         if (response.ok) {
           const data = await response.json();
           console.log('✅ Connected accounts response:', data);
-          console.log('⚠️ Note: traceId is NOT the OAuth ID. TraceId:', data.traceId);
           
-          // Check if we have a valid response - this means OAuth completed
-          if (data.success && data.results !== undefined) {
-            // Now fetch OAuth connections to get the REAL OAuth ID
-            try {
-              const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook`;
-              console.log('🔍 Fetching OAuth connections from:', oauthUrl);
+          // Check if we have accounts with oauthId
+          if (data.success && data.results && data.results.accounts && data.results.accounts.length > 0) {
+            // Extract oauthId from the first account
+            const oAuthId = data.results.accounts[0].oauthId;
+            
+            if (oAuthId) {
+              console.log('✅ Found OAuth ID from accounts:', oAuthId);
+              console.log('🔗 Will fetch pages from:', `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook/accounts/${oAuthId}`);
               
-              const oauthResponse = await fetch(oauthUrl, {
-                method: 'GET',
-                headers: {
-                  'authorization': `Bearer ${accessToken}`,
-                  'token-id': firebaseToken,
-                  'version': '2021-07-28',
-                  'channel': 'APP',
-                  'source': 'WEB_USER',
-                  'accept': 'application/json'
-                }
-              });
-
-              if (oauthResponse.ok) {
-                const oauthData = await oauthResponse.json();
-                console.log('✅ OAuth connections list:', oauthData);
-                
-                // Extract OAuth ID from the connections list
-                if (oauthData && Array.isArray(oauthData) && oauthData.length > 0) {
-                  const oAuthId = oauthData[0]._id || oauthData[0].id;
-                  console.log('✅ Found REAL OAuth ID:', oAuthId);
-                  console.log('🔗 Will fetch pages from:', `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook/accounts/${oAuthId}`);
-                  
-                  if (oAuthId) {
-                    await fetchSocialMediaAccountsWithOAuthId(oAuthId);
-                    setSocialMediaLoading(false);
-                    return; // Stop polling
-                  }
-                } else {
-                  console.warn('⚠️ No OAuth connections found yet, will retry...');
-                }
-              } else {
-                console.error('❌ OAuth connections request failed:', oauthResponse.status);
-              }
-            } catch (oauthError) {
-              console.error('❌ Error fetching OAuth connections:', oauthError);
+              await fetchSocialMediaAccountsWithOAuthId(oAuthId);
+              setSocialMediaLoading(false);
+              return; // Stop polling
+            } else {
+              console.warn('⚠️ Account found but no oauthId, will retry...');
             }
+          } else {
+            console.log('⏳ No accounts found yet, waiting for OAuth completion...');
           }
         }
         
