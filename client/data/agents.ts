@@ -1,5 +1,9 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
+<<<<<<< HEAD
 // Generated on: 2026-01-20T16:11:58.558Z
+=======
+// Generated on: 2026-01-20T14:53:09.933Z
+>>>>>>> c962217 (style: final UI polish for sidebar and dashboard spacing)
 
 export interface AgentConfig {
   agent: {

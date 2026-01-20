@@ -124,9 +124,9 @@ export default function Index() {
 
       {/* Main Content */}
       <div className="ml-[60px] bg-gray-50 h-full overflow-hidden flex flex-col">
-        <div className="max-w-full mx-auto px-4 flex-1 min-h-0 flex flex-col">
+        <div className="max-w-full mx-auto px-8 py-6 flex-1 min-h-0 flex flex-col space-y-8">
           {/* Header */}
-          <div className="flex-none flex items-center justify-between bg-gray-50 pb-8 border-b border-gray-200">
+          <div className="flex-none flex items-center justify-between bg-gray-50 pb-6 border-b border-gray-200">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <img
@@ -189,7 +189,7 @@ export default function Index() {
           </div>
 
           {/* Welcome Section */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pt-4">
             <div>
               <h1 className="text-[29px] font-bold text-gray-900 font-open-sans">
                 {isLoadingUserName ? 'Good afternoon! 🙌' : `Good afternoon, ${userFirstName}! 🙌`}
