@@ -926,8 +926,8 @@ export default function IntegrationsSettings() {
         attempts++;
         console.log(`📱 Polling for social media OAuth connections (attempt ${attempts}/${maxAttempts})...`);
         
-        // Fetch connected accounts to get accounts with oauthId for the specific platform
-        const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts`;
+        // Fetch all accounts (connected + available to connect) with fetchAll=true
+        const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
         
         const response = await fetch(accountsUrl, {
           method: 'GET',
@@ -943,50 +943,29 @@ export default function IntegrationsSettings() {
 
         if (response.ok) {
           const data = await response.json();
-          console.log('✅ Connected accounts response:', data);
+          console.log('✅ All accounts response (fetchAll=true):', data);
           
-          // Check if OAuth completed by looking for any accounts
+          // Check if we have accounts with oauthId
           if (data.success && data.results && data.results.accounts && data.results.accounts.length > 0) {
-            // Now fetch platform-specific OAuth connections to get the correct OAuth ID
-            try {
-              const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}`;
-              console.log(`🔍 Fetching ${platform} OAuth connections from:`, oauthUrl);
+            // Filter accounts by platform
+            const platformAccounts = data.results.accounts.filter((acc: any) => acc.platform === platform);
+            
+            if (platformAccounts.length > 0) {
+              const account = platformAccounts[0];
+              const oAuthId = account.oauthId;
               
-              const oauthResponse = await fetch(oauthUrl, {
-                method: 'GET',
-                headers: {
-                  'authorization': `Bearer ${accessToken}`,
-                  'token-id': firebaseToken,
-                  'version': '2021-07-28',
-                  'channel': 'APP',
-                  'source': 'WEB_USER',
-                  'accept': 'application/json'
-                }
-              });
-
-              if (oauthResponse.ok) {
-                const oauthData = await oauthResponse.json();
-                console.log(`✅ ${platform} OAuth connections list:`, oauthData);
-                
-                // Extract OAuth ID from the connections list
-                if (oauthData && Array.isArray(oauthData) && oauthData.length > 0) {
-                  const oAuthId = oauthData[0]._id || oauthData[0].id;
-                  console.log(`✅ Found ${platform} OAuth ID:`, oAuthId);
-                  console.log(`🔗 Will fetch ${platform} accounts from:`, `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`);
-                  
-                  if (oAuthId) {
-                    await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
-                    setSocialMediaLoading(false);
-                    return; // Stop polling
-                  }
-                } else {
-                  console.warn(`⚠️ No ${platform} OAuth connections found yet, will retry...`);
-                }
+              console.log(`✅ Found ${platform} account with OAuth ID:`, oAuthId);
+              console.log(`🔗 Will fetch ${platform} accounts from:`, `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`);
+              
+              if (oAuthId) {
+                await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
+                setSocialMediaLoading(false);
+                return; // Stop polling
               } else {
-                console.error(`❌ ${platform} OAuth connections request failed:`, oauthResponse.status);
+                console.warn(`⚠️ ${platform} account found but no oauthId, will retry...`);
               }
-            } catch (oauthError) {
-              console.error(`❌ Error fetching ${platform} OAuth connections:`, oauthError);
+            } else {
+              console.log(`⏳ No ${platform} accounts found yet, waiting for OAuth completion...`);
             }
           } else {
             console.log('⏳ No accounts found yet, waiting for OAuth completion...');
