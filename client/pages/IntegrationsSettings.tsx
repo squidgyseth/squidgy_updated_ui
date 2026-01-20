@@ -55,6 +55,7 @@ export default function IntegrationsSettings() {
   const [showSocialMediaPages, setShowSocialMediaPages] = useState(false);
   const [socialMediaLoading, setSocialMediaLoading] = useState(false);
   const [manualOAuthId, setManualOAuthId] = useState<string>('');
+  const [connectedSocialMediaAccounts, setConnectedSocialMediaAccounts] = useState<any[]>([]);
 
   useEffect(() => {
     getUserFirmId();
@@ -74,6 +75,13 @@ export default function IntegrationsSettings() {
         fetchFacebookPagesFromGHL(),
         fetchFacebookAdAccountsFromGHL()
       ]);
+    }
+  }, [locationId, firebaseToken, accessToken]);
+
+  useEffect(() => {
+    // Auto-fetch connected social media accounts when tokens are available
+    if (locationId && firebaseToken && accessToken) {
+      fetchConnectedSocialMediaAccounts();
     }
   }, [locationId, firebaseToken, accessToken]);
 
@@ -819,6 +827,39 @@ export default function IntegrationsSettings() {
     }, 1000);
   };
 
+  const fetchConnectedSocialMediaAccounts = async () => {
+    if (!locationId || !firebaseToken || !accessToken) {
+      return;
+    }
+
+    try {
+      const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
+      
+      const response = await fetch(accountsUrl, {
+        method: 'GET',
+        headers: {
+          'authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER',
+          'accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success && data.results && data.results.accounts) {
+          setConnectedSocialMediaAccounts(data.results.accounts);
+          console.log('✅ Connected social media accounts:', data.results.accounts);
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching connected social media accounts:', error);
+    }
+  };
+
   const fetchSocialMediaAccounts = async () => {
     if (!locationId || !firebaseToken || !accessToken) {
       toast.error('Missing required tokens. Please wait for token refresh.');
@@ -1362,11 +1403,27 @@ export default function IntegrationsSettings() {
                     <p className="text-sm text-gray-500 mt-1">
                       Connect Facebook pages for social media posting
                     </p>
-                    {socialMediaPages.filter(p => p.isConnected).length > 0 && (
-                      <div className="mt-2">
+                    {connectedSocialMediaAccounts.length > 0 && (
+                      <div className="mt-3 space-y-2">
                         <Badge variant="default" className="bg-green-500">
-                          {socialMediaPages.filter(p => p.isConnected).length} Page{socialMediaPages.filter(p => p.isConnected).length !== 1 ? 's' : ''} Connected
+                          {connectedSocialMediaAccounts.length} Page{connectedSocialMediaAccounts.length !== 1 ? 's' : ''} Connected
                         </Badge>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {connectedSocialMediaAccounts.map((account) => (
+                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img 
+                                src={account.avatar} 
+                                alt={account.name}
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
+                                <p className="text-xs text-gray-500">Facebook Page</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
