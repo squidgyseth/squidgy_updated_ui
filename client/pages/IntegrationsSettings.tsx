@@ -1259,7 +1259,7 @@ export default function IntegrationsSettings() {
                 </div>
                 <div>
                   <div className="flex items-center justify-center gap-2">
-                    <h3 className="font-semibold text-lg text-gray-900">Facebook / Instagram</h3>
+                    <h3 className="font-semibold text-lg text-gray-900">Facebook/Instagram Ads</h3>
                     {(facebookPages.length > 0 || facebookAdAccounts.length > 0) && (
                       <Badge variant="default" className="bg-green-500">Connected</Badge>
                     )}
@@ -1267,7 +1267,7 @@ export default function IntegrationsSettings() {
                   <p className="text-sm text-gray-500 mt-1">
                     {(facebookPages.length > 0 || facebookAdAccounts.length > 0)
                       ? `${facebookPages.length} page${facebookPages.length !== 1 ? 's' : ''}, ${facebookAdAccounts.length} ad account${facebookAdAccounts.length !== 1 ? 's' : ''}`
-                      : 'Connect your Facebook account and Instagram for social media management'
+                      : 'Connect your Facebook account and Instagram for ads management'
                     }
                   </p>
                   {facebookPages.length > 0 && (
