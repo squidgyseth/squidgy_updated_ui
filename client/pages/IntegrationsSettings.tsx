@@ -854,38 +854,15 @@ export default function IntegrationsSettings() {
           const data = await response.json();
           console.log('✅ Connected accounts response:', data);
           
-          // Check if we have a valid response structure with success and results
-          if (data.success && data.results !== undefined) {
-            // Now fetch the OAuth connections to get the actual OAuth ID
-            const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook`;
+          // Check if we have a valid response structure with success, results, and traceId
+          if (data.success && data.results !== undefined && data.traceId) {
+            const oAuthId = data.traceId;
+            console.log('✅ Found OAuth ID (traceId):', oAuthId);
             
-            const oauthResponse = await fetch(oauthUrl, {
-              method: 'GET',
-              headers: {
-                'authorization': `Bearer ${accessToken}`,
-                'token-id': firebaseToken,
-                'version': '2021-07-28',
-                'channel': 'APP',
-                'source': 'WEB_USER',
-                'accept': 'application/json'
-              }
-            });
-
-            if (oauthResponse.ok) {
-              const oauthData = await oauthResponse.json();
-              console.log('✅ OAuth connections:', oauthData);
-              
-              // Extract OAuth ID from the connections list
-              if (oauthData && Array.isArray(oauthData) && oauthData.length > 0) {
-                const oAuthId = oauthData[0]._id || oauthData[0].id;
-                if (oAuthId) {
-                  console.log('✅ Found OAuth ID:', oAuthId);
-                  await fetchSocialMediaAccountsWithOAuthId(oAuthId);
-                  setSocialMediaLoading(false);
-                  return; // Stop polling
-                }
-              }
-            }
+            // Use the traceId directly to fetch Facebook pages
+            await fetchSocialMediaAccountsWithOAuthId(oAuthId);
+            setSocialMediaLoading(false);
+            return; // Stop polling
           }
         }
         
