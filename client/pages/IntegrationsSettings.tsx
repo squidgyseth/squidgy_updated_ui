@@ -55,6 +55,16 @@ export default function IntegrationsSettings() {
     }
   }, [firmUserId]);
 
+  useEffect(() => {
+    // Auto-fetch Facebook pages and ad accounts when tokens are available
+    if (locationId && firebaseToken && accessToken && !showFacebookPages) {
+      Promise.all([
+        fetchFacebookPagesFromGHL(),
+        fetchFacebookAdAccountsFromGHL()
+      ]);
+    }
+  }, [locationId, firebaseToken, accessToken]);
+
   const refreshFirebaseToken = async () => {
     if (!firmUserId) return;
     
