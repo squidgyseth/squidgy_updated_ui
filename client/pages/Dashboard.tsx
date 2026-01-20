@@ -13,17 +13,17 @@ import { ResponsiveLayout } from "../components/mobile";
 import { MobileDashboard } from "../components/mobile/dashboard/MobileDashboard";
 import NewOnboardingModal from "../components/onboarding/NewOnboardingModal";
 import OnboardingService from "../services/onboardingService";
-import { 
-  MessageCircle, 
-  Home, 
-  Menu, 
-  LogOut, 
-  Search, 
-  Bell, 
-  Settings, 
-  CheckCircle, 
-  Target, 
-  TrendingUp, 
+import {
+  MessageCircle,
+  Home,
+  Menu,
+  LogOut,
+  Search,
+  Bell,
+  Settings,
+  CheckCircle,
+  Target,
+  TrendingUp,
   Award,
   Plus,
   Play,
@@ -56,9 +56,9 @@ export default function Index() {
         // Simple logic: Query enabled agents count
         const onboardingService = OnboardingService.getInstance();
         const enabledAgentsCount = await onboardingService.getEnabledAgentsCount(userId);
-        
+
         console.log(`🔍 Dashboard: User ${userId} has ${enabledAgentsCount} enabled agents`);
-        
+
         // SIMPLE: If 0 enabled agents, show onboarding. If 1+, don't show.
         if (enabledAgentsCount === 0) {
           console.log('🎯 Dashboard: Showing onboarding - no enabled agents');
@@ -87,7 +87,7 @@ export default function Index() {
 
       try {
         console.log('🔍 Dashboard: Fetching profile for user_id:', userId);
-        
+
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('full_name')
@@ -118,18 +118,18 @@ export default function Index() {
   }, [userId]);
 
   const desktopLayout = (
-    <div className="min-h-screen bg-white">
+    <div className="h-screen overflow-hidden bg-white">
       {/* Reusable Left Navigation */}
       <LeftNavigation currentPage="dashboard" />
 
       {/* Main Content */}
-      <div className="ml-[60px] bg-gray-50 p-8">
-        <div className="max-w-full mx-auto space-y-6 px-4">
+      <div className="ml-[60px] bg-gray-50 h-full overflow-hidden flex flex-col">
+        <div className="max-w-full mx-auto px-4 flex-1 min-h-0 flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between bg-gray-50 pb-8 border-b border-gray-200">
+          <div className="flex-none flex items-center justify-between bg-gray-50 pb-8 border-b border-gray-200">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <img 
+                <img
                   src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=290"
                   alt="Squidgy"
                   className="w-[100px] h-[40px]"
@@ -140,14 +140,14 @@ export default function Index() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
                 <Search className="w-6 h-6 text-gray-500" />
               </Button>
-              
+
               <NotificationBell />
-              
+
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900">
@@ -159,9 +159,9 @@ export default function Index() {
                 </div>
                 <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
                   {!isLoading && faviconUrl && faviconUrl.trim() !== '' ? (
-                    <img 
-                      src={faviconUrl} 
-                      alt={`${companyName} logo`} 
+                    <img
+                      src={faviconUrl}
+                      alt={`${companyName} logo`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         // Fallback to Squidgy logo if company favicon fails to load
@@ -169,9 +169,9 @@ export default function Index() {
                       }}
                     />
                   ) : (
-                    <img 
-                      src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64" 
-                      alt="Squidgy logo" 
+                    <img
+                      src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64"
+                      alt="Squidgy logo"
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         // If Squidgy logo fails, show checkmark fallback
@@ -194,9 +194,9 @@ export default function Index() {
               <h1 className="text-[29px] font-bold text-gray-900 font-open-sans">
                 {isLoadingUserName ? 'Good afternoon! 🙌' : `Good afternoon, ${userFirstName}! 🙌`}
               </h1>
-              <p className="text-[15px] text-gray-600 font-open-sans">Your AI-powered solar sales command center - never miss a lead again</p>
+              <p className="text-[15px] text-gray-600 font-open-sans">Your AI-powered command center </p>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <Badge className="bg-green-100 text-green-800 hover:bg-green-100 px-3 py-1">
                 AI Assistant Active
@@ -204,7 +204,7 @@ export default function Index() {
               <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 px-3 py-1">
                 X Urgent Follow-ups
               </Badge>
-              <button 
+              <button
                 onClick={() => navigate('/welcome')}
                 className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm transition-colors"
               >
@@ -220,22 +220,22 @@ export default function Index() {
 
           {/* Personal Assistant Card */}
           <Card className="border-2 border-squidgy-red bg-purple-50">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center gap-4">
-                <img 
-                  src="/Squidgy AI Assistants Avatars/1.png" 
-                  alt="Personal Assistant icon" 
+                <img
+                  src="/Squidgy AI Assistants Avatars/1.png"
+                  alt="Personal Assistant icon"
                   className="w-16 h-16 rounded-full"
                 />
                 <div className="flex-1">
                   <h2 className="text-[20px] font-bold text-gray-900 font-open-sans">Personal Assistant</h2>
                   <p className="text-[15px] text-gray-600 font-open-sans mt-1">Your onboarding assistant for setting up AI agents. Get help configuring your team of AI assistants.</p>
                 </div>
-                <Button 
+                <Button
                   onClick={() => navigate('/chat/personal_assistant')}
-                  className="bg-squidgy-gradient text-white gap-2 px-7 py-3"
+                  className="bg-squidgy-gradient text-white gap-2 px-6 py-2.5 h-auto text-sm font-semibold"
                 >
-                  <MessageCircle className="w-6 h-6" />
+                  <MessageCircle className="w-5 h-5" />
                   Start Chat
                 </Button>
               </div>
@@ -591,15 +591,15 @@ export default function Index() {
                       <Button size="sm" className="bg-purple-100 text-purple-700 hover:bg-purple-100">Weekly</Button>
                       <Button variant="outline" size="sm">Custom Dates</Button>
                     </div>
-                    
+
                     <div className="h-72 flex items-center justify-center">
-                      <img 
-                        src="https://api.builder.io/api/v1/image/assets/TEMP/da246d08c5389d582108deb80b70b7914c657931?width=1336" 
-                        alt="Sales Performance Chart" 
+                      <img
+                        src="https://api.builder.io/api/v1/image/assets/TEMP/da246d08c5389d582108deb80b70b7914c657931?width=1336"
+                        alt="Sales Performance Chart"
                         className="w-full h-full object-contain"
                       />
                     </div>
-                    
+
                     <div className="flex items-center gap-6 mt-4">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
@@ -614,7 +614,7 @@ export default function Index() {
                         <span className="text-sm text-gray-600 font-open-sans">Converted</span>
                       </div>
                     </div>
-                    
+
                     <div className="bg-white rounded-lg p-4 mt-4">
                       <div className="flex items-center gap-2 mb-3">
                         <Lightbulb className="w-5 h-5 text-purple-600" />
@@ -887,7 +887,7 @@ export default function Index() {
                   <p className="text-[13px] text-gray-600 font-open-sans">Streamline your solar sales workflow</p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-4 gap-6">
                 <Button variant="outline" className="flex-col h-auto py-4 bg-purple-50 border-purple-200">
                   <div className="w-9 h-9 bg-purple-100 rounded-full flex items-center justify-center mb-2">
@@ -895,21 +895,21 @@ export default function Index() {
                   </div>
                   <span className="font-open-sans">View New Leads</span>
                 </Button>
-                
+
                 <Button variant="outline" className="flex-col h-auto py-4 bg-purple-50 border-purple-200">
                   <div className="w-9 h-9 bg-red-100 rounded-full flex items-center justify-center mb-2">
                     <Calendar className="w-5 h-5 text-red-600" />
                   </div>
                   <span className="font-open-sans">Schedule Survey</span>
                 </Button>
-                
+
                 <Button variant="outline" className="flex-col h-auto py-4 bg-purple-50 border-purple-200">
                   <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center mb-2">
                     <MessageCircle className="w-5 h-5 text-green-600" />
                   </div>
                   <span className="font-open-sans">Start New Chat</span>
                 </Button>
-                
+
                 <Button variant="outline" className="flex-col h-auto py-4 bg-purple-50 border-purple-200">
                   <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center mb-2">
                     <BarChart3 className="w-5 h-5 text-blue-600" />
@@ -932,11 +932,11 @@ export default function Index() {
       >
         <MobileDashboard />
       </ResponsiveLayout>
-      
+
       {/* New Onboarding Modal */}
-      <NewOnboardingModal 
-        isOpen={showOnboarding} 
-        onClose={() => setShowOnboarding(false)} 
+      <NewOnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
       />
     </>
   );

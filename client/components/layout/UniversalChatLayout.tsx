@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, Plus } from 'lucide-react';
+import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, ChevronDown, Plus } from 'lucide-react';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useUser } from '../../hooks/useUser';
 import ChatHistory from '../chat/ChatHistory';
@@ -36,87 +36,87 @@ const formatRecentAction = (message: string, agentName: string): string => {
   // Remove HTML tags
   const cleanMessage = message.replace(/<[^>]*>/g, '').trim();
   const lowerMessage = cleanMessage.toLowerCase();
-  
+
   // Detect agent enablement/configuration completion - use the passed agent name
   if (lowerMessage.includes('is now configured') || lowerMessage.includes('configured and ready') || lowerMessage.includes('is now fully configured') || lowerMessage.includes('enabled and ready')) {
     return `${agentName} enabled`;
   }
-  
+
   // Detect notifications enabled
   if (lowerMessage.includes('notifications enabled') || (lowerMessage.includes('notification') && lowerMessage.includes('enabled'))) {
     return 'Notifications enabled';
   }
-  
+
   // Detect calendar connected
   if (lowerMessage.includes('calendar connected') || (lowerMessage.includes('calendar') && lowerMessage.includes('connected'))) {
     return 'Calendar connected';
   }
-  
+
   // Detect brand voice set
   if (lowerMessage.includes('brand voice') || lowerMessage.includes('voice set')) {
     return 'Brand voice configured';
   }
-  
+
   // Detect targeting configured
   if (lowerMessage.includes('b2c targeting') || lowerMessage.includes('b2b targeting') || lowerMessage.includes('targeting configured')) {
     return 'Targeting configured';
   }
-  
+
   // Detect goals aligned
   if (lowerMessage.includes('goals aligned') || (lowerMessage.includes('goal') && lowerMessage.includes('aligned'))) {
     return 'Goals configured';
   }
-  
+
   // Detect newsletter preview (HTML content with newsletter structure)
   if (message.includes('<html') || message.includes('<!DOCTYPE') || message.includes('<table') || (lowerMessage.includes('newsletter') && lowerMessage.includes('preview'))) {
     return 'Newsletter preview';
   }
-  
+
   // Detect newsletter creation
   if (lowerMessage.includes('newsletter') && (lowerMessage.includes('created') || lowerMessage.includes('generated') || lowerMessage.includes('ready'))) {
     return 'Newsletter created';
   }
-  
+
   // Detect content repurposing
   if (lowerMessage.includes('repurpos') || lowerMessage.includes('social media content') || lowerMessage.includes('posts generated')) {
     return 'Content repurposed';
   }
-  
+
   // Detect social media post creation
   if (lowerMessage.includes('linkedin') || lowerMessage.includes('twitter') || lowerMessage.includes('instagram') || lowerMessage.includes('facebook')) {
     return 'Social posts created';
   }
-  
+
   // Detect content generation
   if (lowerMessage.includes('here\'s') || lowerMessage.includes('i\'ve created') || lowerMessage.includes('i\'ve generated') || lowerMessage.includes('draft')) {
     return 'Content generated';
   }
-  
+
   // Detect website analysis
   if (lowerMessage.includes('website') && lowerMessage.includes('analy')) {
     return 'Website analyzed';
   }
-  
+
   // Detect onboarding/setup completion
   if (lowerMessage.includes('fully configured and ready') || lowerMessage.includes('setup complete')) {
     return 'Setup completed';
   }
-  
+
   // Detect questions asked by agent
   if (lowerMessage.includes('would you like') || lowerMessage.includes('what would you') || lowerMessage.includes('which') || lowerMessage.endsWith('?')) {
     return 'Question asked';
   }
-  
+
   // Detect generic acknowledgments (not useful as activity)
   if (lowerMessage.startsWith('okay, got it') || lowerMessage.startsWith('okay got it') || lowerMessage.startsWith('ok, got it') || lowerMessage.startsWith('ok got it')) {
     return 'Acknowledgment';
   }
-  
+
   // Detect chat/conversation started
   if (lowerMessage.startsWith('hey') || lowerMessage.startsWith('hello') || lowerMessage.startsWith('hi ') || lowerMessage.includes('welcome') || lowerMessage.includes('great to') || lowerMessage.startsWith('okay, let\'s get started') || lowerMessage.startsWith('okay, let\'s start')) {
     return 'Conversation started';
   }
-  
+
   // Default: truncate the actual message to show something meaningful
   if (cleanMessage.length > 0) {
     // Get first sentence or first 50 chars
@@ -126,14 +126,14 @@ const formatRecentAction = (message: string, agentName: string): string => {
     }
     return cleanMessage.length > 50 ? cleanMessage.substring(0, 47) + '...' : cleanMessage;
   }
-  
+
   return 'Activity recorded';
 };
 
-export default function UniversalChatLayout({ 
-  agent, 
-  children, 
-  onPinToggle, 
+export default function UniversalChatLayout({
+  agent,
+  children,
+  onPinToggle,
   onSettingsClick,
   onNewChat,
   currentSessionId,
@@ -146,6 +146,11 @@ export default function UniversalChatLayout({
   const [recentActions, setRecentActions] = useState<string[]>([]);
   const [isLoadingActions, setIsLoadingActions] = useState(true); // Only true on initial load
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  const toggleSection = (sectionId: string) => {
+    setOpenSection(prev => prev === sectionId ? null : sectionId);
+  };
 
   // Function to add a new action to the top of the list (live update)
   const addRecentAction = (message: string) => {
@@ -168,20 +173,20 @@ export default function UniversalChatLayout({
       if (!hasLoadedOnce) {
         setIsLoadingActions(true);
       }
-      
+
       try {
         const chatHistoryService = ChatHistoryService.getInstance();
         // Use getRecentAgentMessages to get individual messages, not grouped by session
         // Fetch more than 4 to account for filtered "Question asked" entries
         const messages = await chatHistoryService.getRecentAgentMessages(userId, agent.id, 10);
-        
+
         if (messages.length > 0) {
           // Format each message as a recent action, filter out non-useful activities
           const actions = messages
             .map(msg => formatRecentAction(msg.message, agent.name))
             .filter(action => !['Question asked', 'Acknowledgment', 'Conversation started', 'Activity recorded'].includes(action))
             .slice(0, 4); // Take first 4 after filtering
-          
+
           setRecentActions(actions);
         }
       } catch (error) {
@@ -219,19 +224,19 @@ export default function UniversalChatLayout({
             {/* Left: Sidebar toggle + Agent info */}
             <div className="flex items-center space-x-3">
               {/* Sidebar Toggle Button */}
-              <button 
+              <button
                 onClick={toggleSidebar}
                 className="text-squidgy-primary hover:bg-gray-100 p-1 rounded transition-colors"
                 title="Toggle Sidebar"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7.5 2.5V17.5M4.16667 2.5H15.8333C16.7538 2.5 17.5 3.24619 17.5 4.16667V15.8333C17.5 16.7538 16.7538 17.5 15.8333 17.5H4.16667C3.24619 17.5 2.5 16.7538 2.5 15.8333V4.16667C2.5 3.24619 3.24619 2.5 4.16667 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M7.5 2.5V17.5M4.16667 2.5H15.8333C16.7538 2.5 17.5 3.24619 17.5 4.16667V15.8333C17.5 16.7538 16.7538 17.5 15.8333 17.5H4.16667C3.24619 17.5 2.5 16.7538 2.5 15.8333V4.16667C2.5 3.24619 3.24619 2.5 4.16667 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
               <div className="relative">
                 {agent.avatar && (
-                  <img 
-                    src={agent.avatar} 
+                  <img
+                    src={agent.avatar}
                     alt={agent.name}
                     className="w-10 h-10 rounded-full"
                   />
@@ -244,7 +249,7 @@ export default function UniversalChatLayout({
                 <p className="text-xs font-normal text-gray-500 mt-1">active • {agent.tagline}</p>
               </div>
             </div>
-            
+
             {/* Right: Action buttons */}
             <div className="flex items-center space-x-2">
               <button className="p-2 text-purple-600 hover:text-purple-700 rounded-lg hover:bg-purple-50 transition">
@@ -272,161 +277,253 @@ export default function UniversalChatLayout({
         </div>
       </div>
 
-      {/* Right Sidebar - Agent Details - Modal Style Design */}
-      <div className="w-80 border-l border-gray-200 bg-white overflow-y-auto">
-        {/* Agent Header - Modal Style */}
-        <div className="p-6 text-center">
-          {/* Centered Avatar with Gradient Border */}
-          {agent.avatar && (
-            <div className="relative inline-block mb-4">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-r from-red-500 to-purple-600 p-1">
-                <img 
-                  src={agent.avatar} 
+      {/* Right Sidebar - Fixed Layout */}
+      <div className="w-80 border-l border-gray-200 bg-white flex flex-col h-full overflow-hidden">
+
+        {/* FIXED TOP SECTION: Header + Actions + Onboarding */}
+        <div className="flex-none bg-white border-b border-gray-100 z-10 shadow-sm">
+          {/* Compact Header */}
+          <div className="p-3 flex items-center space-x-3">
+            <div className="relative">
+              {agent.avatar ? (
+                <img
+                  src={agent.avatar}
                   alt={agent.name}
-                  className="w-full h-full rounded-full object-cover"
+                  className="w-10 h-10 rounded-full object-cover"
                 />
-                {/* Active indicator */}
-                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                  {agent.name.substring(0, 2)}
+                </div>
+              )}
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-sm font-bold text-gray-900 truncate leading-tight">{agent.name}</h2>
+              <div className="flex items-center text-[10px] text-gray-500 mt-0.5">
+                <span className="w-1 h-1 bg-green-500 rounded-full mr-1"></span>
+                Active • {agent.category}
               </div>
             </div>
-          )}
-          
-          {/* Centered Agent Name */}
-          <h2 className="text-lg font-semibold text-purple-600 mb-3">{agent.name}</h2>
-          
-          {/* Centered Specialization Badge */}
-          {agent.specialization && (
-            <div className="mb-4">
-              <span className="inline-block px-4 py-2 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-                {agent.specialization}
-              </span>
-            </div>
-          )}
-          
-          {/* Centered Description */}
-          <p className="text-sm text-gray-600 leading-relaxed mb-6 text-center max-w-xs mx-auto">{agent.description}</p>
+          </div>
 
-          {/* Action Buttons - matching screenshot */}
-          <div className="space-y-3">
-            {/* New Chat Button */}
-            <button 
+          {/* Compact Actions Row */}
+          <div className="px-3 pb-2 flex gap-2">
+            <button
               onClick={handleNewChat}
-              className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition font-medium"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-md hover:from-green-700 hover:to-emerald-700 transition text-xs font-semibold shadow-sm"
             >
-              <Plus size={18} />
+              <Plus size={14} />
               <span>New Chat</span>
             </button>
-
-            {/* Settings and Pin Buttons */}
-            <div className="flex space-x-3">
-              <button 
-                onClick={handleSettingsClick}
-                className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-500 to-purple-600 text-white rounded-xl hover:from-red-600 hover:to-purple-700 transition font-medium"
-              >
-                <Settings size={18} />
-                <span>Settings</span>
-              </button>
-              <button 
-                onClick={handlePinToggle}
-                className="flex items-center justify-center space-x-2 px-6 py-3 border-2 border-purple-300 text-purple-600 rounded-xl hover:bg-purple-50 transition font-medium"
-              >
-                {isPinned ? <Pin size={18} /> : <PinOff size={18} />}
-                <span>{isPinned ? 'Pinned' : 'To pin'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Onboarding Section */}
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex items-center space-x-2 mb-4">
-            <Settings className="text-squidgy-primary" size={18} />
-            <h3 className="text-lg font-semibold text-gray-900">Onboarding</h3>
-          </div>
-          <div className="space-y-3">
-            <button 
+            <button
               onClick={handleSettingsClick}
-              className="w-full flex items-center justify-between p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer border border-purple-200 relative"
+              className="px-2 py-1.5 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition border border-gray-200"
+              title="Settings"
             >
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"></div>
-                <span className="text-sm text-purple-700 font-medium">Configurable Data</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Setup Required</span>
-                <ChevronRight className="text-purple-400" size={14} />
-              </div>
+              <Settings size={14} />
             </button>
-            <button className="w-full flex items-center justify-between p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer border border-purple-200 relative">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"></div>
-                <span className="text-sm text-purple-700 font-medium">Integration Setup</span>
-              </div>
+            <button
+              onClick={handlePinToggle}
+              className={`px-2 py-1.5 rounded-md transition border ${isPinned
+                ? 'bg-purple-50 text-purple-600 border-purple-200'
+                : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 border-gray-200'
+                }`}
+              title={isPinned ? "Unpin Agent" : "Pin Agent"}
+            >
+              {isPinned ? <Pin size={14} /> : <PinOff size={14} />}
+            </button>
+          </div>
+
+          {/* Onboarding Section - Compact & Secondary */}
+          <div className="px-3 pb-2">
+            <button
+              onClick={handleSettingsClick}
+              className="w-full flex items-center justify-between p-2 bg-purple-50/50 hover:bg-purple-50 rounded-md transition cursor-pointer border border-purple-100/50 group"
+            >
               <div className="flex items-center space-x-2">
-                <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Setup Required</span>
-                <ChevronRight className="text-purple-400" size={14} />
+                <div className="w-1 h-1 bg-purple-500 rounded-full animate-pulse"></div>
+                <span className="text-[11px] text-purple-700 font-medium group-hover:text-purple-800">Complete AI Setup</span>
               </div>
+              <ChevronRight className="text-purple-300 group-hover:text-purple-500" size={12} />
             </button>
           </div>
         </div>
 
-        {/* Capabilities Section - matching screenshots exactly */}
-        {agent.capabilities && agent.capabilities.length > 0 && (
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-center space-x-2 mb-4">
-              <Zap className="text-squidgy-primary" size={18} />
-              <h3 className="text-lg font-semibold text-gray-900">Capabilities</h3>
+        {/* SCROLLABLE AREA: Sessions first, then collapsed details */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar bg-gray-50/50">
+
+          {/* Previous Sessions - Priority Content */}
+          <div className="px-3 pt-1 pb-1">
+            <div className="bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm p-2.5 min-h-[52px] flex flex-col justify-center">
+              <PreviousSessions
+                agentId={agent.id}
+                currentSessionId={currentSessionId}
+                onSessionSelect={onSessionSelect || (() => { })}
+              />
             </div>
-            <div className="space-y-3">
-              {agent.capabilities.map((capability, index) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-squidgy-primary rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-sm text-gray-700 leading-relaxed">{capability}</p>
+          </div>
+
+          <div className="px-3 pb-4 space-y-2">
+            {/* Capabilities - Collapsible */}
+            <CollapsibleSection
+              title="Capabilities"
+              icon={<Zap size={14} />}
+              isOpen={openSection === 'capabilities'}
+              onToggle={() => toggleSection('capabilities')}
+              preview={
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {agent.capabilities && agent.capabilities.length > 0 ? (
+                    <>
+                      {agent.capabilities.slice(0, 2).map((cap, i) => (
+                        <span key={i} className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded-full border border-purple-100">
+                          {cap.length > 15 ? cap.substring(0, 15) + '...' : cap}
+                        </span>
+                      ))}
+                      {agent.capabilities.length > 2 && (
+                        <span className="text-[10px] text-gray-400 self-center">+{agent.capabilities.length - 2} more</span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-[10px] text-gray-400">No capabilities specified</span>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              }
+            >
+              <div className="space-y-1.5 mt-2">
+                {agent.capabilities && agent.capabilities.length > 0 ? (
+                  agent.capabilities.map((capability, index) => (
+                    <div key={index} className="flex items-start gap-2 text-xs text-gray-600">
+                      <div className="w-1 h-1 bg-purple-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                      <p className="leading-tight">{capability}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-500 italic">No specific capabilities listed for this agent.</p>
+                )}
+              </div>
+            </CollapsibleSection>
 
-        {/* Recent Actions Section - dynamic from chat_history */}
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex items-center space-x-2 mb-4">
-            <Clock className="text-squidgy-primary" size={18} />
-            <h3 className="text-lg font-semibold text-gray-900">Recent Actions</h3>
-          </div>
-          <div className="space-y-4">
-            {isLoadingActions ? (
-              <p className="text-sm text-gray-500">Loading recent activity...</p>
-            ) : (
-              [...Array(4)].map((_, index) => {
-                const action = recentActions[index];
-                return (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${action ? 'bg-squidgy-primary' : 'bg-gray-300'}`}></div>
-                    <p className={`text-sm ${action ? 'text-gray-700' : 'text-gray-400'}`}>
-                      {action || '—'}
+            {/* Recent Activity - Collapsible */}
+            <CollapsibleSection
+              title="Recent Activity"
+              icon={<Clock size={14} />}
+              isOpen={openSection === 'activity'}
+              onToggle={() => toggleSection('activity')}
+              preview={
+                <div className="mt-1">
+                  {recentActions.length > 0 ? (
+                    <p className="text-[10px] text-gray-500 truncate italic">
+                      Latest: {recentActions[0]}
                     </p>
-                  </div>
-                );
-              })
-            )}
+                  ) : (
+                    <p className="text-[10px] text-gray-400">No recent activity</p>
+                  )}
+                </div>
+              }
+            >
+              <div className="space-y-2.5 mt-2">
+                {isLoadingActions ? (
+                  <p className="text-xs text-gray-500 pl-1">Loading activity...</p>
+                ) : recentActions.length > 0 ? (
+                  recentActions.map((action, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-green-500"></div>
+                      <p className="text-xs text-gray-700 font-medium">{action}</p>
+                    </div>
+                  ))
+                ) : (
+                  [...Array(4)].map((_, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-gray-200"></div>
+                      <p className="text-xs text-gray-400">—</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CollapsibleSection>
+
+            {/* Previous Content - Collapsible */}
+            <CollapsibleSection
+              title="Generated Content"
+              icon={<MessageSquare size={14} />}
+              isOpen={openSection === 'content'}
+              onToggle={() => toggleSection('content')}
+              preview={
+                <p className="text-[10px] text-gray-500 mt-1">View recent items</p>
+              }
+            >
+              <div className="-mx-1">
+                <PreviousContent agentId={agent.id} />
+              </div>
+            </CollapsibleSection>
           </div>
         </div>
 
-        {/* Previous Content Section */}
-        <div className="px-6 py-2">
-          <PreviousContent agentId={agent.id} />
-        </div>
-
-        {/* Previous Sessions Section */}
-        <div className="px-6 py-2">
-          <PreviousSessions 
-            agentId={agent.id} 
-            currentSessionId={currentSessionId}
-            onSessionSelect={onSessionSelect || (() => {})}
-          />
-        </div>
       </div>
+    </div>
+  );
+}
+
+// Helper Component for Collapsible Sections
+function CollapsibleSection({
+  title,
+  icon,
+  children,
+  preview,
+  isOpen: propsIsOpen,
+  onToggle,
+  defaultOpen = false
+}: {
+  title: string,
+  icon: React.ReactNode,
+  children: React.ReactNode,
+  preview?: React.ReactNode,
+  isOpen?: boolean,
+  onToggle?: () => void,
+  defaultOpen?: boolean
+}) {
+  const [localIsOpen, setLocalIsOpen] = useState(defaultOpen);
+
+  const isOpen = propsIsOpen !== undefined ? propsIsOpen : localIsOpen;
+  const handleToggle = () => {
+    if (onToggle) {
+      onToggle();
+    } else {
+      setLocalIsOpen(!localIsOpen);
+    }
+  };
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm transition-all duration-200">
+      <button
+        onClick={handleToggle}
+        className="w-full flex items-start justify-between p-2.5 bg-white hover:bg-gray-50 transition-colors min-h-[52px]"
+      >
+        <div className="flex-1 min-w-0 pr-2 self-center">
+          <div className="flex items-center gap-2">
+            <span className="text-purple-500">{icon}</span>
+            <span className="text-xs font-bold text-gray-800">{title}</span>
+          </div>
+          {!isOpen && preview && (
+            <div className="animate-in fade-in duration-300">
+              {preview}
+            </div>
+          )}
+        </div>
+        <div className="flex-shrink-0 mt-0.5">
+          {isOpen ? (
+            <ChevronDown size={14} className="text-gray-400" />
+          ) : (
+            <ChevronRight size={14} className="text-gray-400" />
+          )}
+        </div>
+      </button>
+      {isOpen && (
+        <div className="px-2.5 pb-3 pt-0 border-t border-gray-50 animate-in slide-in-from-top-1 duration-200">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
