@@ -395,34 +395,6 @@ export default function IntegrationsSettings() {
     }
   };
 
-  const checkGoogleCalendarConnection = async () => {
-    if (!locationId || !pitToken) return;
-    
-    try {
-      setCheckingCalendar(true);
-      const response = await fetch(`https://services.leadconnectorhq.com/social-media-posting/${locationId}/accounts`, {
-        headers: {
-          'Authorization': `Bearer ${pitToken}`,
-          'Version': '2021-07-28',
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        // Check if Google Calendar is in the social media accounts
-        const hasGoogleCalendar = data.accounts?.some((account: any) => 
-          account.type === 'google_calendar' || account.provider === 'google' || account.name?.toLowerCase().includes('google')
-        ) || false;
-        setGoogleCalendarConnected(hasGoogleCalendar);
-      }
-    } catch (err) {
-      console.error('Failed to check Google Calendar connection:', err);
-      setGoogleCalendarConnected(false);
-    } finally {
-      setCheckingCalendar(false);
-    }
-  };
 
   const handleGoogleAccountConnect = () => {
     if (!locationId || !ghlUserId) {
