@@ -232,17 +232,15 @@ export default function IntegrationsSettings() {
 
   const fetchFacebookAdAccountsFromGHL = async () => {
     if (!locationId || !firebaseToken || !accessToken) {
-      toast.error('Missing required tokens. Please wait for token refresh.');
       return;
     }
     
-    setFacebookLoading(true);
     try {
-      console.log('📊 Fetching Facebook Ad Accounts from GHL backend API...');
+      console.log('📊 Fetching connected Facebook Ad Account from GHL backend API...');
       
-      const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/allAdAccounts`;
+      const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/adAccount`;
       
-      const response = await fetch(`${ghlBackendUrl}?limit=100`, {
+      const response = await fetch(ghlBackendUrl, {
         method: 'GET',
         headers: {
           'authorization': `Bearer ${accessToken}`,
@@ -255,28 +253,30 @@ export default function IntegrationsSettings() {
       });
       
       if (!response.ok) {
-        throw new Error(`GHL API error: ${response.status}`);
+        // No ad account connected, that's okay
+        console.log('ℹ️ No ad account connected');
+        setFacebookAdAccounts([]);
+        return;
       }
       
       const data = await response.json();
-      console.log('✅ Facebook Ad Accounts response:', data);
+      console.log('✅ Facebook Ad Account response:', data);
       
-      const rawAccounts = data.adAccounts || [];
-      
-      // Map GHL response format to our UI format
-      const accounts = rawAccounts.map((account: any) => ({
-        id: account.facebookAdAccountId || account.id,
-        name: account.facebookAdAccountName || account.name,
-        ...account
-      }));
-      
-      setFacebookAdAccounts(accounts);
-      console.log(`✅ Found ${accounts.length} ad accounts`);
+      // Check if we have a connected ad account
+      if (data.adAccountId && data.adAccountName) {
+        const account = {
+          id: data.adAccountId,
+          name: data.adAccountName,
+          ...data
+        };
+        setFacebookAdAccounts([account]);
+        console.log(`✅ Connected ad account: ${data.adAccountName}`);
+      } else {
+        setFacebookAdAccounts([]);
+      }
     } catch (error: any) {
-      console.error('❌ Error fetching Facebook ad accounts:', error);
-      toast.error(error.message || 'Failed to fetch ad accounts');
-    } finally {
-      setFacebookLoading(false);
+      console.error('❌ Error fetching Facebook ad account:', error);
+      setFacebookAdAccounts([]);
     }
   };
 
