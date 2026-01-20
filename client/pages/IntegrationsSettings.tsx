@@ -3,7 +3,7 @@ import { SettingsLayout } from '../components/layout/SettingsLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Zap, CheckCircle, XCircle, RefreshCw, ExternalLink } from 'lucide-react';
+import { Zap, CheckCircle, XCircle, RefreshCw, ExternalLink, Facebook, X } from 'lucide-react';
 import { useUser } from '../hooks/useUser';
 import { supabase } from '../lib/supabase';
 import { profilesApi } from '../lib/supabase-api';
@@ -48,6 +48,12 @@ export default function IntegrationsSettings() {
   const [firmUserId, setFirmUserId] = useState<string | null>(null);
   const [firebaseToken, setFirebaseToken] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  
+  // Social Media Posting states
+  const [socialMediaPages, setSocialMediaPages] = useState<any[]>([]);
+  const [socialMediaOAuthId, setSocialMediaOAuthId] = useState<string | null>(null);
+  const [showSocialMediaPages, setShowSocialMediaPages] = useState(false);
+  const [socialMediaLoading, setSocialMediaLoading] = useState(false);
 
   useEffect(() => {
     getUserFirmId();
@@ -770,6 +776,164 @@ export default function IntegrationsSettings() {
     );
   };
 
+  // Social Media Posting Functions
+  const handleSocialMediaFacebookConnect = () => {
+    if (!locationId || !ghlUserId) {
+      alert('Unable to connect: Location ID or User ID not found. Please ensure you have a GHL subaccount set up.');
+      return;
+    }
+    
+    const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/facebook/start?locationId=${locationId}&userId=${ghlUserId}`;
+    
+    // Open in a centered popup window
+    const width = 600;
+    const height = 700;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    
+    const popup = window.open(
+      oauthUrl,
+      'FacebookSocialMediaOAuth',
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+    );
+
+    // Listen for OAuth completion
+    const checkPopup = setInterval(() => {
+      if (popup && popup.closed) {
+        clearInterval(checkPopup);
+        // After OAuth, fetch the accounts
+        fetchSocialMediaAccounts();
+      }
+    }, 1000);
+  };
+
+  const fetchSocialMediaAccounts = async () => {
+    if (!locationId || !firebaseToken || !accessToken) {
+      toast.error('Missing required tokens. Please wait for token refresh.');
+      return;
+    }
+
+    setSocialMediaLoading(true);
+    try {
+      console.log('📱 Fetching social media accounts...');
+      
+      // First, we need to get the OAuth ID - we'll try to fetch from a known endpoint
+      // The OAuth ID is returned after OAuth, but we can also get it from the accounts endpoint
+      // For now, we'll use a placeholder approach - in production you'd store this after OAuth
+      
+      // Try to get accounts - the endpoint format suggests we need an oAuthId
+      // We'll need to handle this differently - let's check if there are any connected accounts first
+      
+      toast.info('Please complete the OAuth flow to see available accounts');
+      setShowSocialMediaPages(true);
+      
+    } catch (error: any) {
+      console.error('❌ Error fetching social media accounts:', error);
+      toast.error(error.message || 'Failed to fetch social media accounts');
+    } finally {
+      setSocialMediaLoading(false);
+    }
+  };
+
+  const fetchSocialMediaAccountsWithOAuthId = async (oAuthId: string) => {
+    if (!locationId || !firebaseToken || !accessToken) {
+      return;
+    }
+
+    setSocialMediaLoading(true);
+    try {
+      console.log('📱 Fetching social media accounts with OAuth ID:', oAuthId);
+      
+      const url = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook/accounts/${oAuthId}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER',
+          'accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Social media accounts response:', data);
+      
+      if (data.success && data.results?.pages) {
+        setSocialMediaPages(data.results.pages);
+        setSocialMediaOAuthId(oAuthId);
+        setShowSocialMediaPages(true);
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching social media accounts:', error);
+      toast.error(error.message || 'Failed to fetch social media accounts');
+    } finally {
+      setSocialMediaLoading(false);
+    }
+  };
+
+  const connectSocialMediaPage = async (pageId: string) => {
+    if (!locationId || !firebaseToken || !accessToken || !socialMediaOAuthId) {
+      toast.error('Missing required information');
+      return;
+    }
+
+    setSocialMediaLoading(true);
+    try {
+      console.log('🔗 Connecting social media page:', pageId);
+      
+      const url = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook/accounts/${socialMediaOAuthId}`;
+      
+      const page = socialMediaPages.find(p => p.id === pageId);
+      if (!page) {
+        throw new Error('Page not found');
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER',
+          'accept': 'application/json',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: page.id,
+          name: page.name,
+          avatar: page.avatar,
+          isOwned: page.isOwned
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Connected social media page:', data);
+      
+      if (data.success) {
+        toast.success(`Connected ${page.name} successfully!`);
+        // Refresh the accounts list
+        fetchSocialMediaAccountsWithOAuthId(socialMediaOAuthId);
+      }
+    } catch (error: any) {
+      console.error('❌ Error connecting social media page:', error);
+      toast.error(error.message || 'Failed to connect page');
+    } finally {
+      setSocialMediaLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
       'created': { label: 'Active', variant: 'default' },
@@ -1082,8 +1246,127 @@ export default function IntegrationsSettings() {
           </Card>
         </div>
 
+        {/* Social Media Integrations Section */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Social Media Integrations</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Facebook Social Media Posting */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center p-2">
+                    <Facebook className="w-12 h-12 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">Facebook Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect Facebook pages for social media posting
+                    </p>
+                    {socialMediaPages.filter(p => p.isConnected).length > 0 && (
+                      <div className="mt-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {socialMediaPages.filter(p => p.isConnected).length} Page{socialMediaPages.filter(p => p.isConnected).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                    onClick={handleSocialMediaFacebookConnect}
+                    disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                  >
+                    {socialMediaLoading ? 'Loading...' : 'Connect Facebook'}
+                  </Button>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Social Media Pages Modal */}
+        {showSocialMediaPages && (
+          <Card className="mt-6">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Facebook Social Media Pages</CardTitle>
+                  <CardDescription>Select pages to connect for social media posting</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSocialMediaPages(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {socialMediaLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading pages...</p>
+                </div>
+              ) : socialMediaPages.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No pages available. Please complete OAuth first.</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    After OAuth, you'll need to provide the OAuth ID to fetch pages.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {socialMediaPages.map((page) => (
+                    <div
+                      key={page.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        {page.avatar && (
+                          <img
+                            src={page.avatar}
+                            alt={page.name}
+                            className="w-10 h-10 rounded-full"
+                          />
+                        )}
+                        <div>
+                          <p className="font-medium">{page.name}</p>
+                          <p className="text-xs text-gray-500">ID: {page.id}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {page.isConnected ? (
+                          <Badge variant="default" className="bg-green-500">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Connected
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => connectSocialMediaPage(page.id)}
+                            disabled={socialMediaLoading || !page.isOwned}
+                          >
+                            Connect
+                          </Button>
+                        )}
+                        {!page.isOwned && (
+                          <span className="text-xs text-gray-400">Not owned</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Coming Soon Section */}
-        <Card className="border-dashed">
+        <Card className="border-dashed mt-8">
           <CardHeader>
             <CardTitle className="text-gray-400">More Integrations Coming Soon</CardTitle>
             <CardDescription>
