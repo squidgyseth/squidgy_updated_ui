@@ -814,25 +814,70 @@ export default function IntegrationsSettings() {
     }
 
     setSocialMediaLoading(true);
-    try {
-      console.log('📱 Fetching social media accounts...');
-      
-      // First, we need to get the OAuth ID - we'll try to fetch from a known endpoint
-      // The OAuth ID is returned after OAuth, but we can also get it from the accounts endpoint
-      // For now, we'll use a placeholder approach - in production you'd store this after OAuth
-      
-      // Try to get accounts - the endpoint format suggests we need an oAuthId
-      // We'll need to handle this differently - let's check if there are any connected accounts first
-      
-      toast.info('Please complete the OAuth flow to see available accounts');
-      setShowSocialMediaPages(true);
-      
-    } catch (error: any) {
-      console.error('❌ Error fetching social media accounts:', error);
-      toast.error(error.message || 'Failed to fetch social media accounts');
-    } finally {
-      setSocialMediaLoading(false);
-    }
+    setShowSocialMediaPages(true);
+    
+    let attempts = 0;
+    const maxAttempts = 12; // 12 attempts * 5 seconds = 1 minute max
+    
+    const pollForAccounts = async () => {
+      try {
+        attempts++;
+        console.log(`📱 Polling for social media accounts (attempt ${attempts}/${maxAttempts})...`);
+        
+        // Try to fetch OAuth connections to get the OAuth ID
+        // We'll need to check if there's a recent OAuth connection
+        const oauthListUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook`;
+        
+        const response = await fetch(oauthListUrl, {
+          method: 'GET',
+          headers: {
+            'authorization': `Bearer ${accessToken}`,
+            'token-id': firebaseToken,
+            'version': '2021-07-28',
+            'channel': 'APP',
+            'source': 'WEB_USER',
+            'accept': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ OAuth connections response:', data);
+          
+          // If we have OAuth connections, get the first one's ID
+          if (data && data.length > 0) {
+            const oAuthId = data[0]._id || data[0].id;
+            if (oAuthId) {
+              console.log('✅ Found OAuth ID:', oAuthId);
+              await fetchSocialMediaAccountsWithOAuthId(oAuthId);
+              setSocialMediaLoading(false);
+              return; // Stop polling
+            }
+          }
+        }
+        
+        // If we haven't found accounts yet and haven't exceeded max attempts, poll again
+        if (attempts < maxAttempts) {
+          setTimeout(pollForAccounts, 5000); // Poll every 5 seconds
+        } else {
+          console.log('⏱️ Max polling attempts reached');
+          toast.info('OAuth completed. Please click "Connect Facebook" again to see available pages.');
+          setSocialMediaLoading(false);
+        }
+        
+      } catch (error: any) {
+        console.error('❌ Error polling for accounts:', error);
+        if (attempts < maxAttempts) {
+          setTimeout(pollForAccounts, 5000); // Continue polling on error
+        } else {
+          toast.error('Failed to fetch accounts. Please try again.');
+          setSocialMediaLoading(false);
+        }
+      }
+    };
+    
+    // Start polling
+    pollForAccounts();
   };
 
   const fetchSocialMediaAccountsWithOAuthId = async (oAuthId: string) => {
