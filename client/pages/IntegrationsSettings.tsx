@@ -737,7 +737,7 @@ export default function IntegrationsSettings() {
       return;
     }
     
-    const oauthUrl = `https://api.leadconnectorhq.com/outlook/start_oauth?locationId=${locationId}&userId=${ghlUserId}`;
+    const oauthUrl = `https://api.leadconnectorhq.com/api/outlook/start_oauth?location_id=${locationId}&user_id=${ghlUserId}&requestedBy=${ghlUserId}`;
     
     // Open in a centered popup window
     const width = 600;
