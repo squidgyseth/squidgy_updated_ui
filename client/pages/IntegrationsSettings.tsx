@@ -882,7 +882,7 @@ export default function IntegrationsSettings() {
     }
 
     try {
-      const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
+      const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts`;
       
       const response = await fetch(accountsUrl, {
         method: 'GET',
