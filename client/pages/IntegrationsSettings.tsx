@@ -794,80 +794,74 @@ export default function IntegrationsSettings() {
           </Card>
 
           {/* Facebook / Instagram Integration */}
-          <Card className="hover:shadow-lg transition-shadow col-span-1 md:col-span-2 lg:col-span-3">
+          <Card className="hover:shadow-lg transition-shadow">
             <CardContent className="pt-6">
-              {!showFacebookPages ? (
-                <div className="max-w-2xl mx-auto space-y-6">
-                  <div className="text-center space-y-4">
-                    <div className="w-20 h-20 mx-auto rounded-lg flex overflow-hidden">
-                      <div className="w-1/2 bg-blue-600 flex items-center justify-center">
-                        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                        </svg>
-                      </div>
-                      <div className="w-1/2 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
-                        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                        </svg>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg text-gray-900">Facebook / Instagram</h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Connect your Facebook account and Instagram for social media management
-                      </p>
-                    </div>
+              <div className="text-center space-y-4">
+                <div className="w-20 h-20 mx-auto rounded-lg flex overflow-hidden relative">
+                  <div className="w-1/2 bg-blue-600 flex items-center justify-center">
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
                   </div>
-
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-700">Click the button below to log into your Facebook account in a separate window. Return to this page after completing the login.</p>
+                  <div className="w-1/2 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
                   </div>
-
-                  <Button 
-                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-                    onClick={handleFacebookLogin}
-                    disabled={facebookLoading || !facebookOAuthUrl}
-                  >
-                    Log into Facebook
-                  </Button>
-
-                  <div className="space-y-3">
-                    <p className="font-semibold text-gray-800">Did you successfully log into Facebook?</p>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-3 cursor-pointer p-3 border-2 rounded-lg hover:bg-gray-50 transition-colors" style={{ borderColor: facebookDidLogin === 'yes' ? '#3b82f6' : '#e5e7eb' }}>
-                        <input
-                          type="radio"
-                          name="facebookDidLogin"
-                          value="yes"
-                          checked={facebookDidLogin === 'yes'}
-                          onChange={() => setFacebookDidLogin('yes')}
-                          className="w-4 h-4 text-blue-500"
-                        />
-                        <span className="text-gray-800">Yes, I completed the Facebook login</span>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer p-3 border-2 rounded-lg hover:bg-gray-50 transition-colors" style={{ borderColor: facebookDidLogin === 'no' ? '#3b82f6' : '#e5e7eb' }}>
-                        <input
-                          type="radio"
-                          name="facebookDidLogin"
-                          value="no"
-                          checked={facebookDidLogin === 'no'}
-                          onChange={() => setFacebookDidLogin('no')}
-                          className="w-4 h-4 text-blue-500"
-                        />
-                        <span className="text-gray-800">No, I need to try again</span>
-                      </label>
+                  {(facebookPages.length > 0 || facebookAdAccounts.length > 0) && (
+                    <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1">
+                      <CheckCircle className="w-4 h-4 text-white" />
                     </div>
-                  </div>
-
-                  <Button 
-                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
-                    onClick={handleFacebookNext}
-                    disabled={facebookLoading || facebookDidLogin !== 'yes'}
-                  >
-                    {facebookLoading ? 'Loading Pages...' : 'Next - Fetch My Pages'}
-                  </Button>
+                  )}
                 </div>
-              ) : (
+                <div>
+                  <div className="flex items-center justify-center gap-2">
+                    <h3 className="font-semibold text-lg text-gray-900">Facebook / Instagram</h3>
+                    {(facebookPages.length > 0 || facebookAdAccounts.length > 0) && (
+                      <Badge variant="default" className="bg-green-500">Connected</Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {(facebookPages.length > 0 || facebookAdAccounts.length > 0)
+                      ? `${facebookPages.length} page${facebookPages.length !== 1 ? 's' : ''}, ${facebookAdAccounts.length} ad account${facebookAdAccounts.length !== 1 ? 's' : ''}`
+                      : 'Connect your Facebook account and Instagram for social media management'
+                    }
+                  </p>
+                  {facebookPages.length > 0 && (
+                    <div className="mt-2 text-xs text-gray-600">
+                      <p className="font-medium">Pages:</p>
+                      <p>{facebookPages.map(p => p.name).join(', ')}</p>
+                    </div>
+                  )}
+                  {facebookAdAccounts.length > 0 && (
+                    <div className="mt-2 text-xs text-gray-600">
+                      <p className="font-medium">Ad Accounts:</p>
+                      <p>{facebookAdAccounts.map(a => a.name).join(', ')}</p>
+                    </div>
+                  )}
+                </div>
+                <Button 
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                  onClick={() => setShowFacebookPages(true)}
+                  disabled={loading || !locationId}
+                >
+                  {(facebookPages.length > 0 || facebookAdAccounts.length > 0) ? 'Manage Integration' : 'Connect Facebook'}
+                </Button>
+                {!loading && !locationId && (
+                  <p className="text-xs text-red-500">
+                    Please set up a GHL subaccount first
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Facebook Management Modal/Section */}
+        {showFacebookPages && (
+          <Card className="mt-6">
+            <CardContent className="pt-6">
+              {!facebookDidLogin ? (
                 <div className="max-w-4xl mx-auto space-y-6">
                   <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center gap-3">
@@ -923,10 +917,13 @@ export default function IntegrationsSettings() {
                     {facebookLoading ? 'Connecting...' : `Connect ${selectedFacebookPages.length} Page${selectedFacebookPages.length !== 1 ? 's' : ''}`}
                   </Button>
                 </div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
+        )}
 
+        {/* Integration Cards Grid - Continued */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Outlook Calendar Integration */}
           <Card className="hover:shadow-lg transition-shadow">
             <CardContent className="pt-6">
