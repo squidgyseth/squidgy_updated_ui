@@ -854,50 +854,18 @@ export default function IntegrationsSettings() {
           const data = await response.json();
           console.log('✅ Connected accounts response:', data);
           
-          // Check if we have a valid response structure
-          if (data.success && data.results !== undefined) {
-            // Try to fetch OAuth connections to get the actual OAuth ID
-            try {
-              const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook`;
-              
-              const oauthResponse = await fetch(oauthUrl, {
-                method: 'GET',
-                headers: {
-                  'authorization': `Bearer ${accessToken}`,
-                  'token-id': firebaseToken,
-                  'version': '2021-07-28',
-                  'channel': 'APP',
-                  'source': 'WEB_USER',
-                  'accept': 'application/json'
-                }
-              });
-
-              if (oauthResponse.ok) {
-                const oauthData = await oauthResponse.json();
-                console.log('✅ OAuth connections list:', JSON.stringify(oauthData, null, 2));
-                
-                // Extract OAuth ID from the connections list
-                if (oauthData && Array.isArray(oauthData) && oauthData.length > 0) {
-                  console.log('📋 First OAuth connection object:', JSON.stringify(oauthData[0], null, 2));
-                  const oAuthId = oauthData[0]._id || oauthData[0].id;
-                  if (oAuthId) {
-                    console.log('✅ Found OAuth ID from connections list:', oAuthId);
-                    console.log('🔗 Will fetch pages from:', `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook/accounts/${oAuthId}`);
-                    await fetchSocialMediaAccountsWithOAuthId(oAuthId);
-                    setSocialMediaLoading(false);
-                    return; // Stop polling
-                  } else {
-                    console.warn('⚠️ OAuth connection found but no _id or id field');
-                  }
-                } else {
-                  console.warn('⚠️ No OAuth connections found in response');
-                }
-              } else {
-                console.error('❌ OAuth connections request failed:', oauthResponse.status);
-              }
-            } catch (oauthError) {
-              console.error('❌ Error fetching OAuth connections:', oauthError);
-            }
+          // Check if we have a valid response structure with traceId
+          if (data.success && data.results !== undefined && data.traceId) {
+            const oAuthId = data.traceId;
+            console.log('✅ Using traceId as OAuth ID:', oAuthId);
+            console.log('🔗 Will fetch pages from:', `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook/accounts/${oAuthId}`);
+            
+            // Use the traceId directly to fetch Facebook pages
+            await fetchSocialMediaAccountsWithOAuthId(oAuthId);
+            setSocialMediaLoading(false);
+            return; // Stop polling
+          } else {
+            console.log('⏳ Waiting for valid response with traceId...');
           }
         }
         
