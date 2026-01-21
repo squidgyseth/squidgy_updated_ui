@@ -117,7 +117,10 @@ export default function IntegrationsSettings() {
         if (result.token_refreshed) {
           console.log('✅ Firebase token refresh started in background');
         } else {
-          console.log(`✅ Firebase token is fresh (age: ${result.token_age_minutes} minutes)`);
+          const ageText = result.token_age_minutes !== undefined && result.token_age_minutes !== null 
+            ? `${result.token_age_minutes} minutes` 
+            : 'unknown';
+          console.log(`✅ Firebase token is fresh (age: ${ageText})`);
         }
         // After refresh check, fetch the tokens
         await fetchTokensFromDatabase();
