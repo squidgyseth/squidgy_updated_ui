@@ -69,19 +69,18 @@ export default function IntegrationsSettings() {
     }
   }, [firmUserId]);
 
-  // Disabled auto-fetch to prevent 401 errors - users can manually click "Connect Facebook" button
-  // useEffect(() => {
-  //   if (locationId && firebaseToken && accessToken && !showFacebookPages) {
-  //     Promise.all([
-  //       fetchFacebookPagesFromGHL().catch(err => {
-  //         console.log('⚠️ Skipping Facebook pages auto-fetch:', err.message);
-  //       }),
-  //       fetchFacebookAdAccountsFromGHL().catch(err => {
-  //         console.log('⚠️ Skipping Facebook ad accounts auto-fetch:', err.message);
-  //       })
-  //     ]);
-  //   }
-  // }, [locationId, firebaseToken, accessToken]);
+  useEffect(() => {
+    if (locationId && firebaseToken && accessToken && !showFacebookPages) {
+      Promise.all([
+        fetchFacebookPagesFromGHL().catch(err => {
+          console.log('⚠️ Skipping Facebook pages auto-fetch:', err.message);
+        }),
+        fetchFacebookAdAccountsFromGHL().catch(err => {
+          console.log('⚠️ Skipping Facebook ad accounts auto-fetch:', err.message);
+        })
+      ]);
+    }
+  }, [locationId, firebaseToken, accessToken]);
 
   useEffect(() => {
     // Auto-fetch connected social media accounts when tokens are available
