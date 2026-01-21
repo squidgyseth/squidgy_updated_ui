@@ -48,6 +48,7 @@ export default function IntegrationsSettings() {
   const [firmUserId, setFirmUserId] = useState<string | null>(null);
   const [firebaseToken, setFirebaseToken] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [refreshingToken, setRefreshingToken] = useState(false);
   
   // Social Media Posting states
   const [socialMediaPages, setSocialMediaPages] = useState<any[]>([]);
@@ -70,7 +71,7 @@ export default function IntegrationsSettings() {
   }, [firmUserId]);
 
   useEffect(() => {
-    if (locationId && firebaseToken && accessToken && !showFacebookPages) {
+    if (locationId && firebaseToken && accessToken && !showFacebookPages && !refreshingToken) {
       Promise.all([
         fetchFacebookPagesFromGHL().catch(err => {
           console.log('⚠️ Skipping Facebook pages auto-fetch:', err.message);
@@ -80,7 +81,7 @@ export default function IntegrationsSettings() {
         })
       ]);
     }
-  }, [locationId, firebaseToken, accessToken]);
+  }, [locationId, firebaseToken, accessToken, refreshingToken]);
 
   useEffect(() => {
     // Auto-fetch connected social media accounts when tokens are available
@@ -99,6 +100,7 @@ export default function IntegrationsSettings() {
   const refreshFirebaseToken = async () => {
     if (!firmUserId) return;
     
+    setRefreshingToken(true);
     try {
       console.log('🔄 Checking Firebase token freshness...');
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -123,6 +125,8 @@ export default function IntegrationsSettings() {
     } catch (error) {
       console.error('❌ Error refreshing Firebase token:', error);
       // Don't show error to user - this is a background operation
+    } finally {
+      setRefreshingToken(false);
     }
   };
 
@@ -301,7 +305,9 @@ export default function IntegrationsSettings() {
 
   const fetchFacebookPagesFromGHL = async () => {
     if (!locationId || !firebaseToken || !accessToken) {
-      toast.error('Missing required tokens. Please wait for token refresh.');
+      if (!refreshingToken) {
+        console.log('⚠️ Missing required tokens. Waiting for token refresh...');
+      }
       return;
     }
     
@@ -366,7 +372,10 @@ export default function IntegrationsSettings() {
       console.log(`✅ Found ${pages.length} total pages (${connectedPages.length} connected)`);
     } catch (error: any) {
       console.error('❌ Error fetching Facebook pages:', error);
-      toast.error(error.message || 'Failed to fetch Facebook pages');
+      // Only show error toast if not refreshing token
+      if (!refreshingToken) {
+        toast.error(error.message || 'Failed to fetch Facebook pages');
+      }
     } finally {
       setFacebookLoading(false);
     }
@@ -1236,8 +1245,13 @@ export default function IntegrationsSettings() {
           </Card>
 
           {/* Facebook / Instagram Integration */}
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow relative">
             <CardContent className="pt-6">
+              {refreshingToken && (
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
+                  <RefreshCw className="w-8 h-8 text-purple-600 animate-spin" />
+                </div>
+              )}
               <div className="text-center space-y-4">
                 <div className="w-20 h-20 mx-auto rounded-lg flex overflow-hidden relative">
                   <div className="w-1/2 bg-blue-600 flex items-center justify-center">
