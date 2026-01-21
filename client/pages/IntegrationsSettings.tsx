@@ -1319,18 +1319,33 @@ export default function IntegrationsSettings() {
                         <p className="text-sm text-green-600">Found {facebookPages.length} pages</p>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setShowFacebookPages(false);
-                        setFacebookDidLogin(null);
-                        setFacebookPages([]);
-                        setSelectedFacebookPages([]);
-                      }}
-                    >
-                      Start Over
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (facebookOAuthUrl) {
+                            window.open(facebookOAuthUrl, '_blank', 'width=600,height=700');
+                          } else {
+                            toast.error('OAuth URL not available. Please refresh the page.');
+                          }
+                        }}
+                      >
+                        Reconnect
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowFacebookPages(false);
+                          setFacebookDidLogin(null);
+                          setFacebookPages([]);
+                          setSelectedFacebookPages([]);
+                        }}
+                      >
+                        Start Over
+                      </Button>
+                    </div>
                   </div>
 
                   <div>
