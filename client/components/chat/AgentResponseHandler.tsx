@@ -91,10 +91,28 @@ export default function AgentResponseHandler({
           </div>
         );
       }
-      // For other Ready status, agent_response contains HTML to preview
+      
+      // Check if content looks like HTML (contains HTML tags)
+      const looksLikeHtml = /<[a-z][\s\S]*>/i.test(response.agent_response);
+      
+      if (looksLikeHtml) {
+        // For HTML content, use HTMLPreview
+        return (
+          <div className={`agent-response ready-state ${className}`}>
+            <HTMLPreview content={response.agent_response} />
+          </div>
+        );
+      }
+      
+      // For plain text/markdown content, use LinkDetectingTextArea
       return (
         <div className={`agent-response ready-state ${className}`}>
-          <HTMLPreview content={response.agent_response} />
+          <div className="bg-gray-100 rounded-lg px-4 py-2">
+            <LinkDetectingTextArea 
+              content={response.agent_response}
+              className="text-text-primary whitespace-pre-wrap"
+            />
+          </div>
         </div>
       );
       
