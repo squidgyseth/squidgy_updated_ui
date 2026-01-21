@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## SA_Load_Instructions Workflow\n\nPopulates the agent_instructions vector store for ALL agents.\n\n### Triggers:\n- Manual Trigger (for testing)\n- Webhook: POST /webhook/load-instructions\n- GitHub Action (on push to knowledge_base/)\n\n### Flow:\n1. Load instruction files from GitHub\n2. Generate embeddings via OpenAI\n3. Upsert to agent_instructions table\n\n### Agents Loaded:\n- shared (6 files)\n- personal_assistant (7 files)\n- newsletter_multi (2 files)\n- content_repurposer (2 files)\n- smm (2 files)\n- sol (2 files)\n\nTotal: 21 instruction documents",
+        "content": "## SA_Load_Instructions Workflow\n\nPopulates the agent_instructions vector store for ALL agents.\n\n### Triggers:\n- Manual Trigger (for testing)\n- Webhook: POST /webhook/load-instructions\n\n### Flow:\n1. Load instruction files from GitHub\n2. Generate embeddings via OpenRouter (text-embedding-3-small)\n3. Upsert to agent_instructions table\n\n### Agents Loaded:\n- shared (6 files)\n- personal_assistant (7 files)\n- newsletter_multi (2 files)\n- content_repurposer (2 files)\n- smm (2 files)\n- sol (2 files)\n\nTotal: 21 instruction documents",
         "height": 240,
         "width": 400
       },
@@ -80,13 +80,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.openai.com/v1/embeddings",
+        "url": "https://openrouter.ai/api/v1/embeddings",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer {{ $credentials.openAiApi.apiKey }}"
+              "value": "Bearer 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"
             },
             {
               "name": "Content-Type",
@@ -99,7 +99,7 @@
           "parameters": [
             {
               "name": "model",
-              "value": "text-embedding-ada-002"
+              "value": "openai/text-embedding-3-small"
             },
             {
               "name": "input",
@@ -113,13 +113,7 @@
       "typeVersion": 4.3,
       "position": [920, 300],
       "id": "get-embedding",
-      "name": "Generate Embedding",
-      "credentials": {
-        "openAiApi": {
-          "id": "xeFNBBSMiFQf7cQv",
-          "name": "OpenAi account"
-        }
-      }
+      "name": "Generate Embedding (OpenRouter)"
     },
     {
       "parameters": {
