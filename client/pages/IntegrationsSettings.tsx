@@ -49,6 +49,8 @@ export default function IntegrationsSettings() {
   const [firebaseToken, setFirebaseToken] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshingToken, setRefreshingToken] = useState(false);
+  const [tokenRefreshRequested, setTokenRefreshRequested] = useState(false);
+  const [pollingForToken, setPollingForToken] = useState(false);
   
   // Social Media Posting states
   const [socialMediaPages, setSocialMediaPages] = useState<any[]>([]);
@@ -65,7 +67,7 @@ export default function IntegrationsSettings() {
 
   useEffect(() => {
     if (firmUserId) {
-      refreshFirebaseToken();
+      fetchTokensFromDatabase(true); // Check age on initial load
       fetchGHLIntegrations();
     }
   }, [firmUserId]);
@@ -98,11 +100,11 @@ export default function IntegrationsSettings() {
   }, [ghlUserId, locationId, firebaseToken, accessToken]);
 
   const refreshFirebaseToken = async () => {
-    if (!firmUserId) return;
+    if (!firmUserId || tokenRefreshRequested) return; // Prevent duplicate requests
     
     setRefreshingToken(true);
     try {
-      console.log('🔄 Checking Firebase token freshness...');
+      console.log('🔄 Requesting Firebase token refresh...');
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       
       const response = await fetch(`${backendUrl}/api/ghl/refresh-firebase-token`, {
@@ -121,19 +123,19 @@ export default function IntegrationsSettings() {
             ? `${result.token_age_minutes} minutes` 
             : 'unknown';
           console.log(`✅ Firebase token is fresh (age: ${ageText})`);
+          // Token is fresh, fetch it now
+          await fetchTokensFromDatabase(false);
         }
-        // After refresh check, fetch the tokens
-        await fetchTokensFromDatabase();
       }
     } catch (error) {
       console.error('❌ Error refreshing Firebase token:', error);
-      // Don't show error to user - this is a background operation
+      setTokenRefreshRequested(false);
     } finally {
       setRefreshingToken(false);
     }
   };
 
-  const fetchTokensFromDatabase = async () => {
+  const fetchTokensFromDatabase = async (checkAge = false) => {
     if (!firmUserId) return;
     
     try {
@@ -162,21 +164,31 @@ export default function IntegrationsSettings() {
         const tokenTime = ghlData['firebase token time'];
         const accessTok = fbData?.access_token || pitTok; // Use access_token if available, fallback to PIT
         
-        // Check if token is older than 1 hour
-        let tokenNeedsRefresh = false;
-        if (tokenTime && fbToken) {
-          const tokenDate = new Date(tokenTime);
-          const now = new Date();
-          const ageInMinutes = (now.getTime() - tokenDate.getTime()) / (1000 * 60);
-          console.log(`🕐 Firebase token age: ${Math.floor(ageInMinutes)} minutes`);
-          
-          if (ageInMinutes > 60) {
-            console.log('⚠️ Firebase token is older than 1 hour, triggering refresh...');
+        // Only check age on initial load, not during polling
+        if (checkAge && !tokenRefreshRequested) {
+          let tokenNeedsRefresh = false;
+          if (tokenTime && fbToken) {
+            const tokenDate = new Date(tokenTime);
+            const now = new Date();
+            const ageInMinutes = (now.getTime() - tokenDate.getTime()) / (1000 * 60);
+            console.log(`🕐 Firebase token age: ${Math.floor(ageInMinutes)} minutes`);
+            
+            if (ageInMinutes > 60) {
+              console.log('⚠️ Firebase token is older than 1 hour, triggering refresh...');
+              tokenNeedsRefresh = true;
+            }
+          } else if (!fbToken || !tokenTime) {
+            console.log('⚠️ Firebase token or timestamp missing, triggering refresh...');
             tokenNeedsRefresh = true;
           }
-        } else if (!fbToken || !tokenTime) {
-          console.log('⚠️ Firebase token or timestamp missing, triggering refresh...');
-          tokenNeedsRefresh = true;
+          
+          // Trigger refresh ONCE and start polling
+          if (tokenNeedsRefresh) {
+            setTokenRefreshRequested(true);
+            await refreshFirebaseToken();
+            startTokenPolling();
+            return; // Don't set tokens yet, wait for refresh
+          }
         }
         
         setFirebaseToken(fbToken);
@@ -190,15 +202,56 @@ export default function IntegrationsSettings() {
           hasPITToken: !!pitTok,
           locationId: locId
         });
-        
-        // Trigger refresh if needed
-        if (tokenNeedsRefresh) {
-          await refreshFirebaseToken();
-        }
       }
     } catch (error) {
       console.error('❌ Error fetching tokens:', error);
     }
+  };
+
+  const startTokenPolling = () => {
+    if (pollingForToken) return; // Already polling
+    
+    setPollingForToken(true);
+    console.log('🔄 Starting token polling (checking every 5 seconds)...');
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data: ghlData } = await supabase
+          .from('ghl_subaccounts')
+          .select('"Firebase Token", "firebase token time"')
+          .eq('firm_user_id', firmUserId)
+          .single();
+        
+        if (ghlData && ghlData['Firebase Token']) {
+          const tokenTime = ghlData['firebase token time'];
+          if (tokenTime) {
+            const tokenDate = new Date(tokenTime);
+            const now = new Date();
+            const ageInMinutes = (now.getTime() - tokenDate.getTime()) / (1000 * 60);
+            
+            // If token is fresh (less than 5 minutes old), it's been updated
+            if (ageInMinutes < 5) {
+              console.log('✅ Token has been refreshed! Stopping polling.');
+              clearInterval(pollInterval);
+              setPollingForToken(false);
+              setTokenRefreshRequested(false);
+              // Fetch all tokens now
+              await fetchTokensFromDatabase(false);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error polling for token:', error);
+      }
+    }, 5000); // Poll every 5 seconds
+    
+    // Stop polling after 5 minutes to prevent infinite polling
+    setTimeout(() => {
+      clearInterval(pollInterval);
+      setPollingForToken(false);
+      setTokenRefreshRequested(false);
+      console.log('⏱️ Token polling timeout reached');
+    }, 300000); // 5 minutes
   };
 
   const checkGoogleCalendarConnection = async () => {
