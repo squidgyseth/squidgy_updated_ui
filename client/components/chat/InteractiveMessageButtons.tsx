@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { googleCalendarService } from '../../lib/googleCalendar';
 import { toast } from 'sonner';
 import AgentMappingService from '../../services/agentMappingService';
+import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 
 interface InteractiveMessageButtonsProps {
   content: string;
@@ -188,11 +189,12 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
 
   return (
     <div className="space-y-3">
-      {/* Display the cleaned text content */}
+      {/* Display the cleaned text content with markdown rendering */}
       {textContent && (
-        <div className="whitespace-pre-wrap text-gray-800">
-          {textContent}
-        </div>
+        <LinkDetectingTextArea 
+          content={textContent}
+          className="whitespace-pre-wrap text-gray-800"
+        />
       )}
       
       {/* Display interactive buttons */}
