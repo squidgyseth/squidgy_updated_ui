@@ -1,10 +1,11 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-20T14:34:51.118Z
+// Generated on: 2026-01-21T09:10:59.938Z
 
 export interface AgentConfig {
   agent: {
     id: string;
     name: string;
+    emoji?: string;
     category: string;
     description: string;
     specialization?: string;
@@ -12,6 +13,7 @@ export interface AgentConfig {
     avatar?: string;
     pinned?: boolean;
     initial_message?: string;
+    sidebar_greeting?: string;
     capabilities?: string[];
     recent_actions?: string[];
   };
@@ -44,27 +46,29 @@ export const ALL_AGENTS: AgentConfig[] = [
   {
     "agent": {
       "id": "personal_assistant",
+      "emoji": "🤖",
       "name": "Personal Assistant",
       "category": "GENERAL",
-      "description": "Your versatile personal assistant ready to help with any task.",
-      "specialization": "Always Ready to Help",
-      "tagline": "Organize. Schedule. Support.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+      "description": "Your onboarding assistant for setting up AI agents",
+      "specialization": "Onboarding Expert",
+      "tagline": "Setup. Configure. Launch.",
+      "avatar": "/Squidgy AI Assistants Avatars/1.png",
       "pinned": true,
-      "initial_message": "Hello! To continue with the setup process, I'll need to review your company website to understand your organization's values, communication style, industry sector, and other relevant details. Could you please provide your website URL?",
+      "initial_message": "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.",
+      "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
       "capabilities": [
-        "Task management and scheduling coordination",
-        "Research and information gathering",
-        "Email drafting and communication support",
-        "Document organization and file management",
-        "Calendar management and appointment scheduling",
-        "Travel planning and logistics coordination"
+        "Website analysis and company insights",
+        "AI agent recommendation and setup",
+        "Brand voice and communication style configuration",
+        "Target audience and business goal analysis",
+        "Calendar and notification setup",
+        "Complete onboarding flow management"
       ],
       "recent_actions": [
-        "Organized calendar for next week's meetings",
-        "Researched market trends for quarterly report",
-        "Drafted follow-up emails for client meetings",
-        "Scheduled team meetings for project kickoff"
+        "Analyzed company website and recommended 3 AI agents",
+        "Configured SMM Assistant for e-commerce business",
+        "Set up professional brand voice for marketing team",
+        "Enabled notifications and calendar integration"
       ]
     },
     "ui_use": {
@@ -88,12 +92,12 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "suggestions": [
-      "Help me organize my schedule for this week",
-      "Draft a professional email for me",
-      "Research latest industry trends",
-      "Create a task list for my project",
-      "Schedule a meeting with my team",
-      "Help me plan my upcoming trip"
+      "Let's start the setup process",
+      "Analyze my company website",
+      "Recommend AI agents for my business",
+      "Configure my brand voice and style",
+      "Set up notifications and calendar",
+      "➕ Add Another Assistant"
     ],
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant"
@@ -102,71 +106,6 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tone": "professional",
       "style": "helpful",
       "approach": "proactive"
-    }
-  },
-  {
-    "agent": {
-      "id": "newsletter",
-      "name": "Newsletter Agent",
-      "category": "MARKETING",
-      "description": "Create and manage newsletters",
-      "specialization": "Creative & Trendy",
-      "tagline": "Content. Create. Distribute.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
-      "pinned": true,
-      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
-      "capabilities": [
-        "Content creation and optimization for newsletters",
-        "PDF document processing and analysis",
-        "Speech-to-text content input",
-        "Newsletter template generation",
-        "Email marketing best practices"
-      ],
-      "recent_actions": [
-        "Generated newsletter for Q4 product launch",
-        "Processed PDF content from marketing materials",
-        "Analyzed competitor newsletter performance"
-      ]
-    },
-    "suggestions": [
-      "Create newsletter content",
-      "Process PDF document",
-      "Generate email templates",
-      "Analyze newsletter performance",
-      "Design email layout",
-      "Optimize subject lines"
-    ],
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
-      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
-      "pages": [
-        {
-          "name": "newsletter_liquid-blanch-17032840_page1",
-          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-          "order": 1,
-          "source": {
-            "type": "figma_deployed",
-            "url": "https://liquid-blanch-17032840.figma.site/"
-          }
-        }
-      ]
-    },
-    "ui_use": {
-      "pages": [
-        {
-          "name": "Newsletter Liquid-Blanch-17032840 Page1",
-          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-          "order": 1,
-          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
-        }
-      ],
-      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
     }
   },
   {
@@ -235,35 +174,45 @@ export const ALL_AGENTS: AgentConfig[] = [
   },
   {
     "agent": {
-      "id": "smm_assistant",
-      "name": "SMM Assistant",
+      "id": "content_repurposer_multi",
+      "emoji": "✨",
+      "name": "Content Repurposer Multi",
       "category": "MARKETING",
-      "description": "Specializes in social media marketing, content creation, and trend analysis.",
-      "specialization": "Creative & Trendy",
-      "tagline": "Trend. Post. Analyze.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+      "description": "Transform content into multiple platform formats",
+      "specialization": "Content Repurposer",
+      "tagline": "Repurpose. Convert. Deliver.",
+      "avatar": "/Squidgy AI Assistants Avatars/10.png",
+      "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
-        "Content creation and optimization for all major social platforms",
-        "Trend analysis and hashtag research",
-        "Social media strategy development and planning",
-        "Engagement optimization and community management"
+        "Multi-platform content transformation",
+        "Social media post generation (LinkedIn, Twitter, Instagram)",
+        "Blog to social media conversion",
+        "Newsletter content repurposing",
+        "Tone and style adaptation per platform"
       ],
       "recent_actions": [
-        "Created 15 Instagram post ideas for fashion brand",
-        "Analysed competitor performance",
-        "Generated trending hashtags for Q4 campaign",
-        "Developed content calendar for December"
+        "Converted blog post into 5 LinkedIn posts",
+        "Generated Twitter thread from newsletter",
+        "Created Instagram captions from article",
+        "Adapted content for multiple audiences"
       ]
     },
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
     },
     "ui_use": {
       "page_type": "single_page",
       "pages": [
         {
-          "name": "SMM Dashboard",
-          "path": "smm-dashboard",
+          "name": "Your Agent Dashboard",
+          "path": "your-agent-dashboard",
           "order": 1,
           "validated": true
         }
@@ -279,28 +228,275 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "suggestions": [
-      "Create Instagram post ideas",
-      "Analyze competitor content",
-      "Write engaging captions",
-      "Generate trending hashtags",
-      "Plan content calendar",
-      "Optimize engagement strategy"
+      "Convert newsletter to social posts",
+      "Create LinkedIn post from content",
+      "Generate Twitter thread",
+      "Adapt for Instagram",
+      "Repurpose for multiple platforms",
+      "Change tone for different audience"
     ],
     "personality": {
-      "tone": "creative",
-      "style": "trendy",
-      "approach": "data_driven"
+      "tone": "professional",
+      "style": "helpful",
+      "approach": "proactive"
+    }
+  },
+  {
+    "agent": {
+      "id": "newsletter",
+      "emoji": "📧",
+      "name": "Newsletter Agent",
+      "category": "MARKETING",
+      "description": "Create and manage newsletters",
+      "specialization": "Creative & Trendy",
+      "tagline": "Content. Create. Distribute.",
+      "avatar": "/Squidgy AI Assistants Avatars/4.png",
+      "pinned": false,
+      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+      "capabilities": [
+        "Content creation and optimization for newsletters",
+        "PDF document processing and analysis",
+        "Speech-to-text content input",
+        "Newsletter template generation",
+        "Email marketing best practices"
+      ],
+      "recent_actions": [
+        "Generated newsletter for Q4 product launch",
+        "Processed PDF content from marketing materials",
+        "Analyzed competitor newsletter performance"
+      ]
+    },
+    "suggestions": [
+      "Create newsletter content",
+      "Process PDF document",
+      "Generate email templates",
+      "Analyze newsletter performance",
+      "Design email layout",
+      "Optimize subject lines"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+      "pages": [
+        {
+          "name": "newsletter_liquid-blanch-17032840_page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "source": {
+            "type": "figma_deployed",
+            "url": "https://liquid-blanch-17032840.figma.site/"
+          }
+        }
+      ]
+    },
+    "ui_use": {
+      "pages": [
+        {
+          "name": "Newsletter Liquid-Blanch-17032840 Page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+        }
+      ],
+      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+    }
+  },
+  {
+    "agent": {
+      "id": "newsletter_multi",
+      "emoji": "📰",
+      "name": "Newsletter Agent Multi",
+      "category": "MARKETING",
+      "description": "Create and manage newsletters",
+      "specialization": "Creative & Trendy",
+      "tagline": "Content. Create. Distribute.",
+      "avatar": "/Squidgy AI Assistants Avatars/7.png",
+      "pinned": false,
+      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+      "capabilities": [
+        "Content creation and optimization for newsletters",
+        "PDF document processing and analysis",
+        "Speech-to-text content input",
+        "Newsletter template generation",
+        "Email marketing best practices"
+      ],
+      "recent_actions": [
+        "Generated newsletter for Q4 product launch",
+        "Processed PDF content from marketing materials",
+        "Analyzed competitor newsletter performance"
+      ]
+    },
+    "suggestions": [
+      "Create newsletter content",
+      "Process PDF document",
+      "Generate email templates",
+      "Analyze newsletter performance",
+      "Design email layout",
+      "Optimize subject lines"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/newsletter_multi",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+      "pages": [
+        {
+          "name": "newsletter_liquid-blanch-17032840_page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "source": {
+            "type": "figma_deployed",
+            "url": "https://liquid-blanch-17032840.figma.site/"
+          }
+        }
+      ]
+    },
+    "ui_use": {
+      "pages": [
+        {
+          "name": "Newsletter Liquid-Blanch-17032840 Page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+        }
+      ],
+      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+    }
+  },
+  {
+    "agent": {
+      "id": "social_media_agent",
+      "emoji": "📱",
+      "name": "Social Media Manager",
+      "category": "MARKETING",
+      "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn",
+      "specialization": "Social Media Automation",
+      "tagline": "Consult. Confirm. Execute.",
+      "avatar": "/Squidgy AI Assistants Avatars/16.png",
+      "pinned": false,
+      "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
+      "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
+      "capabilities": [
+        "Multi-platform post scheduling (Facebook, Instagram, LinkedIn)",
+        "Content ideation and caption generation",
+        "Image and video post management",
+        "Story scheduling for Facebook and Instagram",
+        "Media file upload and storage management",
+        "UTC timezone conversion for global scheduling",
+        "Post deletion with safety confirmations"
+      ],
+      "recent_actions": [
+        "Scheduled 5 LinkedIn posts for the week",
+        "Created Instagram story campaign for product launch",
+        "Generated caption ideas for Facebook engagement post",
+        "Uploaded media files to storage for reuse"
+      ]
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Social Media Dashboard",
+          "path": "social-media-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons"
+      ]
+    },
+    "suggestions": [
+      "Schedule a post for LinkedIn",
+      "Create an Instagram image post",
+      "Generate caption ideas for Facebook",
+      "Schedule a story for Instagram",
+      "Upload media to storage",
+      "Show my scheduled posts"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_agent"
+    },
+    "personality": {
+      "tone": "professional",
+      "style": "helpful",
+      "approach": "consultative"
+    },
+    "platforms": {
+      "facebook": {
+        "accounts": [
+          "The Ai Team",
+          "Solair - Solar Energy Ai Assistant"
+        ],
+        "content_types": [
+          "text",
+          "image",
+          "video",
+          "story_image",
+          "story_video"
+        ]
+      },
+      "instagram": {
+        "accounts": [
+          "hiretheaiteam",
+          "Seth Ward"
+        ],
+        "content_types": [
+          "image",
+          "video",
+          "story_image",
+          "story_video"
+        ]
+      },
+      "linkedin": {
+        "accounts": [
+          "Seth Ward",
+          "The Ai Team"
+        ],
+        "content_types": [
+          "text",
+          "image",
+          "video"
+        ]
+      }
+    },
+    "media_handling": {
+      "max_file_size_mb": 25,
+      "supported_image_types": [
+        "image/png",
+        "image/jpeg"
+      ],
+      "supported_video_types": [
+        "video/mp4"
+      ]
     }
   },
   {
     "agent": {
       "id": "SOL",
-      "name": "SOL Bot",
+      "emoji": "☀️",
+      "name": "Solar Sales Assistant",
       "category": "SALES",
       "description": "Solar sales expert - Calculate savings, design systems, close deals",
       "specialization": "Solar Energy Expert",
       "tagline": "Illuminate. Calculate. Convert.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
+      "avatar": "/Squidgy AI Assistants Avatars/5.png",
       "pinned": true,
       "presetup_required": true,
       "presetup_page": "/solar-config",
@@ -410,12 +606,86 @@ export const ALL_AGENTS: AgentConfig[] = [
   {
     "agent": {
       "id": "content_repurposer",
+      "emoji": "🔄",
       "name": "Content Repurposer",
       "category": "SALES",
       "description": "Repurpose content for different platforms and audiences",
       "specialization": "Content Repurposer",
       "tagline": "Repurpose. Convert. Deliver.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
+      "avatar": "/Squidgy AI Assistants Avatars/15.png",
+      "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
+      "capabilities": [
+        "Primary capability or main function",
+        "Secondary feature or service provided",
+        "Integration or special functionality",
+        "Advanced feature or automation",
+        "Additional service or tool"
+      ],
+      "recent_actions": [
+        "Completed a recent task or project",
+        "Generated content or performed analysis",
+        "Processed user request or data",
+        "Automated workflow or integration"
+      ]
+    },
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Your Agent Dashboard",
+          "path": "your-agent-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons"
+      ]
+    },
+    "suggestions": [
+      "First suggested action",
+      "Second helpful prompt",
+      "Third common task",
+      "Fourth useful command",
+      "Fifth popular request",
+      "Sixth frequent operation"
+    ],
+    "personality": {
+      "tone": "professional",
+      "style": "helpful",
+      "approach": "proactive"
+    }
+  }
+];
+
+// Agents by ID (for fast lookup)
+export const AGENTS_BY_ID: Record<string, AgentConfig> = {
+  "content_repurposer": {
+    "agent": {
+      "id": "content_repurposer",
+      "emoji": "🔄",
+      "name": "Content Repurposer",
+      "category": "SALES",
+      "description": "Repurpose content for different platforms and audiences",
+      "specialization": "Content Repurposer",
+      "tagline": "Repurpose. Convert. Deliver.",
+      "avatar": "/Squidgy AI Assistants Avatars/15.png",
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
         "Primary capability or main function",
@@ -475,156 +745,29 @@ export const ALL_AGENTS: AgentConfig[] = [
       "approach": "proactive"
     }
   },
-  {
+  "content_repurposer_multi": {
     "agent": {
-      "id": "test_multi_agent",
-      "name": "Test Multi-Agent",
-      "category": "TESTING",
-      "description": "Testing multi-agent code generation system.",
-      "specialization": "Advanced Testing",
-      "tagline": "Test. Generate. Collaborate.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-      "capabilities": [
-        "Multi-agent code generation and testing",
-        "Advanced AI workflow collaboration",
-        "System integration testing",
-        "Performance optimization and analysis"
-      ],
-      "recent_actions": [
-        "Generated test suites for new features",
-        "Coordinated multi-agent workflows",
-        "Optimized system performance metrics",
-        "Validated integration pipelines"
-      ]
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Testing Dashboard",
-          "path": "testing-dashboard",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "Generate test cases",
-      "Run system diagnostics",
-      "Optimize performance",
-      "Create integration tests",
-      "Validate workflows",
-      "Analyze metrics"
-    ],
-    "personality": {
-      "tone": "technical",
-      "style": "analytical",
-      "approach": "systematic"
-    }
-  },
-  {
-    "agent": {
-      "id": "test_multi_page_agent",
-      "name": "Test Multi-Page Agent",
-      "category": "TESTING",
-      "description": "Testing multi-page functionality.",
-      "specialization": "Multi-Page Testing",
-      "tagline": "Navigate. Test. Validate.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-      "capabilities": [
-        "Multi-page navigation testing",
-        "Complex UI component validation",
-        "User journey optimization",
-        "Interface responsiveness testing"
-      ],
-      "recent_actions": [
-        "Tested multi-page navigation flows",
-        "Validated complex UI components",
-        "Optimized user experience paths",
-        "Analyzed interface responsiveness"
-      ]
-    },
-    "ui_use": {
-      "page_type": "multi_page",
-      "pages": [
-        {
-          "name": "Navigation Test",
-          "path": "navigation-test",
-          "order": 1,
-          "validated": true
-        },
-        {
-          "name": "UI Validation",
-          "path": "ui-validation",
-          "order": 2,
-          "validated": false
-        },
-        {
-          "name": "Performance Analysis",
-          "path": "performance-analysis",
-          "order": 3,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "Test navigation flows",
-      "Validate UI components",
-      "Optimize user journeys",
-      "Check responsiveness",
-      "Run page tests",
-      "Analyze performance"
-    ],
-    "personality": {
-      "tone": "professional",
-      "style": "methodical",
-      "approach": "comprehensive"
-    }
-  }
-];
-
-// Agents by ID (for fast lookup)
-export const AGENTS_BY_ID: Record<string, AgentConfig> = {
-  "content_repurposer": {
-    "agent": {
-      "id": "content_repurposer",
-      "name": "Content Repurposer",
-      "category": "SALES",
-      "description": "Repurpose content for different platforms and audiences",
+      "id": "content_repurposer_multi",
+      "emoji": "✨",
+      "name": "Content Repurposer Multi",
+      "category": "MARKETING",
+      "description": "Transform content into multiple platform formats",
       "specialization": "Content Repurposer",
       "tagline": "Repurpose. Convert. Deliver.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
+      "avatar": "/Squidgy AI Assistants Avatars/10.png",
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
-        "Primary capability or main function",
-        "Secondary feature or service provided",
-        "Integration or special functionality",
-        "Advanced feature or automation",
-        "Additional service or tool"
+        "Multi-platform content transformation",
+        "Social media post generation (LinkedIn, Twitter, Instagram)",
+        "Blog to social media conversion",
+        "Newsletter content repurposing",
+        "Tone and style adaptation per platform"
       ],
       "recent_actions": [
-        "Completed a recent task or project",
-        "Generated content or performed analysis",
-        "Processed user request or data",
-        "Automated workflow or integration"
+        "Converted blog post into 5 LinkedIn posts",
+        "Generated Twitter thread from newsletter",
+        "Created Instagram captions from article",
+        "Adapted content for multiple audiences"
       ]
     },
     "n8n": {
@@ -658,12 +801,12 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
-      "First suggested action",
-      "Second helpful prompt",
-      "Third common task",
-      "Fourth useful command",
-      "Fifth popular request",
-      "Sixth frequent operation"
+      "Convert newsletter to social posts",
+      "Create LinkedIn post from content",
+      "Generate Twitter thread",
+      "Adapt for Instagram",
+      "Repurpose for multiple platforms",
+      "Change tone for different audience"
     ],
     "personality": {
       "tone": "professional",
@@ -674,13 +817,14 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
   "newsletter": {
     "agent": {
       "id": "newsletter",
+      "emoji": "📧",
       "name": "Newsletter Agent",
       "category": "MARKETING",
       "description": "Create and manage newsletters",
       "specialization": "Creative & Trendy",
       "tagline": "Content. Create. Distribute.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
-      "pinned": true,
+      "avatar": "/Squidgy AI Assistants Avatars/4.png",
+      "pinned": false,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
         "Content creation and optimization for newsletters",
@@ -736,30 +880,98 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
     }
   },
+  "newsletter_multi": {
+    "agent": {
+      "id": "newsletter_multi",
+      "emoji": "📰",
+      "name": "Newsletter Agent Multi",
+      "category": "MARKETING",
+      "description": "Create and manage newsletters",
+      "specialization": "Creative & Trendy",
+      "tagline": "Content. Create. Distribute.",
+      "avatar": "/Squidgy AI Assistants Avatars/7.png",
+      "pinned": false,
+      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+      "capabilities": [
+        "Content creation and optimization for newsletters",
+        "PDF document processing and analysis",
+        "Speech-to-text content input",
+        "Newsletter template generation",
+        "Email marketing best practices"
+      ],
+      "recent_actions": [
+        "Generated newsletter for Q4 product launch",
+        "Processed PDF content from marketing materials",
+        "Analyzed competitor newsletter performance"
+      ]
+    },
+    "suggestions": [
+      "Create newsletter content",
+      "Process PDF document",
+      "Generate email templates",
+      "Analyze newsletter performance",
+      "Design email layout",
+      "Optimize subject lines"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/newsletter_multi",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+      "pages": [
+        {
+          "name": "newsletter_liquid-blanch-17032840_page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "source": {
+            "type": "figma_deployed",
+            "url": "https://liquid-blanch-17032840.figma.site/"
+          }
+        }
+      ]
+    },
+    "ui_use": {
+      "pages": [
+        {
+          "name": "Newsletter Liquid-Blanch-17032840 Page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+        }
+      ],
+      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+    }
+  },
   "personal_assistant": {
     "agent": {
       "id": "personal_assistant",
+      "emoji": "🤖",
       "name": "Personal Assistant",
       "category": "GENERAL",
-      "description": "Your versatile personal assistant ready to help with any task.",
-      "specialization": "Always Ready to Help",
-      "tagline": "Organize. Schedule. Support.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+      "description": "Your onboarding assistant for setting up AI agents",
+      "specialization": "Onboarding Expert",
+      "tagline": "Setup. Configure. Launch.",
+      "avatar": "/Squidgy AI Assistants Avatars/1.png",
       "pinned": true,
-      "initial_message": "Hello! To continue with the setup process, I'll need to review your company website to understand your organization's values, communication style, industry sector, and other relevant details. Could you please provide your website URL?",
+      "initial_message": "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.",
+      "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
       "capabilities": [
-        "Task management and scheduling coordination",
-        "Research and information gathering",
-        "Email drafting and communication support",
-        "Document organization and file management",
-        "Calendar management and appointment scheduling",
-        "Travel planning and logistics coordination"
+        "Website analysis and company insights",
+        "AI agent recommendation and setup",
+        "Brand voice and communication style configuration",
+        "Target audience and business goal analysis",
+        "Calendar and notification setup",
+        "Complete onboarding flow management"
       ],
       "recent_actions": [
-        "Organized calendar for next week's meetings",
-        "Researched market trends for quarterly report",
-        "Drafted follow-up emails for client meetings",
-        "Scheduled team meetings for project kickoff"
+        "Analyzed company website and recommended 3 AI agents",
+        "Configured SMM Assistant for e-commerce business",
+        "Set up professional brand voice for marketing team",
+        "Enabled notifications and calendar integration"
       ]
     },
     "ui_use": {
@@ -783,12 +995,12 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
-      "Help me organize my schedule for this week",
-      "Draft a professional email for me",
-      "Research latest industry trends",
-      "Create a task list for my project",
-      "Schedule a meeting with my team",
-      "Help me plan my upcoming trip"
+      "Let's start the setup process",
+      "Analyze my company website",
+      "Recommend AI agents for my business",
+      "Configure my brand voice and style",
+      "Set up notifications and calendar",
+      "➕ Add Another Assistant"
     ],
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant"
@@ -799,37 +1011,41 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "approach": "proactive"
     }
   },
-  "smm_assistant": {
+  "social_media_agent": {
     "agent": {
-      "id": "smm_assistant",
-      "name": "SMM Assistant",
+      "id": "social_media_agent",
+      "emoji": "📱",
+      "name": "Social Media Manager",
       "category": "MARKETING",
-      "description": "Specializes in social media marketing, content creation, and trend analysis.",
-      "specialization": "Creative & Trendy",
-      "tagline": "Trend. Post. Analyze.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+      "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn",
+      "specialization": "Social Media Automation",
+      "tagline": "Consult. Confirm. Execute.",
+      "avatar": "/Squidgy AI Assistants Avatars/16.png",
+      "pinned": false,
+      "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
+      "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
       "capabilities": [
-        "Content creation and optimization for all major social platforms",
-        "Trend analysis and hashtag research",
-        "Social media strategy development and planning",
-        "Engagement optimization and community management"
+        "Multi-platform post scheduling (Facebook, Instagram, LinkedIn)",
+        "Content ideation and caption generation",
+        "Image and video post management",
+        "Story scheduling for Facebook and Instagram",
+        "Media file upload and storage management",
+        "UTC timezone conversion for global scheduling",
+        "Post deletion with safety confirmations"
       ],
       "recent_actions": [
-        "Created 15 Instagram post ideas for fashion brand",
-        "Analysed competitor performance",
-        "Generated trending hashtags for Q4 campaign",
-        "Developed content calendar for December"
+        "Scheduled 5 LinkedIn posts for the week",
+        "Created Instagram story campaign for product launch",
+        "Generated caption ideas for Facebook engagement post",
+        "Uploaded media files to storage for reuse"
       ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant"
     },
     "ui_use": {
       "page_type": "single_page",
       "pages": [
         {
-          "name": "SMM Dashboard",
-          "path": "smm-dashboard",
+          "name": "Social Media Dashboard",
+          "path": "social-media-dashboard",
           "order": 1,
           "validated": true
         }
@@ -845,17 +1061,68 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
-      "Create Instagram post ideas",
-      "Analyze competitor content",
-      "Write engaging captions",
-      "Generate trending hashtags",
-      "Plan content calendar",
-      "Optimize engagement strategy"
+      "Schedule a post for LinkedIn",
+      "Create an Instagram image post",
+      "Generate caption ideas for Facebook",
+      "Schedule a story for Instagram",
+      "Upload media to storage",
+      "Show my scheduled posts"
     ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_agent"
+    },
     "personality": {
-      "tone": "creative",
-      "style": "trendy",
-      "approach": "data_driven"
+      "tone": "professional",
+      "style": "helpful",
+      "approach": "consultative"
+    },
+    "platforms": {
+      "facebook": {
+        "accounts": [
+          "The Ai Team",
+          "Solair - Solar Energy Ai Assistant"
+        ],
+        "content_types": [
+          "text",
+          "image",
+          "video",
+          "story_image",
+          "story_video"
+        ]
+      },
+      "instagram": {
+        "accounts": [
+          "hiretheaiteam",
+          "Seth Ward"
+        ],
+        "content_types": [
+          "image",
+          "video",
+          "story_image",
+          "story_video"
+        ]
+      },
+      "linkedin": {
+        "accounts": [
+          "Seth Ward",
+          "The Ai Team"
+        ],
+        "content_types": [
+          "text",
+          "image",
+          "video"
+        ]
+      }
+    },
+    "media_handling": {
+      "max_file_size_mb": 25,
+      "supported_image_types": [
+        "image/png",
+        "image/jpeg"
+      ],
+      "supported_video_types": [
+        "video/mp4"
+      ]
     }
   },
   "social_media_scheduler": {
@@ -925,12 +1192,13 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
   "SOL": {
     "agent": {
       "id": "SOL",
-      "name": "SOL Bot",
+      "emoji": "☀️",
+      "name": "Solar Sales Assistant",
       "category": "SALES",
       "description": "Solar sales expert - Calculate savings, design systems, close deals",
       "specialization": "Solar Energy Expert",
       "tagline": "Illuminate. Calculate. Convert.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
+      "avatar": "/Squidgy AI Assistants Avatars/5.png",
       "pinned": true,
       "presetup_required": true,
       "presetup_page": "/solar-config",
@@ -1036,130 +1304,6 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
         "permit_databases"
       ]
     }
-  },
-  "test_multi_agent": {
-    "agent": {
-      "id": "test_multi_agent",
-      "name": "Test Multi-Agent",
-      "category": "TESTING",
-      "description": "Testing multi-agent code generation system.",
-      "specialization": "Advanced Testing",
-      "tagline": "Test. Generate. Collaborate.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-      "capabilities": [
-        "Multi-agent code generation and testing",
-        "Advanced AI workflow collaboration",
-        "System integration testing",
-        "Performance optimization and analysis"
-      ],
-      "recent_actions": [
-        "Generated test suites for new features",
-        "Coordinated multi-agent workflows",
-        "Optimized system performance metrics",
-        "Validated integration pipelines"
-      ]
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Testing Dashboard",
-          "path": "testing-dashboard",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "Generate test cases",
-      "Run system diagnostics",
-      "Optimize performance",
-      "Create integration tests",
-      "Validate workflows",
-      "Analyze metrics"
-    ],
-    "personality": {
-      "tone": "technical",
-      "style": "analytical",
-      "approach": "systematic"
-    }
-  },
-  "test_multi_page_agent": {
-    "agent": {
-      "id": "test_multi_page_agent",
-      "name": "Test Multi-Page Agent",
-      "category": "TESTING",
-      "description": "Testing multi-page functionality.",
-      "specialization": "Multi-Page Testing",
-      "tagline": "Navigate. Test. Validate.",
-      "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-      "capabilities": [
-        "Multi-page navigation testing",
-        "Complex UI component validation",
-        "User journey optimization",
-        "Interface responsiveness testing"
-      ],
-      "recent_actions": [
-        "Tested multi-page navigation flows",
-        "Validated complex UI components",
-        "Optimized user experience paths",
-        "Analyzed interface responsiveness"
-      ]
-    },
-    "ui_use": {
-      "page_type": "multi_page",
-      "pages": [
-        {
-          "name": "Navigation Test",
-          "path": "navigation-test",
-          "order": 1,
-          "validated": true
-        },
-        {
-          "name": "UI Validation",
-          "path": "ui-validation",
-          "order": 2,
-          "validated": false
-        },
-        {
-          "name": "Performance Analysis",
-          "path": "performance-analysis",
-          "order": 3,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "Test navigation flows",
-      "Validate UI components",
-      "Optimize user journeys",
-      "Check responsiveness",
-      "Run page tests",
-      "Analyze performance"
-    ],
-    "personality": {
-      "tone": "professional",
-      "style": "methodical",
-      "approach": "comprehensive"
-    }
   }
 };
 
@@ -1169,27 +1313,29 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     {
       "agent": {
         "id": "personal_assistant",
+        "emoji": "🤖",
         "name": "Personal Assistant",
         "category": "GENERAL",
-        "description": "Your versatile personal assistant ready to help with any task.",
-        "specialization": "Always Ready to Help",
-        "tagline": "Organize. Schedule. Support.",
-        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+        "description": "Your onboarding assistant for setting up AI agents",
+        "specialization": "Onboarding Expert",
+        "tagline": "Setup. Configure. Launch.",
+        "avatar": "/Squidgy AI Assistants Avatars/1.png",
         "pinned": true,
-        "initial_message": "Hello! To continue with the setup process, I'll need to review your company website to understand your organization's values, communication style, industry sector, and other relevant details. Could you please provide your website URL?",
+        "initial_message": "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.",
+        "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
         "capabilities": [
-          "Task management and scheduling coordination",
-          "Research and information gathering",
-          "Email drafting and communication support",
-          "Document organization and file management",
-          "Calendar management and appointment scheduling",
-          "Travel planning and logistics coordination"
+          "Website analysis and company insights",
+          "AI agent recommendation and setup",
+          "Brand voice and communication style configuration",
+          "Target audience and business goal analysis",
+          "Calendar and notification setup",
+          "Complete onboarding flow management"
         ],
         "recent_actions": [
-          "Organized calendar for next week's meetings",
-          "Researched market trends for quarterly report",
-          "Drafted follow-up emails for client meetings",
-          "Scheduled team meetings for project kickoff"
+          "Analyzed company website and recommended 3 AI agents",
+          "Configured SMM Assistant for e-commerce business",
+          "Set up professional brand voice for marketing team",
+          "Enabled notifications and calendar integration"
         ]
       },
       "ui_use": {
@@ -1213,12 +1359,12 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "suggestions": [
-        "Help me organize my schedule for this week",
-        "Draft a professional email for me",
-        "Research latest industry trends",
-        "Create a task list for my project",
-        "Schedule a meeting with my team",
-        "Help me plan my upcoming trip"
+        "Let's start the setup process",
+        "Analyze my company website",
+        "Recommend AI agents for my business",
+        "Configure my brand voice and style",
+        "Set up notifications and calendar",
+        "➕ Add Another Assistant"
       ],
       "n8n": {
         "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant"
@@ -1231,71 +1377,6 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     }
   ],
   "MARKETING": [
-    {
-      "agent": {
-        "id": "newsletter",
-        "name": "Newsletter Agent",
-        "category": "MARKETING",
-        "description": "Create and manage newsletters",
-        "specialization": "Creative & Trendy",
-        "tagline": "Content. Create. Distribute.",
-        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=newsletter",
-        "pinned": true,
-        "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
-        "capabilities": [
-          "Content creation and optimization for newsletters",
-          "PDF document processing and analysis",
-          "Speech-to-text content input",
-          "Newsletter template generation",
-          "Email marketing best practices"
-        ],
-        "recent_actions": [
-          "Generated newsletter for Q4 product launch",
-          "Processed PDF content from marketing materials",
-          "Analyzed competitor newsletter performance"
-        ]
-      },
-      "suggestions": [
-        "Create newsletter content",
-        "Process PDF document",
-        "Generate email templates",
-        "Analyze newsletter performance",
-        "Design email layout",
-        "Optimize subject lines"
-      ],
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
-        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
-        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
-        "pages": [
-          {
-            "name": "newsletter_liquid-blanch-17032840_page1",
-            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-            "order": 1,
-            "source": {
-              "type": "figma_deployed",
-              "url": "https://liquid-blanch-17032840.figma.site/"
-            }
-          }
-        ]
-      },
-      "ui_use": {
-        "pages": [
-          {
-            "name": "Newsletter Liquid-Blanch-17032840 Page1",
-            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-            "order": 1,
-            "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
-          }
-        ],
-        "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
-      }
-    },
     {
       "agent": {
         "id": "social_media_scheduler",
@@ -1362,35 +1443,45 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     },
     {
       "agent": {
-        "id": "smm_assistant",
-        "name": "SMM Assistant",
+        "id": "content_repurposer_multi",
+        "emoji": "✨",
+        "name": "Content Repurposer Multi",
         "category": "MARKETING",
-        "description": "Specializes in social media marketing, content creation, and trend analysis.",
-        "specialization": "Creative & Trendy",
-        "tagline": "Trend. Post. Analyze.",
-        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/5de94726d88f958a1bdd5755183ee631960b155f?width=64",
+        "description": "Transform content into multiple platform formats",
+        "specialization": "Content Repurposer",
+        "tagline": "Repurpose. Convert. Deliver.",
+        "avatar": "/Squidgy AI Assistants Avatars/10.png",
+        "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
         "capabilities": [
-          "Content creation and optimization for all major social platforms",
-          "Trend analysis and hashtag research",
-          "Social media strategy development and planning",
-          "Engagement optimization and community management"
+          "Multi-platform content transformation",
+          "Social media post generation (LinkedIn, Twitter, Instagram)",
+          "Blog to social media conversion",
+          "Newsletter content repurposing",
+          "Tone and style adaptation per platform"
         ],
         "recent_actions": [
-          "Created 15 Instagram post ideas for fashion brand",
-          "Analysed competitor performance",
-          "Generated trending hashtags for Q4 campaign",
-          "Developed content calendar for December"
+          "Converted blog post into 5 LinkedIn posts",
+          "Generated Twitter thread from newsletter",
+          "Created Instagram captions from article",
+          "Adapted content for multiple audiences"
         ]
       },
       "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/SMM_Assistant"
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
+        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+      },
+      "ui": {
+        "page_type": "standard",
+        "figma_url": "",
+        "figma_deployed_url": "",
+        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
       },
       "ui_use": {
         "page_type": "single_page",
         "pages": [
           {
-            "name": "SMM Dashboard",
-            "path": "smm-dashboard",
+            "name": "Your Agent Dashboard",
+            "path": "your-agent-dashboard",
             "order": 1,
             "validated": true
           }
@@ -1406,17 +1497,263 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "suggestions": [
-        "Create Instagram post ideas",
-        "Analyze competitor content",
-        "Write engaging captions",
-        "Generate trending hashtags",
-        "Plan content calendar",
-        "Optimize engagement strategy"
+        "Convert newsletter to social posts",
+        "Create LinkedIn post from content",
+        "Generate Twitter thread",
+        "Adapt for Instagram",
+        "Repurpose for multiple platforms",
+        "Change tone for different audience"
       ],
       "personality": {
-        "tone": "creative",
-        "style": "trendy",
-        "approach": "data_driven"
+        "tone": "professional",
+        "style": "helpful",
+        "approach": "proactive"
+      }
+    },
+    {
+      "agent": {
+        "id": "newsletter",
+        "emoji": "📧",
+        "name": "Newsletter Agent",
+        "category": "MARKETING",
+        "description": "Create and manage newsletters",
+        "specialization": "Creative & Trendy",
+        "tagline": "Content. Create. Distribute.",
+        "avatar": "/Squidgy AI Assistants Avatars/4.png",
+        "pinned": false,
+        "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+        "capabilities": [
+          "Content creation and optimization for newsletters",
+          "PDF document processing and analysis",
+          "Speech-to-text content input",
+          "Newsletter template generation",
+          "Email marketing best practices"
+        ],
+        "recent_actions": [
+          "Generated newsletter for Q4 product launch",
+          "Processed PDF content from marketing materials",
+          "Analyzed competitor newsletter performance"
+        ]
+      },
+      "suggestions": [
+        "Create newsletter content",
+        "Process PDF document",
+        "Generate email templates",
+        "Analyze newsletter performance",
+        "Design email layout",
+        "Optimize subject lines"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
+        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+      },
+      "ui": {
+        "page_type": "standard",
+        "figma_url": "",
+        "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+        "pages": [
+          {
+            "name": "newsletter_liquid-blanch-17032840_page1",
+            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+            "order": 1,
+            "source": {
+              "type": "figma_deployed",
+              "url": "https://liquid-blanch-17032840.figma.site/"
+            }
+          }
+        ]
+      },
+      "ui_use": {
+        "pages": [
+          {
+            "name": "Newsletter Liquid-Blanch-17032840 Page1",
+            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+            "order": 1,
+            "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+          }
+        ],
+        "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+      }
+    },
+    {
+      "agent": {
+        "id": "newsletter_multi",
+        "emoji": "📰",
+        "name": "Newsletter Agent Multi",
+        "category": "MARKETING",
+        "description": "Create and manage newsletters",
+        "specialization": "Creative & Trendy",
+        "tagline": "Content. Create. Distribute.",
+        "avatar": "/Squidgy AI Assistants Avatars/7.png",
+        "pinned": false,
+        "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+        "capabilities": [
+          "Content creation and optimization for newsletters",
+          "PDF document processing and analysis",
+          "Speech-to-text content input",
+          "Newsletter template generation",
+          "Email marketing best practices"
+        ],
+        "recent_actions": [
+          "Generated newsletter for Q4 product launch",
+          "Processed PDF content from marketing materials",
+          "Analyzed competitor newsletter performance"
+        ]
+      },
+      "suggestions": [
+        "Create newsletter content",
+        "Process PDF document",
+        "Generate email templates",
+        "Analyze newsletter performance",
+        "Design email layout",
+        "Optimize subject lines"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/newsletter_multi",
+        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+      },
+      "ui": {
+        "page_type": "standard",
+        "figma_url": "",
+        "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+        "pages": [
+          {
+            "name": "newsletter_liquid-blanch-17032840_page1",
+            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+            "order": 1,
+            "source": {
+              "type": "figma_deployed",
+              "url": "https://liquid-blanch-17032840.figma.site/"
+            }
+          }
+        ]
+      },
+      "ui_use": {
+        "pages": [
+          {
+            "name": "Newsletter Liquid-Blanch-17032840 Page1",
+            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+            "order": 1,
+            "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+          }
+        ],
+        "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+      }
+    },
+    {
+      "agent": {
+        "id": "social_media_agent",
+        "emoji": "📱",
+        "name": "Social Media Manager",
+        "category": "MARKETING",
+        "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn",
+        "specialization": "Social Media Automation",
+        "tagline": "Consult. Confirm. Execute.",
+        "avatar": "/Squidgy AI Assistants Avatars/16.png",
+        "pinned": false,
+        "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
+        "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
+        "capabilities": [
+          "Multi-platform post scheduling (Facebook, Instagram, LinkedIn)",
+          "Content ideation and caption generation",
+          "Image and video post management",
+          "Story scheduling for Facebook and Instagram",
+          "Media file upload and storage management",
+          "UTC timezone conversion for global scheduling",
+          "Post deletion with safety confirmations"
+        ],
+        "recent_actions": [
+          "Scheduled 5 LinkedIn posts for the week",
+          "Created Instagram story campaign for product launch",
+          "Generated caption ideas for Facebook engagement post",
+          "Uploaded media files to storage for reuse"
+        ]
+      },
+      "ui_use": {
+        "page_type": "single_page",
+        "pages": [
+          {
+            "name": "Social Media Dashboard",
+            "path": "social-media-dashboard",
+            "order": 1,
+            "validated": true
+          }
+        ]
+      },
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "voice_input",
+          "suggestion_buttons"
+        ]
+      },
+      "suggestions": [
+        "Schedule a post for LinkedIn",
+        "Create an Instagram image post",
+        "Generate caption ideas for Facebook",
+        "Schedule a story for Instagram",
+        "Upload media to storage",
+        "Show my scheduled posts"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_agent"
+      },
+      "personality": {
+        "tone": "professional",
+        "style": "helpful",
+        "approach": "consultative"
+      },
+      "platforms": {
+        "facebook": {
+          "accounts": [
+            "The Ai Team",
+            "Solair - Solar Energy Ai Assistant"
+          ],
+          "content_types": [
+            "text",
+            "image",
+            "video",
+            "story_image",
+            "story_video"
+          ]
+        },
+        "instagram": {
+          "accounts": [
+            "hiretheaiteam",
+            "Seth Ward"
+          ],
+          "content_types": [
+            "image",
+            "video",
+            "story_image",
+            "story_video"
+          ]
+        },
+        "linkedin": {
+          "accounts": [
+            "Seth Ward",
+            "The Ai Team"
+          ],
+          "content_types": [
+            "text",
+            "image",
+            "video"
+          ]
+        }
+      },
+      "media_handling": {
+        "max_file_size_mb": 25,
+        "supported_image_types": [
+          "image/png",
+          "image/jpeg"
+        ],
+        "supported_video_types": [
+          "video/mp4"
+        ]
       }
     }
   ],
@@ -1424,12 +1761,13 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     {
       "agent": {
         "id": "SOL",
-        "name": "SOL Bot",
+        "emoji": "☀️",
+        "name": "Solar Sales Assistant",
         "category": "SALES",
         "description": "Solar sales expert - Calculate savings, design systems, close deals",
         "specialization": "Solar Energy Expert",
         "tagline": "Illuminate. Calculate. Convert.",
-        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=solar&backgroundColor=ffb238",
+        "avatar": "/Squidgy AI Assistants Avatars/5.png",
         "pinned": true,
         "presetup_required": true,
         "presetup_page": "/solar-config",
@@ -1539,12 +1877,13 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     {
       "agent": {
         "id": "content_repurposer",
+        "emoji": "🔄",
         "name": "Content Repurposer",
         "category": "SALES",
         "description": "Repurpose content for different platforms and audiences",
         "specialization": "Content Repurposer",
         "tagline": "Repurpose. Convert. Deliver.",
-        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=content_repurposer",
+        "avatar": "/Squidgy AI Assistants Avatars/15.png",
         "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
         "capabilities": [
           "Primary capability or main function",
@@ -1604,137 +1943,11 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "approach": "proactive"
       }
     }
-  ],
-  "TESTING": [
-    {
-      "agent": {
-        "id": "test_multi_agent",
-        "name": "Test Multi-Agent",
-        "category": "TESTING",
-        "description": "Testing multi-agent code generation system.",
-        "specialization": "Advanced Testing",
-        "tagline": "Test. Generate. Collaborate.",
-        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-        "capabilities": [
-          "Multi-agent code generation and testing",
-          "Advanced AI workflow collaboration",
-          "System integration testing",
-          "Performance optimization and analysis"
-        ],
-        "recent_actions": [
-          "Generated test suites for new features",
-          "Coordinated multi-agent workflows",
-          "Optimized system performance metrics",
-          "Validated integration pipelines"
-        ]
-      },
-      "ui_use": {
-        "page_type": "single_page",
-        "pages": [
-          {
-            "name": "Testing Dashboard",
-            "path": "testing-dashboard",
-            "order": 1,
-            "validated": true
-          }
-        ]
-      },
-      "interface": {
-        "type": "chat",
-        "features": [
-          "text_input",
-          "file_upload",
-          "voice_input",
-          "suggestion_buttons"
-        ]
-      },
-      "suggestions": [
-        "Generate test cases",
-        "Run system diagnostics",
-        "Optimize performance",
-        "Create integration tests",
-        "Validate workflows",
-        "Analyze metrics"
-      ],
-      "personality": {
-        "tone": "technical",
-        "style": "analytical",
-        "approach": "systematic"
-      }
-    },
-    {
-      "agent": {
-        "id": "test_multi_page_agent",
-        "name": "Test Multi-Page Agent",
-        "category": "TESTING",
-        "description": "Testing multi-page functionality.",
-        "specialization": "Multi-Page Testing",
-        "tagline": "Navigate. Test. Validate.",
-        "avatar": "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-        "capabilities": [
-          "Multi-page navigation testing",
-          "Complex UI component validation",
-          "User journey optimization",
-          "Interface responsiveness testing"
-        ],
-        "recent_actions": [
-          "Tested multi-page navigation flows",
-          "Validated complex UI components",
-          "Optimized user experience paths",
-          "Analyzed interface responsiveness"
-        ]
-      },
-      "ui_use": {
-        "page_type": "multi_page",
-        "pages": [
-          {
-            "name": "Navigation Test",
-            "path": "navigation-test",
-            "order": 1,
-            "validated": true
-          },
-          {
-            "name": "UI Validation",
-            "path": "ui-validation",
-            "order": 2,
-            "validated": false
-          },
-          {
-            "name": "Performance Analysis",
-            "path": "performance-analysis",
-            "order": 3,
-            "validated": true
-          }
-        ]
-      },
-      "interface": {
-        "type": "chat",
-        "features": [
-          "text_input",
-          "file_upload",
-          "voice_input",
-          "suggestion_buttons"
-        ]
-      },
-      "suggestions": [
-        "Test navigation flows",
-        "Validate UI components",
-        "Optimize user journeys",
-        "Check responsiveness",
-        "Run page tests",
-        "Analyze performance"
-      ],
-      "personality": {
-        "tone": "professional",
-        "style": "methodical",
-        "approach": "comprehensive"
-      }
-    }
   ]
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","newsletter","personal_assistant","smm_assistant","social_media_scheduler","SOL","test_multi_agent","test_multi_page_agent"];
+export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","social_media_agent","social_media_scheduler","SOL"];
 
 // Total count
 export const TOTAL_AGENTS = 8;
