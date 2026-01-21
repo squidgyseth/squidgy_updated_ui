@@ -139,10 +139,10 @@ export default function IntegrationsSettings() {
     try {
       console.log('🔑 Fetching tokens from database...');
       
-      // Fetch from ghl_subaccounts table
+      // Fetch from ghl_subaccounts table including token timestamp
       const { data: ghlData, error: ghlError } = await supabase
         .from('ghl_subaccounts')
-        .select('"Firebase Token", PIT_Token, ghl_location_id')
+        .select('"Firebase Token", PIT_Token, ghl_location_id, "firebase token time"')
         .eq('firm_user_id', firmUserId)
         .single();
       
@@ -159,7 +159,25 @@ export default function IntegrationsSettings() {
         const fbToken = ghlData['Firebase Token'];
         const pitTok = ghlData['PIT_Token'];
         const locId = ghlData['ghl_location_id'];
+        const tokenTime = ghlData['firebase token time'];
         const accessTok = fbData?.access_token || pitTok; // Use access_token if available, fallback to PIT
+        
+        // Check if token is older than 1 hour
+        let tokenNeedsRefresh = false;
+        if (tokenTime && fbToken) {
+          const tokenDate = new Date(tokenTime);
+          const now = new Date();
+          const ageInMinutes = (now.getTime() - tokenDate.getTime()) / (1000 * 60);
+          console.log(`🕐 Firebase token age: ${Math.floor(ageInMinutes)} minutes`);
+          
+          if (ageInMinutes > 60) {
+            console.log('⚠️ Firebase token is older than 1 hour, triggering refresh...');
+            tokenNeedsRefresh = true;
+          }
+        } else if (!fbToken || !tokenTime) {
+          console.log('⚠️ Firebase token or timestamp missing, triggering refresh...');
+          tokenNeedsRefresh = true;
+        }
         
         setFirebaseToken(fbToken);
         setAccessToken(accessTok);
@@ -172,6 +190,11 @@ export default function IntegrationsSettings() {
           hasPITToken: !!pitTok,
           locationId: locId
         });
+        
+        // Trigger refresh if needed
+        if (tokenNeedsRefresh) {
+          await refreshFirebaseToken();
+        }
       }
     } catch (error) {
       console.error('❌ Error fetching tokens:', error);
