@@ -656,23 +656,56 @@ export default function N8nChatInterface({
               ) : (
                 // User message display
                 <div>
-                  {message.fileUpload ? (
-                    // File upload message
-                    <FileMessage 
-                      fileInfo={message.fileUpload} 
-                      timestamp={message.timestamp}
-                    />
-                  ) : (
+                  {(() => {
+                    // Check if this is a file upload message (either with fileUpload prop or legacy text format)
+                    if (message.fileUpload) {
+                      return (
+                        <FileMessage 
+                          fileInfo={message.fileUpload} 
+                          timestamp={message.timestamp}
+                        />
+                      );
+                    }
+                    
+                    // Check for legacy file upload text pattern: "I've uploaded a file: filename"
+                    const fileUploadMatch = message.content.match(/I've uploaded a file: (.+?)(?:\n|$)/);
+                    const urlMatch = message.content.match(/URL:\s*(https?:\/\/[^\s]+)/);
+                    
+                    if (fileUploadMatch && urlMatch) {
+                      // Parse as legacy file upload and render as FileMessage
+                      const fileName = fileUploadMatch[1].trim();
+                      const fileUrl = urlMatch[1].trim();
+                      
+                      return (
+                        <FileMessage 
+                          fileInfo={{
+                            fileName,
+                            fileUrl,
+                            fileId: message.id,
+                            status: 'completed',
+                            agentId: agent.id,
+                            agentName: agent.name
+                          }} 
+                          timestamp={message.timestamp}
+                        />
+                      );
+                    }
+                    
                     // Regular text message
-                    <>
-                      <div className="bg-blue-500 text-white rounded-lg px-4 py-2">
-                        <p className="whitespace-pre-wrap">{message.content}</p>
-                      </div>
-                      <span className="text-xs text-gray-500 mt-1 block">
-                        {message.timestamp.toLocaleTimeString()}
-                      </span>
-                    </>
-                  )}
+                    return (
+                      <>
+                        <div className="bg-blue-500 text-white rounded-lg px-4 py-2">
+                          <LinkDetectingTextArea 
+                            content={message.content}
+                            className="whitespace-pre-wrap"
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500 mt-1 block">
+                          {message.timestamp.toLocaleTimeString()}
+                        </span>
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </div>
