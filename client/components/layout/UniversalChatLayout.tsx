@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, ChevronDown, Plus } from 'lucide-react';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useUser } from '../../hooks/useUser';
@@ -143,6 +144,7 @@ export default function UniversalChatLayout({
   const [isPinned, setIsPinned] = useState(agent.pinned || false);
   const { isSidebarOpen, toggleSidebar } = useSidebar();
   const { userId } = useUser();
+  const navigate = useNavigate();
   const [recentActions, setRecentActions] = useState<string[]>([]);
   const [isLoadingActions, setIsLoadingActions] = useState(true); // Only true on initial load
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -150,6 +152,10 @@ export default function UniversalChatLayout({
 
   const toggleSection = (sectionId: string) => {
     setOpenSection(prev => prev === sectionId ? null : sectionId);
+  };
+
+  const handleIntegrationSetupClick = () => {
+    navigate('/integrations-settings');
   };
 
   // Function to add a new action to the top of the list (live update)
@@ -353,7 +359,7 @@ export default function UniversalChatLayout({
 
               {/* Integration Setup Row */}
               <button
-                onClick={handleSettingsClick}
+                onClick={handleIntegrationSetupClick}
                 className="w-full flex items-center justify-between p-2.5 bg-white border border-gray-100 rounded-lg shadow-sm hover:bg-gray-50 transition group"
               >
                 <span className="text-[11px] font-bold text-gray-700">Integration Setup</span>
