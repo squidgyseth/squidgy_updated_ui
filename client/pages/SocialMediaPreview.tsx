@@ -7,13 +7,13 @@ import { AgentConfigService } from '../services/agentConfigService';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { PLATFORM_NAMES, mapToStandardPlatformName, getPlatformColor, getPlatformActiveColors } from '../constants/platforms';
-import { 
-  ArrowLeft, 
-  Edit3, 
-  Save, 
-  X, 
-  Upload, 
-  Wand2, 
+import {
+  ArrowLeft,
+  Edit3,
+  Save,
+  X,
+  Upload,
+  Wand2,
   FileText,
   Heart,
   MessageCircle,
@@ -49,7 +49,7 @@ interface SocialMediaContent {
  */
 function convertLocalStorageContentToPosts(content: any): SocialPost[] {
   const posts: SocialPost[] = [];
-  
+
   try {
     // Handle error structure with raw JSON content
     let processedContent = content;
@@ -63,10 +63,10 @@ function convertLocalStorageContentToPosts(content: any): SocialPost[] {
         return posts;
       }
     }
-    
+
     // Handle array format (when content is wrapped in array)
     let socialMediaContent: SocialMediaContent;
-    
+
     if (Array.isArray(processedContent) && processedContent[0] && processedContent[0].ContentRepurposerPosts) {
       socialMediaContent = processedContent[0].ContentRepurposerPosts;
     } else if (processedContent && processedContent.ContentRepurposerPosts) {
@@ -130,7 +130,7 @@ function convertLocalStorageContentToPosts(content: any): SocialPost[] {
 
     console.log('✅ Successfully converted to posts:', posts);
     return posts;
-    
+
   } catch (error) {
     console.error('❌ Error converting localStorage content:', error);
     return posts;
@@ -166,7 +166,7 @@ export default function SocialMediaPreview() {
         if (paramAgentId) {
           setAgentId(paramAgentId);
         }
-        
+
         const config = await configService.loadAgentConfig(agentId);
         if (config) {
           setAgentConfig(config);
@@ -206,12 +206,12 @@ export default function SocialMediaPreview() {
       // Get parameters from URL
       const sessionId = searchParams.get('session_id');
       const historyId = searchParams.get('history_id');
-      
+
       console.log('🔍 SocialMediaPreview: Loading social content from database');
       console.log('🔍 SocialMediaPreview: userId:', userId);
       console.log('🔍 SocialMediaPreview: sessionId:', sessionId);
       console.log('🔍 SocialMediaPreview: historyId:', historyId);
-      
+
       // Also load the history record to get GeneralAssets from the original content
       let historyQuery = supabase
         .from('history_content_repurposer')
@@ -267,10 +267,10 @@ export default function SocialMediaPreview() {
       let generalAssetsFound = false;
       if (historyData && historyData.length > 0) {
         try {
-          const historyContent = typeof historyData[0].content === 'string' 
-            ? JSON.parse(historyData[0].content) 
+          const historyContent = typeof historyData[0].content === 'string'
+            ? JSON.parse(historyData[0].content)
             : historyData[0].content;
-          
+
           if (historyContent && historyContent.GeneralAssets) {
             setGeneralAssets(historyContent.GeneralAssets);
             generalAssetsFound = true;
@@ -299,7 +299,7 @@ export default function SocialMediaPreview() {
       if (!data || data.length === 0) {
         console.log('❌ SocialMediaPreview: No social content found in database');
         console.log('🔄 SocialMediaPreview: Attempting to load from localStorage as fallback');
-        
+
         // Try to load from localStorage as fallback
         const localStorageContent = localStorage.getItem('socialMediaContent');
         if (localStorageContent) {
@@ -317,12 +317,12 @@ export default function SocialMediaPreview() {
             } else {
               parsedContent = localStorageContent;
             }
-            
+
             const convertedPosts = convertLocalStorageContentToPosts(parsedContent);
-            
+
             if (convertedPosts.length > 0) {
               setPosts(convertedPosts);
-              
+
               // Set the first platform with posts as active tab
               const platforms = [...new Set(convertedPosts.map(post => post.platform))];
               if (platforms.length > 0) {
@@ -334,7 +334,7 @@ export default function SocialMediaPreview() {
             console.error('❌ SocialMediaPreview: Error parsing localStorage content:', error);
           }
         }
-        
+
         setPosts([]);
         return;
       }
@@ -358,31 +358,31 @@ export default function SocialMediaPreview() {
       allParsedPosts.forEach(post => {
         const dedupeKey = `${post.platform}-${post.caption.trim()}`;
         const existing = seenPosts.get(dedupeKey);
-        
+
         // Keep the post with the higher database record ID (more recent)
         if (!existing || post.databaseRecordId > existing.databaseRecordId) {
           seenPosts.set(dedupeKey, post);
         }
       });
-      
+
       const parsedPosts: SocialPost[] = Array.from(seenPosts.values());
-      
+
       console.log('📱 Before deduplication:', allParsedPosts.length, 'posts');
       console.log('📱 After deduplication:', parsedPosts.length, 'posts');
 
       console.log('📱 Converted posts:', parsedPosts);
       console.log('📱 Sample post structure:', parsedPosts[0]);
       console.log('📱 Platforms found:', [...new Set(parsedPosts.map(post => post.platform))]);
-      
+
       setPosts(parsedPosts);
-      
+
       // Set the first platform with posts as active tab
       const platforms = [...new Set(parsedPosts.map(post => post.platform))];
       console.log('📱 Setting active tab to:', platforms[0]);
       if (platforms.length > 0) {
         setActiveTab(platforms[0]);
       }
-      
+
       // Load existing images for all posts
       loadPostImages(parsedPosts);
     } catch (error) {
@@ -483,8 +483,8 @@ export default function SocialMediaPreview() {
   };
 
   const handleSaveEdit = (postId: string) => {
-    setPosts(posts.map(post => 
-      post.id === postId 
+    setPosts(posts.map(post =>
+      post.id === postId
         ? { ...post, caption: editedCaption }
         : post
     ));
@@ -506,14 +506,14 @@ export default function SocialMediaPreview() {
   const handleGenerateImageClick = async (postId: string) => {
     const post = posts.find(p => p.id === postId);
     if (!post?.imagePrompt || !userId) return;
-    
+
     setCurrentPostId(postId);
     setGeneratingImage(true);
-    
+
     try {
       // Get session_id from URL params
       const sessionId = searchParams.get('session_id');
-      
+
       // Generate and save image using existing prompt
       const imageRecord = await imageService.generateAndSaveImage(
         post.imagePrompt,
@@ -556,21 +556,21 @@ export default function SocialMediaPreview() {
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
     fileInput.style.display = 'none';
-    
+
     fileInput.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file || !userId) return;
-      
+
       setUploadingImage(true);
       setCurrentPostId(postId);
-      
+
       try {
         const post = posts.find(p => p.id === postId);
         if (!post) return;
 
         // Get session_id from URL params
         const sessionId = searchParams.get('session_id');
-        
+
         // Upload and save image
         const imageRecord = await imageService.uploadAndSaveImage(
           file,
@@ -604,7 +604,7 @@ export default function SocialMediaPreview() {
         setCurrentPostId(null);
       }
     };
-    
+
     // Trigger file selection
     document.body.appendChild(fileInput);
     fileInput.click();
@@ -613,32 +613,32 @@ export default function SocialMediaPreview() {
 
   const loadPostImages = async (postsToLoad: SocialPost[]) => {
     if (!userId) return;
-    
+
     try {
       const imagesMap: Record<string, ImageRecord[]> = {};
-      
+
       console.log('🖼️ Loading images for posts:', postsToLoad.map(p => ({
         id: p.id,
         platform: p.platform,
         originalPostId: p.originalPostId,
         searchPostId: p.originalPostId || p.id
       })));
-      
+
       // Load images for each post
       for (const post of postsToLoad) {
         const searchPostId = post.originalPostId || post.id;
         console.log(`🔍 Searching for images with post_id: "${searchPostId}" for platform: ${post.platform}`);
-        
+
         const images = await imageService.getPostImages(
           userId,
           agentId,
           searchPostId // Use originalPostId for database queries
         );
-        
+
         console.log(`📷 Found ${images.length} images for post ${post.platform} (${searchPostId}):`, images);
         imagesMap[post.id] = images; // Still use composite ID for React state
       }
-      
+
       console.log('🖼️ Final images map:', imagesMap);
       setPostImages(imagesMap);
     } catch (error) {
@@ -648,16 +648,16 @@ export default function SocialMediaPreview() {
 
   const handleCustomPromptSubmit = async () => {
     if (!customPrompt.trim() || !currentPostId || !userId) return;
-    
+
     setGeneratingImage(true);
-    
+
     try {
       const post = posts.find(p => p.id === currentPostId);
       if (!post) return;
 
       // Get session_id from URL params
       const sessionId = searchParams.get('session_id');
-      
+
       // Generate and save image
       const imageRecord = await imageService.generateAndSaveImage(
         customPrompt,
@@ -700,42 +700,42 @@ export default function SocialMediaPreview() {
   const getPlatformIcon = (platform: string, size: string = 'w-5 h-5') => {
     // Standardize platform name first
     const standardPlatform = mapToStandardPlatformName(platform);
-    
+
     switch (standardPlatform) {
-      case PLATFORM_NAMES.LINKEDIN: 
+      case PLATFORM_NAMES.LINKEDIN:
         return (
           <svg className={size} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
           </svg>
         );
-      case PLATFORM_NAMES.INSTAGRAM_FACEBOOK: 
+      case PLATFORM_NAMES.INSTAGRAM_FACEBOOK:
         return (
           <svg className={size} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12c0-3.403 2.759-6.162 6.162-6.162s6.162 2.759 6.162 6.162c0 3.403-2.759 6.162-6.162 6.162s-6.162-2.759-6.162-6.162zm12.162 0c0-2.298-1.864-4.162-4.162-4.162s-4.162 1.864-4.162 4.162c0 2.298 1.864 4.162 4.162 4.162s4.162-1.864 4.162-4.162zm2.588-6.461c0 .796-.646 1.442-1.442 1.442s-1.442-.646-1.442-1.442.646-1.441 1.442-1.441 1.442.645 1.442 1.441z"/>
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12c0-3.403 2.759-6.162 6.162-6.162s6.162 2.759 6.162 6.162c0 3.403-2.759 6.162-6.162 6.162s-6.162-2.759-6.162-6.162zm12.162 0c0-2.298-1.864-4.162-4.162-4.162s-4.162 1.864-4.162 4.162c0 2.298 1.864 4.162 4.162 4.162s4.162-1.864 4.162-4.162zm2.588-6.461c0 .796-.646 1.442-1.442 1.442s-1.442-.646-1.442-1.442.646-1.441 1.442-1.441 1.442.645 1.442 1.441z" />
           </svg>
         );
-      case PLATFORM_NAMES.TIKTOK_REELS: 
+      case PLATFORM_NAMES.TIKTOK_REELS:
         return (
           <svg className={size} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+            <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
           </svg>
         );
-      case PLATFORM_NAMES.GENERAL: 
+      case PLATFORM_NAMES.GENERAL:
         return (
           <svg className={size} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
         );
       case PLATFORM_NAMES.ADDITIONAL_ASSETS:
         return (
           <svg className={size} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
           </svg>
         );
-      default: 
+      default:
         return (
           <svg className={size} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
           </svg>
         );
     }
@@ -753,7 +753,7 @@ export default function SocialMediaPreview() {
   // Helper function to parse GeneralAssets (handles both string and array formats)
   const parseGeneralAssets = (assets: any) => {
     if (!assets) return null;
-    
+
     const parseField = (field: any): string[] => {
       if (!field) return [];
       if (Array.isArray(field)) return field;
@@ -763,7 +763,7 @@ export default function SocialMediaPreview() {
       }
       return [];
     };
-    
+
     return {
       Quotes: parseField(assets.Quotes),
       DataPoints: parseField(assets.DataPoints),
@@ -773,13 +773,13 @@ export default function SocialMediaPreview() {
 
   // Parse GeneralAssets
   const parsedGeneralAssets = parseGeneralAssets(generalAssets);
-  
+
   // Add GeneralAssets as a platform if it exists
   const platforms = Object.keys(groupedPosts);
   if (parsedGeneralAssets && (parsedGeneralAssets.Quotes?.length > 0 || parsedGeneralAssets.DataPoints?.length > 0 || parsedGeneralAssets.Questions?.length > 0)) {
     platforms.push('Additional Assets');
   }
-  
+
   const activePosts = activeTab === 'Additional Assets' ? [] : (groupedPosts[activeTab] || []);
 
   console.log('🎯 Render debug:', {
@@ -811,7 +811,7 @@ export default function SocialMediaPreview() {
               </button>
               <h1 className="text-xl font-semibold text-gray-900">Social Media Preview</h1>
             </div>
-            
+
             <div className="text-sm text-gray-500">
               {posts.length} posts generated
             </div>
@@ -828,28 +828,28 @@ export default function SocialMediaPreview() {
                 const isActive = activeTab === platform;
                 let borderColor = 'border-transparent';
                 let textColor = 'text-gray-500';
-                
+
                 if (isActive) {
                   const colors = getPlatformActiveColors(platform);
                   borderColor = colors.border;
                   textColor = colors.text;
                 }
-                
+
                 return (
                   <button
                     key={platform}
                     onClick={() => setActiveTab(platform)}
                     className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${borderColor} ${textColor} ${!isActive ? 'hover:text-gray-700 hover:border-gray-300' : ''}`}
                   >
-                  <div className="flex items-center gap-2">
-                    {getPlatformIcon(platform, 'w-5 h-5')}
-                    <span>{platform}</span>
-                    <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
-                      {platform === 'Additional Assets' 
-                        ? ((parsedGeneralAssets?.Quotes?.length || 0) + (parsedGeneralAssets?.DataPoints?.length || 0) + (parsedGeneralAssets?.Questions?.length || 0))
-                        : groupedPosts[platform].length
-                      }
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {getPlatformIcon(platform, 'w-5 h-5')}
+                      <span>{platform}</span>
+                      <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
+                        {platform === 'Additional Assets'
+                          ? ((parsedGeneralAssets?.Quotes?.length || 0) + (parsedGeneralAssets?.DataPoints?.length || 0) + (parsedGeneralAssets?.Questions?.length || 0))
+                          : groupedPosts[platform].length
+                        }
+                      </span>
                     </div>
                   </button>
                 );
@@ -967,8 +967,8 @@ export default function SocialMediaPreview() {
                       <div>
                         <h3 className="font-semibold">{post.platform}</h3>
                         <p className="text-sm opacity-90">
-                          {post.type === 'video' ? 'Video Content' : 
-                           post.type === 'asset' ? 'General Asset' : 'Post'}
+                          {post.type === 'video' ? 'Video Content' :
+                            post.type === 'asset' ? 'General Asset' : 'Post'}
                         </p>
                       </div>
                     </div>
@@ -1021,18 +1021,18 @@ export default function SocialMediaPreview() {
                             </div>
                           ))}
                         </div>
-                        
+
                         {/* Action buttons below images */}
                         <div className="p-4 bg-gray-50">
                           <div className="flex gap-2 justify-center">
-                            <button 
+                            <button
                               onClick={() => handleCustomPromptClick(post.id)}
                               className="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-1"
                             >
                               <FileText className="w-3 h-3" />
                               Custom Prompt
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleGenerateImageClick(post.id)}
                               disabled={!post.imagePrompt || generatingImage}
                               className="px-3 py-1 bg-purple-500 text-white text-xs rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1044,7 +1044,7 @@ export default function SocialMediaPreview() {
                               )}
                               Generate Image
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleInsertImageClick(post.id)}
                               disabled={uploadingImage}
                               className="px-3 py-1 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1068,14 +1068,14 @@ export default function SocialMediaPreview() {
                           </div>
                           <p className="text-sm text-gray-500 mb-4">Image will appear here</p>
                           <div className="flex gap-2 justify-center">
-                            <button 
+                            <button
                               onClick={() => handleCustomPromptClick(post.id)}
                               className="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-1"
                             >
                               <FileText className="w-3 h-3" />
                               Custom Prompt
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleGenerateImageClick(post.id)}
                               disabled={!post.imagePrompt || generatingImage}
                               className="px-3 py-1 bg-purple-500 text-white text-xs rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1087,7 +1087,7 @@ export default function SocialMediaPreview() {
                               )}
                               Generate Image
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleInsertImageClick(post.id)}
                               disabled={uploadingImage}
                               className="px-3 py-1 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1112,9 +1112,9 @@ export default function SocialMediaPreview() {
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
                       {!isLoading && faviconUrl ? (
-                        <img 
-                          src={faviconUrl} 
-                          alt={`${companyName || 'Company'} logo`} 
+                        <img
+                          src={faviconUrl}
+                          alt={`${companyName || 'Company'} logo`}
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             // Fallback to Squidgy logo if favicon fails to load
@@ -1123,19 +1123,20 @@ export default function SocialMediaPreview() {
                               e.currentTarget.src = squidgyLogoUrl;
                             } else {
                               // If Squidgy logo also fails, hide image and show initials
-                              e.currentTarget.style.display = 'none';
-                              (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.style.display = 'none';
+                              (target.nextElementSibling as HTMLElement).style.display = 'flex';
                             }
                           }}
                         />
                       ) : null}
-                      <span 
-                        className="text-sm font-semibold text-gray-600" 
+                      <span
+                        className="text-sm font-semibold text-gray-600"
                         style={{ display: (!isLoading && faviconUrl) ? 'none' : 'flex' }}
                       >
                         {isLoading ? '...' : (
-                          companyName && companyName !== 'Squidgy' 
-                            ? companyName.substring(0, 2).toUpperCase() 
+                          companyName && companyName !== 'Squidgy'
+                            ? companyName.substring(0, 2).toUpperCase()
                             : 'SQ'
                         )}
                       </span>
@@ -1143,8 +1144,8 @@ export default function SocialMediaPreview() {
                     <div>
                       <p className="font-semibold text-sm">
                         {isLoading ? 'Loading...' : (
-                          companyName && companyName !== 'Squidgy' 
-                            ? companyName 
+                          companyName && companyName !== 'Squidgy'
+                            ? companyName
                             : 'Squidgy AI'
                         )}
                       </p>
@@ -1243,7 +1244,7 @@ export default function SocialMediaPreview() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1257,7 +1258,7 @@ export default function SocialMediaPreview() {
                   rows={4}
                 />
               </div>
-              
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowCustomPromptModal(false)}

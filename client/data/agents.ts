@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-21T10:13:06.937Z
+// Generated on: 2026-01-22T16:39:10.849Z
 
 export interface AgentConfig {
   agent: {
@@ -16,15 +16,22 @@ export interface AgentConfig {
     sidebar_greeting?: string;
     capabilities?: string[];
     recent_actions?: string[];
+    presetup_required?: boolean;
+    presetup_page?: string;
   };
   n8n: {
     webhook_url: string;
+    image_generator_url?: string;
   };
   ui?: {
     page_type: string;
     pages?: any[];
+    figma_url?: string;
+    figma_deployed_url?: string;
+    figma_token?: string;
   };
   ui_use?: {
+    page_type?: string;
     pages: any[];
     default_page?: string;
     navigation_type?: string;
@@ -39,6 +46,9 @@ export interface AgentConfig {
     style: string;
     approach: string;
   };
+  platforms?: any;
+  media_handling?: any;
+  solar_config?: any;
 }
 
 // All agents (pre-sorted)
@@ -1947,7 +1957,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","social_media_agent","social_media_scheduler","SOL"];
+export const AGENT_IDS: string[] = ["content_repurposer", "content_repurposer_multi", "newsletter", "newsletter_multi", "personal_assistant", "social_media_agent", "social_media_scheduler", "SOL"];
 
 // Total count
 export const TOTAL_AGENTS = 8;

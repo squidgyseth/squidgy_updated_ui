@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   MoreHorizontal,
   UserPlus
 } from 'lucide-react';
@@ -25,17 +25,17 @@ export default function TeamSettings() {
   const { faviconUrl } = useCompanyBranding();
   const [loading, setLoading] = useState(false);
   const [inviting, setInviting] = useState(false);
-  
+
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'Admin' | 'Sales Rep' | 'Viewer'>('Admin');
-  
+
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   // Load existing team members
   useEffect(() => {
     const loadTeamMembers = async () => {
       if (!profile?.user_id || !profile?.company_id) return;
-      
+
       setLoading(true);
       try {
         const { supabase } = await import('../lib/supabase');
@@ -99,13 +99,13 @@ export default function TeamSettings() {
 
     try {
       setInviting(true);
-      
+
       const { supabase } = await import('../lib/supabase');
-      
+
       // Generate avatar text and color
       const avatarText = inviteEmail.slice(0, 2).toUpperCase();
       const avatarColor = 'bg-purple-200';
-      
+
       // Insert new team member invitation
       const { data, error } = await supabase
         .from('team_members')
@@ -144,7 +144,7 @@ export default function TeamSettings() {
           avatarText: data.avatar_text,
           avatarColor: data.avatar_color
         };
-        
+
         setTeamMembers([newMember, ...teamMembers]);
         setInviteEmail('');
         toast.success(`Invitation sent to ${inviteEmail}`);
@@ -167,7 +167,7 @@ export default function TeamSettings() {
 
     try {
       const { supabase } = await import('../lib/supabase');
-      
+
       const { error } = await supabase
         .from('team_members')
         .delete()
@@ -188,10 +188,10 @@ export default function TeamSettings() {
   const handleRoleChange = async (memberId: string, newRole: string) => {
     try {
       const { supabase } = await import('../lib/supabase');
-      
+
       const { error } = await supabase
         .from('team_members')
-        .update({ 
+        .update({
           role: newRole,
           updated_at: new Date().toISOString()
         })
@@ -201,10 +201,10 @@ export default function TeamSettings() {
         throw error;
       }
 
-      setTeamMembers(teamMembers.map(member => 
-        member.id === memberId ? { ...member, role: newRole } : member
+      setTeamMembers(teamMembers.map(member =>
+        member.id === memberId ? { ...member, role: newRole as TeamMember['role'] } : member
       ));
-      
+
       const member = teamMembers.find(m => m.id === memberId);
       if (member) {
         toast.success(`${member.name}'s role updated to ${newRole}`);
@@ -235,7 +235,7 @@ export default function TeamSettings() {
         {/* Invite New Member Section */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
           <h2 className="text-lg font-medium text-gray-900 mb-6">Invite New Member</h2>
-          
+
           <div className="flex gap-4">
             <div className="flex-1">
               <label className="block text-sm text-gray-600 mb-2">Email</label>
@@ -247,7 +247,7 @@ export default function TeamSettings() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400"
               />
             </div>
-            
+
             <div className="w-64">
               <label className="block text-sm text-gray-600 mb-2">Role</label>
               <select
@@ -260,7 +260,7 @@ export default function TeamSettings() {
                 <option value="Viewer">Viewer</option>
               </select>
             </div>
-            
+
             <div className="flex items-end">
               <button
                 onClick={handleInviteMember}
@@ -279,7 +279,7 @@ export default function TeamSettings() {
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-lg font-medium text-gray-900">Team Members</h2>
           </div>
-          
+
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -305,27 +305,29 @@ export default function TeamSettings() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-gray-100">
                           {faviconUrl ? (
-                            <img 
-                              src={faviconUrl} 
-                              alt="Company favicon" 
+                            <img
+                              src={faviconUrl}
+                              alt="Company favicon"
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 // Hide company favicon and show Squidgy logo
-                                e.currentTarget.style.display = 'none';
-                                const container = e.currentTarget.parentElement;
+                                const target = e.currentTarget as HTMLImageElement;
+                                target.style.display = 'none';
+                                const container = target.parentElement;
                                 const squidgyImg = container?.querySelector('.squidgy-fallback') as HTMLElement;
                                 if (squidgyImg) squidgyImg.classList.remove('hidden');
                               }}
                             />
                           ) : null}
-                          <img 
-                            src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64" 
-                            alt="Squidgy logo" 
+                          <img
+                            src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64"
+                            alt="Squidgy logo"
                             className={`w-6 h-6 squidgy-fallback ${faviconUrl ? 'hidden' : ''}`}
                             onError={(e) => {
                               // Hide Squidgy logo and show text initials
-                              e.currentTarget.style.display = 'none';
-                              const container = e.currentTarget.parentElement;
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.style.display = 'none';
+                              const container = target.parentElement;
                               const textDiv = container?.querySelector('.text-fallback') as HTMLElement;
                               if (textDiv) textDiv.classList.remove('hidden');
                             }}
@@ -357,18 +359,17 @@ export default function TeamSettings() {
                       </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        member.status === 'Active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : member.status === 'Invited'
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${member.status === 'Active'
+                        ? 'bg-green-100 text-green-800'
+                        : member.status === 'Invited'
                           ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-gray-100 text-gray-800'
-                      }`}>
+                        }`}>
                         {member.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <button 
+                      <button
                         onClick={() => handleRemoveMember(member.id)}
                         className="text-gray-400 hover:text-gray-600"
                       >
