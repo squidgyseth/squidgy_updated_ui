@@ -28,40 +28,48 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     console.log('🔍 InteractiveMessageButtons: Parsing content:', text);
     const options: ButtonOption[] = [];
     
-    // Handle both formats: $$**TEXT**$$ (new) and $**TEXT**$ (old)
-    const newFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
-    const oldFormatPattern = /\$\*\*\*\*([^*]+)\*\*\*\*\$/g;
+    // Handle multiple formats:
+    // 1. $$emoji Text - Description$$ (current format from screenshot)
+    // 2. $$**TEXT**$$ (bold format)
+    // 3. $****TEXT****$ (old format)
     
-    // Try new format first
+    // Pattern for $$content$$ - captures everything between $$ markers
+    const dollarPattern = /\$\$([^$]+)\$\$/g;
+    
     let match;
-    while ((match = newFormatPattern.exec(text)) !== null) {
-      const [fullMatch, buttonText] = match;
+    while ((match = dollarPattern.exec(text)) !== null) {
+      const [fullMatch, innerContent] = match;
+      
+      // Parse inner content - may have emoji at start, may have description after dash
+      let emoji = '';
+      let buttonText = innerContent.trim();
+      let description = '';
+      
+      // Remove bold markers if present: **text** -> text
+      buttonText = buttonText.replace(/\*\*([^*]+)\*\*/g, '$1');
+      
+      // Check if starts with emoji (first 1-4 chars could be emoji)
+      const emojiMatch = buttonText.match(/^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]+)\s*/u);
+      if (emojiMatch) {
+        emoji = emojiMatch[1];
+        buttonText = buttonText.slice(emojiMatch[0].length);
+      }
+      
+      // Check for description after dash: "Text - Description"
+      const dashIndex = buttonText.indexOf(' - ');
+      if (dashIndex > 0) {
+        description = buttonText.slice(dashIndex + 3).trim();
+        buttonText = buttonText.slice(0, dashIndex).trim();
+      }
       
       // Avoid duplicates
-      if (!options.find(o => o.text === buttonText.trim())) {
+      if (buttonText && !options.find(o => o.text === buttonText)) {
         options.push({
-          emoji: '', // No emoji needed
-          text: buttonText.trim(),
-          description: '',
+          emoji,
+          text: buttonText,
+          description,
           fullText: fullMatch
         });
-      }
-    }
-    
-    // If no buttons found with new format, try old format
-    if (options.length === 0) {
-      while ((match = oldFormatPattern.exec(text)) !== null) {
-        const [fullMatch, buttonText] = match;
-        
-        // Avoid duplicates
-        if (!options.find(o => o.text === buttonText.trim())) {
-          options.push({
-            emoji: '', // No emoji needed
-            text: buttonText.trim(),
-            description: '',
-            fullText: fullMatch
-          });
-        }
       }
     }
     
@@ -73,6 +81,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
   const cleanContent = (text: string): string => {
     // Remove both formats: $$**TEXT**$$ and $**TEXT**$
     let cleaned = text
+      .replace(/\$\$([^$]+)\$\$/g, '') // New format
       .replace(/\$\$\*\*[^*]+\*\*\$\$/g, '') // New format
       .replace(/\$\*\*\*\*[^*]+\*\*\*\*\$/g, ''); // Old format
     
