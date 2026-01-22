@@ -441,7 +441,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "Show my scheduled posts"
     ],
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_agent"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/b93a4510-bb01-4595-ab23-5ae97e162275"
     },
     "personality": {
       "tone": "professional",
@@ -1079,7 +1079,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "Show my scheduled posts"
     ],
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_agent"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/b93a4510-bb01-4595-ab23-5ae97e162275"
     },
     "personality": {
       "tone": "professional",
@@ -1710,7 +1710,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "Show my scheduled posts"
       ],
       "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_agent"
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/b93a4510-bb01-4595-ab23-5ae97e162275"
       },
       "personality": {
         "tone": "professional",
