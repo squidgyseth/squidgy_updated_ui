@@ -118,12 +118,12 @@ export default function Index() {
   }, [userId]);
 
   const desktopLayout = (
-    <div className="h-screen overflow-hidden bg-white">
+    <div className="h-screen overflow-y-auto bg-white">
       {/* Reusable Left Navigation */}
       <LeftNavigation currentPage="dashboard" />
 
       {/* Main Content */}
-      <div className="ml-[60px] bg-gray-50 h-full overflow-hidden flex flex-col">
+      <div className="ml-[60px] bg-gray-50 h-full overflow-y-auto flex flex-col">
         <div className="max-w-full mx-auto px-8 py-6 flex-1 min-h-0 flex flex-col space-y-8">
           {/* Header */}
           <div className="flex-none flex items-center justify-between bg-gray-50 pb-6 border-b border-gray-200">
