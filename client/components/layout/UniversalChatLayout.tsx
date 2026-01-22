@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, ChevronDown, Plus } from 'lucide-react';
+import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, ChevronDown, Plus, Check, FileText } from 'lucide-react';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useUser } from '../../hooks/useUser';
 import ChatHistory from '../chat/ChatHistory';
@@ -149,6 +149,7 @@ export default function UniversalChatLayout({
   const [isLoadingActions, setIsLoadingActions] = useState(true); // Only true on initial load
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
 
   const toggleSection = (sectionId: string) => {
     setOpenSection(prev => prev === sectionId ? null : sectionId);
@@ -216,6 +217,10 @@ export default function UniversalChatLayout({
     onSettingsClick?.(agent.id);
   };
 
+  const handleGlobalSettingsClick = () => {
+    navigate('/account-settings');
+  };
+
   const handleNewChat = () => {
     onNewChat?.(agent.id);
   };
@@ -229,16 +234,6 @@ export default function UniversalChatLayout({
           <div className="flex items-center justify-between">
             {/* Left: Sidebar toggle + Agent info */}
             <div className="flex items-center space-x-3">
-              {/* Sidebar Toggle Button */}
-              <button
-                onClick={toggleSidebar}
-                className="text-squidgy-primary hover:bg-gray-100 p-1 rounded transition-colors"
-                title="Toggle Sidebar"
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7.5 2.5V17.5M4.16667 2.5H15.8333C16.7538 2.5 17.5 3.24619 17.5 4.16667V15.8333C17.5 16.7538 16.7538 17.5 15.8333 17.5H4.16667C3.24619 17.5 2.5 16.7538 2.5 15.8333V4.16667C2.5 3.24619 3.24619 2.5 4.16667 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
               <div className="relative">
                 {agent.avatar && (
                   <img
@@ -252,23 +247,36 @@ export default function UniversalChatLayout({
               </div>
               <div>
                 <h1 className="text-base font-bold text-black">{agent.name}</h1>
-                <p className="text-xs font-normal text-gray-500 mt-1">active • {agent.tagline}</p>
+                <p className="text-xs font-normal text-gray-500 mt-1">active • Friendly & Helpful</p>
               </div>
             </div>
 
             {/* Right: Action buttons */}
             <div className="flex items-center space-x-2">
-              <button className="p-2 text-purple-600 hover:text-purple-700 rounded-lg hover:bg-purple-50 transition">
+              <button
+                onClick={() => alert('Coming soon')}
+                className="p-2 text-gray-400 hover:text-gray-500 rounded-lg hover:bg-gray-50 transition"
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
               </button>
-              <button className="p-2 text-purple-600 hover:text-purple-700 rounded-lg hover:bg-purple-50 transition">
+              <button
+                onClick={() => alert('Coming soon')}
+                className="p-2 text-gray-400 hover:text-gray-500 rounded-lg hover:bg-gray-50 transition"
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
               </button>
-              <button className="p-2 text-purple-600 hover:text-purple-700 rounded-lg hover:bg-purple-50 transition">
+              <button
+                onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+                className={`p-2 rounded-lg transition border text-purple-600 ${isRightSidebarOpen
+                  ? 'bg-purple-50 border-purple-100'
+                  : 'border-transparent hover:bg-purple-50'
+                  }`}
+                title={isRightSidebarOpen ? "Hide details" : "Show details"}
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -283,206 +291,214 @@ export default function UniversalChatLayout({
         </div>
       </div>
 
-      {/* Right Sidebar - Fixed Layout */}
-      <div className="w-80 border-l border-gray-200 bg-white flex flex-col h-full overflow-hidden">
+      {/* Right Sidebar - Redesigned Layout */}
+      {isRightSidebarOpen && (
+        <div className="w-80 border-l border-gray-200 bg-white flex flex-col h-full overflow-hidden font-sans">
 
-        {/* FIXED TOP SECTION: Header + Actions + Onboarding */}
-        <div className="flex-none bg-white border-b border-gray-100 z-10 shadow-sm">
-          {/* Compact Header */}
-          <div className="p-3 flex items-center space-x-3">
-            <div className="relative">
+          {/* Header Section */}
+          <div className="flex-none p-3 pb-0.5 text-center bg-gradient-to-b from-purple-50/50 to-white">
+            <div className="relative inline-block mb-1.5">
               {agent.avatar ? (
                 <img
                   src={agent.avatar}
                   alt={agent.name}
-                  className="w-10 h-10 rounded-full object-cover"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                   {agent.name.substring(0, 2)}
                 </div>
               )}
-              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white"></div>
             </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-gray-900 truncate leading-tight">{agent.name}</h2>
-              <div className="flex items-center text-[10px] text-gray-500 mt-0.5">
-                <span className="w-1 h-1 bg-green-500 rounded-full mr-1"></span>
-                Active • {agent.category}
-              </div>
+
+            <h2 className="text-sm font-bold text-indigo-600 mb-0">{agent.name}</h2>
+
+            <div className="inline-flex items-center px-2 py-0.5 bg-purple-100/80 rounded-full mb-1.5">
+              <span className="text-[8px] font-semibold text-purple-700">Friendly & Helpful</span>
             </div>
-          </div>
 
-          {/* Compact Actions Row */}
-          <div className="px-3 pb-2 flex gap-2">
-            <button
-              onClick={handleNewChat}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-md hover:from-green-700 hover:to-emerald-700 transition text-xs font-semibold shadow-sm"
-            >
-              <Plus size={14} />
-              <span>New Chat</span>
-            </button>
-            <button
-              onClick={handleSettingsClick}
-              className="px-2 py-1.5 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition border border-gray-200"
-              title="Settings"
-            >
-              <Settings size={14} />
-            </button>
-            <button
-              onClick={handlePinToggle}
-              className={`px-2 py-1.5 rounded-md transition border ${isPinned
-                ? 'bg-purple-50 text-purple-600 border-purple-200'
-                : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 border-gray-200'
-                }`}
-              title={isPinned ? "Unpin Agent" : "Pin Agent"}
-            >
-              {isPinned ? <Pin size={14} /> : <PinOff size={14} />}
-            </button>
-          </div>
+            <p className="text-[9px] text-center text-gray-400 mb-1.5 leading-tight px-4 line-clamp-2">
+              {agent.description || "I'm here to help you set up your Squidgy account."}
+            </p>
 
-          {/* Onboarding Section - Fixed */}
-          <div className="px-3 pb-3 pt-2">
-            <h3 className="text-[10px] font-bold text-gray-600 uppercase tracking-wider pl-1 mb-2">Onboarding</h3>
-            <div className="space-y-1.5">
-              {/* Configurable Data Row */}
+            <div className="flex gap-1 justify-center px-1">
               <button
-                onClick={handleSettingsClick}
-                className="w-full flex items-center justify-between p-2.5 bg-white border border-gray-100 rounded-lg shadow-sm hover:bg-gray-50 transition group"
+                onClick={handleNewChat}
+                className="flex-1 flex items-center justify-center gap-1 py-1 px-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
               >
-                <span className="text-[11px] font-bold text-gray-700">Configurable Data</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded-full border border-red-100 font-bold leading-none">Setup Required</span>
-                  <ChevronRight size={12} className="text-gray-300 group-hover:text-purple-500" />
-                </div>
+                <Plus size={12} />
+                <span className="font-semibold text-[10px]">New Chat</span>
               </button>
 
-              {/* Integration Setup Row */}
               <button
-                onClick={handleIntegrationSetupClick}
-                className="w-full flex items-center justify-between p-2.5 bg-white border border-gray-100 rounded-lg shadow-sm hover:bg-gray-50 transition group"
+                onClick={handleGlobalSettingsClick}
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-purple-200 text-purple-600 hover:text-purple-700 hover:bg-purple-50 hover:border-purple-300 transition-colors bg-white shadow-sm"
+                title="Settings"
               >
-                <span className="text-[11px] font-bold text-gray-700">Integration Setup</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded-full border border-red-100 font-bold leading-none">Setup Required</span>
-                  <ChevronRight size={12} className="text-gray-300 group-hover:text-purple-500" />
-                </div>
+                <Settings size={14} />
+              </button>
+
+              <button
+                onClick={handlePinToggle}
+                className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-colors shadow-sm ${isPinned
+                  ? 'bg-purple-50 text-purple-600 border-purple-300'
+                  : 'bg-white border-purple-200 text-purple-600 hover:text-purple-700 hover:bg-purple-50 hover:border-purple-300'
+                  }`}
+                title={isPinned ? "Unpin Agent" : "Pin Agent"}
+              >
+                <Pin size={14} />
               </button>
             </div>
           </div>
-        </div>
 
-        {/* SCROLLABLE AREA: Sessions first, then collapsed details */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar bg-gray-50/50">
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-4 py-2 space-y-3 custom-scrollbar">
 
-          {/* Previous Sessions - Priority Content */}
-          <div className="px-3 pt-0 pb-1">
-            <div className="bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm px-2.5 py-2 min-h-[45px] flex flex-col justify-center">
-              <PreviousSessions
-                agentId={agent.id}
-                currentSessionId={currentSessionId}
-                onSessionSelect={onSessionSelect || (() => { })}
-              />
-            </div>
-          </div>
-
-          <div className="px-3 pb-4 space-y-2">
-            {/* Capabilities - Collapsible */}
-            <CollapsibleSection
-              title="Capabilities"
-              icon={<Zap size={14} />}
-              isOpen={openSection === 'capabilities'}
-              onToggle={() => toggleSection('capabilities')}
-              preview={
-                <div className="flex flex-wrap gap-x-2.5 gap-y-1 mt-1">
-                  {agent.capabilities && agent.capabilities.length > 0 ? (
-                    <>
-                      {agent.capabilities.slice(0, 2).map((cap, i) => (
-                        <span key={i} className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded-full border border-purple-100">
-                          {cap.length > 15 ? cap.substring(0, 15) + '...' : cap}
-                        </span>
-                      ))}
-                      {agent.capabilities.length > 2 && (
-                        <span className="text-[10px] text-gray-400 self-center">+{agent.capabilities.length - 2} more</span>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-[10px] text-gray-400">No capabilities specified</span>
-                  )}
-                </div>
-              }
-            >
-              <div className="space-y-1.5 mt-2">
-                {agent.capabilities && agent.capabilities.length > 0 ? (
-                  agent.capabilities.map((capability, index) => (
-                    <div key={index} className="flex items-start gap-2 text-xs text-gray-600">
-                      <div className="w-1 h-1 bg-purple-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                      <p className="leading-tight">{capability}</p>
+            {/* Onboarding Section */}
+            <div>
+              <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">ONBOARDING</h3>
+              <div className="space-y-2">
+                {/* Card 1 */}
+                <div className="p-2.5 rounded-lg border border-gray-100 shadow-sm bg-white hover:border-purple-100 transition-colors cursor-pointer group" onClick={handleSettingsClick}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-gray-800 text-[11px]">Configurable Data</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="px-1 py-0.5 bg-red-50 rounded-full">
+                        <span className="text-[9px] font-bold text-red-400">Setup Required</span>
+                      </div>
+                      <ChevronRight size={12} className="text-gray-300 group-hover:text-purple-500 transition-colors" />
                     </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-gray-500 italic">No specific capabilities listed for this agent.</p>
-                )}
-              </div>
-            </CollapsibleSection>
+                  </div>
+                </div>
 
-            {/* Recent Activity - Collapsible */}
-            <CollapsibleSection
-              title="Recent Activity"
-              icon={<Clock size={14} />}
-              isOpen={openSection === 'activity'}
-              onToggle={() => toggleSection('activity')}
-              preview={
-                <div className="mt-1">
-                  {recentActions.length > 0 ? (
-                    <p className="text-[10px] text-gray-500 truncate italic">
-                      Latest: {recentActions[0]}
-                    </p>
+                {/* Card 2 */}
+                <div className="p-2.5 rounded-lg border border-gray-100 shadow-sm bg-white hover:border-purple-100 transition-colors cursor-pointer group" onClick={handleIntegrationSetupClick}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-gray-800 text-[11px]">Integration Setup</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="px-1.5 py-0.5 bg-red-50 rounded-full">
+                        <span className="text-[9px] font-bold text-red-400">Setup Required</span>
+                      </div>
+                      <ChevronRight size={12} className="text-gray-300 group-hover:text-purple-500 transition-colors" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Previous Sessions */}
+                <div className="pt-0.5">
+                  <div className="flex items-center gap-2 mb-1.5 px-1">
+                    <MessageSquare size={14} className="text-purple-600" />
+                    <h3 className="text-[11px] font-bold text-gray-800">Previous Sessions</h3>
+                  </div>
+                  <div className="pl-2 border-l-2 border-purple-100 ml-2">
+                    <PreviousSessions
+                      agentId={agent.id}
+                      currentSessionId={currentSessionId}
+                      onSessionSelect={onSessionSelect || (() => { })}
+                      hideHeader={true}
+                    />
+                  </div>
+                </div>
+
+                {/* Review Row */}
+                <div className="flex items-center gap-2 py-0.5 px-1 cursor-pointer group" onClick={handleSettingsClick}>
+                  <div className="text-purple-600">
+                    <Check size={14} strokeWidth={3} />
+                  </div>
+                  <span className="font-bold text-gray-800 text-[11px] flex-1 group-hover:text-purple-600 transition-colors">Review your Brand Profile</span>
+                  <ChevronRight size={12} className="text-gray-300 group-hover:text-purple-500 transition-colors" />
+                </div>
+              </div>
+            </div>
+
+            {/* Capabilities Section */}
+            <div>
+              <div className="flex items-center justify-between mb-2 cursor-pointer group" onClick={() => toggleSection('capabilities')}>
+                <div className="flex items-center gap-2 px-1">
+                  <Zap size={14} className="text-purple-600 fill-purple-100" />
+                  <h3 className="text-[11px] font-bold text-gray-800">Capabilities</h3>
+                </div>
+                <ChevronRight size={12} className={`text-purple-300 group-hover:text-purple-600 transition-transform ${openSection === 'capabilities' ? 'rotate-90' : ''}`} />
+              </div>
+
+              {/* Always show tags as preview, matching image */}
+              <div className="flex flex-wrap gap-1 px-1 mb-1">
+                <div className="bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full text-[9px] font-medium">
+                  Website analysis...
+                </div>
+                <div className="bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full text-[9px] font-medium">
+                  AI agent recomm...
+                </div>
+                <div className="text-[9px] text-gray-400 font-medium py-0.5 px-0.5">
+                  +4 more
+                </div>
+              </div>
+
+              {/* Expanded Content */}
+              {openSection === 'capabilities' && (
+                <div className="mt-2 pl-2 space-y-1.5 animate-in slide-in-from-top-1 duration-200">
+                  {agent.capabilities && agent.capabilities.length > 0 ? (
+                    agent.capabilities.map((capability, index) => (
+                      <div key={index} className="flex items-start gap-2 text-xs text-gray-600">
+                        <div className="w-1 h-1 bg-purple-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="leading-tight">{capability}</p>
+                      </div>
+                    ))
                   ) : (
-                    <p className="text-[10px] text-gray-400">No recent activity</p>
+                    <p className="text-xs text-gray-500 italic">No specific capabilities listed for this agent.</p>
                   )}
                 </div>
-              }
-            >
-              <div className="space-y-2.5 mt-2">
+              )}
+            </div>
+
+            {/* Recent Activity Section */}
+            <div className="pt-0.5">
+              <div className="flex items-center justify-between pointer-events-none group px-1">
+                <div className="flex items-center gap-2">
+                  <Clock size={14} className="text-purple-600" />
+                  <h3 className="text-[11px] font-bold text-gray-800">Recent Activity</h3>
+                </div>
+              </div>
+
+              <div className="mt-2 pl-2 space-y-1.5">
                 {isLoadingActions ? (
-                  <p className="text-xs text-gray-500 pl-1">Loading activity...</p>
+                  <p className="text-[9px] text-gray-500 pl-1">Loading activity...</p>
                 ) : recentActions.length > 0 ? (
                   recentActions.map((action, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-green-500"></div>
-                      <p className="text-xs text-gray-700 font-medium">{action}</p>
+                    <div key={index} className="flex items-start gap-1.5">
+                      <div className="w-1 h-1 rounded-full mt-1 flex-shrink-0 bg-green-500"></div>
+                      <p className="text-[9px] text-gray-700 font-medium line-clamp-1">{action}</p>
                     </div>
                   ))
                 ) : (
-                  [...Array(4)].map((_, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-gray-200"></div>
-                      <p className="text-xs text-gray-400">—</p>
-                    </div>
-                  ))
+                  <p className="text-[9px] text-gray-400 pl-1">No recent activity.</p>
                 )}
               </div>
-            </CollapsibleSection>
+            </div>
 
-            {/* Previous Content - Collapsible */}
-            <CollapsibleSection
-              title="Generated Content"
-              icon={<MessageSquare size={14} />}
-              isOpen={openSection === 'content'}
-              onToggle={() => toggleSection('content')}
-              preview={
-                <p className="text-[10px] text-gray-600 font-medium mt-1">View recent items</p>
-              }
-            >
-              <div className="-mx-1">
-                <PreviousContent agentId={agent.id} />
+            {/* Generated Content Section */}
+            <div className="pt-0.5">
+              <div className="flex items-center justify-between cursor-pointer group px-1" onClick={() => toggleSection('content')}>
+                <div className="flex items-center gap-2">
+                  <FileText size={14} className="text-purple-600" />
+                  <h3 className="text-[11px] font-bold text-gray-800">Generated Content</h3>
+                </div>
+                <ChevronRight size={12} className={`text-purple-300 group-hover:text-purple-600 transition-transform ${openSection === 'content' ? 'rotate-90' : ''}`} />
               </div>
-            </CollapsibleSection>
+
+              {openSection === 'content' && (
+                <div className="mt-2 pl-1 animate-in slide-in-from-top-1 duration-200">
+                  <PreviousContent agentId={agent.id} />
+                </div>
+              )}
+            </div>
+
+
+
           </div>
         </div>
-
-      </div>
+      )}
     </div>
   );
 }

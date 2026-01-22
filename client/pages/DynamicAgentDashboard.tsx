@@ -18,7 +18,7 @@ export default function DynamicAgentDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const configService = AgentConfigService.getInstance();
-  
+
   const [agentConfig, setAgentConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export default function DynamicAgentDashboard() {
       try {
         setLoading(true);
         const config = await configService.loadAgentConfig(agentId);
-        
+
         if (config) {
           setAgentConfig(config);
           console.log(`${config.agent.name} config loaded from YAML`);
@@ -55,7 +55,7 @@ export default function DynamicAgentDashboard() {
         setLoading(false);
       }
     };
-    
+
     loadAgentConfig();
   }, [agentId, configService]);
 
@@ -66,7 +66,7 @@ export default function DynamicAgentDashboard() {
 
   // Initialize navigation service with React Router
   useNavigationService();
-  
+
   const handleSettingsClick = (agentId: string) => {
     console.log(`Settings clicked for agent: ${agentId}`);
 
@@ -76,11 +76,11 @@ export default function DynamicAgentDashboard() {
 
   const handleNewChat = (agentId: string) => {
     console.log(`New chat clicked for agent: ${agentId}`);
-    
+
     // When user explicitly clicks "New Chat", always generate a fresh session
     const newSessionId = chatSessionService.generateSessionId(userId, agentId);
     setCurrentSessionId(newSessionId);
-    
+
     console.log(`Created new chat session: ${newSessionId}`);
   };
 
@@ -108,7 +108,7 @@ export default function DynamicAgentDashboard() {
         }
       }
     };
-    
+
     initializeSession();
   }, [userId, agentId]);
 
@@ -154,7 +154,7 @@ export default function DynamicAgentDashboard() {
   };
 
   return (
-    <UniversalChatLayout 
+    <UniversalChatLayout
       agent={agentConfig.agent}
       onPinToggle={handlePinToggle}
       onSettingsClick={handleSettingsClick}
@@ -181,12 +181,12 @@ export default function DynamicAgentDashboard() {
  */
 function generateIntroMessage(agent: any, fromSidebar?: boolean): string {
   const { initial_message, sidebar_greeting } = agent;
-  
+
   // Use sidebar_greeting when navigating from sidebar (if available), otherwise use initial_message
   if (fromSidebar && sidebar_greeting) {
     return sidebar_greeting;
   }
-  
+
   // Return the initial_message from YAML config
   return initial_message || '';
 }

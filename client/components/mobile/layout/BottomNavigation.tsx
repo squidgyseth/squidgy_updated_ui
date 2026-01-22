@@ -21,11 +21,13 @@ const navItems: NavItem[] = [
     label: 'Dashboard',
     path: '/dashboard',
   },
-  {
-    icon: TrendingUp,
-    label: 'Leads',
-    path: '/leads',
-  },
+  /*
+    {
+      icon: TrendingUp,
+      label: 'Leads',
+      path: '/leads',
+    },
+  */
   {
     icon: User,
     label: 'Account',
