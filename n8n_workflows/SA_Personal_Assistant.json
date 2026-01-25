@@ -4,33 +4,33 @@
     {
       "parameters": {
         "content": "# Personal Assistant - Master Agent\n\n## Flow:\n1. Webhook receives request\n2. Load CORE instructions (security_rules + instructions.md)\n3. RAG search for CONTEXTUAL instructions based on user query\n4. Get AGENT config + USER PROFILE from Supabase (parallel)\n5. Pre-process request (combine all data)\n6. AI Agent decides: ANSWER, REDIRECT, ONBOARD, or CLARIFY\n7. Build response\n8. Return to webhook\n\n## Instruction Loading (Hybrid):\n- ALWAYS: security_rules.md, instructions.md (Tier 1)\n- RAG: button_patterns, response_format, content_previews, actions_* (Tier 2)\n\n## User Settings Reuse (from profiles):\n- First agent: Collect all → Save to profiles via tool\n- 2nd+ agent: Show existing → Offer reuse or customize",
-        "height": 280,
-        "width": 400,
+        "height": 600,
+        "width": 576,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -200,
-        -100
+        -2464,
+        80
       ],
       "typeVersion": 1,
-      "id": "overview-note",
+      "id": "f0889c44-dfcb-4c8b-aa55-8f34159cc8e3",
       "name": "Overview"
     },
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "personal_assistant",
+        "path": "personal_assistant_new",
         "responseMode": "responseNode",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        300,
-        300
+        -1840,
+        496
       ],
-      "id": "webhook-main",
+      "id": "69c59212-5ea7-4679-9773-25d2578236c3",
       "name": "PA Webhook",
       "webhookId": "personal-assistant-main"
     },
@@ -43,18 +43,18 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        520,
-        300
+        -1616,
+        496
       ],
-      "id": "load-core-instructions",
+      "id": "eaa719f1-9c5d-42d6-858c-706107fdef83",
       "name": "Load Core Instructions",
+      "alwaysOutputData": true,
       "credentials": {
         "postgres": {
           "id": "9VZuQcfK90oMX16w",
           "name": "Neon Postgres"
         }
       },
-      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
@@ -66,18 +66,18 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        520,
-        480
+        -1616,
+        688
       ],
-      "id": "load-contextual-instructions",
+      "id": "3e3251fc-5d6d-478c-b4a2-0ca97a101613",
       "name": "Load Contextual Instructions (RAG)",
+      "alwaysOutputData": true,
       "credentials": {
         "postgres": {
           "id": "9VZuQcfK90oMX16w",
           "name": "Neon Postgres"
         }
       },
-      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
@@ -100,10 +100,10 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        740,
-        300
+        -1392,
+        496
       ],
-      "id": "get-user-config",
+      "id": "a0b35213-5c12-4fd1-864f-43dea4b1dfaa",
       "name": "Get Agent Config",
       "credentials": {
         "supabaseApi": {
@@ -114,15 +114,15 @@
     },
     {
       "parameters": {
-        "jsCode": "// Pre-process: Combine data for AI Agent\nconst webhook = $('PA Webhook').first().json;\nconst coreInstructions = $('Load Core Instructions').all();\nconst contextualInstructions = $('Load Contextual Instructions (RAG)').all();\nconst config = $('Get Agent Config').first().json || {};\n\n// TIER 1: Core instructions (always loaded)\nlet coreSection = '## CORE INSTRUCTIONS (Always Active)\\n\\n';\nfor (const item of coreInstructions) {\n  const doc = item.json;\n  if (doc.document) {\n    coreSection += `### ${doc.source_file}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n  }\n}\n\n// TIER 2: Contextual instructions (RAG retrieved based on relevance)\nlet contextSection = '';\nif (contextualInstructions.length > 0) {\n  contextSection = '## CONTEXTUAL INSTRUCTIONS (Retrieved for this query)\\n\\n';\n  for (const item of contextualInstructions) {\n    const doc = item.json;\n    if (doc.document) {\n      const similarity = doc.similarity ? ` (relevance: ${(doc.similarity * 100).toFixed(0)}%)` : '';\n      contextSection += `### ${doc.source_file}${similarity}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n    }\n  }\n}\n\n// Combine instructions\nconst combinedInstructions = coreSection + contextSection;\n\n// Extract request data\nconst body = webhook.body || {};\nconst userId = body.user_id;\nconst sessionId = body.session_id;\nconst userMessage = body.user_mssg?.trim() || '';\nconst agentName = body.agent_name || 'personal_assistant';\nconst requestId = body.request_id || crypto.randomUUID();\n\n// Build the data object for AI Agent\nreturn {\n  json: {\n    user_id: userId,\n    session_id: sessionId,\n    user_mssg: userMessage,\n    agent_name: agentName,\n    request_id: requestId,\n    timestamp: new Date().toISOString(),\n    instructions: combinedInstructions || 'No instructions found.',\n    enabled_agents: config.enabled_agents || '',\n    assistants: config.assistants || '',\n    agent_department_value: config.agent_department_value || ''\n  }\n};"
+        "jsCode": "// Pre-process: Combine data for AI Agent\nconst webhook = $('PA Webhook').first().json;\nconst coreInstructions = $('Load Core Instructions').all();\nconst contextualInstructions = $('Load Contextual Instructions (RAG)').all();\nconst config = $('Get Agent Config').first().json || {};\n\n// TIER 1: Core instructions (always loaded)\nlet coreSection = '## CORE INSTRUCTIONS (Always Active)\\n\\n';\nfor (const item of coreInstructions) {\n  const doc = item.json;\n  if (doc.document) {\n    coreSection += `### ${doc.source_file}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n  }\n}\n\n// TIER 2: Contextual instructions (RAG retrieved based on relevance)\nlet contextSection = '';\nif (contextualInstructions.length > 0) {\n  contextSection = '## CONTEXTUAL INSTRUCTIONS (Retrieved for this query)\\n\\n';\n  for (const item of contextualInstructions) {\n    const doc = item.json;\n    if (doc.document) {\n      const similarity = doc.similarity ? ` (relevance: ${(doc.similarity * 100).toFixed(0)}%)` : '';\n      contextSection += `### ${doc.source_file}${similarity}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n    }\n  }\n}\n\nconst combinedInstructions = coreSection + contextSection;\n\nconst body = webhook.body || {};\nconst userId = body.user_id;\nconst sessionId = body.session_id;\nconst userMessage = body.user_mssg?.trim() || '';\nconst agentName = body.agent_name || 'personal_assistant';\nconst requestId = body.request_id || crypto.randomUUID();\n\nreturn {\n  json: {\n    user_id: userId,\n    session_id: sessionId,\n    user_mssg: userMessage,\n    agent_name: agentName,\n    request_id: requestId,\n    timestamp: new Date().toISOString(),\n    instructions: combinedInstructions || 'No instructions found.',\n    enabled_agents: config.enabled_agents || '',\n    assistants: config.assistants || '',\n    agent_department_value: config.agent_department_value || ''\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        960,
-        300
+        -1184,
+        496
       ],
-      "id": "pre-process",
+      "id": "06bd8d4b-62be-4def-992e-a739392336ad",
       "name": "Pre-Process"
     },
     {
@@ -139,10 +139,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        1100,
-        520
+        -1040,
+        720
       ],
-      "id": "openrouter-model",
+      "id": "b35bc671-bd2c-4f07-ac98-3f91037b25da",
       "name": "OpenRouter Chat Model",
       "credentials": {
         "openAiApi": {
@@ -160,15 +160,15 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        1260,
-        520
+        -880,
+        720
       ],
-      "id": "session-memory",
+      "id": "c01cddf7-12f8-47af-829e-0b730b36d7a5",
       "name": "Session Memory"
     },
     {
       "parameters": {
-        "model": "openai/text-embedding-3-small",
+        "model": "text-embedding-3-small",
         "options": {
           "baseURL": "https://openrouter.ai/api/v1"
         }
@@ -176,10 +176,10 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
       "typeVersion": 1.2,
       "position": [
-        1420,
-        640
+        -720,
+        944
       ],
-      "id": "embeddings-rag",
+      "id": "90a06847-7b17-482e-971d-478900b53ef3",
       "name": "OpenRouter Embeddings",
       "credentials": {
         "openAiApi": {
@@ -191,8 +191,8 @@
     {
       "parameters": {
         "mode": "retrieve-as-tool",
-        "tableName": "user_vector_knowledge_base",
         "toolDescription": "Search the Knowledge Base for information about the user's business. Use this to answer questions about company details, contacts, products, services, etc. Query with natural language.",
+        "tableName": "user_vector_knowledge_base",
         "options": {
           "metadata": {
             "metadataValues": [
@@ -207,10 +207,10 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
       "typeVersion": 1.3,
       "position": [
-        1420,
-        520
+        -720,
+        720
       ],
-      "id": "vector-search-tool",
+      "id": "71bf2c71-779f-4d90-a4be-9cdc9e41ae43",
       "name": "Vector Search (RAG)",
       "credentials": {
         "postgres": {
@@ -239,15 +239,14 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        1580,
-        520
+        -480,
+        832
       ],
-      "id": "save-to-kb-tool",
+      "id": "90a2f521-37c5-448c-b3ac-339e8b7397d1",
       "name": "Save to KB"
     },
     {
       "parameters": {
-        "toolDescription": "Get configuration/setup details for a specific agent. Use when you need to check if an agent is configured, what settings it has, or before redirecting to an agent. Returns agent's enabled status, configuration settings (brand_voice, target_audience, tone, etc.).",
         "operation": "get",
         "tableId": "user_agent_customizations",
         "filters": {
@@ -266,10 +265,10 @@
       "type": "n8n-nodes-base.supabaseTool",
       "typeVersion": 1,
       "position": [
-        1900,
-        520
+        -240,
+        720
       ],
-      "id": "get-agent-setup-tool",
+      "id": "02263bed-612a-494c-b479-743f2f26fd1b",
       "name": "Get Agent Setup",
       "credentials": {
         "supabaseApi": {
@@ -314,10 +313,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        1740,
-        520
+        -400,
+        720
       ],
-      "id": "web-analysis-tool",
+      "id": "bfbd192c-70de-4718-a0a8-f079ddd4819c",
       "name": "Web Analysis"
     },
     {
@@ -340,8 +339,11 @@
       },
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
-      "position": [2060, 520],
-      "id": "update-kb-tool",
+      "position": [
+        -80,
+        720
+      ],
+      "id": "fd7746da-2767-4eb1-9b45-69367e52f038",
       "name": "Update KB"
     },
     {
@@ -363,8 +365,11 @@
       },
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
-      "position": [2220, 520],
-      "id": "delete-kb-tool",
+      "position": [
+        96,
+        720
+      ],
+      "id": "f9fcd7eb-63b0-4d2b-92f5-6661a4c73248",
       "name": "Delete from KB"
     },
     {
@@ -388,40 +393,35 @@
       },
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
-      "position": [2380, 520],
-      "id": "upload-file-tool",
+      "position": [
+        256,
+        720
+      ],
+      "id": "81852136-f59d-44b7-b05c-bb01825cc52e",
       "name": "Upload File"
     },
     {
       "parameters": {
-        "toolDescription": "Save user-level settings to profile after FIRST agent setup. Use ONLY when completing the first agent onboarding to store brand_voice, target_audience, primary_goals, calendar_type, and notifications at user level. These settings will be reused for subsequent agent setups.",
         "operation": "update",
         "tableId": "profiles",
-        "matchingColumns": ["user_id"],
         "fieldsUi": {
           "fieldValues": [
             {
-              "fieldName": "user_id",
               "fieldValue": "={{ $('Pre-Process').item.json.user_id }}"
             },
             {
-              "fieldName": "brand_voice",
               "fieldValue": "={{ $fromAI('brand_voice', 'The selected brand voice (e.g., Professional and authoritative)', 'string') }}"
             },
             {
-              "fieldName": "target_audience",
               "fieldValue": "={{ $fromAI('target_audience', 'The target audience description', 'string') }}"
             },
             {
-              "fieldName": "primary_goals",
               "fieldValue": "={{ $fromAI('primary_goals', 'Array of primary goals (e.g., [\"Lead generation\", \"Thought leadership\"])', 'json') }}"
             },
             {
-              "fieldName": "calendar_type",
               "fieldValue": "={{ $fromAI('calendar_type', 'Calendar connection type: google, outlook, or skip', 'string') }}"
             },
             {
-              "fieldName": "notifications_enabled",
               "fieldValue": "={{ $fromAI('notifications_enabled', 'Enable notifications (true or false)', 'boolean') }}"
             }
           ]
@@ -429,8 +429,11 @@
       },
       "type": "n8n-nodes-base.supabaseTool",
       "typeVersion": 1,
-      "position": [2540, 520],
-      "id": "save-user-settings-tool",
+      "position": [
+        416,
+        720
+      ],
+      "id": "1ee86c94-5fed-4466-8361-66ebeb245b90",
       "name": "Save User Settings",
       "credentials": {
         "supabaseApi": {
@@ -441,41 +444,15 @@
     },
     {
       "parameters": {
-        "toolDescription": "Enable an agent for the user by creating an entry in assistant_personalizations. Use this EVERY TIME an agent is enabled (both first agent and additional agents). Pass the communication_tone based on user's brand_voice setting or custom value if user customized.",
-        "operation": "upsert",
-        "tableId": "assistant_personalizations",
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldName": "user_id",
-              "fieldValue": "={{ $('Pre-Process').item.json.user_id }}"
-            },
-            {
-              "fieldName": "assistant_id",
-              "fieldValue": "={{ $fromAI('assistant_id', 'The agent ID to enable (e.g., newsletter_multi, smm, content_repurposer)', 'string') }}"
-            },
-            {
-              "fieldName": "communication_tone",
-              "fieldValue": "={{ $fromAI('communication_tone', 'Communication tone for this agent (e.g., professional, friendly, casual)', 'string') }}"
-            },
-            {
-              "fieldName": "custom_instructions",
-              "fieldValue": "={{ $fromAI('custom_instructions', 'Any custom instructions for this agent (optional, can be empty string)', 'string') }}"
-            },
-            {
-              "fieldName": "is_enabled",
-              "fieldValue": true
-            }
-          ]
-        },
-        "options": {
-          "conflictTarget": ["user_id", "assistant_id"]
-        }
+        "operation": "upsert"
       },
       "type": "n8n-nodes-base.supabaseTool",
       "typeVersion": 1,
-      "position": [2700, 520],
-      "id": "enable-agent-tool",
+      "position": [
+        576,
+        720
+      ],
+      "id": "6c370cfe-e020-4f13-b316-73dd0807152d",
       "name": "Enable Agent",
       "credentials": {
         "supabaseApi": {
@@ -495,10 +472,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.8,
       "position": [
-        1180,
-        300
+        -960,
+        496
       ],
-      "id": "pa-ai-agent",
+      "id": "de0a4474-7a23-457b-bde5-f3b8d72078bd",
       "name": "PA AI Agent"
     },
     {
@@ -508,10 +485,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1500,
-        300
+        -640,
+        496
       ],
-      "id": "response-builder",
+      "id": "a6b355c1-9359-44d0-885d-9491b304edad",
       "name": "Response Builder"
     },
     {
@@ -523,29 +500,70 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        1720,
-        300
+        -416,
+        496
       ],
-      "id": "respond-webhook",
+      "id": "4d572d25-f20d-42b8-b46a-5ca93aee0721",
       "name": "Respond to Webhook"
     },
     {
       "parameters": {
         "content": "## Tools Available to AI Agent\n\n### KB Tools:\n1. **Vector Search** - Find data from KB\n2. **Save to KB** - Store new info\n3. **Update KB** - Granular update\n4. **Delete from KB** - Remove specific entry\n5. **Upload File** - Process & store files\n\n### Agent Setup Tools:\n6. **Save User Settings** - profiles table (FIRST agent)\n7. **Enable Agent** - assistant_personalizations (EVERY agent)\n\n### Other Tools:\n8. **Web Analysis** - Analyze website\n9. **Get Agent Setup** - Check agent config\n\n## Two-Tier Settings:\n- User-level: profiles table\n- Agent-level: assistant_personalizations table",
-        "height": 220,
-        "width": 300,
+        "height": 556,
+        "width": 492,
         "color": 3
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1380,
-        720
+        -784,
+        1136
       ],
       "typeVersion": 1,
-      "id": "tools-note",
+      "id": "e9cfaf79-e276-4261-b81b-1aa07fb1457b",
       "name": "Tools Note"
     }
   ],
+  "pinData": {
+    "PA Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.theaiteam.uk",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+            "content-length": "286",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://app.squidgy.ai",
+            "priority": "u=1, i",
+            "referer": "https://app.squidgy.ai/",
+            "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "49.37.150.84",
+            "x-forwarded-host": "n8n.theaiteam.uk",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "user_id": "3bd4d2b1-6265-4e3c-90c4-c1fcbc813f08",
+            "user_mssg": "Hello",
+            "session_id": "3bd4d2b1-6265-4e3c-90c4-c1fcbc813f08_personal_assistant_1769329713047_is1rhbv0ci",
+            "agent_name": "personal_assistant",
+            "timestamp_of_call_made": "2026-01-25T08:32:08.134Z",
+            "request_id": "1769329927837-3793"
+          },
+          "webhookUrl": "https://n8n.theaiteam.uk/webhook/personal_assistant_new",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
   "connections": {
     "PA Webhook": {
       "main": [
@@ -619,17 +637,6 @@
           {
             "node": "PA AI Agent",
             "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Embeddings OpenAI": {
-      "ai_embedding": [
-        [
-          {
-            "node": "Vector Search (RAG)",
-            "type": "ai_embedding",
             "index": 0
           }
         ]
@@ -755,16 +762,28 @@
           }
         ]
       ]
+    },
+    "OpenRouter Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Vector Search (RAG)",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "v4.0.0-hybrid-instructions",
+  "versionId": "1cb9986c-5a2f-4a5b-8959-bf24203fd71d",
   "meta": {
-    "templateCredsSetupCompleted": true
+    "templateCredsSetupCompleted": true,
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
   },
-  "id": "SA_Personal_Assistant",
+  "id": "oRu1jpN8YvXEsNFn",
   "tags": []
 }
