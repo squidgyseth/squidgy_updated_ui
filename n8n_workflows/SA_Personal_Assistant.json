@@ -605,11 +605,6 @@
             "node": "Get Agent Config",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Get User Profile",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -618,7 +613,7 @@
       "main": [
         [
           {
-            "node": "Pre-Process",
+            "node": "Get User Profile",
             "type": "main",
             "index": 0
           }
@@ -631,7 +626,7 @@
           {
             "node": "Pre-Process",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]
