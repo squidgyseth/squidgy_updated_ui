@@ -74,7 +74,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extract shared .md files and pass config along\nconst config = $('Config').first().json;\nconst sharedFilesRaw = $input.first().json;\n\nconst sharedFiles = [];\n\nif (Array.isArray(sharedFilesRaw)) {\n  for (const file of sharedFilesRaw) {\n    if (file.name && file.name.endsWith('.md')) {\n      sharedFiles.push({\n        source_file: file.name,\n        url: `${config.rawBaseUrl}/shared/${file.name}`\n      });\n    }\n  }\n}\n\nreturn {\n  json: {\n    config: config,\n    sharedFiles: sharedFiles\n  }\n};"
+        "jsCode": "// Extract shared .md files and pass config along\nconst config = $('Config').first().json;\n\n// N8N converts array response into multiple items, so use $input.all()\nconst allItems = $input.all();\nconst sharedFiles = [];\n\nfor (const item of allItems) {\n  const file = item.json;\n  if (file.name && file.name.endsWith('.md')) {\n    sharedFiles.push({\n      source_file: file.name,\n      url: `${config.rawBaseUrl}/shared/${file.name}`\n    });\n  }\n}\n\nreturn {\n  json: {\n    config: config,\n    sharedFiles: sharedFiles\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -102,7 +102,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extract agent folder names, carry forward config and shared files\nconst prevData = $('Parse Shared Files').first().json;\nconst agentFoldersRaw = $input.first().json;\n\nconst agents = [];\n\nif (Array.isArray(agentFoldersRaw)) {\n  for (const folder of agentFoldersRaw) {\n    if (folder.type === 'dir' && folder.name) {\n      agents.push({\n        agent_id: folder.name,\n        config: prevData.config,\n        sharedFiles: prevData.sharedFiles\n      });\n    }\n  }\n}\n\nreturn agents.map(a => ({ json: a }));"
+        "jsCode": "// Extract agent folder names, carry forward config and shared files\nconst prevData = $('Parse Shared Files').first().json;\n\n// N8N converts array response into multiple items, so use $input.all()\nconst allItems = $input.all();\nconst agents = [];\n\nfor (const item of allItems) {\n  const folder = item.json;\n  if (folder.type === 'dir' && folder.name) {\n    agents.push({\n      agent_id: folder.name,\n      config: prevData.config,\n      sharedFiles: prevData.sharedFiles\n    });\n  }\n}\n\nreturn agents.map(a => ({ json: a }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -130,7 +130,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Build complete file list for this agent\nconst prevData = $('Parse Agent Folders').item.json;\nconst config = prevData.config;\nconst sharedFiles = prevData.sharedFiles;\nconst agentId = prevData.agent_id;\nconst agentFilesRaw = $input.first().json;\n\nconst files = [];\n\n// 1. Add agent's own files\nconst agentOwnFileNames = [];\nif (Array.isArray(agentFilesRaw)) {\n  for (const file of agentFilesRaw) {\n    if (file.name && file.name.endsWith('.md')) {\n      agentOwnFileNames.push(file.name);\n      files.push({\n        agent_id: agentId,\n        source_file: file.name,\n        url: `${config.rawBaseUrl}/agents/${agentId}/${file.name}`\n      });\n    }\n  }\n}\n\n// 2. Add shared files\nconst hasOwnActions = config.agentsWithOwnActions.includes(agentId);\n\nfor (const sharedFile of sharedFiles) {\n  // Skip shared actions if agent has own actions\n  if (hasOwnActions && (sharedFile.source_file === 'actions_performed.md' || sharedFile.source_file === 'actions_todo.md')) {\n    continue;\n  }\n  \n  // Skip if agent already has this file\n  if (agentOwnFileNames.includes(sharedFile.source_file)) {\n    continue;\n  }\n  \n  files.push({\n    agent_id: agentId,\n    source_file: sharedFile.source_file,\n    url: sharedFile.url\n  });\n}\n\nreturn files.map(f => ({ json: f }));"
+        "jsCode": "// Build complete file list for this agent\nconst prevData = $('Parse Agent Folders').item.json;\nconst config = prevData.config;\nconst sharedFiles = prevData.sharedFiles;\nconst agentId = prevData.agent_id;\n\n// N8N converts array response into multiple items, so use $input.all()\nconst allItems = $input.all();\nconst files = [];\nconst agentOwnFileNames = [];\n\n// 1. Add agent's own files\nfor (const item of allItems) {\n  const file = item.json;\n  if (file.name && file.name.endsWith('.md')) {\n    agentOwnFileNames.push(file.name);\n    files.push({\n      agent_id: agentId,\n      source_file: file.name,\n      url: `${config.rawBaseUrl}/agents/${agentId}/${file.name}`\n    });\n  }\n}\n\n// 2. Add shared files\nconst hasOwnActions = config.agentsWithOwnActions.includes(agentId);\n\nfor (const sharedFile of sharedFiles) {\n  // Skip shared actions if agent has own actions\n  if (hasOwnActions && (sharedFile.source_file === 'actions_performed.md' || sharedFile.source_file === 'actions_todo.md')) {\n    continue;\n  }\n  \n  // Skip if agent already has this file\n  if (agentOwnFileNames.includes(sharedFile.source_file)) {\n    continue;\n  }\n  \n  files.push({\n    agent_id: agentId,\n    source_file: sharedFile.source_file,\n    url: sharedFile.url\n  });\n}\n\nreturn files.map(f => ({ json: f }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
