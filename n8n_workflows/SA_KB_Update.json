@@ -4,30 +4,44 @@
     {
       "parameters": {
         "content": "## SA_KB_Update Workflow\n\nGranular KB update - finds and replaces specific content.\n\n### Table: user_vector_knowledge_base\n\n### Flow:\n1. Search for matching content\n2. Delete only matching rows\n3. Generate embedding\n4. Insert updated content\n\n### Called By:\n- Personal Assistant (Update KB tool)",
-        "height": 200,
+        "height": 392,
         "width": 400
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [32, 32],
+      "position": [
+        -560,
+        0
+      ],
       "typeVersion": 1,
-      "id": "note-overview",
+      "id": "71bb8704-67a0-4e6e-9c33-e7006f1f9980",
       "name": "Overview"
     },
     {
       "parameters": {
         "workflowInputs": {
           "values": [
-            { "name": "userID", "type": "string" },
-            { "name": "category", "type": "string" },
-            { "name": "old_content", "type": "string" },
-            { "name": "new_content", "type": "string" }
+            {
+              "name": "userID"
+            },
+            {
+              "name": "category"
+            },
+            {
+              "name": "old_content"
+            },
+            {
+              "name": "new_content"
+            }
           ]
         }
       },
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
-      "position": [32, 240],
-      "id": "trigger",
+      "position": [
+        -112,
+        208
+      ],
+      "id": "2eedd927-ad20-4636-bd48-08cfd84b7ae3",
       "name": "When Called"
     },
     {
@@ -38,8 +52,11 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [280, 240],
-      "id": "delete-matching",
+      "position": [
+        144,
+        208
+      ],
+      "id": "02cd93ce-624e-476f-864f-04c47235f69f",
       "name": "Delete Matching Entry",
       "credentials": {
         "postgres": {
@@ -83,8 +100,11 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
-      "position": [500, 240],
-      "id": "get-embedding",
+      "position": [
+        368,
+        208
+      ],
+      "id": "ce848dcb-5924-4ee3-b0e0-90a61ee12a21",
       "name": "Get Embedding (OpenRouter)"
     },
     {
@@ -95,8 +115,11 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [720, 240],
-      "id": "insert-updated",
+      "position": [
+        576,
+        208
+      ],
+      "id": "3431fd16-c6de-433c-8705-4929b5be9a7d",
       "name": "Insert Updated Content",
       "credentials": {
         "postgres": {
@@ -111,29 +134,69 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [940, 240],
-      "id": "response",
+      "position": [
+        800,
+        208
+      ],
+      "id": "5ad1f0f8-130b-4f76-a05d-01b4220fda35",
       "name": "Response"
     }
   ],
+  "pinData": {},
   "connections": {
     "When Called": {
-      "main": [[{ "node": "Delete Matching Entry", "type": "main", "index": 0 }]]
-    },
-    "Delete Matching Entry": {
-      "main": [[{ "node": "Get Embedding", "type": "main", "index": 0 }]]
-    },
-    "Get Embedding": {
-      "main": [[{ "node": "Insert Updated Content", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Delete Matching Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Insert Updated Content": {
-      "main": [[{ "node": "Response", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Matching Entry": {
+      "main": [
+        [
+          {
+            "node": "Get Embedding (OpenRouter)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Embedding (OpenRouter)": {
+      "main": [
+        [
+          {
+            "node": "Insert Updated Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" },
-  "versionId": "2.0.0-explicit-columns",
-  "meta": { "templateCredsSetupCompleted": true },
-  "id": "SA_KB_Update",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2d853b44-6074-4b57-842b-1c415827e55b",
+  "meta": {
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "aDM99m2gYlQJexdF",
   "tags": []
 }
