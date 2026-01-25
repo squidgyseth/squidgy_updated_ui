@@ -3,26 +3,28 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## SA_Load_Instructions Workflow\n\nPopulates the agent_instructions vector store for ALL agents.\n\n### Triggers:\n- Manual Trigger (for testing)\n- Webhook: POST /webhook/load-instructions\n\n### Flow:\n1. Load instruction files from GitHub\n2. Generate embeddings via OpenRouter (text-embedding-3-small)\n3. Upsert to agent_instructions table\n\n### Agents Loaded:\n- shared (6 files)\n- personal_assistant (7 files)\n- newsletter_multi (2 files)\n- content_repurposer (2 files)\n- smm (2 files)\n- sol (2 files)\n\nTotal: 21 instruction documents",
-        "height": 240,
-        "width": 400
+        "content": "## SA_Load_Instructions Workflow (DYNAMIC)\n\nAutomatically discovers and loads ALL agent instruction files.\n\n### Triggers:\n- Manual Trigger (for testing)\n- Webhook: POST /webhook/load-instructions\n\n### Dynamic Flow:\n1. Fetch shared/ folder files from GitHub\n2. Fetch agents/ folder to discover all agents\n3. For each agent, fetch their folder files\n4. Build file list: agent files + shared files\n5. Generate embeddings via OpenRouter\n6. Upsert to agent_instructions table\n\n### Rules:\n- All agents get ALL shared files\n- EXCEPT: personal_assistant has own actions files\n  (so PA gets shared MINUS actions_*.md)\n\n### Adding New Agents:\nJust create folder in knowledge_base/agents/\nWorkflow auto-discovers it!",
+        "height": 640,
+        "width": 420
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [32, 32],
+      "position": [
+        -384,
+        48
+      ],
       "typeVersion": 1,
-      "id": "note-overview",
+      "id": "e0a03d13-eb3e-4b2f-b49d-e024f6bd5669",
       "name": "Overview"
     },
     {
-      "parameters": {
-        "rule": {
-          "interval": [{}]
-        }
-      },
+      "parameters": {},
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [32, 300],
-      "id": "manual-trigger",
+      "position": [
+        80,
+        256
+      ],
+      "id": "67fc17ce-a20d-4cca-9093-90cf5046a8cf",
       "name": "Manual Trigger"
     },
     {
@@ -34,20 +36,123 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [32, 480],
-      "id": "webhook-trigger",
+      "position": [
+        80,
+        432
+      ],
+      "id": "a11ae5cc-f0f5-4efc-8372-9a57e35f97d6",
       "name": "Webhook Trigger",
       "webhookId": "load-instructions"
     },
     {
       "parameters": {
-        "jsCode": "// Define all instruction files to load\nconst baseUrl = 'https://raw.githubusercontent.com/Squidgy-AI/squidgy_updated_ui/main/knowledge_base';\n\nconst files = [\n  // ============================================\n  // SHARED FILES (for all child agents)\n  // ============================================\n  { agent_id: 'shared', source_file: 'security_rules.md', url: `${baseUrl}/shared/security_rules.md` },\n  { agent_id: 'shared', source_file: 'button_patterns.md', url: `${baseUrl}/shared/button_patterns.md` },\n  { agent_id: 'shared', source_file: 'response_format.md', url: `${baseUrl}/shared/response_format.md` },\n  { agent_id: 'shared', source_file: 'content_previews.md', url: `${baseUrl}/shared/content_previews.md` },\n  { agent_id: 'shared', source_file: 'actions_performed.md', url: `${baseUrl}/shared/actions_performed.md` },\n  { agent_id: 'shared', source_file: 'actions_todo.md', url: `${baseUrl}/shared/actions_todo.md` },\n  \n  // ============================================\n  // PERSONAL ASSISTANT (PA specific + shared minus actions)\n  // ============================================\n  { agent_id: 'personal_assistant', source_file: 'instructions.md', url: `${baseUrl}/agents/personal_assistant/instructions.md` },\n  { agent_id: 'personal_assistant', source_file: 'actions_performed.md', url: `${baseUrl}/agents/personal_assistant/actions_performed.md` },\n  { agent_id: 'personal_assistant', source_file: 'actions_todo.md', url: `${baseUrl}/agents/personal_assistant/actions_todo.md` },\n  { agent_id: 'personal_assistant', source_file: 'security_rules.md', url: `${baseUrl}/shared/security_rules.md` },\n  { agent_id: 'personal_assistant', source_file: 'button_patterns.md', url: `${baseUrl}/shared/button_patterns.md` },\n  { agent_id: 'personal_assistant', source_file: 'response_format.md', url: `${baseUrl}/shared/response_format.md` },\n  { agent_id: 'personal_assistant', source_file: 'content_previews.md', url: `${baseUrl}/shared/content_previews.md` },\n  \n  // ============================================\n  // NEWSLETTER MULTI\n  // ============================================\n  { agent_id: 'newsletter_multi', source_file: 'instructions.md', url: `${baseUrl}/agents/newsletter_multi/instructions.md` },\n  { agent_id: 'newsletter_multi', source_file: 'custom_instructions.md', url: `${baseUrl}/agents/newsletter_multi/custom_instructions.md` },\n  \n  // ============================================\n  // CONTENT REPURPOSER\n  // ============================================\n  { agent_id: 'content_repurposer', source_file: 'instructions.md', url: `${baseUrl}/agents/content_repurposer/instructions.md` },\n  { agent_id: 'content_repurposer', source_file: 'custom_instructions.md', url: `${baseUrl}/agents/content_repurposer/custom_instructions.md` },\n  \n  // ============================================\n  // SOCIAL MEDIA MANAGER (SMM)\n  // ============================================\n  { agent_id: 'smm', source_file: 'instructions.md', url: `${baseUrl}/agents/smm/instructions.md` },\n  { agent_id: 'smm', source_file: 'custom_instructions.md', url: `${baseUrl}/agents/smm/custom_instructions.md` },\n  \n  // ============================================\n  // SOLAR SALES ASSISTANT (SOL)\n  // ============================================\n  { agent_id: 'sol', source_file: 'instructions.md', url: `${baseUrl}/agents/sol/instructions.md` },\n  { agent_id: 'sol', source_file: 'custom_instructions.md', url: `${baseUrl}/agents/sol/custom_instructions.md` }\n];\n\nreturn files.map(f => ({ json: f }));"
+        "jsCode": "// Config for dynamic discovery\nreturn {\n  json: {\n    rawBaseUrl: 'https://raw.githubusercontent.com/Squidgy-AI/squidgy_updated_ui/main/knowledge_base',\n    apiBaseUrl: 'https://api.github.com/repos/Squidgy-AI/squidgy_updated_ui/contents/knowledge_base',\n    // Agents that have their OWN actions files (don't inherit shared actions)\n    agentsWithOwnActions: ['personal_assistant']\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [260, 300],
-      "id": "define-files",
-      "name": "Define Instruction Files"
+      "position": [
+        304,
+        256
+      ],
+      "id": "config-node-001",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.apiBaseUrl }}/shared",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        528,
+        160
+      ],
+      "id": "fetch-shared-001",
+      "name": "Fetch Shared Folder",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config').item.json.apiBaseUrl }}/agents",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        528,
+        352
+      ],
+      "id": "fetch-agents-001",
+      "name": "Fetch Agents Folder",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract shared .md files\nconst config = $('Config').first().json;\nconst sharedFiles = $('Fetch Shared Folder').first().json;\n\nconst files = [];\n\n// Get all .md files from shared folder\nif (Array.isArray(sharedFiles)) {\n  for (const file of sharedFiles) {\n    if (file.name && file.name.endsWith('.md')) {\n      files.push({\n        source_file: file.name,\n        url: `${config.rawBaseUrl}/shared/${file.name}`\n      });\n    }\n  }\n}\n\nreturn { json: { sharedFiles: files, config } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        160
+      ],
+      "id": "parse-shared-001",
+      "name": "Parse Shared Files"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract agent folder names\nconst agentFolders = $('Fetch Agents Folder').first().json;\n\nconst agents = [];\n\nif (Array.isArray(agentFolders)) {\n  for (const folder of agentFolders) {\n    if (folder.type === 'dir' && folder.name) {\n      agents.push({ agent_id: folder.name });\n    }\n  }\n}\n\nreturn agents.map(a => ({ json: a }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        352
+      ],
+      "id": "parse-agents-001",
+      "name": "Parse Agent Folders"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config').item.json.apiBaseUrl }}/agents/{{ $json.agent_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        976,
+        352
+      ],
+      "id": "fetch-agent-files-001",
+      "name": "Fetch Agent Files",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build complete file list for this agent\nconst config = $('Config').first().json;\nconst sharedData = $('Parse Shared Files').first().json;\nconst agentId = $('Parse Agent Folders').item.json.agent_id;\nconst agentFiles = $input.first().json;\n\nconst files = [];\n\n// 1. Add agent's own files\nif (Array.isArray(agentFiles)) {\n  for (const file of agentFiles) {\n    if (file.name && file.name.endsWith('.md')) {\n      files.push({\n        agent_id: agentId,\n        source_file: file.name,\n        url: `${config.rawBaseUrl}/agents/${agentId}/${file.name}`\n      });\n    }\n  }\n}\n\n// 2. Add shared files\n// Check if this agent has its own actions files\nconst hasOwnActions = config.agentsWithOwnActions.includes(agentId);\nconst agentOwnFiles = files.map(f => f.source_file);\n\nfor (const sharedFile of sharedData.sharedFiles) {\n  // Skip shared actions if agent has own actions\n  if (hasOwnActions && (sharedFile.source_file === 'actions_performed.md' || sharedFile.source_file === 'actions_todo.md')) {\n    continue;\n  }\n  \n  // Skip if agent already has this file (own version takes precedence)\n  if (agentOwnFiles.includes(sharedFile.source_file)) {\n    continue;\n  }\n  \n  files.push({\n    agent_id: agentId,\n    source_file: sharedFile.source_file,\n    url: sharedFile.url\n  });\n}\n\n// Also add shared files with agent_id='shared' for reference\nconst sharedRefFiles = sharedData.sharedFiles.map(f => ({\n  agent_id: 'shared',\n  source_file: f.source_file,\n  url: f.url\n}));\n\nreturn [...files, ...sharedRefFiles].map(f => ({ json: f }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        352
+      ],
+      "id": "build-file-list-001",
+      "name": "Build File List"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Deduplicate: shared files only need to be added once\nconst allItems = $input.all();\nconst seen = new Set();\nconst unique = [];\n\nfor (const item of allItems) {\n  const key = `${item.json.agent_id}|${item.json.source_file}`;\n  if (!seen.has(key)) {\n    seen.add(key);\n    unique.push(item);\n  }\n}\n\nreturn unique;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        352
+      ],
+      "id": "dedupe-001",
+      "name": "Deduplicate Files"
     },
     {
       "parameters": {
@@ -62,19 +167,25 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
-      "position": [480, 300],
-      "id": "fetch-file",
+      "position": [
+        1648,
+        352
+      ],
+      "id": "e2f7aa71-7ff0-4aaf-9a5c-c836e4c1ecfe",
       "name": "Fetch File Content",
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\nconst prevData = $('Define Instruction Files').item.json;\n\n// Get the document content\nconst document = typeof input === 'string' ? input : (input.data || input.body || JSON.stringify(input));\n\nreturn {\n  json: {\n    agent_id: prevData.agent_id,\n    source_file: prevData.source_file,\n    document: document\n  }\n};"
+        "jsCode": "const input = $input.first().json;\nconst prevData = $('Deduplicate Files').item.json;\n\n// Get the document content\nconst document = typeof input === 'string' ? input : (input.data || input.body || JSON.stringify(input));\n\nreturn {\n  json: {\n    agent_id: prevData.agent_id,\n    source_file: prevData.source_file,\n    document: document\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [700, 300],
-      "id": "prepare-document",
+      "position": [
+        1872,
+        352
+      ],
+      "id": "da847e63-ff1d-4b74-9f29-c30314b07a62",
       "name": "Prepare Document"
     },
     {
@@ -111,8 +222,11 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
-      "position": [920, 300],
-      "id": "get-embedding",
+      "position": [
+        2096,
+        352
+      ],
+      "id": "6800039e-2e2d-4442-9fe2-b2c38f0b70a7",
       "name": "Generate Embedding (OpenRouter)"
     },
     {
@@ -123,8 +237,11 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [1140, 300],
-      "id": "upsert-instruction",
+      "position": [
+        2320,
+        352
+      ],
+      "id": "5f0acf6b-901c-4788-9578-d01eaff46ad1",
       "name": "Upsert Instruction",
       "credentials": {
         "postgres": {
@@ -135,42 +252,194 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nreturn {\n  json: {\n    success: true,\n    files_processed: items.length,\n    timestamp: new Date().toISOString()\n  }\n};"
+        "jsCode": "const items = $input.all();\n\n// Count by agent\nconst agentCounts = {};\nfor (const item of items) {\n  const agentId = item.json?.agent_id || 'unknown';\n  agentCounts[agentId] = (agentCounts[agentId] || 0) + 1;\n}\n\nreturn {\n  json: {\n    success: true,\n    total_files_processed: items.length,\n    by_agent: agentCounts,\n    timestamp: new Date().toISOString()\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1360, 300],
-      "id": "summary",
+      "position": [
+        2544,
+        352
+      ],
+      "id": "4032335d-2db2-40d0-90c4-0680136cc9ce",
       "name": "Summary"
     }
   ],
+  "pinData": {
+    "Manual Trigger": [
+      {
+        "json": {}
+      }
+    ]
+  },
   "connections": {
     "Manual Trigger": {
-      "main": [[{ "node": "Define Instruction Files", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Webhook Trigger": {
-      "main": [[{ "node": "Define Instruction Files", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Define Instruction Files": {
-      "main": [[{ "node": "Fetch File Content", "type": "main", "index": 0 }]]
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Fetch Shared Folder",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Agents Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Shared Folder": {
+      "main": [
+        [
+          {
+            "node": "Parse Shared Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Agents Folder": {
+      "main": [
+        [
+          {
+            "node": "Parse Agent Folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Shared Files": {
+      "main": [
+        [
+          {
+            "node": "Fetch Agent Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Agent Folders": {
+      "main": [
+        [
+          {
+            "node": "Fetch Agent Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Agent Files": {
+      "main": [
+        [
+          {
+            "node": "Build File List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build File List": {
+      "main": [
+        [
+          {
+            "node": "Deduplicate Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate Files": {
+      "main": [
+        [
+          {
+            "node": "Fetch File Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Fetch File Content": {
-      "main": [[{ "node": "Prepare Document", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Prepare Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Prepare Document": {
-      "main": [[{ "node": "Generate Embedding", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Generate Embedding (OpenRouter)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Generate Embedding": {
-      "main": [[{ "node": "Upsert Instruction", "type": "main", "index": 0 }]]
+    "Generate Embedding (OpenRouter)": {
+      "main": [
+        [
+          {
+            "node": "Upsert Instruction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Upsert Instruction": {
-      "main": [[{ "node": "Summary", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
-  "settings": { "executionOrder": "v1" },
-  "versionId": "3.0.0-all-agents",
-  "meta": { "templateCredsSetupCompleted": true },
-  "id": "SA_Load_Instructions",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dynamic-v1",
+  "meta": {
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "6D4gmDewnGmHswb9",
   "tags": []
 }

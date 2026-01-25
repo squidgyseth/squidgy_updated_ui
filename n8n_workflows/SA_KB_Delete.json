@@ -4,29 +4,41 @@
     {
       "parameters": {
         "content": "## SA_KB_Delete Workflow\n\nDelete specific content from KB.\n\n### Table: user_vector_knowledge_base\n\n### Flow:\n1. Search for matching content by text\n2. Delete matching rows\n\n### Called By:\n- Personal Assistant (Delete from KB tool)",
-        "height": 180,
+        "height": 340,
         "width": 400
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [32, 32],
+      "position": [
+        -352,
+        0
+      ],
       "typeVersion": 1,
-      "id": "note-overview",
+      "id": "1beb6901-8be4-4756-bf90-1b6c46dc6baf",
       "name": "Overview"
     },
     {
       "parameters": {
         "workflowInputs": {
           "values": [
-            { "name": "userID", "type": "string" },
-            { "name": "category", "type": "string" },
-            { "name": "content_to_delete", "type": "string" }
+            {
+              "name": "userID"
+            },
+            {
+              "name": "category"
+            },
+            {
+              "name": "content_to_delete"
+            }
           ]
         }
       },
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
-      "position": [32, 240],
-      "id": "trigger",
+      "position": [
+        112,
+        208
+      ],
+      "id": "a44bb076-1ca0-45dd-aa39-11f4db109fa2",
       "name": "When Called"
     },
     {
@@ -37,8 +49,11 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [280, 240],
-      "id": "delete-content",
+      "position": [
+        368,
+        208
+      ],
+      "id": "60c94126-4d0c-4b3b-9b68-f25d9228f526",
       "name": "Delete Matching Content",
       "credentials": {
         "postgres": {
@@ -54,23 +69,47 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [520, 240],
-      "id": "response",
+      "position": [
+        608,
+        208
+      ],
+      "id": "30eaa5c5-d88f-4c7e-84f0-1bb77124f17a",
       "name": "Response"
     }
   ],
+  "pinData": {},
   "connections": {
     "When Called": {
-      "main": [[{ "node": "Delete Matching Content", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Delete Matching Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Delete Matching Content": {
-      "main": [[{ "node": "Response", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" },
-  "versionId": "2.0.0-explicit-columns",
-  "meta": { "templateCredsSetupCompleted": true },
-  "id": "SA_KB_Delete",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "41de9653-9a82-483c-82ed-cc9e704209eb",
+  "meta": {
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "Sur1f0TnJWL8gMVg",
   "tags": []
 }
