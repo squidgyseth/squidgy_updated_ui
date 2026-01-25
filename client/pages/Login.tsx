@@ -5,6 +5,10 @@ import { toast } from 'sonner';
 import { signIn } from '../lib/api';
 import { useUser } from "@/hooks/useUser";
 import { onboardingRouter } from "@/services/onboardingRouter";
+import { linkScoresToUser } from '@/services/anonymousPlayer';
+
+// Game URL - update this to your deployed game URL
+const GAME_URL = 'https://squidgy-waitlist-game.vercel.app';
 
 // SVG Icons from the design
 const GoogleIcon = () => (
@@ -55,23 +59,31 @@ const InsightsIcon = () => (
 );
 
 interface CarouselState {
-  icon: React.ReactNode;
+  type: 'game' | 'content';
+  icon?: React.ReactNode;
   title: string;
-  description: string;
+  description?: string;
 }
 
 const carouselStates: CarouselState[] = [
   {
+    type: 'game',
+    title: "Reclaim Your Time",
+  },
+  {
+    type: 'content',
     icon: <TeamIcon />,
     title: "AI That Works Like a Team",
     description: "Built for the way you work — intelligent, flexible, and always collaborative."
   },
   {
+    type: 'content',
     icon: <ExpertsIcon />,
-    title: "Department Experts", 
+    title: "Department Experts",
     description: "Use specialized AI for marketing, sales, HR, strategy, and more."
   },
   {
+    type: 'content',
     icon: <InsightsIcon />,
     title: "New Insights, Instantly",
     description: "Your Marketing Assistant analyzed your campaign and suggested 3 ways to improve results."
@@ -162,9 +174,22 @@ export default function Login() {
           const finalUserId = await checkUserId();
           
           if (finalUserId) {
+            // Link any anonymous game scores to this user
+            const pendingScores = getGameHistory();
+            if (pendingScores.length > 0) {
+              try {
+                const linkedCount = await linkScoresToUser(finalUserId as string);
+                if (linkedCount > 0) {
+                  toast.success(`${linkedCount} game score${linkedCount > 1 ? 's' : ''} saved to your account!`);
+                }
+              } catch (err) {
+                console.warn('Failed to link game scores:', err);
+              }
+            }
+
             const routeDecision = await onboardingRouter.determineLoginRoute(finalUserId as string);
             console.log('🧭 Login: Route decision:', routeDecision);
-            
+
             toast.success(routeDecision.reason);
             navigate(routeDecision.redirectPath);
           } else {
@@ -335,16 +360,18 @@ export default function Login() {
       </div>
 
       {/* Right Side - Carousel */}
-      <div className="flex-1 flex flex-col justify-between p-12 min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8]">
+      <div className={`flex-1 flex flex-col min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] ${
+        carouselStates[currentSlide].type === 'game' ? 'p-4' : 'p-12 justify-between'
+      }`}>
         {/* Carousel Indicators */}
-        <div className="flex justify-center gap-2 mb-8">
+        <div className={`flex justify-center gap-2 ${carouselStates[currentSlide].type === 'game' ? 'mb-4' : 'mb-8'}`}>
           {carouselStates.map((_, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
               className={`h-2 rounded-full transition-all ${
-                currentSlide === index 
-                  ? "w-8 bg-white" 
+                currentSlide === index
+                  ? "w-8 bg-white"
                   : "w-2 bg-white/50"
               }`}
             />
@@ -352,64 +379,98 @@ export default function Login() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col justify-center items-center text-center">
-          <div className="relative mb-12">
-            {/* Icon Container */}
-            <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-6">
-              {carouselStates[currentSlide].icon}
+        <div className={`flex-1 flex flex-col items-center ${
+          carouselStates[currentSlide].type === 'game' ? '' : 'justify-center text-center'
+        }`}>
+          {carouselStates[currentSlide].type === 'game' ? (
+            /* Game Slide - Full size iframe with next slide peek */
+            <div className="w-full h-full flex flex-col gap-4">
+              <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl">
+                <iframe
+                  src={GAME_URL}
+                  className="w-full h-full border-0"
+                  title="Squidgy Game"
+                  allow="autoplay; fullscreen"
+                />
+              </div>
+              {/* Navigation buttons */}
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={prevSlide}
+                  className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+                >
+                  <ChevronLeft size={20} strokeWidth={1.67} />
+                </button>
+                <button
+                  onClick={nextSlide}
+                  className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+                >
+                  <ChevronRight size={20} strokeWidth={1.67} />
+                </button>
+              </div>
             </div>
+          ) : (
+            /* Content Slide */
+            <div className="relative mb-12">
+              {/* Icon Container */}
+              <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-6">
+                {carouselStates[currentSlide].icon}
+              </div>
 
-            {/* Title and Description */}
-            <div className="max-w-[453px]">
-              <h2 className="text-4xl font-bold text-white mb-4 leading-[45px] font-['Open_Sans']">
-                {carouselStates[currentSlide].title}
-              </h2>
-              <p className="text-lg text-white/90 leading-7 font-['Open_Sans'] max-w-[448px]">
-                {carouselStates[currentSlide].description}
-              </p>
+              {/* Title and Description */}
+              <div className="max-w-[453px]">
+                <h2 className="text-4xl font-bold text-white mb-4 leading-[45px] font-['Open_Sans']">
+                  {carouselStates[currentSlide].title}
+                </h2>
+                <p className="text-lg text-white/90 leading-7 font-['Open_Sans'] max-w-[448px]">
+                  {carouselStates[currentSlide].description}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Navigation and Trust Indicators */}
-        <div>
-          {/* Navigation Controls */}
-          <div className="flex justify-center gap-4 mb-8">
-            <button
-              onClick={prevSlide}
-              className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-            >
-              <ChevronLeft size={20} strokeWidth={1.67} />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-            >
-              <ChevronRight size={20} strokeWidth={1.67} />
-            </button>
-          </div>
-
-          {/* Trust Indicators */}
+        {/* Navigation and Trust Indicators - Hidden for game slide */}
+        {carouselStates[currentSlide].type !== 'game' && (
           <div>
-            <p className="text-center text-white/80 text-[15px] mb-4 font-['Open_Sans']">
-              Trusted by teams worldwide
-            </p>
-            <div className="flex justify-center items-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#05DF72]"></div>
-                <span className="text-white text-[14px] font-['Open_Sans']">99.9% Uptime</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#51A2FF]"></div>
-                <span className="text-white text-[14px] font-['Open_Sans']">Secure & private</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#C27AFF]"></div>
-                <span className="text-white text-[14px] font-['Open_Sans']">24/7 Support</span>
+            {/* Navigation Controls */}
+            <div className="flex justify-center gap-4 mb-8">
+              <button
+                onClick={prevSlide}
+                className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+              >
+                <ChevronLeft size={20} strokeWidth={1.67} />
+              </button>
+              <button
+                onClick={nextSlide}
+                className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+              >
+                <ChevronRight size={20} strokeWidth={1.67} />
+              </button>
+            </div>
+
+            {/* Trust Indicators */}
+            <div>
+              <p className="text-center text-white/80 text-[15px] mb-4 font-['Open_Sans']">
+                Trusted by teams worldwide
+              </p>
+              <div className="flex justify-center items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#05DF72]"></div>
+                  <span className="text-white text-[14px] font-['Open_Sans']">99.9% Uptime</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#51A2FF]"></div>
+                  <span className="text-white text-[14px] font-['Open_Sans']">Secure & private</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#C27AFF]"></div>
+                  <span className="text-white text-[14px] font-['Open_Sans']">24/7 Support</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

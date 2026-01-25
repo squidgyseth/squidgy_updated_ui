@@ -4,6 +4,9 @@ import { Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { signUp } from '../lib/api';
 
+// Game URL - update this to your deployed game URL
+const GAME_URL = 'https://squidgy-waitlist-game.vercel.app';
+
 // Google Icon from design
 const GoogleIcon = () => (
   <svg width="21" height="20" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -65,18 +68,32 @@ export default function Register() {
   // Carousel state
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const carouselStates = [
+  interface CarouselState {
+    type: 'game' | 'content';
+    icon?: React.ReactNode;
+    title: string;
+    description?: string;
+  }
+
+  const carouselStates: CarouselState[] = [
     {
+      type: 'game',
+      title: "Reclaim Your Time",
+    },
+    {
+      type: 'content',
       icon: <TeamIcon />,
       title: "AI That Works Like a Team",
       description: "Built for the way you work — intelligent, flexible, and always collaborative."
     },
     {
+      type: 'content',
       icon: <ExpertsIcon />,
-      title: "Department Experts", 
+      title: "Department Experts",
       description: "Use specialized AI for marketing, sales, HR, strategy, and more."
     },
     {
+      type: 'content',
       icon: <InsightsIcon />,
       title: "New Insights, Instantly",
       description: "Your Marketing Assistant analyzed your campaign and suggested 3 ways to improve results."
@@ -348,7 +365,9 @@ export default function Register() {
       </div>
 
       {/* Right Side - Carousel */}
-      <div className="flex-1 flex flex-col justify-between p-12 min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8]">
+      <div className={`flex-1 flex flex-col min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] ${
+        carouselStates[currentSlide].type === 'game' ? 'p-4' : 'p-12 justify-between'
+      }`}>
         {/* Carousel Indicators */}
         <div className="flex justify-center gap-2 mb-8">
           {carouselStates.map((_, index) => (
@@ -365,26 +384,57 @@ export default function Register() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col justify-center items-center text-center">
-          <div className="relative mb-12">
-            {/* Icon Container */}
-            <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-6">
-              {carouselStates[currentSlide].icon}
+        {carouselStates[currentSlide].type === 'game' ? (
+          /* Game Slide - Full size iframe with next slide peek */
+          <div className="w-full h-full flex flex-col gap-4">
+            <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl">
+              <iframe
+                src={GAME_URL}
+                className="w-full h-full border-0"
+                title="Squidgy Game"
+                allow="autoplay; fullscreen"
+              />
             </div>
-
-            {/* Title and Description */}
-            <div className="max-w-[453px]">
-              <h2 className="text-4xl font-bold text-white mb-4 leading-[45px] font-['Open_Sans']">
-                {carouselStates[currentSlide].title}
-              </h2>
-              <p className="text-lg text-white/90 leading-7 font-['Open_Sans'] max-w-[448px]">
-                {carouselStates[currentSlide].description}
-              </p>
+            {/* Navigation buttons */}
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={prevSlide}
+                className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+              >
+                <ChevronLeft size={20} strokeWidth={1.67} />
+              </button>
+              <button
+                onClick={nextSlide}
+                className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+              >
+                <ChevronRight size={20} strokeWidth={1.67} />
+              </button>
             </div>
           </div>
-        </div>
+        ) : (
+          /* Content Slide */
+          <div className="flex-1 flex flex-col justify-center items-center text-center">
+            <div className="relative mb-12">
+              {/* Icon Container */}
+              <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-6">
+                {carouselStates[currentSlide].icon}
+              </div>
 
-        {/* Navigation and Trust Indicators */}
+              {/* Title and Description */}
+              <div className="max-w-[453px]">
+                <h2 className="text-4xl font-bold text-white mb-4 leading-[45px] font-['Open_Sans']">
+                  {carouselStates[currentSlide].title}
+                </h2>
+                <p className="text-lg text-white/90 leading-7 font-['Open_Sans'] max-w-[448px]">
+                  {carouselStates[currentSlide].description}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation and Trust Indicators - Hidden for game slide */}
+        {carouselStates[currentSlide].type !== 'game' && (
         <div>
           {/* Navigation Controls */}
           <div className="flex justify-center gap-4 mb-8">
@@ -423,6 +473,7 @@ export default function Register() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
