@@ -29,7 +29,8 @@ agent:
   
   # Pin to top of category
   pinned: true
-  
+  enabled: false
+
   # Requires presetup configuration
   presetup_required: true
   presetup_page: /solar-config

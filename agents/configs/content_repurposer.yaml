@@ -41,7 +41,8 @@ agent:
   # Avatar URL (optional - you can use dicebear API with any seed word)
   # Just change the seed= parameter to any word
   avatar: "/Squidgy AI Assistants Avatars/15.png"
-  
+  enabled: false
+
   # Custom initial welcome message (REQUIRED - supports HTML)
   # Use <br> for line breaks (not \n), supports HTML links and formatting
   # Include onboarding link for setup: <a href="/agent-settings/YOUR_AGENT_ID" target="_blank" style="color: #7c3aed; text-decoration: underline;">Complete Onboarding</a>
