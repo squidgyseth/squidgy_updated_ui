@@ -35,8 +35,8 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, subtitle, icon: Icon, trend, iconColor, onClick }: MetricCardProps) {
   return (
-    <MobileCard 
-      variant="interactive" 
+    <MobileCard
+      variant="interactive"
       onClick={onClick}
       className="p-4"
     >
@@ -99,7 +99,7 @@ export function MobileDashboard() {
   ];
 
   const toggleTask = (taskId: string) => {
-    setTasks(prev => prev.map(task => 
+    setTasks(prev => prev.map(task =>
       task.id === taskId ? { ...task, completed: !task.completed } : task
     ));
   };
@@ -135,37 +135,36 @@ export function MobileDashboard() {
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
           <MetricCard
-            title="Leads Today"
-            value="47"
-            subtitle="new"
-            icon={Target}
+            title="Social Posts"
+            value="XX"
+            subtitle="this week"
+            icon={MessageSquare}
             trend={{ value: '+12.5%', isPositive: true }}
             iconColor="bg-blue-500"
-            onClick={() => navigate('/leads')}
           />
           <MetricCard
-            title="Response Time"
-            value="2.3m"
-            subtitle="avg"
+            title="Time Saved"
+            value="XXX"
+            subtitle="hours"
             icon={Clock}
-            trend={{ value: '-8.2%', isPositive: true }}
-            iconColor="bg-orange-500"
-          />
-          <MetricCard
-            title="Deals Won"
-            value="12"
-            subtitle="this month"
-            icon={CheckCircle}
-            trend={{ value: '+41.2%', isPositive: true }}
+            trend={{ value: '+8.2%', isPositive: true }}
             iconColor="bg-green-500"
           />
           <MetricCard
-            title="Conversion"
-            value="34.2%"
-            subtitle="vs last month"
-            icon={DollarSign}
+            title="Customer Satisfaction"
+            value="X.X/X"
+            subtitle="avg rating"
+            icon={CheckCircle}
             trend={{ value: '+2.1%', isPositive: true }}
             iconColor="bg-purple-500"
+          />
+          <MetricCard
+            title="Engagement Rate"
+            value="X.X%"
+            subtitle="avg"
+            icon={TrendingUp}
+            trend={{ value: '+2.1%', isPositive: true }}
+            iconColor="bg-red-500"
           />
         </div>
 
@@ -179,18 +178,16 @@ export function MobileDashboard() {
                 onClick={() => toggleTask(task.id)}
               >
                 <div
-                  className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
-                    task.completed
-                      ? 'bg-green-500 border-green-500'
-                      : 'border-muted-foreground hover:border-primary'
-                  }`}
+                  className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${task.completed
+                    ? 'bg-green-500 border-green-500'
+                    : 'border-muted-foreground hover:border-primary'
+                    }`}
                 >
                   {task.completed && <CheckCircle className="w-3 h-3 text-white" />}
                 </div>
                 <span
-                  className={`flex-1 text-sm ${
-                    task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
-                  }`}
+                  className={`flex-1 text-sm ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
+                    }`}
                 >
                   {task.title}
                 </span>
@@ -213,14 +210,13 @@ export function MobileDashboard() {
           </div>
         </MobileCard>
 
-        {/* Recent High-Priority Leads */}
-        <MobileCard title="High-Priority Leads" className="p-4">
+        {/* Recent High-Priority Leads - Blurred */}
+        <MobileCard title="High-Priority Leads" className="p-4 blur-sm pointer-events-none select-none">
           <div className="space-y-3">
             {recentLeads.map((lead) => (
               <div
                 key={lead.id}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => navigate(`/leads?id=${lead.id}`)}
+                className="flex items-center gap-3 p-2 rounded-lg"
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={lead.avatar} />
@@ -236,7 +232,7 @@ export function MobileDashboard() {
                   <p className="text-sm font-semibold text-foreground">{lead.value}</p>
                   <div className="flex items-center gap-1">
                     <div className="w-6 h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="h-full bg-green-500 rounded-full transition-all duration-300"
                         style={{ width: `${lead.score}%` }}
                       />
@@ -250,7 +246,6 @@ export function MobileDashboard() {
               variant="ghost"
               size="sm"
               className="w-full mt-3"
-              onClick={() => navigate('/leads')}
               icon={<ArrowRight className="w-4 h-4" />}
             >
               View All Leads
@@ -259,7 +254,7 @@ export function MobileDashboard() {
         </MobileCard>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <TouchButton
             variant="gradient"
             className="h-16 flex-col gap-1"
@@ -268,18 +263,10 @@ export function MobileDashboard() {
             <MessageSquare className="w-5 h-5" />
             <span className="text-sm">Start Chat</span>
           </TouchButton>
-          <TouchButton
-            variant="outline"
-            className="h-16 flex-col gap-1"
-            onClick={() => navigate('/leads')}
-          >
-            <Users className="w-5 h-5" />
-            <span className="text-sm">View Leads</span>
-          </TouchButton>
         </div>
 
-        {/* Performance Insight */}
-        <MobileCard title="This Week's Performance" className="p-4">
+        {/* Performance Insight - Blurred */}
+        <MobileCard title="This Week's Performance" className="p-4 blur-sm pointer-events-none select-none">
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
@@ -294,17 +281,6 @@ export function MobileDashboard() {
                 <span className="text-sm font-medium">12 / 15</span>
               </div>
               <Progress value={80} className="h-2" />
-            </div>
-            <div className="pt-2 border-t border-border">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-green-500" />
-                  <span className="text-sm font-medium text-green-500">90% of monthly target</span>
-                </div>
-                <TouchButton variant="ghost" size="sm">
-                  Details
-                </TouchButton>
-              </div>
             </div>
           </div>
         </MobileCard>

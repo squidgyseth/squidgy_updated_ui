@@ -100,6 +100,12 @@ export class FileUploadService {
         return '📝';
       case 'docx':
         return '📘';
+      case 'md':
+        return '📑';
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+        return '🖼️';
       default:
         return '📎';
     }

@@ -92,14 +92,17 @@ export function UserAccountDropdown() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200">
                 {avatarUrl ? (
-                  <img 
-                    src={avatarUrl} 
+                  <img
+                    src={avatarUrl}
                     alt={displayName}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       // Fallback to gradient with icon if image fails to load
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      const target = e.currentTarget as HTMLImageElement;
+                      target.style.display = 'none';
+                      if (target.nextElementSibling) {
+                        (target.nextElementSibling as HTMLElement).classList.remove('hidden');
+                      }
                     }}
                   />
                 ) : null}
@@ -127,7 +130,7 @@ export function UserAccountDropdown() {
               <LayoutDashboard className="w-4 h-4 text-gray-500" />
               Go to Dashboard
             </button>
-            
+
             <button
               onClick={handleAccountSettings}
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition-colors"
@@ -135,7 +138,7 @@ export function UserAccountDropdown() {
               <Settings className="w-4 h-4 text-gray-500" />
               Account Settings
             </button>
-            
+
             <button
               onClick={handleBusinessSettings}
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition-colors"
@@ -143,7 +146,7 @@ export function UserAccountDropdown() {
               <Building2 className="w-4 h-4 text-gray-500" />
               Business Settings
             </button>
-            
+
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
