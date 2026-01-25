@@ -158,10 +158,12 @@
       "parameters": {
         "model": {
           "__rl": true,
-          "mode": "list",
-          "value": "gpt-4o"
+          "mode": "id",
+          "value": "openai/gpt-4o"
         },
-        "options": {}
+        "options": {
+          "baseURL": "https://openrouter.ai/api/v1"
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
@@ -169,12 +171,12 @@
         1100,
         520
       ],
-      "id": "openai-model",
-      "name": "OpenAI Chat Model",
+      "id": "openrouter-model",
+      "name": "OpenRouter Chat Model",
       "credentials": {
         "openAiApi": {
-          "id": "xeFNBBSMiFQf7cQv",
-          "name": "OpenAi account"
+          "id": "openrouter-cred",
+          "name": "OpenRouter"
         }
       }
     },
@@ -195,7 +197,10 @@
     },
     {
       "parameters": {
-        "options": {}
+        "model": "openai/text-embedding-3-small",
+        "options": {
+          "baseURL": "https://openrouter.ai/api/v1"
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
       "typeVersion": 1.2,
@@ -204,11 +209,11 @@
         640
       ],
       "id": "embeddings-rag",
-      "name": "Embeddings OpenAI",
+      "name": "OpenRouter Embeddings",
       "credentials": {
         "openAiApi": {
-          "id": "xeFNBBSMiFQf7cQv",
-          "name": "OpenAi account"
+          "id": "openrouter-cred",
+          "name": "OpenRouter"
         }
       }
     },
@@ -642,7 +647,7 @@
         ]
       ]
     },
-    "OpenAI Chat Model": {
+    "OpenRouter Chat Model": {
       "ai_languageModel": [
         [
           {

@@ -52,13 +52,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.openai.com/v1/embeddings",
+        "url": "https://openrouter.ai/api/v1/embeddings",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer {{ $credentials.openAiApi.apiKey }}"
+              "value": "Bearer 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"
             },
             {
               "name": "Content-Type",
@@ -71,7 +71,7 @@
           "parameters": [
             {
               "name": "model",
-              "value": "text-embedding-ada-002"
+              "value": "openai/text-embedding-3-small"
             },
             {
               "name": "input",
@@ -85,13 +85,7 @@
       "typeVersion": 4.3,
       "position": [500, 240],
       "id": "get-embedding",
-      "name": "Get Embedding",
-      "credentials": {
-        "openAiApi": {
-          "id": "xeFNBBSMiFQf7cQv",
-          "name": "OpenAi account"
-        }
-      }
+      "name": "Get Embedding (OpenRouter)"
     },
     {
       "parameters": {
