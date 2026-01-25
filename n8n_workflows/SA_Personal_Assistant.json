@@ -114,36 +114,7 @@
     },
     {
       "parameters": {
-        "operation": "get",
-        "tableId": "profiles",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "user_id",
-              "keyValue": "={{ $('PA Webhook').item.json.body.user_id }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        740,
-        480
-      ],
-      "id": "get-user-settings",
-      "name": "Get User Profile",
-      "credentials": {
-        "supabaseApi": {
-          "id": "uk8y8Aw346FSXNbw",
-          "name": "Supabase account"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Pre-process: Combine data for AI Agent\nconst webhook = $('PA Webhook').first().json;\nconst coreInstructions = $('Load Core Instructions').all();\nconst contextualInstructions = $('Load Contextual Instructions (RAG)').all();\nconst config = $('Get Agent Config').first().json || {};\nconst userProfile = $('Get User Profile').first()?.json || null;\n\n// TIER 1: Core instructions (always loaded)\n// security_rules.md + instructions.md\nlet coreSection = '## CORE INSTRUCTIONS (Always Active)\\n\\n';\nfor (const item of coreInstructions) {\n  const doc = item.json;\n  if (doc.document) {\n    coreSection += `### ${doc.source_file}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n  }\n}\n\n// TIER 2: Contextual instructions (RAG retrieved based on relevance)\n// button_patterns, response_format, content_previews, actions_*\nlet contextSection = '';\nif (contextualInstructions.length > 0) {\n  contextSection = '## CONTEXTUAL INSTRUCTIONS (Retrieved for this query)\\n\\n';\n  for (const item of contextualInstructions) {\n    const doc = item.json;\n    if (doc.document) {\n      const similarity = doc.similarity ? ` (relevance: ${(doc.similarity * 100).toFixed(0)}%)` : '';\n      contextSection += `### ${doc.source_file}${similarity}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n    }\n  }\n}\n\n// Combine instructions\nconst combinedInstructions = coreSection + contextSection;\n\n// Extract request data\nconst body = webhook.body || {};\nconst userId = body.user_id;\nconst sessionId = body.session_id;\nconst userMessage = body.user_mssg?.trim() || '';\nconst agentName = body.agent_name || 'personal_assistant';\nconst requestId = body.request_id || crypto.randomUUID();\n\n// Format user_settings from profiles table (null if not set)\nlet userSettingsFormatted = null;\nif (userProfile && userProfile.brand_voice) {\n  userSettingsFormatted = {\n    brand_voice: userProfile.brand_voice,\n    target_audience: userProfile.target_audience,\n    primary_goals: userProfile.primary_goals || [],\n    calendar: userProfile.calendar_type,\n    notifications: userProfile.notifications_enabled ? 'enabled' : 'disabled'\n  };\n}\n\n// Build the data object for AI Agent\nreturn {\n  json: {\n    // Request info\n    user_id: userId,\n    session_id: sessionId,\n    user_mssg: userMessage,\n    agent_name: agentName,\n    request_id: requestId,\n    timestamp: new Date().toISOString(),\n    \n    // Instructions (hybrid: core always + contextual RAG)\n    instructions: combinedInstructions || 'No instructions found.',\n    \n    // Agent/System config ONLY (user data comes from KB via RAG)\n    enabled_agents: config.enabled_agents || '',\n    assistants: config.assistants || '',\n    agent_department_value: config.agent_department_value || '',\n    \n    // User settings from profiles (for agent onboarding reuse)\n    user_settings: userSettingsFormatted\n  }\n};"
+        "jsCode": "// Pre-process: Combine data for AI Agent\nconst webhook = $('PA Webhook').first().json;\nconst coreInstructions = $('Load Core Instructions').all();\nconst contextualInstructions = $('Load Contextual Instructions (RAG)').all();\nconst config = $('Get Agent Config').first().json || {};\n\n// TIER 1: Core instructions (always loaded)\nlet coreSection = '## CORE INSTRUCTIONS (Always Active)\\n\\n';\nfor (const item of coreInstructions) {\n  const doc = item.json;\n  if (doc.document) {\n    coreSection += `### ${doc.source_file}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n  }\n}\n\n// TIER 2: Contextual instructions (RAG retrieved based on relevance)\nlet contextSection = '';\nif (contextualInstructions.length > 0) {\n  contextSection = '## CONTEXTUAL INSTRUCTIONS (Retrieved for this query)\\n\\n';\n  for (const item of contextualInstructions) {\n    const doc = item.json;\n    if (doc.document) {\n      const similarity = doc.similarity ? ` (relevance: ${(doc.similarity * 100).toFixed(0)}%)` : '';\n      contextSection += `### ${doc.source_file}${similarity}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n    }\n  }\n}\n\n// Combine instructions\nconst combinedInstructions = coreSection + contextSection;\n\n// Extract request data\nconst body = webhook.body || {};\nconst userId = body.user_id;\nconst sessionId = body.session_id;\nconst userMessage = body.user_mssg?.trim() || '';\nconst agentName = body.agent_name || 'personal_assistant';\nconst requestId = body.request_id || crypto.randomUUID();\n\n// Build the data object for AI Agent\nreturn {\n  json: {\n    user_id: userId,\n    session_id: sessionId,\n    user_mssg: userMessage,\n    agent_name: agentName,\n    request_id: requestId,\n    timestamp: new Date().toISOString(),\n    instructions: combinedInstructions || 'No instructions found.',\n    enabled_agents: config.enabled_agents || '',\n    assistants: config.assistants || '',\n    agent_department_value: config.agent_department_value || ''\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -610,17 +581,6 @@
       ]
     },
     "Get Agent Config": {
-      "main": [
-        [
-          {
-            "node": "Get User Profile",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get User Profile": {
       "main": [
         [
           {
