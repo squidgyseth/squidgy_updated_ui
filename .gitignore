@@ -31,3 +31,6 @@ dist-ssr
 nova-realm.rar
 nova-realm/
 nova-realm_updated/
+
+# N8N workflows (contain API keys and secrets)
+n8n_workflows/
