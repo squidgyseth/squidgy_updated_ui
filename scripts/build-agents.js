@@ -142,6 +142,7 @@ export interface AgentConfig {
     tagline?: string;
     avatar?: string;
     pinned?: boolean;
+    enabled?: boolean;  // Whether agent is enabled by default (personal_assistant always true)
     uses_conversation_state?: boolean;  // Enables multi-turn conversation state persistence
     initial_message?: string;
     sidebar_greeting?: string;

@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-01-17T04:58:27.098Z
+// Generated on: 2026-01-25T06:49:27.362Z
 
 export interface AgentConfig {
   agent: {
@@ -12,6 +12,7 @@ export interface AgentConfig {
     tagline?: string;
     avatar?: string;
     pinned?: boolean;
+    enabled?: boolean;  // Whether agent is enabled by default (personal_assistant always true)
     uses_conversation_state?: boolean;  // Enables multi-turn conversation state persistence
     initial_message?: string;
     sidebar_greeting?: string;
@@ -52,9 +53,10 @@ export const ALL_AGENTS: AgentConfig[] = [
       "category": "GENERAL",
       "description": "Your onboarding assistant for setting up AI agents",
       "specialization": "Onboarding Expert",
-      "tagline": "Setup. Configure. Launch.",
+      "tagline": "Friendly & Helpful",
       "avatar": "/Squidgy AI Assistants Avatars/1.png",
       "pinned": true,
+      "enabled": true,
       "initial_message": "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.",
       "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
       "capabilities": [
@@ -111,6 +113,71 @@ export const ALL_AGENTS: AgentConfig[] = [
   },
   {
     "agent": {
+      "id": "social_media_scheduler",
+      "name": "Social Media Scheduler",
+      "category": "MARKETING",
+      "description": "Schedule and manage your social media posts across multiple platforms",
+      "specialization": "Automated & Strategic",
+      "tagline": "Schedule. Publish. Engage.",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=social-scheduler",
+      "pinned": true,
+      "enabled": true,
+      "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
+      "capabilities": [
+        "Schedule posts across multiple social media platforms",
+        "Create and manage content calendars",
+        "Optimize posting times for maximum engagement",
+        "Draft social media content with hashtags and captions",
+        "Track scheduled posts and publishing status",
+        "Analyze best times to post based on audience data",
+        "Manage social media campaigns and series",
+        "Cross-platform content adaptation"
+      ],
+      "recent_actions": [
+        "Scheduled 15 posts for next week's product launch",
+        "Optimized posting times based on engagement analytics",
+        "Created content calendar for Q1 campaign",
+        "Drafted Instagram captions with trending hashtags"
+      ]
+    },
+    "suggestions": [
+      "Schedule a post for tomorrow",
+      "Show my content calendar",
+      "What's the best time to post?",
+      "Draft a LinkedIn post",
+      "Create a posting schedule",
+      "Analyze my posting strategy"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_scheduler"
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "suggestion_buttons",
+        "calendar_integration"
+      ]
+    },
+    "personality": {
+      "tone": "professional yet friendly",
+      "style": "strategic and organized",
+      "approach": "proactive scheduling and optimization"
+    },
+    "ui_use": {
+      "pages": [
+        {
+          "name": "Social Media Dashboard",
+          "path": "/agents/social_media_scheduler/dashboard",
+          "order": 1
+        }
+      ],
+      "default_page": "/agents/social_media_scheduler/dashboard"
+    }
+  },
+  {
+    "agent": {
       "id": "content_repurposer_multi",
       "emoji": "✨",
       "name": "Content Repurposer Multi",
@@ -120,6 +187,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "specialization": "Content Repurposer",
       "tagline": "Repurpose. Convert. Deliver.",
       "avatar": "/Squidgy AI Assistants Avatars/10.png",
+      "enabled": false,
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
         "Multi-platform content transformation",
@@ -190,6 +258,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tagline": "Content. Create. Distribute.",
       "avatar": "/Squidgy AI Assistants Avatars/4.png",
       "pinned": false,
+      "enabled": false,
       "uses_conversation_state": true,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
@@ -257,6 +326,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tagline": "Content. Create. Distribute.",
       "avatar": "/Squidgy AI Assistants Avatars/7.png",
       "pinned": false,
+      "enabled": false,
       "uses_conversation_state": true,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
@@ -324,6 +394,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tagline": "Consult. Confirm. Execute.",
       "avatar": "/Squidgy AI Assistants Avatars/16.png",
       "pinned": false,
+      "enabled": true,
       "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
       "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
       "capabilities": [
@@ -438,6 +509,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tagline": "Illuminate. Calculate. Convert.",
       "avatar": "/Squidgy AI Assistants Avatars/5.png",
       "pinned": true,
+      "enabled": false,
       "presetup_required": true,
       "presetup_page": "/solar-config",
       "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-config\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your solar offer details.",
@@ -554,6 +626,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "specialization": "Content Repurposer",
       "tagline": "Repurpose. Convert. Deliver.",
       "avatar": "/Squidgy AI Assistants Avatars/15.png",
+      "enabled": false,
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
         "Primary capability or main function",
@@ -628,6 +701,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "specialization": "Content Repurposer",
       "tagline": "Repurpose. Convert. Deliver.",
       "avatar": "/Squidgy AI Assistants Avatars/15.png",
+      "enabled": false,
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
         "Primary capability or main function",
@@ -698,6 +772,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "specialization": "Content Repurposer",
       "tagline": "Repurpose. Convert. Deliver.",
       "avatar": "/Squidgy AI Assistants Avatars/10.png",
+      "enabled": false,
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "capabilities": [
         "Multi-platform content transformation",
@@ -768,6 +843,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tagline": "Content. Create. Distribute.",
       "avatar": "/Squidgy AI Assistants Avatars/4.png",
       "pinned": false,
+      "enabled": false,
       "uses_conversation_state": true,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
@@ -835,6 +911,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tagline": "Content. Create. Distribute.",
       "avatar": "/Squidgy AI Assistants Avatars/7.png",
       "pinned": false,
+      "enabled": false,
       "uses_conversation_state": true,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "capabilities": [
@@ -899,9 +976,10 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "category": "GENERAL",
       "description": "Your onboarding assistant for setting up AI agents",
       "specialization": "Onboarding Expert",
-      "tagline": "Setup. Configure. Launch.",
+      "tagline": "Friendly & Helpful",
       "avatar": "/Squidgy AI Assistants Avatars/1.png",
       "pinned": true,
+      "enabled": true,
       "initial_message": "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.",
       "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
       "capabilities": [
@@ -967,6 +1045,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tagline": "Consult. Confirm. Execute.",
       "avatar": "/Squidgy AI Assistants Avatars/16.png",
       "pinned": false,
+      "enabled": true,
       "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
       "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
       "capabilities": [
@@ -1070,6 +1149,71 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     }
   },
+  "social_media_scheduler": {
+    "agent": {
+      "id": "social_media_scheduler",
+      "name": "Social Media Scheduler",
+      "category": "MARKETING",
+      "description": "Schedule and manage your social media posts across multiple platforms",
+      "specialization": "Automated & Strategic",
+      "tagline": "Schedule. Publish. Engage.",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=social-scheduler",
+      "pinned": true,
+      "enabled": true,
+      "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
+      "capabilities": [
+        "Schedule posts across multiple social media platforms",
+        "Create and manage content calendars",
+        "Optimize posting times for maximum engagement",
+        "Draft social media content with hashtags and captions",
+        "Track scheduled posts and publishing status",
+        "Analyze best times to post based on audience data",
+        "Manage social media campaigns and series",
+        "Cross-platform content adaptation"
+      ],
+      "recent_actions": [
+        "Scheduled 15 posts for next week's product launch",
+        "Optimized posting times based on engagement analytics",
+        "Created content calendar for Q1 campaign",
+        "Drafted Instagram captions with trending hashtags"
+      ]
+    },
+    "suggestions": [
+      "Schedule a post for tomorrow",
+      "Show my content calendar",
+      "What's the best time to post?",
+      "Draft a LinkedIn post",
+      "Create a posting schedule",
+      "Analyze my posting strategy"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_scheduler"
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "suggestion_buttons",
+        "calendar_integration"
+      ]
+    },
+    "personality": {
+      "tone": "professional yet friendly",
+      "style": "strategic and organized",
+      "approach": "proactive scheduling and optimization"
+    },
+    "ui_use": {
+      "pages": [
+        {
+          "name": "Social Media Dashboard",
+          "path": "/agents/social_media_scheduler/dashboard",
+          "order": 1
+        }
+      ],
+      "default_page": "/agents/social_media_scheduler/dashboard"
+    }
+  },
   "SOL": {
     "agent": {
       "id": "SOL",
@@ -1081,6 +1225,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tagline": "Illuminate. Calculate. Convert.",
       "avatar": "/Squidgy AI Assistants Avatars/5.png",
       "pinned": true,
+      "enabled": false,
       "presetup_required": true,
       "presetup_page": "/solar-config",
       "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-config\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your solar offer details.",
@@ -1199,9 +1344,10 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "category": "GENERAL",
         "description": "Your onboarding assistant for setting up AI agents",
         "specialization": "Onboarding Expert",
-        "tagline": "Setup. Configure. Launch.",
+        "tagline": "Friendly & Helpful",
         "avatar": "/Squidgy AI Assistants Avatars/1.png",
         "pinned": true,
+        "enabled": true,
         "initial_message": "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.",
         "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
         "capabilities": [
@@ -1260,6 +1406,71 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
   "MARKETING": [
     {
       "agent": {
+        "id": "social_media_scheduler",
+        "name": "Social Media Scheduler",
+        "category": "MARKETING",
+        "description": "Schedule and manage your social media posts across multiple platforms",
+        "specialization": "Automated & Strategic",
+        "tagline": "Schedule. Publish. Engage.",
+        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=social-scheduler",
+        "pinned": true,
+        "enabled": true,
+        "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
+        "capabilities": [
+          "Schedule posts across multiple social media platforms",
+          "Create and manage content calendars",
+          "Optimize posting times for maximum engagement",
+          "Draft social media content with hashtags and captions",
+          "Track scheduled posts and publishing status",
+          "Analyze best times to post based on audience data",
+          "Manage social media campaigns and series",
+          "Cross-platform content adaptation"
+        ],
+        "recent_actions": [
+          "Scheduled 15 posts for next week's product launch",
+          "Optimized posting times based on engagement analytics",
+          "Created content calendar for Q1 campaign",
+          "Drafted Instagram captions with trending hashtags"
+        ]
+      },
+      "suggestions": [
+        "Schedule a post for tomorrow",
+        "Show my content calendar",
+        "What's the best time to post?",
+        "Draft a LinkedIn post",
+        "Create a posting schedule",
+        "Analyze my posting strategy"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_scheduler"
+      },
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "suggestion_buttons",
+          "calendar_integration"
+        ]
+      },
+      "personality": {
+        "tone": "professional yet friendly",
+        "style": "strategic and organized",
+        "approach": "proactive scheduling and optimization"
+      },
+      "ui_use": {
+        "pages": [
+          {
+            "name": "Social Media Dashboard",
+            "path": "/agents/social_media_scheduler/dashboard",
+            "order": 1
+          }
+        ],
+        "default_page": "/agents/social_media_scheduler/dashboard"
+      }
+    },
+    {
+      "agent": {
         "id": "content_repurposer_multi",
         "emoji": "✨",
         "name": "Content Repurposer Multi",
@@ -1269,6 +1480,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "specialization": "Content Repurposer",
         "tagline": "Repurpose. Convert. Deliver.",
         "avatar": "/Squidgy AI Assistants Avatars/10.png",
+        "enabled": false,
         "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
         "capabilities": [
           "Multi-platform content transformation",
@@ -1339,6 +1551,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "tagline": "Content. Create. Distribute.",
         "avatar": "/Squidgy AI Assistants Avatars/4.png",
         "pinned": false,
+        "enabled": false,
         "uses_conversation_state": true,
         "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
         "capabilities": [
@@ -1406,6 +1619,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "tagline": "Content. Create. Distribute.",
         "avatar": "/Squidgy AI Assistants Avatars/7.png",
         "pinned": false,
+        "enabled": false,
         "uses_conversation_state": true,
         "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
         "capabilities": [
@@ -1473,6 +1687,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "tagline": "Consult. Confirm. Execute.",
         "avatar": "/Squidgy AI Assistants Avatars/16.png",
         "pinned": false,
+        "enabled": true,
         "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
         "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
         "capabilities": [
@@ -1589,6 +1804,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "tagline": "Illuminate. Calculate. Convert.",
         "avatar": "/Squidgy AI Assistants Avatars/5.png",
         "pinned": true,
+        "enabled": false,
         "presetup_required": true,
         "presetup_page": "/solar-config",
         "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-config\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your solar offer details.",
@@ -1705,6 +1921,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "specialization": "Content Repurposer",
         "tagline": "Repurpose. Convert. Deliver.",
         "avatar": "/Squidgy AI Assistants Avatars/15.png",
+        "enabled": false,
         "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
         "capabilities": [
           "Primary capability or main function",
@@ -1768,7 +1985,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","social_media_agent","SOL"];
+export const AGENT_IDS: string[] = ["content_repurposer","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","social_media_agent","social_media_scheduler","SOL"];
 
 // Total count
-export const TOTAL_AGENTS = 7;
+export const TOTAL_AGENTS = 8;
