@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## SA_Load_Instructions Workflow (DYNAMIC)\n\nAutomatically discovers and loads ALL agent instruction files.\n\n### Triggers:\n- Manual Trigger (for testing)\n- Webhook: POST /webhook/load-instructions\n\n### Dynamic Flow:\n1. Fetch shared/ folder files from GitHub\n2. Fetch agents/ folder to discover all agents\n3. For each agent, fetch their folder files\n4. Build file list: agent files + shared files\n5. Generate embeddings via OpenRouter\n6. Upsert to agent_instructions table\n\n### Rules:\n- All agents get ALL shared files\n- EXCEPT: personal_assistant has own actions files\n  (so PA gets shared MINUS actions_*.md)\n\n### Adding New Agents:\nJust create folder in knowledge_base/agents/\nWorkflow auto-discovers it!",
+        "content": "## SA_Load_Instructions Workflow (DYNAMIC)\n\nAutomatically discovers and loads ALL agent instruction files.\n\n### Triggers:\n- Manual Trigger (for testing)\n- Webhook: POST /webhook/load-instructions\n\n### Sequential Flow:\n1. Fetch shared/ folder files from GitHub\n2. Fetch agents/ folder to discover all agents\n3. For each agent, fetch their folder files\n4. Build file list: agent files + shared files\n5. Generate embeddings via OpenRouter\n6. Upsert to agent_instructions table\n\n### Rules:\n- All agents get ALL shared files\n- EXCEPT: personal_assistant has own actions files\n  (so PA gets shared MINUS actions_*.md)\n\n### Adding New Agents:\nJust create folder in knowledge_base/agents/\nWorkflow auto-discovers it!",
         "height": 640,
         "width": 420
       },
@@ -46,7 +46,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Config for dynamic discovery\nreturn {\n  json: {\n    rawBaseUrl: 'https://raw.githubusercontent.com/Squidgy-AI/squidgy_updated_ui/main/knowledge_base',\n    apiBaseUrl: 'https://api.github.com/repos/Squidgy-AI/squidgy_updated_ui/contents/knowledge_base',\n    // Agents that have their OWN actions files (don't inherit shared actions)\n    agentsWithOwnActions: ['personal_assistant']\n  }\n};"
+        "jsCode": "// Config for dynamic discovery\nreturn {\n  json: {\n    rawBaseUrl: 'https://raw.githubusercontent.com/Squidgy-AI/squidgy_updated_ui/main/knowledge_base',\n    apiBaseUrl: 'https://api.github.com/repos/Squidgy-AI/squidgy_updated_ui/contents/knowledge_base',\n    agentsWithOwnActions: ['personal_assistant']\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -66,7 +66,7 @@
       "typeVersion": 4.3,
       "position": [
         528,
-        160
+        256
       ],
       "id": "fetch-shared-001",
       "name": "Fetch Shared Folder",
@@ -74,14 +74,27 @@
     },
     {
       "parameters": {
-        "url": "={{ $('Config').item.json.apiBaseUrl }}/agents",
+        "jsCode": "// Extract shared .md files and pass config along\nconst config = $('Config').first().json;\nconst sharedFilesRaw = $input.first().json;\n\nconst sharedFiles = [];\n\nif (Array.isArray(sharedFilesRaw)) {\n  for (const file of sharedFilesRaw) {\n    if (file.name && file.name.endsWith('.md')) {\n      sharedFiles.push({\n        source_file: file.name,\n        url: `${config.rawBaseUrl}/shared/${file.name}`\n      });\n    }\n  }\n}\n\nreturn {\n  json: {\n    config: config,\n    sharedFiles: sharedFiles\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        256
+      ],
+      "id": "parse-shared-001",
+      "name": "Parse Shared Files"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.config.apiBaseUrl }}/agents",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        528,
-        352
+        976,
+        256
       ],
       "id": "fetch-agents-001",
       "name": "Fetch Agents Folder",
@@ -89,40 +102,27 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extract shared .md files\nconst config = $('Config').first().json;\nconst sharedFiles = $('Fetch Shared Folder').first().json;\n\nconst files = [];\n\n// Get all .md files from shared folder\nif (Array.isArray(sharedFiles)) {\n  for (const file of sharedFiles) {\n    if (file.name && file.name.endsWith('.md')) {\n      files.push({\n        source_file: file.name,\n        url: `${config.rawBaseUrl}/shared/${file.name}`\n      });\n    }\n  }\n}\n\nreturn { json: { sharedFiles: files, config } };"
+        "jsCode": "// Extract agent folder names, carry forward config and shared files\nconst prevData = $('Parse Shared Files').first().json;\nconst agentFoldersRaw = $input.first().json;\n\nconst agents = [];\n\nif (Array.isArray(agentFoldersRaw)) {\n  for (const folder of agentFoldersRaw) {\n    if (folder.type === 'dir' && folder.name) {\n      agents.push({\n        agent_id: folder.name,\n        config: prevData.config,\n        sharedFiles: prevData.sharedFiles\n      });\n    }\n  }\n}\n\nreturn agents.map(a => ({ json: a }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        752,
-        160
-      ],
-      "id": "parse-shared-001",
-      "name": "Parse Shared Files"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Extract agent folder names\nconst agentFolders = $('Fetch Agents Folder').first().json;\n\nconst agents = [];\n\nif (Array.isArray(agentFolders)) {\n  for (const folder of agentFolders) {\n    if (folder.type === 'dir' && folder.name) {\n      agents.push({ agent_id: folder.name });\n    }\n  }\n}\n\nreturn agents.map(a => ({ json: a }));"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        752,
-        352
+        1200,
+        256
       ],
       "id": "parse-agents-001",
       "name": "Parse Agent Folders"
     },
     {
       "parameters": {
-        "url": "={{ $('Config').item.json.apiBaseUrl }}/agents/{{ $json.agent_id }}",
+        "url": "={{ $json.config.apiBaseUrl }}/agents/{{ $json.agent_id }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        976,
-        352
+        1424,
+        256
       ],
       "id": "fetch-agent-files-001",
       "name": "Fetch Agent Files",
@@ -130,29 +130,16 @@
     },
     {
       "parameters": {
-        "jsCode": "// Build complete file list for this agent\nconst config = $('Config').first().json;\nconst sharedData = $('Parse Shared Files').first().json;\nconst agentId = $('Parse Agent Folders').item.json.agent_id;\nconst agentFiles = $input.first().json;\n\nconst files = [];\n\n// 1. Add agent's own files\nif (Array.isArray(agentFiles)) {\n  for (const file of agentFiles) {\n    if (file.name && file.name.endsWith('.md')) {\n      files.push({\n        agent_id: agentId,\n        source_file: file.name,\n        url: `${config.rawBaseUrl}/agents/${agentId}/${file.name}`\n      });\n    }\n  }\n}\n\n// 2. Add shared files\n// Check if this agent has its own actions files\nconst hasOwnActions = config.agentsWithOwnActions.includes(agentId);\nconst agentOwnFiles = files.map(f => f.source_file);\n\nfor (const sharedFile of sharedData.sharedFiles) {\n  // Skip shared actions if agent has own actions\n  if (hasOwnActions && (sharedFile.source_file === 'actions_performed.md' || sharedFile.source_file === 'actions_todo.md')) {\n    continue;\n  }\n  \n  // Skip if agent already has this file (own version takes precedence)\n  if (agentOwnFiles.includes(sharedFile.source_file)) {\n    continue;\n  }\n  \n  files.push({\n    agent_id: agentId,\n    source_file: sharedFile.source_file,\n    url: sharedFile.url\n  });\n}\n\n// Also add shared files with agent_id='shared' for reference\nconst sharedRefFiles = sharedData.sharedFiles.map(f => ({\n  agent_id: 'shared',\n  source_file: f.source_file,\n  url: f.url\n}));\n\nreturn [...files, ...sharedRefFiles].map(f => ({ json: f }));"
+        "jsCode": "// Build complete file list for this agent\nconst prevData = $('Parse Agent Folders').item.json;\nconst config = prevData.config;\nconst sharedFiles = prevData.sharedFiles;\nconst agentId = prevData.agent_id;\nconst agentFilesRaw = $input.first().json;\n\nconst files = [];\n\n// 1. Add agent's own files\nconst agentOwnFileNames = [];\nif (Array.isArray(agentFilesRaw)) {\n  for (const file of agentFilesRaw) {\n    if (file.name && file.name.endsWith('.md')) {\n      agentOwnFileNames.push(file.name);\n      files.push({\n        agent_id: agentId,\n        source_file: file.name,\n        url: `${config.rawBaseUrl}/agents/${agentId}/${file.name}`\n      });\n    }\n  }\n}\n\n// 2. Add shared files\nconst hasOwnActions = config.agentsWithOwnActions.includes(agentId);\n\nfor (const sharedFile of sharedFiles) {\n  // Skip shared actions if agent has own actions\n  if (hasOwnActions && (sharedFile.source_file === 'actions_performed.md' || sharedFile.source_file === 'actions_todo.md')) {\n    continue;\n  }\n  \n  // Skip if agent already has this file\n  if (agentOwnFileNames.includes(sharedFile.source_file)) {\n    continue;\n  }\n  \n  files.push({\n    agent_id: agentId,\n    source_file: sharedFile.source_file,\n    url: sharedFile.url\n  });\n}\n\nreturn files.map(f => ({ json: f }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1200,
-        352
+        1648,
+        256
       ],
       "id": "build-file-list-001",
       "name": "Build File List"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Deduplicate: shared files only need to be added once\nconst allItems = $input.all();\nconst seen = new Set();\nconst unique = [];\n\nfor (const item of allItems) {\n  const key = `${item.json.agent_id}|${item.json.source_file}`;\n  if (!seen.has(key)) {\n    seen.add(key);\n    unique.push(item);\n  }\n}\n\nreturn unique;"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1424,
-        352
-      ],
-      "id": "dedupe-001",
-      "name": "Deduplicate Files"
     },
     {
       "parameters": {
@@ -168,8 +155,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        1648,
-        352
+        1872,
+        256
       ],
       "id": "e2f7aa71-7ff0-4aaf-9a5c-c836e4c1ecfe",
       "name": "Fetch File Content",
@@ -177,13 +164,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\nconst prevData = $('Deduplicate Files').item.json;\n\n// Get the document content\nconst document = typeof input === 'string' ? input : (input.data || input.body || JSON.stringify(input));\n\nreturn {\n  json: {\n    agent_id: prevData.agent_id,\n    source_file: prevData.source_file,\n    document: document\n  }\n};"
+        "jsCode": "const input = $input.first().json;\nconst prevData = $('Build File List').item.json;\n\n// Get the document content\nconst document = typeof input === 'string' ? input : (input.data || input.body || JSON.stringify(input));\n\nreturn {\n  json: {\n    agent_id: prevData.agent_id,\n    source_file: prevData.source_file,\n    document: document\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1872,
-        352
+        2096,
+        256
       ],
       "id": "da847e63-ff1d-4b74-9f29-c30314b07a62",
       "name": "Prepare Document"
@@ -223,8 +210,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2096,
-        352
+        2320,
+        256
       ],
       "id": "6800039e-2e2d-4442-9fe2-b2c38f0b70a7",
       "name": "Generate Embedding (OpenRouter)"
@@ -238,8 +225,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2320,
-        352
+        2544,
+        256
       ],
       "id": "5f0acf6b-901c-4788-9578-d01eaff46ad1",
       "name": "Upsert Instruction",
@@ -257,8 +244,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2544,
-        352
+        2768,
+        256
       ],
       "id": "4032335d-2db2-40d0-90c4-0680136cc9ce",
       "name": "Summary"
@@ -301,11 +288,6 @@
             "node": "Fetch Shared Folder",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Fetch Agents Folder",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -321,22 +303,22 @@
         ]
       ]
     },
-    "Fetch Agents Folder": {
+    "Parse Shared Files": {
       "main": [
         [
           {
-            "node": "Parse Agent Folders",
+            "node": "Fetch Agents Folder",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Parse Shared Files": {
+    "Fetch Agents Folder": {
       "main": [
         [
           {
-            "node": "Fetch Agent Files",
+            "node": "Parse Agent Folders",
             "type": "main",
             "index": 0
           }
@@ -366,17 +348,6 @@
       ]
     },
     "Build File List": {
-      "main": [
-        [
-          {
-            "node": "Deduplicate Files",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Deduplicate Files": {
       "main": [
         [
           {
@@ -436,7 +407,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "dynamic-v1",
+  "versionId": "dynamic-v2-sequential",
   "meta": {
     "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
   },
