@@ -49,7 +49,7 @@ suggestions:
   - "➕ Add Another Assistant"
 
 n8n:
-  webhook_url: https://n8n.theaiteam.uk/webhook/personal_assistant
+  webhook_url: https://n8n.theaiteam.uk/webhook/personal_assistant_new
   #https://n8n.theaiteam.uk/webhook/c2fcbad6-abc0-43af-8aa8-d1661ff4461d
   #https://n8n.theaiteam.uk/webhook/Squidgy/PersonalAssistant
 
