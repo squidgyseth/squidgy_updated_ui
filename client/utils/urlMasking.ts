@@ -1,215 +1,159 @@
 /**
- * Utility functions to mask/hide Supabase URLs for security and branding purposes
+ * URL masking and markdown rendering utilities
  */
+
+// Shared styles
+const LINK_STYLE = 'color: #7c3aed; text-decoration: underline;';
+const IMAGE_STYLE = `max-width: 400px; width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer;`;
+
+/**
+ * Creates an HTML image element with consistent styling
+ */
+const createImageHtml = (url: string, alt: string, caption?: string): string => {
+  const trimmedUrl = url.trim();
+  return `<div style="margin: 8px 0; display: inline-block;"><a href="${trimmedUrl}" target="_blank" rel="noopener noreferrer"><img src="${trimmedUrl}" alt="${alt}" style="${IMAGE_STYLE}" /></a>${caption ? `<div style="font-size: 12px; color: #6b7280; margin-top: 4px;">${caption}</div>` : ''}</div>`;
+};
+
+/**
+ * Creates an HTML link element with consistent styling
+ */
+const createLinkHtml = (url: string, text: string): string => {
+  return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="${LINK_STYLE}">${text}</a>`;
+};
 
 /**
  * Checks if a URL is a Supabase storage URL
  */
 export const isSupabaseUrl = (url: string): boolean => {
-  return url.includes('.supabase.co') || url.includes('supabase');
+  return url.includes('.supabase.co');
 };
 
 /**
- * Creates a proxy URL for Supabase storage that hides the original URL
- * This would typically go through your backend to serve the image
+ * Creates a proxy URL for Supabase storage
  */
 export const createProxyUrl = (originalUrl: string, resourceType: 'avatar' | 'image' | 'file' = 'image'): string => {
-  if (!originalUrl) {
+  if (!originalUrl || originalUrl.startsWith('/api/storage/') || !isSupabaseUrl(originalUrl)) {
     return originalUrl;
   }
 
-  // If it's already a proxy URL, return as-is to prevent double encoding
-  if (originalUrl.startsWith('/api/storage/')) {
-    return originalUrl;
-  }
-
-  // If it's not a Supabase URL, return as-is
-  if (!isSupabaseUrl(originalUrl)) {
-    return originalUrl;
-  }
-
-  // Extract the file path from the Supabase URL
   const urlParts = originalUrl.split('/storage/v1/object/public/');
   if (urlParts.length > 1) {
-    let filePath = urlParts[1];
-    
-    // Remove any query parameters and handle them separately
-    const [pathOnly, queryString] = filePath.split('?');
-    filePath = pathOnly;
-    
-    // Create a masked URL that goes through your backend
-    // Don't double-encode if it's already encoded
-    const encodedPath = filePath.includes('%') ? filePath : encodeURIComponent(filePath);
+    const [pathOnly, queryString] = urlParts[1].split('?');
+    const encodedPath = pathOnly.includes('%') ? pathOnly : encodeURIComponent(pathOnly);
     return `/api/storage/${resourceType}/${encodedPath}${queryString ? '?' + queryString : ''}`;
   }
 
-  // Fallback - return a generic endpoint
   return `/api/storage/${resourceType}/${encodeURIComponent(btoa(originalUrl))}`;
 };
 
 /**
- * Replaces Supabase URLs in text with generic link text
+ * Converts markdown images ![alt](url) to HTML
  */
-export const maskUrlsInText = (text: string): string => {
+const convertMarkdownImages = (text: string): string => {
   if (!text) return text;
-
-  // Replace Supabase URLs with clickable generic links
-  return text.replace(
-    /https?:\/\/[^\s]*\.supabase\.co[^\s]*/g,
-    '<a href="$&" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Link</a>'
-  );
+  
+  return text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => {
+    return createImageHtml(url, alt || 'Image', alt || undefined);
+  });
 };
 
 /**
- * Checks if a URL points to an image file
+ * Checks if a URL points to an image based on extension or known image hosting patterns
  */
-export const isImageUrl = (url: string): boolean => {
-  if (!url) return false;
-  const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)(\?.*)?$/i;
-  const imageHosts = /(unsplash\.com|pexels\.com|pixabay\.com|imgur\.com|cloudinary\.com|imagekit\.io)/i;
-  return imageExtensions.test(url) || imageHosts.test(url);
+const isImageUrl = (url: string): boolean => {
+  // Check standard image extensions
+  if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i.test(url)) {
+    return true;
+  }
+  // Check for Supabase storage image URLs (media-library bucket or image paths)
+  if (url.includes('.supabase.co') && (url.includes('media-library') || url.includes('/image') || url.includes('newsletter'))) {
+    return true;
+  }
+  // Check for GHL/LeadConnector storage URLs
+  if (url.includes('storage.googleapis.com') || url.includes('leadconnectorhq.com')) {
+    return true;
+  }
+  // Check for common image CDN patterns
+  if (url.includes('/images/') || url.includes('/media/') || url.includes('/uploads/')) {
+    return true;
+  }
+  return false;
 };
 
 /**
- * Converts markdown formatting to HTML
- * Handles bold (**text**), italic (*text*), and links
- * Special handling for image links - renders them as clickable image previews
+ * Converts markdown links [text](url) to HTML
+ * If the URL is an image, renders it as an image instead of a link
  */
-export const convertMarkdownLinksToHtml = (text: string): string => {
+const convertMarkdownLinks = (text: string): string => {
   if (!text) return text;
-
-  let result = text;
-
-  // Handle bold text **text** - must be done before italic to avoid conflicts
-  result = result.replace(
-    /\*\*([^*]+)\*\*/g,
-    '<strong>$1</strong>'
-  );
-
-  // Handle italic text *text* (single asterisk, but not part of bold)
-  result = result.replace(
-    /(?<!\*)\*([^*]+)\*(?!\*)/g,
-    '<em>$1</em>'
-  );
-
-  // First handle markdown image links ![alt](url) - render as actual images
-  result = result.replace(
-    /!\[([^\]]*)\]\(([^)\s]+)\)/g,
-    (match, altText, url) => {
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-block my-2">
-        <img src="${url}" alt="${altText || 'Image'}" class="max-w-full h-auto rounded-lg shadow-md hover:shadow-lg transition-shadow" style="max-height: 200px; object-fit: contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'color: #7c3aed; text-decoration: underline;\\'>${altText || 'View Image'}</span>';" />
-      </a>`;
+  
+  // Complete links [text](url) - check if URL is an image
+  let result = text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, linkText, url) => {
+    // If URL is an image, render as image with the link text as caption
+    if (isImageUrl(url)) {
+      return createImageHtml(url, linkText, linkText !== 'View Image' ? linkText : undefined);
     }
-  );
-
-  // Handle markdown links that look like image links [!Image X](url) - common pattern from AI
-  result = result.replace(
-    /\[(!?Image\s*\d*[^\]]*)\]\(([^)\s]+)\)/gi,
-    (match, linkText, url) => {
-      if (isImageUrl(url)) {
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-block my-2">
-          <img src="${url}" alt="${linkText}" class="max-w-full h-auto rounded-lg shadow-md hover:shadow-lg transition-shadow" style="max-height: 200px; object-fit: contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'color: #7c3aed; text-decoration: underline;\\'>${linkText}</span>';" />
-        </a>`;
-      }
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">${linkText}</a>`;
-    }
-  );
-
-  // Handle complete markdown links [text](url) - check if URL is an image
-  result = result.replace(
-    /\[([^\]]+)\]\(([^)\s]+)\)/g,
-    (match, linkText, url) => {
-      // If URL is an image and link text suggests it's an image, show preview
-      if (isImageUrl(url) && /image|photo|picture|img|pic/i.test(linkText)) {
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-block my-2">
-          <img src="${url}" alt="${linkText}" class="max-w-full h-auto rounded-lg shadow-md hover:shadow-lg transition-shadow" style="max-height: 200px; object-fit: contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'color: #7c3aed; text-decoration: underline;\\'>${linkText}</span>';" />
-        </a>`;
-      }
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">${linkText}</a>`;
-    }
-  );
-
-  // Then handle incomplete markdown links [text]() - just return the text without brackets
-  result = result.replace(
-    /\[([^\]]+)\]\(\s*\)/g,
-    (match, linkText) => {
-      return linkText;
-    }
-  );
-
+    return createLinkHtml(url, linkText);
+  });
+  
+  // Incomplete links [text]() - just return the text
+  result = result.replace(/\[([^\]]+)\]\(\s*\)/g, '$1');
+  
   return result;
 };
 
 /**
- * Replaces any storage URLs in text with appropriate clickable link text
+ * Converts markdown bold **text** to HTML
+ */
+const convertMarkdownBold = (text: string): string => {
+  if (!text) return text;
+  return text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+};
+
+/**
+ * Converts raw URLs to clickable links or image previews
+ */
+const convertRawUrls = (text: string): string => {
+  if (!text) return text;
+  
+  // Image URLs - show as images (no caption for raw URLs)
+  let result = text.replace(
+    /(?<!href=")(?<!src=")(?<!\]\()https?:\/\/[^\s<>"'\)]+\.(jpg|jpeg|png|gif|webp)(?:\?[^\s<>"'\)]*)?/gi,
+    (url) => createImageHtml(url, 'Image', undefined)
+  );
+  
+  // Other URLs - show as links
+  result = result.replace(
+    /(?<!href=")(?<!src=")(?<!\]\()(?<!<a[^>]*>)(https?:\/\/[^\s<>"'\)]+)(?![^<]*<\/a>)/gi,
+    (url) => createLinkHtml(url, 'View Link')
+  );
+  
+  return result;
+};
+
+/**
+ * Main function: processes text with markdown and URLs
+ * Handles: **bold**, ![images](url), [links](url), and raw URLs
  */
 export const maskStorageUrlsInText = (text: string): string => {
   if (!text) return text;
-
-  // First, handle markdown-style links
-  let maskedText = convertMarkdownLinksToHtml(text);
   
-  // Replace different types of storage URLs with appropriate clickable labels
-  // Handle both full URLs (with https://) and partial URLs (without protocol)
-  maskedText = maskedText.replace(
-    /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/avatars[^\s]*)/g,
-    (match, urlPart) => {
-      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
-      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Profile Image</a>`;
-    }
-  );
+  let result = text;
   
-  maskedText = maskedText.replace(
-    /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/screenshots[^\s]*)/g,
-    (match, urlPart) => {
-      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
-      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Screenshot</a>`;
-    }
-  );
+  // Process in order: images first, then links, then bold, then raw URLs
+  result = convertMarkdownImages(result);
+  result = convertMarkdownLinks(result);
+  result = convertMarkdownBold(result);
+  result = convertRawUrls(result);
   
-  maskedText = maskedText.replace(
-    /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/images[^\s]*)/g,
-    (match, urlPart) => {
-      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
-      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Image</a>`;
-    }
-  );
+  // Clean up excessive whitespace (3+ newlines become 2)
+  result = result.replace(/\n{3,}/g, '\n\n');
+  // Remove whitespace before image divs
+  result = result.replace(/\n+(<div style="margin: 8px 0;)/g, '\n$1');
+  // Remove whitespace after image divs
+  result = result.replace(/(<\/div>)\n{2,}/g, '$1\n');
   
-  maskedText = maskedText.replace(
-    /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/documents[^\s]*)/g,
-    (match, urlPart) => {
-      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
-      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download Document</a>`;
-    }
-  );
-  
-  // Handle favicon URLs specifically (they may be in /static/favicons/ folder)
-  maskedText = maskedText.replace(
-    /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/static\/favicons\/[^\s]*)/g,
-    (match, urlPart) => {
-      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
-      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Logo</a>`;
-    }
-  );
-  
-  maskedText = maskedText.replace(
-    /(?:https?:\/\/)?([^\s]*\.supabase\.co\/storage\/v1\/object\/public\/[^\s]*)/g,
-    (match, urlPart) => {
-      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
-      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download File</a>`;
-    }
-  );
-  
-  // General Supabase URL masking with clickable links
-  maskedText = maskedText.replace(
-    /(?:https?:\/\/)?([^\s]*\.supabase\.co[^\s]*)/g,
-    (match, urlPart) => {
-      const fullUrl = match.startsWith('http') ? match : `https://${urlPart}`;
-      return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Link</a>`;
-    }
-  );
-
-  return maskedText;
+  return result;
 };
 
 /**
@@ -219,71 +163,5 @@ export const createMaskedDownloadLink = (originalUrl: string, filename?: string)
   if (!originalUrl || !isSupabaseUrl(originalUrl)) {
     return { url: originalUrl, displayName: filename || 'Download' };
   }
-
-  const proxyUrl = createProxyUrl(originalUrl, 'file');
-  const displayName = filename || 'Download File';
-  
-  return { url: proxyUrl, displayName };
-};
-
-/**
- * Alternative function that uses proxy URLs in the links for maximum security
- * This version hides the original URLs completely by routing through our backend
- */
-export const maskStorageUrlsWithProxy = (text: string): string => {
-  if (!text) return text;
-
-  let maskedText = text;
-  
-  // Replace different types of storage URLs with proxy links
-  maskedText = maskedText.replace(
-    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/(avatars[^\s]*))/g,
-    (match, fullUrl, filePath) => {
-      const proxyUrl = createProxyUrl(fullUrl, 'avatar');
-      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Profile Image</a>`;
-    }
-  );
-  
-  maskedText = maskedText.replace(
-    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/(screenshots[^\s]*))/g,
-    (match, fullUrl, filePath) => {
-      const proxyUrl = createProxyUrl(fullUrl, 'image');
-      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Screenshot</a>`;
-    }
-  );
-  
-  maskedText = maskedText.replace(
-    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/(images[^\s]*))/g,
-    (match, fullUrl, filePath) => {
-      const proxyUrl = createProxyUrl(fullUrl, 'image');
-      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Image</a>`;
-    }
-  );
-  
-  maskedText = maskedText.replace(
-    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/(documents[^\s]*))/g,
-    (match, fullUrl, filePath) => {
-      const proxyUrl = createProxyUrl(fullUrl, 'file');
-      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download Document</a>`;
-    }
-  );
-  
-  maskedText = maskedText.replace(
-    /(https?:\/\/[^\s]*\.supabase\.co\/storage\/v1\/object\/public\/([^\s]*))/g,
-    (match, fullUrl, filePath) => {
-      const proxyUrl = createProxyUrl(fullUrl, 'file');
-      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">Download File</a>`;
-    }
-  );
-  
-  // General Supabase URL masking with proxy links
-  maskedText = maskedText.replace(
-    /(https?:\/\/[^\s]*\.supabase\.co[^\s]*)/g,
-    (match, fullUrl) => {
-      const proxyUrl = createProxyUrl(fullUrl, 'file');
-      return `<a href="${proxyUrl}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; text-decoration: underline;">View Link</a>`;
-    }
-  );
-
-  return maskedText;
+  return { url: createProxyUrl(originalUrl, 'file'), displayName: filename || 'Download File' };
 };

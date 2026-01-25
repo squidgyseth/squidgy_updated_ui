@@ -5,7 +5,7 @@ agent:
   category: GENERAL
   description: Your onboarding assistant for setting up AI agents
   specialization: "Onboarding Expert"
-  tagline: "Setup. Configure. Launch."
+  tagline: "Friendly & Helpful"
   avatar: "/Squidgy AI Assistants Avatars/1.png"
   pinned: true
   initial_message: "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you."

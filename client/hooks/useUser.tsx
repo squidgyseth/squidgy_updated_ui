@@ -76,8 +76,8 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         
         if (isDevelopment) {
           // Development mode - create or use existing dev user
-          let devUserId = localStorage.getItem('dev_user_id');
-          let devUserEmail = localStorage.getItem('dev_user_email') || 'dmacproject123@gmail.com';
+          let devUserId = localStorage.getItem('dev_user_id') || import.meta.env.VITE_DEV_USER_ID;
+          let devUserEmail = localStorage.getItem('dev_user_email') || import.meta.env.VITE_DEV_USER_EMAIL || 'dmacproject123@gmail.com';
           
           console.log('🔍 UserProvider Dev: Auth values:', {
             devUserId,
@@ -312,8 +312,8 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         
         if (isDevelopment) {
           // Fallback to development mode only in dev environment
-          let devUserId = localStorage.getItem('dev_user_id');
-          let devUserEmail = localStorage.getItem('dev_user_email') || 'dmacproject123@gmail.com';
+          let devUserId = localStorage.getItem('dev_user_id') || import.meta.env.VITE_DEV_USER_ID;
+          let devUserEmail = localStorage.getItem('dev_user_email') || import.meta.env.VITE_DEV_USER_EMAIL || 'dmacproject123@gmail.com';
           
           if (!devUserId) {
             devUserId = generateUserId();
@@ -492,8 +492,8 @@ export const UserProvider = ({ children }: UserProviderProps) => {
                          import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
     
     if (isDevelopment && newUserId) {
-      const devUserEmail = localStorage.getItem('dev_user_email') || 'dmacproject123@gmail.com';
-      const devUserName = localStorage.getItem('dev_user_name') || 'Development User';
+      const devUserEmail = localStorage.getItem('dev_user_email') || import.meta.env.VITE_DEV_USER_EMAIL || 'dmacproject123@gmail.com';
+      const devUserName = localStorage.getItem('dev_user_name') || import.meta.env.VITE_DEV_USER_NAME || 'Development User';
       const devUserAvatar = localStorage.getItem('dev_user_avatar') || '';
       console.log('UserProvider: Updating auth state for dev user with localStorage data');
       setIsAuthenticated(true);
