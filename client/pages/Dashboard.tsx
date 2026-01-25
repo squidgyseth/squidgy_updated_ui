@@ -44,6 +44,7 @@ export default function Index() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [userFirstName, setUserFirstName] = useState<string>("User");
   const [isLoadingUserName, setIsLoadingUserName] = useState(true);
+  const [enabledAgentIds, setEnabledAgentIds] = useState<string[]>([]);
   const navigate = useNavigate();
   const { companyName, faviconUrl, isLoading } = useCompanyBranding();
   const { user, userId } = useUser();
@@ -116,6 +117,34 @@ export default function Index() {
     };
 
     fetchUserProfile();
+  }, [userId]);
+
+  // Fetch enabled agents from assistant_personalizations
+  useEffect(() => {
+    const fetchEnabledAgents = async () => {
+      if (!userId) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('assistant_personalizations')
+          .select('assistant_id')
+          .eq('user_id', userId)
+          .eq('is_enabled', true);
+
+        if (error) {
+          console.error('❌ Dashboard: Error fetching enabled agents:', error);
+          return;
+        }
+
+        const agentIds = data?.map((row: { assistant_id: string }) => row.assistant_id) || [];
+        setEnabledAgentIds(agentIds);
+        console.log('✅ Dashboard: Enabled agents:', agentIds);
+      } catch (error) {
+        console.error('❌ Dashboard: Error in fetchEnabledAgents:', error);
+      }
+    };
+
+    fetchEnabledAgents();
   }, [userId]);
 
   const desktopLayout = (
@@ -224,29 +253,31 @@ export default function Index() {
             </CardContent>
           </Card>
 
-          {/* Social Media Manager Card */}
-          <Card className="border-2 border-blue-400 bg-blue-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <img
-                  src="/Squidgy AI Assistants Avatars/16.png"
-                  alt="Social Media Manager icon"
-                  className="w-16 h-16 rounded-full"
-                />
-                <div className="flex-1">
-                  <h2 className="text-[20px] font-bold text-gray-900 font-open-sans">Social Media Manager</h2>
-                  <p className="text-[15px] text-gray-600 font-open-sans mt-1">Manage and schedule social media content across Facebook, Instagram, and LinkedIn.</p>
+          {/* Social Media Manager Card - Only show if enabled */}
+          {enabledAgentIds.includes('social_media_agent') && (
+            <Card className="border-2 border-blue-400 bg-blue-50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <img
+                    src="/Squidgy AI Assistants Avatars/16.png"
+                    alt="Social Media Manager icon"
+                    className="w-16 h-16 rounded-full"
+                  />
+                  <div className="flex-1">
+                    <h2 className="text-[20px] font-bold text-gray-900 font-open-sans">Social Media Manager</h2>
+                    <p className="text-[15px] text-gray-600 font-open-sans mt-1">Manage and schedule social media content across Facebook, Instagram, and LinkedIn.</p>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/chat/social_media_agent')}
+                    className="bg-squidgy-gradient text-white gap-2 px-6 py-2.5 h-auto text-sm font-semibold"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    Start Chat
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => navigate('/chat/social_media_agent')}
-                  className="bg-squidgy-gradient text-white gap-2 px-6 py-2.5 h-auto text-sm font-semibold"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  Start Chat
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Feature Cards Row - Leads Related Blurred */}
           <div className="grid grid-cols-4 gap-6">
