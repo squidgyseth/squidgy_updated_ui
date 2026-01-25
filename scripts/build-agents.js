@@ -16,6 +16,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 /**
  * Upsert agents to Supabase personal_assistant_config table
  * Only upserts records with config_type = 'assistants'
+ * Syncs: code, display_name, emoji, description, category, is_enabled
  */
 async function upsertAgentsToSupabase(agents) {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -29,19 +30,22 @@ async function upsertAgentsToSupabase(agents) {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   // Transform agents to personal_assistant_config format
-  // Skip Personal Assistant - it's a system agent and shouldn't be synced
-  const records = agents
-    .filter(agent => agent.agent.id !== 'personal_assistant')
-    .map(agent => ({
-      config_type: 'assistants',
-      code: agent.agent.id,
-      display_name: agent.agent.name,
-      emoji: agent.agent.emoji || '🤖',
-      description: agent.agent.description || null,
-      category: agent.agent.category || 'General'
-    }));
+  // Include ALL agents (including personal_assistant)
+  const records = agents.map(agent => ({
+    config_type: 'assistants',
+    code: agent.agent.id,
+    display_name: agent.agent.name,
+    emoji: agent.agent.emoji || '🤖',
+    description: agent.agent.description || null,
+    category: agent.agent.category || 'General',
+    is_enabled: agent.agent.enabled === true  // Sync enabled status from YAML
+  }));
+
+  const enabledCount = records.filter(r => r.is_enabled).length;
+  const disabledCount = records.filter(r => !r.is_enabled).length;
 
   console.log(`\n🔄 Syncing ${records.length} agents to Supabase...`);
+  console.log(`   📊 Enabled: ${enabledCount} | Disabled: ${disabledCount}`);
 
   // Upsert each record (based on config_type + code unique constraint)
   for (const record of records) {
@@ -56,7 +60,8 @@ async function upsertAgentsToSupabase(agents) {
       if (error) {
         console.warn(`⚠️  Failed to upsert ${record.code}:`, error.message);
       } else {
-        console.log(`   ✓ ${record.emoji} ${record.display_name} (${record.code})`);
+        const status = record.is_enabled ? '✅' : '⬚';
+        console.log(`   ${status} ${record.emoji} ${record.display_name} (${record.code})`);
       }
     } catch (err) {
       console.warn(`⚠️  Error upserting ${record.code}:`, err.message);
