@@ -393,6 +393,7 @@ export default function Register() {
                 className="w-full h-full border-0"
                 title="Squidgy Game"
                 allow="autoplay; fullscreen"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
               />
             </div>
             {/* Navigation buttons */}
