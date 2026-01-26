@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { signIn } from '../lib/api';
 import { useUser } from "@/hooks/useUser";
 import { onboardingRouter } from "@/services/onboardingRouter";
-import { linkScoresToUser } from '@/services/anonymousPlayer';
+import { linkScoresToUser, getGameHistory } from '@/services/anonymousPlayer';
 
 // Game URL - update this to your deployed game URL
 const GAME_URL = 'https://squidgy-waitlist-game.vercel.app';
