@@ -515,11 +515,15 @@ export default function N8nChatInterface({
 
   // Helper function to detect if message contains interactive buttons
   const hasInteractiveButtons = (content: string): boolean => {
-    // Look for both button patterns: $$**text**$$ (new) and $**text**$ (old)
-    const newFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
+    // Look for all button patterns:
+    // 1. $$**text**$$ (bold format)
+    // 2. $****text****$ (old format)
+    // 3. $$emoji text - description$$ (emoji format without bold)
+    const boldFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
     const oldFormatPattern = /\$\*\*\*\*([^*]+)\*\*\*\*\$/g;
+    const generalPattern = /\$\$([^$]+)\$\$/g; // Matches any $$content$$ pattern
     
-    return newFormatPattern.test(content) || oldFormatPattern.test(content);
+    return boldFormatPattern.test(content) || oldFormatPattern.test(content) || generalPattern.test(content);
   };
 
   // Helper function to extract button texts from content
@@ -1118,11 +1122,23 @@ export default function N8nChatInterface({
                           }
                         }
                         
-                        // Regular message display
+                        // Regular message display - check for $$...$$ button patterns
+                        if (hasInteractiveButtons(message.content)) {
+                          return (
+                            <div className="bg-gray-100 rounded-lg px-4 py-3">
+                              <InteractiveMessageButtons 
+                                content={message.content}
+                                onButtonClick={handleButtonClick}
+                              />
+                            </div>
+                          );
+                        }
+                        
+                        // Plain text message display
                         return (
                           <div className="bg-gray-100 rounded-lg px-4 py-2">
                             <LinkDetectingTextArea 
-                              content={hasInteractiveButtons(message.content) ? cleanButtonPatterns(message.content) : message.content}
+                              content={message.content}
                               className="text-text-primary whitespace-pre-wrap"
                             />
                           </div>
