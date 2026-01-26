@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { signIn } from '../lib/api';
 import { useUser } from "@/hooks/useUser";
 import { onboardingRouter } from "@/services/onboardingRouter";
-import { linkScoresToUser } from '@/services/anonymousPlayer';
+import { linkScoresToUser, getGameHistory } from '@/services/anonymousPlayer';
 
 // Game URL - update this to your deployed game URL
 const GAME_URL = 'https://squidgy-waitlist-game.vercel.app';
@@ -139,68 +139,36 @@ export default function Login() {
         return;
       }
       
-      // Don't set userId manually - let the auth state change listener handle it
-      // The auth state change listener will do the email lookup to get correct user_id
+      // Get user ID directly from the sign-in response
+      const loggedInUserId = response.profile?.user_id || response.user?.id;
       
+      if (!loggedInUserId) {
+        console.error('❌ Login: No user ID in response');
+        toast.error('Login failed. Please try again.');
+        return;
+      }
+      
+      console.log('✅ Login: User authenticated with ID:', loggedInUserId);
       toast.success('Login successful!');
       
-      // Use smart onboarding router to determine where to go
-      // This will check completion status and route accordingly
-      try {
-        // Get user ID from response or auth service
-        // Note: We'll get the userId after auth is established
-        
-        // Wait for auth to settle, then use smart routing
-        const determineRoute = async () => {
-          // Wait up to 3 seconds for userId to be available
-          let attempts = 0;
-          const maxAttempts = 6; // 3 seconds with 500ms intervals
-          
-          const checkUserId = () => {
-            return new Promise((resolve) => {
-              const interval = setInterval(() => {
-                attempts++;
-                if (userId) {
-                  clearInterval(interval);
-                  resolve(userId);
-                } else if (attempts >= maxAttempts) {
-                  clearInterval(interval);
-                  resolve(null);
-                }
-              }, 500);
-            });
-          };
-          
-          const finalUserId = await checkUserId();
-          
-          if (finalUserId) {
-            // Link any anonymous game scores to this user
-            const pendingScores = getGameHistory();
-            if (pendingScores.length > 0) {
-              try {
-                const linkedCount = await linkScoresToUser(finalUserId as string);
-                if (linkedCount > 0) {
-                  toast.success(`${linkedCount} game score${linkedCount > 1 ? 's' : ''} saved to your account!`);
-                }
-              } catch (err) {
-                console.warn('Failed to link game scores:', err);
-              }
-            }
-
-            const routeDecision = await onboardingRouter.determineLoginRoute(finalUserId as string);
-            console.log('🧭 Login: Route decision:', routeDecision);
-
-            toast.success(routeDecision.reason);
-            navigate(routeDecision.redirectPath);
-          } else {
-            // Fallback to dashboard with onboarding if no userId after waiting
-            console.log('⚠️ Login: No userId found after waiting, falling back to dashboard with onboarding');
-            navigate('/dashboard?onboarding=true');
+      // Link any anonymous game scores to this user
+      const pendingScores = getGameHistory();
+      if (pendingScores.length > 0) {
+        try {
+          const linkedCount = await linkScoresToUser(loggedInUserId);
+          if (linkedCount > 0) {
+            toast.success(`${linkedCount} game score${linkedCount > 1 ? 's' : ''} saved to your account!`);
           }
-        };
-        
-        determineRoute();
-        
+        } catch (err) {
+          console.warn('Failed to link game scores:', err);
+        }
+      }
+      
+      // Use smart onboarding router to determine where to go
+      try {
+        const routeDecision = await onboardingRouter.determineLoginRoute(loggedInUserId);
+        console.log('🧭 Login: Route decision:', routeDecision);
+        navigate(routeDecision.redirectPath);
       } catch (error) {
         console.error('❌ Login: Error determining route:', error);
         // Fallback to dashboard with onboarding on error
