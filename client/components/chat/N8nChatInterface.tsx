@@ -64,6 +64,33 @@ export default function N8nChatInterface({
   const chatHistoryService = ChatHistoryService.getInstance();
   const fileUploadService = FileUploadService.getInstance();
 
+  // Utility: detect and extract file info embedded in stored message text
+  const parseEmbeddedFileInfo = (message: string) => {
+    const fileNameMatch = message.match(/File:\s*([^\r\n]+)/);
+    // Support both "URL: https://..." and "URL:\nhttps://..." formats (CRLF or LF)
+    const fileUrlMatch =
+      message.match(/URL:\s*(https?:\/\/\S+)/m) ||
+      message.match(/URL:\s*(?:\r?\n)+\s*(https?:\/\/\S+)/m);
+
+    if (fileUrlMatch && fileNameMatch) {
+      const fileUrl = (fileUrlMatch[1] || fileUrlMatch[0]).toString().replace(/^URL:\s*/i, '').trim();
+
+      // Strip everything from the first "File:" block onward (handles 1+ newlines and CRLF)
+      const parts = message.split(/(?:\r?\n)+File:\s*/);
+      return {
+        hasFile: true,
+        fileName: fileNameMatch[1].trim(),
+        fileUrl,
+        messageText: parts[0].trim()
+      };
+    }
+
+    return {
+      hasFile: false,
+      messageText: message
+    };
+  };
+
   // Auto-scroll to bottom when new messages arrive and focus input
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -195,12 +222,26 @@ export default function N8nChatInterface({
       
       if (existingMessages.length > 0) {
         // Convert database messages to ChatMessage format
-        const chatMessages: ChatMessage[] = existingMessages.map(msg => ({
-          id: msg.id,
-          content: msg.message,
-          sender: msg.sender.toLowerCase() as 'user' | 'agent',
-          timestamp: new Date(msg.timestamp)
-        }));
+        const chatMessages: ChatMessage[] = existingMessages.map(msg => {
+          const fileInfo = parseEmbeddedFileInfo(msg.message);
+
+          return {
+            id: msg.id,
+            content: fileInfo.messageText,
+            sender: msg.sender.toLowerCase() as 'user' | 'agent',
+            timestamp: new Date(msg.timestamp),
+            fileUpload: fileInfo.hasFile
+              ? {
+                  fileName: fileInfo.fileName,
+                  fileUrl: fileInfo.fileUrl,
+                  fileId: `file_${msg.id}`,
+                  status: 'completed',
+                  agentId: agent.id,
+                  agentName: agent.name
+                }
+              : undefined
+          };
+        });
         
         console.log(`✅ Setting ${chatMessages.length} messages in state`);
         setMessages(chatMessages);
@@ -764,12 +805,6 @@ export default function N8nChatInterface({
       
       if (!file) return;
       
-      // Validate file size (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('File size must be less than 10MB');
-        return;
-      }
-      
       // Validate file type
       const allowedTypes = ['application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
       if (!allowedTypes.includes(file.type)) {
@@ -796,6 +831,10 @@ export default function N8nChatInterface({
     try {
       const timestamp = Date.now();
       const fileName = `${userId}_${timestamp}_${file.name}`;
+      const uploadTrackingId = `upload_${timestamp}_${Math.random().toString(36).slice(2, 8)}`;
+
+      // Track the upload immediately so the UI can show an indicator
+      setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { name: file.name, status: 'uploading' })));
       
       console.log('Uploading file to Supabase...', fileName);
       console.log('File details:', { name: file.name, size: file.size, type: file.type });
@@ -812,19 +851,32 @@ export default function N8nChatInterface({
       }
       
       console.log('File uploaded successfully:', data);
-    
-    // Step 2: Get public URL
-    const { data: urlData } = supabase.storage
-      .from('newsletter')
-      .getPublicUrl(data.path);
-    
-    const fileUrl = urlData.publicUrl;
-    console.log('File URL:', fileUrl);
-    
-      // Step 3: Call backend processing endpoint
+
+      // Step 2: Get public URL
+      const { data: urlData } = supabase.storage
+        .from('newsletter')
+        .getPublicUrl(data.path);
+
+      const fileUrl = urlData.publicUrl;
+      console.log('File URL:', fileUrl);
+
+      // Clear uploading indicator once upload completes (processing happens in background)
+      setUploadingFiles(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(uploadTrackingId);
+        return newMap;
+      });
+
+      // Step 3: Call backend processing endpoint (no UI indicator)
       await callBackendProcessing(file.name, fileUrl);
     } catch (error) {
       console.error('Error in uploadFileToSupabase:', error);
+      // Clear indicator if upload fails
+      setUploadingFiles(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(uploadTrackingId);
+        return newMap;
+      });
       throw error; // Re-throw to be caught by the outer try-catch
     }
   };
@@ -867,8 +919,6 @@ export default function N8nChatInterface({
     // Track the file upload for status monitoring
     const fileId = result.data?.file_id;
     if (fileId) {
-      setUploadingFiles(prev => new Map(prev.set(fileId, { name: fileName, status: 'processing' })));
-      
       // Start monitoring file status
       monitorFileStatus(fileId, fileName);
     }
@@ -917,13 +967,6 @@ export default function N8nChatInterface({
             
             setMessages(prev => [...prev, completionMessage]);
             await saveMessageToHistory(completionMessage.content, 'Agent', completionMessage.timestamp);
-            
-            // Remove from monitoring
-            setUploadingFiles(prev => {
-              const newMap = new Map(prev);
-              newMap.delete(fileId);
-              return newMap;
-            });
             return;
           } else if (file.processing_status === 'failed') {
             // Show error message
@@ -936,13 +979,6 @@ export default function N8nChatInterface({
             
             setMessages(prev => [...prev, errorMessage]);
             await saveMessageToHistory(errorMessage.content, 'Agent', errorMessage.timestamp);
-            
-            // Remove from monitoring
-            setUploadingFiles(prev => {
-              const newMap = new Map(prev);
-              newMap.delete(fileId);
-              return newMap;
-            });
             return;
           }
         }
@@ -952,12 +988,7 @@ export default function N8nChatInterface({
         if (attempts < maxAttempts) {
           setTimeout(checkStatus, 10000); // Check every 10 seconds
         } else {
-          // Timeout - remove from monitoring
-          setUploadingFiles(prev => {
-            const newMap = new Map(prev);
-            newMap.delete(fileId);
-            return newMap;
-          });
+          // Timeout - stop monitoring
         }
       } catch (error) {
         console.error('Error checking file status:', error);
@@ -1186,6 +1217,21 @@ export default function N8nChatInterface({
       </div>
 
       {/* Input Area */}
+      {uploadingFiles.size > 0 && (
+        <div className="border-t border-gray-200 px-4 pt-3">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+            <div className="space-y-1">
+              {Array.from(uploadingFiles.entries()).map(([id, file]) => (
+                <div key={id} className="flex items-center gap-2 text-sm text-gray-700">
+                  <Loader className="w-4 h-4 animate-spin text-purple-600" />
+                  <span className="font-medium truncate">{file.name}</span>
+                  <span className="text-gray-500">Uploading...</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="border-t border-gray-200 p-4">
         <div className="flex gap-3 items-end">
           <textarea
