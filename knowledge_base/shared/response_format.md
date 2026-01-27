@@ -1,6 +1,6 @@
 # Response Format
 
-## JSON STRUCTURE (Required for all responses)
+## JSON STRUCTURE (Required for ALL agents)
 ```json
 {
   "finished": true,
@@ -8,6 +8,7 @@
   "agent_data": {
     "actions_performed": [],
     "actions_todo": [],
+    "state": {},
     "content_preview": {}
   },
   "routing": {
@@ -20,19 +21,37 @@
 ## FIELD DEFINITIONS
 | Field | Type | Description |
 |-------|------|-------------|
-| `finished` | boolean | true = conversation can end, false = expecting more input |
+| `finished` | boolean | true = task complete / can end, false = expecting more input |
 | `response` | string | User-facing message with buttons |
-| `agent_data` | object | Actions, previews, metadata |
-| `routing` | object | For redirecting to another agent |
+| `agent_data` | object | Actions, state, previews, metadata |
+| `agent_data.state` | object | Agent-specific conversation state tracking |
+| `agent_data.content_preview` | object | Generated content for rendering |
+| `agent_data.lead_info` | object | Sales/qualification data (sales agents) |
+| `routing` | object | For redirecting to another agent (PA only) |
 
-## REDIRECT EXAMPLE
+## AGENT_DATA EXAMPLES
+
+### Content Agents (Newsletter, SMM, Content Repurposer):
 ```json
-{
-  "response": "I'll connect you with the Newsletter Agent! 🚀",
-  "routing": {
-    "target_agent": "newsletter_multi",
-    "reason": "User wants to create newsletter"
-  }
+"agent_data": {
+  "state": { "phase": "gathering", "current_topic_index": 1 },
+  "content_preview": { "type": "newsletter", "content": "..." }
+}
+```
+
+### Sales Agents (SOL):
+```json
+"agent_data": {
+  "state": { "phase": "qualification", "qualified": false },
+  "lead_info": { "lead_score": 45, "property_type": "single_family" }
+}
+```
+
+### Routing Agent (PA):
+```json
+"agent_data": {
+  "actions_performed": [{"action": "agent_enabled", "status": "completed"}],
+  "agent_id": "newsletter_multi"
 }
 ```
 
