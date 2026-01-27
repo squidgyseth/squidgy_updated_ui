@@ -4,6 +4,7 @@ import { useUser } from '../hooks/useUser';
 import { AgentConfigService } from '../services/agentConfigService';
 import { Mic, MicOff, Upload, Send, File, X, ArrowLeft, Trash2, FileText, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { sendToN8nWorkflow, generateRequestId, generateSessionId } from '../lib/n8nService';
 
 interface KnowledgeEntry {
   id: string;
@@ -487,10 +488,50 @@ export default function AgentSettings() {
         throw new Error('Failed to save file knowledge');
       }
 
-      return await response.json();
+      const result = await response.json();
+
+      // Send file to n8n webhook (same as chat interface)
+      await sendFileToN8nWebhook(file.name, fileUrl);
+
+      return result;
     } catch (error) {
       console.error('Error saving file knowledge:', error);
       throw error;
+    }
+  };
+
+  const sendFileToN8nWebhook = async (fileName: string, fileUrl: string) => {
+    try {
+      // Get the agent's webhook URL from config
+      const webhookUrl = agentConfig?.n8n?.webhook_url;
+      
+      if (!webhookUrl) {
+        console.warn('No webhook URL configured for agent, skipping n8n notification');
+        return;
+      }
+
+      // Generate session ID for this upload
+      const sessionId = generateSessionId(userId, agentId);
+      
+      // Create message with file info (same format as chat interface)
+      const message = `File uploaded via Configurable Data section\n\nFile: ${fileName}\nURL: ${fileUrl}`;
+      
+      console.log(`Sending file upload notification to n8n webhook for ${agentConfig.agent.name}`);
+      
+      // Send to n8n workflow
+      await sendToN8nWorkflow(
+        userId,
+        message,
+        agentId,
+        sessionId,
+        generateRequestId(),
+        webhookUrl
+      );
+      
+      console.log('File upload notification sent to n8n successfully');
+    } catch (error) {
+      console.error('Error sending file to n8n webhook:', error);
+      // Don't throw - we still want the file to be saved even if n8n notification fails
     }
   };
 
