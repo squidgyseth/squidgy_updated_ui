@@ -2,27 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { AgentConfigService } from '../services/agentConfigService';
-import { Mic, MicOff, Upload, Send, File, X, ArrowLeft, Trash2, FileText, Loader2 } from 'lucide-react';
+import { Mic, Upload, Send, File, X, ArrowLeft, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-
-interface KnowledgeEntry {
-  id: string;
-  type: 'voice' | 'file';
-  content: string;
-  fileName?: string;
-  timestamp: Date;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-}
-
-interface PreviousFile {
-  id: string;
-  file_id: string;
-  file_name: string;
-  file_url: string;
-  created_at: string;
-  processing_status?: string;
-  extracted_text?: string;
-}
 
 export default function AgentSettings() {
   const { agentId } = useParams<{ agentId: string }>();
@@ -31,7 +12,7 @@ export default function AgentSettings() {
   const [agentConfig, setAgentConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Knowledge base state
   const [currentText, setCurrentText] = useState('');
   const [voiceText, setVoiceText] = useState(''); // Separate state for voice input
@@ -39,15 +20,9 @@ export default function AgentSettings() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
-  // Previously uploaded files state
-  const [previousFiles, setPreviousFiles] = useState<PreviousFile[]>([]);
-  const [loadingPreviousFiles, setLoadingPreviousFiles] = useState(true);
-  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+  // Toast notification state
+  const [showToast, setShowToast] = useState(false);
 
-  // Custom instructions state - track existing record for updates
-  const [customInstructionsId, setCustomInstructionsId] = useState<string | null>(null);
-  const [loadingCustomInstructions, setLoadingCustomInstructions] = useState(true);
-  
   // Speech recognition
   const [recognition, setRecognition] = useState<any>(null);
   const accumulatedTextRef = useRef(''); // Store accumulated speech
@@ -82,112 +57,9 @@ export default function AgentSettings() {
     loadAgentConfig();
   }, [agentId]);
 
-  // Function to fetch existing custom instructions (text input)
-  const fetchCustomInstructions = async () => {
-    if (!userId || !agentId) {
-      setLoadingCustomInstructions(false);
-      return;
-    }
-
-    try {
-      setLoadingCustomInstructions(true);
-      // Custom instructions have file_name = "User Input" and empty file_url
-      const { data, error } = await supabase
-        .from('firm_users_knowledge_base')
-        .select('id, file_id, extracted_text')
-        .eq('firm_user_id', userId)
-        .eq('agent_id', agentId)
-        .eq('file_name', 'User Input')
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (error) {
-        console.error('Error fetching custom instructions:', error);
-      } else if (data && data.length > 0) {
-        setCustomInstructionsId(data[0].id);
-        setCurrentText(data[0].extracted_text || '');
-        console.log('Loaded existing custom instructions');
-      }
-    } catch (error) {
-      console.error('Error fetching custom instructions:', error);
-    } finally {
-      setLoadingCustomInstructions(false);
-    }
-  };
-
-  // Function to fetch previously uploaded files (ONLY actual files, not text entries)
-  const fetchPreviousFiles = async (showLoading = true) => {
-    if (!userId || !agentId) {
-      setLoadingPreviousFiles(false);
-      return;
-    }
-
-    try {
-      if (showLoading) setLoadingPreviousFiles(true);
-      const { data, error } = await supabase
-        .from('firm_users_knowledge_base')
-        .select('id, file_id, file_name, file_url, created_at, processing_status, extracted_text')
-        .eq('firm_user_id', userId)
-        .eq('agent_id', agentId)
-        .neq('file_name', 'User Input')  // Exclude text entries
-        .neq('file_url', '')  // Only files with actual URLs
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching previous files:', error);
-      } else {
-        setPreviousFiles(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching previous files:', error);
-    } finally {
-      setLoadingPreviousFiles(false);
-    }
-  };
-
-  // Fetch custom instructions and files on mount
-  useEffect(() => {
-    fetchCustomInstructions();
-    fetchPreviousFiles();
-  }, [userId, agentId]);
-
-  // Subscribe to realtime updates for file processing status changes
-  useEffect(() => {
-    if (!userId || !agentId) return;
-
-    const channel = supabase
-      .channel('file-processing-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'firm_users_knowledge_base',
-          filter: `firm_user_id=eq.${userId}`
-        },
-        (payload) => {
-          const updatedRecord = payload.new as any;
-
-          // Update the file in our local state if processing_status changed
-          if (updatedRecord.agent_id === agentId && updatedRecord.processing_status) {
-            setPreviousFiles(prev =>
-              prev.map(file =>
-                file.id === updatedRecord.id
-                  ? { ...file, processing_status: updatedRecord.processing_status }
-                  : file
-              )
-            );
-            console.log(`File ${updatedRecord.file_name} status updated to: ${updatedRecord.processing_status}`);
-          }
-        }
-      )
-      .subscribe();
-
-    // Cleanup subscription on unmount
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId, agentId]);
+  // --- COMMENTED OUT: firm_users_knowledge_base code (now using n8n webhook → Neon) ---
+  // fetchCustomInstructions, fetchPreviousFiles, realtime subscription removed
+  // Data now goes directly to user_vector_knowledge_base via n8n SA_Knowledge_Base_Save workflow
 
   // Initialize speech recognition
   useEffect(() => {
@@ -272,50 +144,7 @@ export default function AgentSettings() {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Delete previously uploaded file
-  const handleDeletePreviousFile = async (fileId: string, fileUrl: string) => {
-    if (!confirm('Are you sure you want to delete this file? This action cannot be undone.')) {
-      return;
-    }
-
-    setDeletingFileId(fileId);
-    try {
-      // Extract file path from URL for Supabase storage deletion
-      const urlParts = fileUrl.split('/');
-      const fileName = urlParts[urlParts.length - 1];
-
-      // Delete from Supabase storage
-      const { error: storageError } = await supabase.storage
-        .from('newsletter')
-        .remove([fileName]);
-
-      if (storageError) {
-        console.error('Error deleting from storage:', storageError);
-        // Continue with database deletion even if storage fails
-      }
-
-      // Delete from firm_users_knowledge_base table
-      const { error: dbError } = await supabase
-        .from('firm_users_knowledge_base')
-        .delete()
-        .eq('id', fileId);
-
-      if (dbError) {
-        console.error('Error deleting from database:', dbError);
-        alert('Failed to delete file. Please try again.');
-        return;
-      }
-
-      // Update local state
-      setPreviousFiles(prev => prev.filter(file => file.id !== fileId));
-      console.log('File deleted successfully');
-    } catch (error) {
-      console.error('Error deleting file:', error);
-      alert('Failed to delete file. Please try again.');
-    } finally {
-      setDeletingFileId(null);
-    }
-  };
+  // --- COMMENTED OUT: handleDeletePreviousFile (firm_users_knowledge_base removed) ---
 
   const handleSubmit = async () => {
     if (!userId || !agentId || (!currentText.trim() && uploadedFiles.length === 0)) {
@@ -323,84 +152,71 @@ export default function AgentSettings() {
     }
 
     setIsUploading(true);
-    let successCount = 0;
-    let totalOperations = 0;
 
     try {
-      // Handle text input
+      const n8nUrl = import.meta.env.VITE_N8N_SAVE_KNOWLEDGE_URL;
+
+      // Handle text input — fire and forget to n8n
       if (currentText.trim()) {
-        totalOperations++;
+        fetch(n8nUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userId,
+            agent_id: agentId,
+            type: 'text',
+            content: currentText.trim(),
+            category: 'custom_instructions'
+          })
+        }).catch(err => console.error('n8n text save error:', err));
+      }
+
+      // Handle file uploads — upload to Supabase Storage, then fire n8n with URL
+      for (const file of uploadedFiles) {
         try {
-          const result = await saveTextKnowledge(currentText.trim());
-          if (result.success) {
-            successCount++;
-            console.log('Text knowledge saved successfully:', result.file_id);
+          const timestamp = Date.now();
+          const fileName = `${userId}_${timestamp}_${file.name}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('newsletter')
+            .upload(fileName, file);
+
+          if (uploadError) {
+            console.error('Supabase upload error:', uploadError);
+            continue;
           }
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('newsletter')
+            .getPublicUrl(fileName);
+
+          // Fire and forget to n8n
+          fetch(n8nUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: userId,
+              agent_id: agentId,
+              type: 'file',
+              file_url: publicUrl,
+              file_name: file.name,
+              category: 'documents'
+            })
+          }).catch(err => console.error('n8n file save error:', err));
         } catch (error) {
-          console.error('Failed to save text knowledge:', error);
+          console.error('Failed to upload file:', error);
         }
       }
 
-      // Handle file uploads
-      if (uploadedFiles.length > 0) {
-        totalOperations += uploadedFiles.length;
-        
-        for (const file of uploadedFiles) {
-          try {
-            // Upload to Supabase first
-            const timestamp = Date.now();
-            const fileName = `${userId}_${timestamp}_${file.name}`;
-            
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('newsletter')
-              .upload(fileName, file);
+      // Clear voice state
+      setVoiceText('');
+      accumulatedTextRef.current = '';
+      setUploadedFiles([]);
 
-            if (uploadError) {
-              console.error('Supabase upload error:', uploadError);
-              continue;
-            }
+      // Show toast notification
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 6000);
 
-            const { data: { publicUrl } } = supabase.storage
-              .from('newsletter')
-              .getPublicUrl(fileName);
-
-            // Save to knowledge base with background processing
-            const result = await saveFileKnowledge(file, publicUrl);
-            if (result.success) {
-              successCount++;
-              console.log('File knowledge saved successfully:', result.file_id);
-            }
-          } catch (error) {
-            console.error('Failed to save file knowledge:', error);
-          }
-        }
-      }
-
-      // Show success/error feedback
-      if (successCount === totalOperations) {
-        console.log('All knowledge saved successfully!');
-
-        // Clear voice state (but keep currentText - it's the persistent custom instructions)
-        setVoiceText('');
-        accumulatedTextRef.current = '';
-
-        // Clear uploaded files list
-        setUploadedFiles([]);
-
-        // Only refresh files list if files were uploaded
-        if (uploadedFiles.length > 0) {
-          await fetchPreviousFiles(false);
-        }
-
-      } else {
-        console.error(`Only ${successCount}/${totalOperations} operations succeeded`);
-        // Still clear uploaded files and refresh if files were attempted
-        setUploadedFiles([]);
-        if (uploadedFiles.length > 0) {
-          await fetchPreviousFiles(false);
-        }
-      }
-      
     } catch (error) {
       console.error('Error submitting knowledge:', error);
     } finally {
@@ -408,91 +224,8 @@ export default function AgentSettings() {
     }
   };
 
-  const saveTextKnowledge = async (textContent: string) => {
-    try {
-      // If we have an existing custom instructions record, update it
-      if (customInstructionsId) {
-        const { error } = await supabase
-          .from('firm_users_knowledge_base')
-          .update({
-            extracted_text: textContent,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', customInstructionsId);
-
-        if (error) {
-          throw new Error('Failed to update custom instructions');
-        }
-
-        console.log('Custom instructions updated successfully');
-        return { success: true, file_id: customInstructionsId };
-      }
-
-      // Otherwise create new via backend API
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-      const formData = new FormData();
-      formData.append('firm_user_id', userId);
-      formData.append('agent_id', agentId);
-      formData.append('agent_name', agentConfig?.agent?.name || 'Unknown Agent');
-      formData.append('text_content', textContent);
-
-      const response = await fetch(`${backendUrl}/api/knowledge-base/text`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save text knowledge');
-      }
-
-      const result = await response.json();
-
-      // Store the new ID for future updates
-      if (result.file_id) {
-        // Fetch the actual record ID
-        const { data } = await supabase
-          .from('firm_users_knowledge_base')
-          .select('id')
-          .eq('file_id', result.file_id)
-          .single();
-
-        if (data) {
-          setCustomInstructionsId(data.id);
-        }
-      }
-
-      return result;
-    } catch (error) {
-      console.error('Error saving text knowledge:', error);
-      throw error;
-    }
-  };
-
-  const saveFileKnowledge = async (file: File, fileUrl: string) => {
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-      const formData = new FormData();
-      formData.append('firm_user_id', userId);
-      formData.append('file_name', file.name);
-      formData.append('file_url', fileUrl);
-      formData.append('agent_id', agentId);
-      formData.append('agent_name', agentConfig?.agent?.name || 'Unknown Agent');
-
-      const response = await fetch(`${backendUrl}/api/knowledge-base/file`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save file knowledge');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error saving file knowledge:', error);
-      throw error;
-    }
-  };
+  // --- REMOVED: saveTextKnowledge and saveFileKnowledge ---
+  // Save logic now lives directly in handleSubmit (fire-and-forget to n8n webhook)
 
   if (loading) {
     return (
@@ -667,27 +400,20 @@ export default function AgentSettings() {
                 <label htmlFor="content-textarea" className="block text-lg font-semibold text-gray-800 mb-3">
                   Custom Instructions
                 </label>
-                {loadingCustomInstructions ? (
-                  <div className="w-full h-40 p-4 border-2 border-gray-200 rounded-xl bg-gray-50 flex items-center justify-center">
-                    <Loader2 className="animate-spin text-gray-400 mr-2" size={20} />
-                    <span className="text-gray-500">Loading your instructions...</span>
-                  </div>
-                ) : (
-                  <textarea
-                    id="content-textarea"
-                    value={currentText}
-                    onChange={(e) => setCurrentText(e.target.value)}
-                    placeholder="Type your instructions here, or use voice input above. Your instructions will be saved and you can edit them anytime..."
-                    className="w-full h-40 p-4 border-2 border-gray-200 rounded-xl resize-none focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all text-gray-800 leading-relaxed"
-                  />
-                )}
+                <textarea
+                  id="content-textarea"
+                  value={currentText}
+                  onChange={(e) => setCurrentText(e.target.value)}
+                  placeholder="Type your instructions here, or use voice input above. Your instructions will be saved and you can edit them anytime..."
+                  className="w-full h-40 p-4 border-2 border-gray-200 rounded-xl resize-none focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all text-gray-800 leading-relaxed"
+                />
               </div>
 
               {/* Submit Button */}
               <div className="text-center">
                 <button
                   onClick={handleSubmit}
-                  disabled={isUploading || loadingCustomInstructions || (!currentText.trim() && uploadedFiles.length === 0)}
+                  disabled={isUploading || (!currentText.trim() && uploadedFiles.length === 0)}
                   className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
                 >
                   {isUploading ? (
@@ -716,85 +442,29 @@ export default function AgentSettings() {
             </div>
           </div>
 
-          {/* Previously Uploaded Files Section */}
-          <div className="mt-8 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-gray-600 to-gray-700 px-8 py-4">
-              <h2 className="text-xl font-bold text-white">Previously Uploaded Files</h2>
-              <p className="text-gray-200 text-sm">
-                Files you've uploaded for {agentConfig?.agent?.name}
-              </p>
-            </div>
-
-            <div className="p-6">
-              {loadingPreviousFiles ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="animate-spin text-gray-400" size={24} />
-                  <span className="ml-2 text-gray-500">Loading files...</span>
-                </div>
-              ) : previousFiles.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="mx-auto text-gray-300 mb-3" size={48} />
-                  <p className="text-gray-500">No files uploaded yet</p>
-                  <p className="text-gray-400 text-sm">Upload files above to train your agent</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {previousFiles.map((file) => (
-                    <div
-                      key={file.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded-lg border border-gray-200">
-                          <FileText size={20} className="text-gray-600" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-800">{file.file_name}</p>
-                            {file.processing_status && file.processing_status !== 'completed' && (
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                file.processing_status === 'processing'
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : file.processing_status === 'failed'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}>
-                                {file.processing_status}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            Uploaded {new Date(file.created_at).toLocaleDateString('en-GB', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleDeletePreviousFile(file.id, file.file_url)}
-                        disabled={deletingFileId === file.id}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                        title="Delete file"
-                      >
-                        {deletingFileId === file.id ? (
-                          <Loader2 className="animate-spin" size={18} />
-                        ) : (
-                          <Trash2 size={18} />
-                        )}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          {/* --- REMOVED: Previously Uploaded Files section (firm_users_knowledge_base) --- */}
 
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-slide-up">
+          <div className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl shadow-2xl">
+            <CheckCircle size={20} />
+            <div>
+              <p className="font-semibold">Thanks for uploading!</p>
+              <p className="text-sm text-purple-100">It will take 2-3 minutes to sync your knowledge base.</p>
+            </div>
+            <button
+              onClick={() => setShowToast(false)}
+              className="ml-4 p-1 hover:bg-white/20 rounded-full transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
