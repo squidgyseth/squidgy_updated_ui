@@ -345,7 +345,6 @@ export default function IntegrationsSettings() {
       const response = await fetch(ghlBackendUrl, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -399,7 +398,6 @@ export default function IntegrationsSettings() {
       const connectedResponse = await fetch(`${connectedPagesUrl}?getAll=true`, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -420,7 +418,6 @@ export default function IntegrationsSettings() {
       const allPagesResponse = await fetch(`${allPagesUrl}?limit=100`, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -820,7 +817,6 @@ export default function IntegrationsSettings() {
       const response = await fetch(ghlBackendUrl, {
         method: 'POST',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -973,7 +969,6 @@ export default function IntegrationsSettings() {
       const response = await fetch(accountsUrl, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -1013,13 +1008,16 @@ export default function IntegrationsSettings() {
         attempts++;
         console.log(`📱 Polling for social media OAuth connections (attempt ${attempts}/${maxAttempts})...`);
         
-        // Fetch all accounts (connected + available to connect) with fetchAll=true
+        // Check if we have any OAuth connections by looking at accounts with fetchAll
+        // After OAuth completes, GHL creates an OAuth connection but doesn't auto-connect accounts
+        // We need to find the OAuth ID from the accounts response
+        
+        // Fallback: Fetch all accounts (connected + available to connect) with fetchAll=true
         const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
         
         const response = await fetch(accountsUrl, {
           method: 'GET',
           headers: {
-            'authorization': `Bearer ${accessToken}`,
             'token-id': firebaseToken,
             'version': '2021-07-28',
             'channel': 'APP',
@@ -1032,9 +1030,28 @@ export default function IntegrationsSettings() {
           const data = await response.json();
           console.log('✅ All accounts response (fetchAll=true):', data);
           
-          // Check if we have accounts with oauthId
+          // Check for OAuth ID in groups array (this is where GHL stores OAuth connections)
+          if (data.success && data.results && data.results.groups && data.results.groups.length > 0) {
+            console.log('📦 Found groups (OAuth connections):', data.results.groups);
+            
+            // Find the platform-specific OAuth group
+            const platformGroup = data.results.groups.find((group: any) => 
+              group.platform?.toLowerCase() === platform.toLowerCase()
+            );
+            
+            if (platformGroup && platformGroup.oauthId) {
+              const oAuthId = platformGroup.oauthId;
+              console.log(`✅ Found ${platform} OAuth ID from groups:`, oAuthId);
+              console.log(`🔗 Fetching available ${platform} pages...`);
+              
+              await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
+              setSocialMediaLoading(false);
+              return; // Stop polling
+            }
+          }
+          
+          // Fallback: Check if we have already-connected accounts with oauthId
           if (data.success && data.results && data.results.accounts && data.results.accounts.length > 0) {
-            // Filter accounts by platform
             const platformAccounts = data.results.accounts.filter((acc: any) => acc.platform === platform);
             
             if (platformAccounts.length > 0) {
@@ -1042,21 +1059,16 @@ export default function IntegrationsSettings() {
               const oAuthId = account.oauthId;
               
               console.log(`✅ Found ${platform} account with OAuth ID:`, oAuthId);
-              console.log(`🔗 Will fetch ${platform} accounts from:`, `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`);
               
               if (oAuthId) {
                 await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
                 setSocialMediaLoading(false);
                 return; // Stop polling
-              } else {
-                console.warn(`⚠️ ${platform} account found but no oauthId, will retry...`);
               }
-            } else {
-              console.log(`⏳ No ${platform} accounts found yet, waiting for OAuth completion...`);
             }
-          } else {
-            console.log('⏳ No accounts found yet, waiting for OAuth completion...');
           }
+          
+          console.log(`⏳ No ${platform} OAuth connection found yet, waiting...`);
         }
         
         // If we haven't found OAuth connection yet and haven't exceeded max attempts, poll again
@@ -1098,7 +1110,6 @@ export default function IntegrationsSettings() {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -1172,7 +1183,6 @@ export default function IntegrationsSettings() {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -1417,7 +1427,27 @@ export default function IntegrationsSettings() {
                         size="sm"
                         onClick={() => {
                           if (facebookOAuthUrl) {
-                            window.open(facebookOAuthUrl, '_blank', 'width=600,height=700');
+                            const popup = window.open(facebookOAuthUrl, 'FacebookOAuth', 'width=600,height=700');
+                            
+                            // Poll for popup closure
+                            if (popup) {
+                              const pollTimer = setInterval(() => {
+                                try {
+                                  if (popup.closed) {
+                                    clearInterval(pollTimer);
+                                    console.log('✅ Facebook OAuth popup closed, fetching pages...');
+                                    toast.info('Fetching Facebook pages...');
+                                    
+                                    // Wait 2 seconds for GHL to process OAuth, then fetch pages
+                                    setTimeout(() => {
+                                      fetchFacebookPagesFromGHL();
+                                    }, 2000);
+                                  }
+                                } catch (e) {
+                                  clearInterval(pollTimer);
+                                }
+                              }, 500);
+                            }
                           } else {
                             toast.error('OAuth URL not available. Please refresh the page.');
                           }
