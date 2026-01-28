@@ -3,9 +3,10 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## SA_File_Upload Workflow\n\nProcess uploaded files and store in KB.\n\n### Supported:\n- .txt, .md (text files)\n- .pdf (fetched as reference; full extraction TBD)\n- .json (structured data)\n- .docx (fetched as reference; full extraction TBD)\n\n### Flow:\n1. Receive file URL from Supabase storage\n2. Detect file type\n3. Extract text content (text/json) or store reference (pdf/docx)\n4. Embed and store in KB",
-        "height": 408,
-        "width": 400
+        "content": "## SA_File_Upload Workflow\n\nSub-workflow called by SA_Personal_Assistant when user uploads a file in chat.\n\n### Accepts:\n- userID: User's UUID\n- file_url: Supabase storage public URL\n- file_name: Original filename (e.g. report.pdf)\n- file_type: Extension (e.g. pdf, txt, docx)\n- category: KB category (default: documents)\n\n### Supported file types:\nPDF, DOCX, TXT, MD, JSON (all extracted by backend)\n\n### Flow:\n1. Receive inputs from parent workflow\n2. Call backend /api/file/extract-text → returns pre-chunked text\n3. Output one item per chunk\n4. Generate embedding per chunk (OpenRouter text-embedding-3-small)\n5. INSERT each chunk into user_vector_knowledge_base (Neon)\n6. Return success response with chunk count\n\n### Chunking:\n- Backend splits at ~1500 chars with 200 char overlap\n- Each chunk = separate DB row with its own embedding\n- Handles large PDFs safely (no token limit issues)",
+        "height": 640,
+        "width": 420,
+        "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
@@ -49,13 +50,24 @@
     },
     {
       "parameters": {
-        "url": "={{ $json.file_url }}",
-        "options": {
-          "response": {
-            "response": {
-              "responseFormat": "text"
+        "method": "POST",
+        "url": "https://squidgy-backend-00f664bf1f3d.herokuapp.com/api/file/extract-text",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file_url",
+              "value": "={{ $json.file_url }}"
+            },
+            {
+              "name": "file_name",
+              "value": "={{ $json.file_name }}"
             }
-          }
+          ]
+        },
+        "options": {
+          "timeout": 120000
         }
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -65,12 +77,12 @@
         272
       ],
       "id": "9e4c4f8b-a67e-402e-8b0d-55d5fddaf305",
-      "name": "Fetch File",
+      "name": "Extract Text (Backend)",
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "const input = $('When Called').first().json;\nconst fileContent = $input.first().json.data || $input.first().json.body || '';\nconst fileType = input.file_type?.toLowerCase() || '';\nconst fileName = input.file_name || 'uploaded_file';\n\nlet textContent = '';\n\n// Handle different file types\nif (fileType === 'txt' || fileType === 'md' || fileType === 'text/plain' || fileType === 'text/markdown') {\n  textContent = typeof fileContent === 'string' ? fileContent : JSON.stringify(fileContent);\n} else if (fileType === 'json' || fileType === 'application/json') {\n  try {\n    const parsed = typeof fileContent === 'string' ? JSON.parse(fileContent) : fileContent;\n    textContent = JSON.stringify(parsed, null, 2);\n  } catch (e) {\n    textContent = String(fileContent);\n  }\n} else if (fileType === 'pdf' || fileType === 'application/pdf') {\n  // PDF extraction would need a separate service\n  // For now, mark as needing processing\n  textContent = `[PDF File: ${fileName} - Content extraction pending]`;\n} else {\n  textContent = String(fileContent);\n}\n\n// Prepare for embedding\nconst documentText = `File: ${fileName}\\nType: ${fileType}\\n\\n${textContent}`;\n\nreturn {\n  json: {\n    userID: input.userID,\n    category: input.category || 'documents',\n    file_name: fileName,\n    file_type: fileType,\n    content: documentText\n  }\n};"
+        "jsCode": "// Process backend response — output one item per chunk\nconst input = $('When Called').first().json;\nconst backendResponse = $input.first().json;\n\n// Backend returns: { success, file_name, extracted_text, chunks, chunk_count, char_count }\nconst chunks = backendResponse.chunks || [];\nconst fileName = input.file_name || backendResponse.file_name || 'uploaded_file';\nconst userId = input.userID;\nconst category = input.category || 'documents';\n\nif (!chunks.length) {\n  // Fallback: use extracted_text as single chunk\n  const extractedText = backendResponse.extracted_text || '';\n  if (!extractedText.trim()) {\n    throw new Error(`No text could be extracted from file: ${fileName}`);\n  }\n  return {\n    json: {\n      user_id: userId,\n      category: category,\n      document: `File: ${fileName}\\n\\n${extractedText}`,\n      source: 'file_upload',\n      file_name: fileName,\n      chunk_index: 0,\n      total_chunks: 1\n    }\n  };\n}\n\n// Return one item per chunk\nreturn chunks.map((chunk, index) => ({\n  json: {\n    user_id: userId,\n    category: category,\n    document: `File: ${fileName} [Part ${index + 1}/${chunks.length}]\\n\\n${chunk}`,\n    source: 'file_upload',\n    file_name: fileName,\n    chunk_index: index,\n    total_chunks: chunks.length\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -79,40 +91,63 @@
         272
       ],
       "id": "e79493f7-7bdd-45dc-b7d0-ac7c8919f58e",
-      "name": "Process File"
+      "name": "Process File Chunks"
     },
     {
       "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer OPENROUTER_API_KEY_REDACTED"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "openai/text-embedding-3-small"
+            },
+            {
+              "name": "input",
+              "value": "={{ $json.document }}"
+            }
+          ]
+        },
         "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        704,
-        448
-      ],
-      "id": "ed0bc71e-6de3-4d26-b8db-e7518ff4343f",
-      "name": "OpenRouter Embeddings",
-      "credentials": {
-        "openAiApi": {
-          "id": "xeFNBBSMiFQf7cQv",
-          "name": "OpenAi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "mode": "insert",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
-      "typeVersion": 1.3,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
       "position": [
         784,
         272
       ],
+      "id": "ed0bc71e-6de3-4d26-b8db-e7518ff4343f",
+      "name": "Get Embedding"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.user_vector_knowledge_base (user_id, document, category, embedding, source)\nVALUES (\n  '{{ $('Process File Chunks').item.json.user_id }}',\n  '{{ $('Process File Chunks').item.json.document.replace(/'/g, \"''\").replace(/\\n/g, ' ') }}',\n  '{{ $('Process File Chunks').item.json.category }}',\n  '{{ JSON.stringify($json.data[0].embedding) }}',\n  '{{ $('Process File Chunks').item.json.source }}'\n)\nRETURNING id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1024,
+        272
+      ],
       "id": "98a5b708-8962-45d5-8937-1918e68ce91a",
-      "name": "Store in KB",
+      "name": "Insert to Neon",
       "credentials": {
         "postgres": {
           "id": "9VZuQcfK90oMX16w",
@@ -122,56 +157,12 @@
     },
     {
       "parameters": {
-        "jsonMode": "expressionData",
-        "jsonData": "={{ $('Process File').item.json.content }}",
-        "options": {
-          "metadata": {
-            "metadataValues": [
-              {
-                "name": "user_id",
-                "value": "={{ $('Process File').item.json.userID }}"
-              },
-              {
-                "name": "category",
-                "value": "={{ $('Process File').item.json.category }}"
-              },
-              {
-                "name": "file_name",
-                "value": "={{ $('Process File').item.json.file_name }}"
-              },
-              {
-                "name": "file_type",
-                "value": "={{ $('Process File').item.json.file_type }}"
-              },
-              {
-                "name": "timestamp",
-                "value": "={{ new Date().toISOString() }}"
-              },
-              {
-                "name": "source",
-                "value": "file_upload"
-              }
-            ]
-          }
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
-      "typeVersion": 1.1,
-      "position": [
-        912,
-        448
-      ],
-      "id": "110c4b25-34fe-41b1-b55b-17ff7f3349d3",
-      "name": "Data Loader"
-    },
-    {
-      "parameters": {
-        "jsCode": "const processed = $('Process File').first().json;\n\nreturn {\n  json: {\n    success: true,\n    action: 'file_uploaded',\n    user_id: processed.userID,\n    file_name: processed.file_name,\n    file_type: processed.file_type,\n    category: processed.category,\n    timestamp: new Date().toISOString()\n  }\n};"
+        "jsCode": "// Collect all inserted chunk IDs and return final response\nconst allItems = $input.all();\nconst insertedIds = allItems.map(item => item.json?.id || null).filter(Boolean);\n\nconst input = $('When Called').first().json;\nconst fileName = input.file_name || 'uploaded_file';\n\nreturn {\n  json: {\n    success: true,\n    action: 'file_uploaded',\n    user_id: input.userID,\n    file_name: fileName,\n    file_type: input.file_type || '',\n    category: input.category || 'documents',\n    chunks_inserted: insertedIds.length,\n    inserted_ids: insertedIds,\n    timestamp: new Date().toISOString()\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1088,
+        1264,
         272
       ],
       "id": "1d23c531-4757-43c5-b57f-f0002b82a85b",
@@ -184,63 +175,52 @@
       "main": [
         [
           {
-            "node": "Fetch File",
+            "node": "Extract Text (Backend)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Fetch File": {
+    "Extract Text (Backend)": {
       "main": [
         [
           {
-            "node": "Process File",
+            "node": "Process File Chunks",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Process File": {
+    "Process File Chunks": {
       "main": [
         [
           {
-            "node": "Store in KB",
+            "node": "Get Embedding",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Data Loader": {
-      "ai_document": [
+    "Get Embedding": {
+      "main": [
         [
           {
-            "node": "Store in KB",
-            "type": "ai_document",
+            "node": "Insert to Neon",
+            "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Store in KB": {
+    "Insert to Neon": {
       "main": [
         [
           {
             "node": "Response",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenRouter Embeddings": {
-      "ai_embedding": [
-        [
-          {
-            "node": "Store in KB",
-            "type": "ai_embedding",
             "index": 0
           }
         ]
