@@ -964,7 +964,7 @@ export default function IntegrationsSettings() {
     }
 
     try {
-      const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts`;
+      const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
       
       const response = await fetch(accountsUrl, {
         method: 'GET',
@@ -1011,7 +1011,7 @@ export default function IntegrationsSettings() {
         // Check if we have any OAuth connections by calling /accounts endpoint
         // After OAuth completes, GHL returns the OAuth ID in the response
         // This matches GHL's exact flow: first call /accounts, then use OAuth ID to fetch available pages
-        const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts`;
+        const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
         
         const response = await fetch(accountsUrl, {
           method: 'GET',
