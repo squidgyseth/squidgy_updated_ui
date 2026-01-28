@@ -146,28 +146,27 @@ export default function PersonalisationSettings() {
   };
 
   const loadAgentCustomization = async (agentId: string, agent: Agent) => {
-    if (!profile?.user_id || !profile?.company_id) return;
-    
+    if (!profile?.user_id) return;
+
     try {
       const { supabase } = await import('../lib/supabase');
-      
+
       const { data, error } = await supabase
-        .from('assistant_customization')
+        .from('assistant_personalizations')
         .select('*')
         .eq('user_id', profile.user_id)
-        .eq('company_id', profile.company_id)
-        .eq('agent_id', agentId)
+        .eq('assistant_id', agentId)
         .single();
-      
+
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
         console.error('Error loading customization:', error);
         return;
       }
-      
+
       if (data) {
         // Load existing customization
-        setAssistantName(data.assistant_name);
-        const savedTones = data.assistant_tone.split(',').map((tone: string) => tone.trim()) as AssistantTone[];
+        setAssistantName(data.custom_name || agent.name);
+        const savedTones = (data.communication_tone || 'friendly').split(',').map((tone: string) => tone.trim()) as AssistantTone[];
         setSelectedTones(savedTones);
       } else {
         // No existing customization, use defaults
@@ -183,24 +182,23 @@ export default function PersonalisationSettings() {
   };
 
   const checkExistingCustomizations = async (agentList: Agent[]) => {
-    if (!profile?.user_id || !profile?.company_id) return;
-    
+    if (!profile?.user_id) return;
+
     try {
       const { supabase } = await import('../lib/supabase');
-      
+
       const { data, error } = await supabase
-        .from('assistant_customization')
-        .select('agent_id')
-        .eq('user_id', profile.user_id)
-        .eq('company_id', profile.company_id);
-      
+        .from('assistant_personalizations')
+        .select('assistant_id')
+        .eq('user_id', profile.user_id);
+
       if (error) {
         console.error('Error checking customizations:', error);
         return;
       }
-      
-      const customizedAgentIds = data?.map(item => item.agent_id) || [];
-      
+
+      const customizedAgentIds = data?.map(item => item.assistant_id) || [];
+
       setAgents(prev => prev.map(agent => ({
         ...agent,
         hasCustomization: customizedAgentIds.includes(agent.id)
@@ -223,7 +221,7 @@ export default function PersonalisationSettings() {
   };
 
   const handleSave = async () => {
-    if (!profile?.user_id || !profile?.company_id || !selectedAgent) {
+    if (!profile?.user_id || !selectedAgent) {
       toast.error('Please log in and select an agent');
       return;
     }
@@ -235,41 +233,54 @@ export default function PersonalisationSettings() {
 
     try {
       setSaving(true);
-      
+
       const { supabase } = await import('../lib/supabase');
-      
-      // Prepare customization data for this specific agent
-      const customizationData = {
-        user_id: profile.user_id,
-        company_id: profile.company_id,
-        agent_id: selectedAgent.id,
-        assistant_name: assistantName.trim(),
-        assistant_tone: selectedTones.join(','), // Store multiple tones as comma-separated
-        avatar_url: selectedAgent.avatar,
-        specialization: selectedAgent.description,
-        updated_at: new Date().toISOString()
+
+      const updateFields = {
+        custom_name: assistantName.trim(),
+        communication_tone: selectedTones.join(','),
+        last_updated: new Date().toISOString()
       };
 
-      console.log('Saving agent customization:', customizationData);
+      console.log('Saving agent customization:', { assistant_id: selectedAgent.id, ...updateFields });
 
-      // Use upsert to handle both insert and update for this user+agent combination
-      const { error } = await supabase
-        .from('assistant_customization')
-        .upsert(customizationData, {
-          onConflict: 'user_id,company_id,agent_id',
-          ignoreDuplicates: false
-        });
+      // Check if a row already exists for this user+agent
+      const { data: existing } = await supabase
+        .from('assistant_personalizations')
+        .select('id')
+        .eq('user_id', profile.user_id)
+        .eq('assistant_id', selectedAgent.id)
+        .single();
+
+      let error;
+      if (existing) {
+        // Update existing row
+        ({ error } = await supabase
+          .from('assistant_personalizations')
+          .update(updateFields)
+          .eq('user_id', profile.user_id)
+          .eq('assistant_id', selectedAgent.id));
+      } else {
+        // Insert new row
+        ({ error } = await supabase
+          .from('assistant_personalizations')
+          .insert({
+            user_id: profile.user_id,
+            assistant_id: selectedAgent.id,
+            ...updateFields
+          }));
+      }
 
       if (error) {
-        console.error('Supabase upsert error:', error);
+        console.error('Supabase save error:', error);
         throw new Error(error.message || 'Failed to save assistant customization');
       }
-      
+
       toast.success(`${selectedAgent.name} customization saved successfully!`);
-      
+
       // Update the customization indicator for this agent
-      setAgents(prev => prev.map(agent => 
-        agent.id === selectedAgent.id 
+      setAgents(prev => prev.map(agent =>
+        agent.id === selectedAgent.id
           ? { ...agent, hasCustomization: true }
           : agent
       ));
