@@ -564,14 +564,12 @@ export default function IntegrationsSettings() {
   };
 
   const handleGoogleCalendarConnect = () => {
-    if (!locationId) {
-      alert('Unable to connect: Location ID not found. Please ensure you have a GHL subaccount set up.');
+    if (!locationId || !ghlUserId) {
+      alert('Unable to connect: Location ID or User ID not found. Please ensure you have a GHL subaccount set up.');
       return;
     }
     
-    // Use hardcoded userId that works for this account
-    const userId = 'k2uP8MkaoPU3Xas79npg';
-    const oauthUrl = `https://services.leadconnectorhq.com/social-media-posting/oauth/google/start?locationId=${locationId}&userId=${userId}`;
+    const oauthUrl = `https://services.leadconnectorhq.com/social-media-posting/oauth/google/start?locationId=${locationId}&userId=${ghlUserId}`;
     
     // Open in a centered popup window
     const width = 600;
