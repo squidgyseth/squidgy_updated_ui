@@ -1008,7 +1008,45 @@ export default function IntegrationsSettings() {
         attempts++;
         console.log(`📱 Polling for social media OAuth connections (attempt ${attempts}/${maxAttempts})...`);
         
-        // Fetch all accounts (connected + available to connect) with fetchAll=true
+        // First, try to get OAuth connections to find the oAuthId
+        const connectionsUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/connections`;
+        
+        try {
+          const connectionsResponse = await fetch(connectionsUrl, {
+            method: 'GET',
+            headers: {
+              'token-id': firebaseToken,
+              'version': '2021-07-28',
+              'channel': 'APP',
+              'source': 'WEB_USER',
+              'accept': 'application/json'
+            }
+          });
+
+          if (connectionsResponse.ok) {
+            const connectionsData = await connectionsResponse.json();
+            console.log('✅ OAuth connections response:', connectionsData);
+            
+            // Look for the platform-specific OAuth connection
+            if (connectionsData.connections && connectionsData.connections.length > 0) {
+              const platformConnection = connectionsData.connections.find((conn: any) => 
+                conn.platform?.toLowerCase() === platform.toLowerCase()
+              );
+              
+              if (platformConnection && platformConnection.id) {
+                const oAuthId = platformConnection.id;
+                console.log(`✅ Found ${platform} OAuth connection with ID:`, oAuthId);
+                await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
+                setSocialMediaLoading(false);
+                return; // Stop polling
+              }
+            }
+          }
+        } catch (connectionsError) {
+          console.log('⚠️ OAuth connections endpoint not available, falling back to accounts endpoint');
+        }
+        
+        // Fallback: Fetch all accounts (connected + available to connect) with fetchAll=true
         const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
         
         const response = await fetch(accountsUrl, {
