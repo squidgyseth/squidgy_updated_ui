@@ -1008,49 +1008,9 @@ export default function IntegrationsSettings() {
         attempts++;
         console.log(`📱 Polling for social media OAuth connections (attempt ${attempts}/${maxAttempts})...`);
         
-        // Try to fetch available pages directly from OAuth endpoint
-        // This endpoint should return pages available to connect after OAuth
-        const oauthPagesUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/pages`;
-        
-        try {
-          const oauthPagesResponse = await fetch(oauthPagesUrl, {
-            method: 'GET',
-            headers: {
-              'token-id': firebaseToken,
-              'version': '2021-07-28',
-              'channel': 'APP',
-              'source': 'WEB_USER',
-              'accept': 'application/json'
-            }
-          });
-
-          if (oauthPagesResponse.ok) {
-            const pagesData = await oauthPagesResponse.json();
-            console.log(`✅ OAuth ${platform} pages response:`, pagesData);
-            
-            // If we got pages, show them for selection
-            if (pagesData.pages && pagesData.pages.length > 0) {
-              console.log(`✅ Found ${pagesData.pages.length} available ${platform} pages`);
-              
-              // Set the pages for display
-              if (platform === 'facebook') {
-                setSocialMediaPages(pagesData.pages);
-              } else {
-                setSocialMediaPages(pagesData.pages);
-              }
-              
-              // Store the OAuth ID if provided
-              if (pagesData.oauthId) {
-                setSocialMediaOAuthId(pagesData.oauthId);
-              }
-              
-              setSocialMediaLoading(false);
-              return; // Stop polling
-            }
-          }
-        } catch (oauthPagesError) {
-          console.log(`⚠️ OAuth ${platform} pages endpoint returned error, continuing to poll...`);
-        }
+        // Check if we have any OAuth connections by looking at accounts with fetchAll
+        // After OAuth completes, GHL creates an OAuth connection but doesn't auto-connect accounts
+        // We need to find the OAuth ID from the accounts response
         
         // Fallback: Fetch all accounts (connected + available to connect) with fetchAll=true
         const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
@@ -1070,9 +1030,28 @@ export default function IntegrationsSettings() {
           const data = await response.json();
           console.log('✅ All accounts response (fetchAll=true):', data);
           
-          // Check if we have accounts with oauthId
+          // Check for OAuth ID in groups array (this is where GHL stores OAuth connections)
+          if (data.success && data.results && data.results.groups && data.results.groups.length > 0) {
+            console.log('📦 Found groups (OAuth connections):', data.results.groups);
+            
+            // Find the platform-specific OAuth group
+            const platformGroup = data.results.groups.find((group: any) => 
+              group.platform?.toLowerCase() === platform.toLowerCase()
+            );
+            
+            if (platformGroup && platformGroup.oauthId) {
+              const oAuthId = platformGroup.oauthId;
+              console.log(`✅ Found ${platform} OAuth ID from groups:`, oAuthId);
+              console.log(`🔗 Fetching available ${platform} pages...`);
+              
+              await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
+              setSocialMediaLoading(false);
+              return; // Stop polling
+            }
+          }
+          
+          // Fallback: Check if we have already-connected accounts with oauthId
           if (data.success && data.results && data.results.accounts && data.results.accounts.length > 0) {
-            // Filter accounts by platform
             const platformAccounts = data.results.accounts.filter((acc: any) => acc.platform === platform);
             
             if (platformAccounts.length > 0) {
@@ -1080,21 +1059,16 @@ export default function IntegrationsSettings() {
               const oAuthId = account.oauthId;
               
               console.log(`✅ Found ${platform} account with OAuth ID:`, oAuthId);
-              console.log(`🔗 Will fetch ${platform} accounts from:`, `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`);
               
               if (oAuthId) {
                 await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
                 setSocialMediaLoading(false);
                 return; // Stop polling
-              } else {
-                console.warn(`⚠️ ${platform} account found but no oauthId, will retry...`);
               }
-            } else {
-              console.log(`⏳ No ${platform} accounts found yet, waiting for OAuth completion...`);
             }
-          } else {
-            console.log('⏳ No accounts found yet, waiting for OAuth completion...');
           }
+          
+          console.log(`⏳ No ${platform} OAuth connection found yet, waiting...`);
         }
         
         // If we haven't found OAuth connection yet and haven't exceeded max attempts, poll again
