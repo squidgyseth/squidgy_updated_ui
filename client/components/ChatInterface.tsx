@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { sendToSethAgent } from "../lib/n8nService";
 import LinkDetectingTextArea from "./ui/LinkDetectingTextArea";
+import StreamingChatMessage from "./chat/StreamingChatMessage";
 
 interface Message {
-  type: 'user' | 'bot';
+  type: 'user' | 'bot' | 'demo_stream';
   content: string;
   timestamp: string;
+  isStreaming?: boolean;
 }
 
 interface ChatInterfaceProps {
@@ -19,7 +21,7 @@ interface ChatInterfaceProps {
  * In a real application, this would come from authentication
  */
 const generateUserId = (): string => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = Math.random() * 16 | 0;
     const v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
@@ -27,23 +29,71 @@ const generateUserId = (): string => {
 };
 
 
-export function ChatInterface({ 
-  agentName = "Seth agent", 
+import { useEffect, useRef } from 'react';
+
+export function ChatInterface({
+  agentName = "Seth agent",
   agentDescription = "Business Setup Assistant",
-  context = "business_setup" 
+  context = "business_setup"
 }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const initialMessages: Message[] = [];
+
+    // Add demo message ONLY with ?demo=1 flag
+    const isDemoMode = new URLSearchParams(window.location.search).has('demo');
+    if (isDemoMode) {
+      initialMessages.push({
+        type: 'demo_stream',
+        content: '',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    }
+
+    initialMessages.push({
       type: 'bot',
       content: '👋 Hey, I\'m Seth, your AI assistant! I\'m here to help you set up your business details. How can I assist you today?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
+    });
+
+    return initialMessages;
+  });
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Enhanced auto-scroll for streaming content using ResizeObserver
+  useEffect(() => {
+    if (!scrollAreaRef.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      const isAnyMessageStreaming = messages.some(m => m.isStreaming);
+      if (isAnyMessageStreaming) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }
+    });
+
+    const scrollContent = scrollAreaRef.current.firstElementChild;
+    if (scrollContent) {
+      resizeObserver.observe(scrollContent);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, [messages]);
+
+  const handleStreamComplete = (index: number) => {
+    setMessages(prev => prev.map((msg, i) =>
+      i === index ? { ...msg, isStreaming: false } : msg
+    ));
+  };
 
   const generateUserId = (): string => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
       const r = Math.random() * 16 | 0;
       const v = c == 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
@@ -90,10 +140,10 @@ export function ChatInterface({
       }
 
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       // Ensure URL has protocol
       const formattedUrl = url.startsWith('http') ? url : `https://${url}`;
-      
+
       // Call the real backend analysis (this will hit your actual backend)
       const response = await fetch('/api/website/full-analysis', {
         method: 'POST',
@@ -109,7 +159,7 @@ export function ChatInterface({
 
       if (response.ok) {
         const result = await response.json();
-        
+
         // Show success message
         const successMessage: Message = {
           type: 'bot',
@@ -158,7 +208,7 @@ export function ChatInterface({
       const urlMatch = messageContent.match(/(https?:\/\/[^\s]+)/g);
       if (urlMatch && urlMatch[0]) {
         console.log('🔍 Website URL detected:', urlMatch[0]);
-        
+
         // Show website analysis loading indicators
         const loadingMessage: Message = {
           type: 'bot',
@@ -166,7 +216,7 @@ export function ChatInterface({
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
         setMessages(prev => [...prev, loadingMessage]);
-        
+
         // Trigger website analysis
         await handleWebsiteAnalysis(urlMatch[0]);
         return;
@@ -177,23 +227,23 @@ export function ChatInterface({
       if (!userId) {
         userId = generateUserId();
       }
-      
+
       // Generate session ID based on context and timestamp
       const sessionId = `${userId}_PersonalAssistant_${Date.now()}`;
-      
+
       // Use the updated N8N service with proper payload format
-      const result = await sendToSethAgent(
+      const result: any = await sendToSethAgent(
         userId,
         messageContent,
         sessionId
       );
 
       // console.log('N8N Service result:', result);
-      
+
       // Handle N8N response - check for various possible response formats
       if (result) {
         let botContent = null;
-        
+
         // Check for different possible response properties
         if (result.agent_response) {
           botContent = result.agent_response;
@@ -216,12 +266,13 @@ export function ChatInterface({
           console.log('N8N response structure:', Object.keys(result));
           botContent = 'I received your message and I\'m processing it. The response format is being configured.';
         }
-        
+
         if (botContent) {
           const botMessage: Message = {
             type: 'bot',
             content: botContent,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isStreaming: true
           };
           setMessages(prev => [...prev, botMessage]);
         }
@@ -287,36 +338,50 @@ export function ChatInterface({
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div
+        ref={scrollAreaRef}
+        className="flex-1 p-4 overflow-y-auto"
+      >
         <div className="space-y-4">
           {messages.map((message, index) => (
-            <div key={index} className={`${
-              message.type === 'user' ? 'ml-8 flex flex-col items-end' : 'mr-8'
-            }`}>
-              <div className={`${
-                message.type === 'user' 
-                  ? 'bg-gray-100 rounded-xl p-3 max-w-[80%]' 
-                  : 'bg-gray-50 rounded-lg p-3'
+            <div key={index} className={`${message.type === 'user' ? 'ml-8 flex flex-col items-end' : 'mr-8'
               }`}>
-                <LinkDetectingTextArea 
-                  content={message.content}
-                  className="text-text-primary text-sm leading-relaxed whitespace-pre-line"
-                />
-              </div>
-              <p className={`text-text-subtle text-xs mt-1 ${
-                message.type === 'user' ? 'text-right' : 'text-left'
-              }`}>
-                {message.timestamp}
-              </p>
+              {message.type === 'demo_stream' ? (
+                <div className="w-full">
+                  <StreamingChatMessage />
+                  <p className="text-text-subtle text-xs mt-1 text-left">
+                    {message.timestamp}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className={`${message.type === 'user'
+                    ? 'bg-gray-100 rounded-xl p-3 max-w-[80%]'
+                    : 'bg-gray-50 rounded-lg p-3'
+                    }`}>
+                    <LinkDetectingTextArea
+                      content={message.content}
+                      className="text-text-primary text-sm leading-relaxed whitespace-pre-line"
+                      shouldStream={message.isStreaming}
+                      onStreamComplete={() => handleStreamComplete(index)}
+                    />
+                  </div>
+                  <p className={`text-text-subtle text-xs mt-1 ${message.type === 'user' ? 'text-right' : 'text-left'
+                    }`}>
+                    {message.timestamp}
+                  </p>
+                </>
+              )}
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
       {/* Input */}
       <div className="p-4 border-t border-grey-700">
         <div className="flex items-center gap-2 border border-grey-500 rounded-xl p-2">
-          <input 
+          <input
             type="text"
             placeholder="Your message..."
             className="flex-1 bg-transparent border-none outline-none text-text-primary placeholder-text-subtle text-sm"
@@ -325,7 +390,7 @@ export function ChatInterface({
             onKeyPress={handleKeyPress}
             disabled={isLoading}
           />
-          <button 
+          <button
             onClick={sendMessage}
             disabled={isLoading || !inputMessage.trim()}
             className="p-2 rounded-lg bg-squidgy-purple hover:bg-squidgy-purple/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

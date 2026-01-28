@@ -93,6 +93,8 @@ export interface ChatMessage {
   timestamp: Date;
   status?: AgentStatus;
   isHtml?: boolean;
+  type?: 'demo_stream' | 'regular';
+  isStreaming?: boolean;
   fileUpload?: FileUploadInfo;
   content_repurposer_history_id?: string; // Database record ID for content repurposer
 }
