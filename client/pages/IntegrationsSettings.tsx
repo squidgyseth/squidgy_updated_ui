@@ -1029,51 +1029,37 @@ export default function IntegrationsSettings() {
           console.log('✅ Accounts response:', data);
           console.log('📊 Response structure:', {
             hasResults: !!data.results,
-            hasPages: !!data.results?.pages,
-            pagesLength: data.results?.pages?.length || 0,
-            pages: data.results?.pages
+            hasAccounts: !!data.results?.accounts,
+            accountsLength: data.results?.accounts?.length || 0,
+            accounts: data.results?.accounts
           });
           
-          // GHL returns pages directly with OAuth ID in the response
-          // The response structure is: { results: { pages: [...] } }
-          // Each page may have an oauthId or the response may have it at a different level
-          if (data.success && data.results) {
-            // Check if we have pages (this means OAuth completed and GHL has the connection)
-            if (data.results.pages && data.results.pages.length > 0) {
-              console.log(`✅ Found ${data.results.pages.length} ${platform} pages in response`);
+          // Extract OAuth ID from accounts array
+          // After OAuth completes, GHL returns accounts with oauthId field
+          if (data.success && data.results && data.results.accounts && data.results.accounts.length > 0) {
+            console.log(`✅ Found ${data.results.accounts.length} account(s) in response`);
+            
+            // Filter by platform if multiple accounts exist
+            const platformAccounts = data.results.accounts.filter((acc: any) => 
+              acc.platform?.toLowerCase() === platform.toLowerCase()
+            );
+            
+            const account = platformAccounts.length > 0 ? platformAccounts[0] : data.results.accounts[0];
+            const oAuthId = account.oauthId;
+            
+            if (oAuthId) {
+              console.log(`✅ Found ${platform} OAuth ID from accounts:`, oAuthId);
+              console.log(`🔗 Fetching available ${platform} pages with OAuth ID...`);
               
-              // Look for OAuth ID in the response
-              // It might be in the first page, or in a separate field
-              let oAuthId = null;
-              
-              // Check if there's an oauthId field at the results level
-              if (data.results.oauthId) {
-                oAuthId = data.results.oauthId;
-              }
-              // Or check the first page for oauthId
-              else if (data.results.pages[0]?.oauthId) {
-                oAuthId = data.results.pages[0].oauthId;
-              }
-              
-              if (oAuthId) {
-                console.log(`✅ Found ${platform} OAuth ID:`, oAuthId);
-                console.log(`🔗 Fetching available ${platform} pages with OAuth ID...`);
-                
-                await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
-                setSocialMediaLoading(false);
-                return; // Stop polling
-              } else {
-                // If we have pages but no OAuth ID, the pages themselves might be the final result
-                console.log(`✅ Got ${platform} pages directly, displaying them...`);
-                setSocialMediaPages(data.results.pages);
-                setShowSocialMediaPages(true);
-                setSocialMediaLoading(false);
-                return;
-              }
+              await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
+              setSocialMediaLoading(false);
+              return; // Stop polling
+            } else {
+              console.warn(`⚠️ Account found but no oauthId, will retry...`);
             }
+          } else {
+            console.log(`⏳ No accounts found yet, waiting for OAuth completion...`);
           }
-          
-          console.log(`⏳ No ${platform} pages found yet, waiting for OAuth completion...`);
         }
         
         // If we haven't found OAuth connection yet and haven't exceeded max attempts, poll again
