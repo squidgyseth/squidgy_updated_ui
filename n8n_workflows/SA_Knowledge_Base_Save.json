@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## SA_Knowledge_Base_Save Workflow\n\nWebhook-triggered workflow for saving user knowledge to Neon Postgres.\nCalled from Agent Settings page (frontend).\n\n### Accepts:\n- type: 'text' → Custom instructions\n- type: 'file' → File URL (already in Supabase Storage)\n\n### Flow:\n1. Receive webhook: { user_id, agent_id, type, content/file_url, category }\n2. Route by type (text vs file)\n3. For files: fetch content from URL\n4. Smart delete similar entries (dedup)\n5. Generate embedding (OpenRouter)\n6. INSERT into user_vector_knowledge_base (Neon)\n7. Return success response\n\n### Table: user_vector_knowledge_base\nColumns: user_id, document, category, embedding, source",
+        "content": "## SA_Knowledge_Base_Save Workflow\n\nWebhook-triggered workflow for saving user knowledge to Neon Postgres.\nCalled from Agent Settings page (frontend).\n\n### Accepts:\n- type: 'text' → Custom instructions\n- type: 'file' → File URL (already in Supabase Storage)\n\n### Flow:\n1. Receive webhook: { user_id, agent_id, type, content/file_url, category }\n2. Route by type (text vs file)\n3. For files: fetch content from URL\n4. Generate embedding (OpenRouter)\n5. INSERT into user_vector_knowledge_base (Neon)\n6. Return success response\n\n### Table: user_vector_knowledge_base\nColumns: user_id, document, category, embedding, source",
         "height": 584,
         "width": 420,
         "color": 6
@@ -117,41 +117,6 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extract key terms for smart duplicate detection\nconst input = $input.first().json;\nconst document = input.document || '';\n\nconst keyTerms = document\n  .toLowerCase()\n  .replace(/[^a-z0-9\\s]/g, ' ')\n  .split(/\\s+/)\n  .filter(word => word.length > 3)\n  .slice(0, 10)\n  .join(' ');\n\nreturn {\n  json: {\n    ...input,\n    keyTerms: keyTerms\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1600,
-        272
-      ],
-      "id": "3ed52a6b-7977-4604-9c4e-61ff7d0cf5f8",
-      "name": "Extract Key Terms"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "-- Smart delete: remove semantically similar entries in same category\nWITH similar_entries AS (\n  SELECT id, document,\n    similarity(LOWER(document), LOWER('{{ $json.keyTerms }}')) as sim_score\n  FROM public.user_vector_knowledge_base\n  WHERE user_id = '{{ $json.user_id }}'\n    AND category = '{{ $json.category }}'\n    AND LOWER(document) % LOWER('{{ $json.keyTerms }}')\n)\nDELETE FROM public.user_vector_knowledge_base\nWHERE id IN (\n  SELECT id FROM similar_entries WHERE sim_score > 0.3\n)\nRETURNING id, LEFT(document, 100) as deleted_preview;",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        1824,
-        272
-      ],
-      "id": "cfe29440-9146-49a0-9d00-96caf28562e2",
-      "name": "Smart Delete Similar",
-      "credentials": {
-        "postgres": {
-          "id": "9VZuQcfK90oMX16w",
-          "name": "Neon Postgres"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
         "method": "POST",
         "url": "https://openrouter.ai/api/v1/embeddings",
         "sendHeaders": true,
@@ -176,7 +141,7 @@
             },
             {
               "name": "input",
-              "value": "={{ $('Extract Key Terms').item.json.document }}"
+              "value": "={{ $('Merge Paths').item.json.document }}"
             }
           ]
         },
@@ -185,7 +150,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2048,
+        1600,
         272
       ],
       "id": "eb2a6e92-99a9-4a9d-8202-52354aad7b6a",
@@ -194,13 +159,13 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO public.user_vector_knowledge_base (user_id, document, category, embedding, source)\nVALUES (\n  '{{ $('Extract Key Terms').item.json.user_id }}',\n  '{{ $('Extract Key Terms').item.json.document.replace(/'/g, \"''\").replace(/\\n/g, ' ') }}',\n  '{{ $('Extract Key Terms').item.json.category }}',\n  '{{ JSON.stringify($json.data[0].embedding) }}',\n  '{{ $('Extract Key Terms').item.json.source }}'\n)\nRETURNING id;",
+        "query": "INSERT INTO public.user_vector_knowledge_base (user_id, document, category, embedding, source)\nVALUES (\n  '{{ $('Merge Paths').item.json.user_id }}',\n  '{{ $('Merge Paths').item.json.document.replace(/'/g, \"''\").replace(/\\n/g, ' ') }}',\n  '{{ $('Merge Paths').item.json.category }}',\n  '{{ JSON.stringify($json.data[0].embedding) }}',\n  '{{ $('Merge Paths').item.json.source }}'\n)\nRETURNING id;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2272,
+        1824,
         272
       ],
       "id": "7a106108-f513-4d8d-8db4-1e8449536fa0",
@@ -214,12 +179,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const trigger = $('Extract Key Terms').first().json;\nconst inserted = $input.first().json;\nconst deleted = $('Smart Delete Similar').first().json;\n\nconst deletedCount = Array.isArray(deleted) ? deleted.length : 0;\n\nreturn {\n  json: {\n    success: true,\n    action: 'knowledge_saved',\n    user_id: trigger.user_id,\n    agent_id: trigger.agent_id,\n    category: trigger.category,\n    source: trigger.source,\n    duplicates_removed: deletedCount,\n    inserted_id: inserted?.id || null,\n    timestamp: new Date().toISOString()\n  }\n};"
+        "jsCode": "const trigger = $('Merge Paths').first().json;\nconst inserted = $input.first().json;\n\nreturn {\n  json: {\n    success: true,\n    action: 'knowledge_saved',\n    user_id: trigger.user_id,\n    agent_id: trigger.agent_id,\n    category: trigger.category,\n    source: trigger.source,\n    inserted_id: inserted?.id || null,\n    timestamp: new Date().toISOString()\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2496,
+        2048,
         272
       ],
       "id": "b4558d59-ce3d-4ea6-857b-f9d3dc1d50c7",
@@ -291,28 +256,6 @@
       ]
     },
     "Merge Paths": {
-      "main": [
-        [
-          {
-            "node": "Extract Key Terms",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract Key Terms": {
-      "main": [
-        [
-          {
-            "node": "Smart Delete Similar",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Smart Delete Similar": {
       "main": [
         [
           {
