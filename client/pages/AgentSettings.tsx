@@ -172,8 +172,8 @@ export default function AgentSettings() {
         }).catch(err => console.error('n8n text save error:', err));
       }
 
-      // Handle file uploads — upload to Supabase Storage, then send to backend for extraction
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      // Handle file uploads — upload to Supabase Storage, then send URL to n8n
+      // n8n workflow calls backend /api/file/extract-text for proper text extraction
       for (const file of uploadedFiles) {
         try {
           const timestamp = Date.now();
@@ -192,19 +192,19 @@ export default function AgentSettings() {
             .from('newsletter')
             .getPublicUrl(fileName);
 
-          // Send to backend for proper text extraction (PDF, DOCX, etc.)
-          // Backend extracts text, then forwards to n8n for embedding + KB storage
-          const formData = new FormData();
-          formData.append('firm_user_id', userId);
-          formData.append('file_name', file.name);
-          formData.append('file_url', publicUrl);
-          formData.append('agent_id', agentId || 'personal_assistant');
-          formData.append('agent_name', agentConfig?.agent?.name || 'Personal Assistant');
-
-          fetch(`${backendUrl}/api/file/process`, {
+          // Send to n8n webhook — n8n will call backend to extract text
+          fetch(n8nUrl, {
             method: 'POST',
-            body: formData,
-          }).catch(err => console.error('Backend file process error:', err));
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: userId,
+              agent_id: agentId,
+              type: 'file',
+              file_url: publicUrl,
+              file_name: file.name,
+              category: 'documents'
+            })
+          }).catch(err => console.error('n8n file save error:', err));
         } catch (error) {
           console.error('Failed to upload file:', error);
         }
