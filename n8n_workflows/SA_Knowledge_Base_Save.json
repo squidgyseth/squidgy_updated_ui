@@ -103,7 +103,7 @@
     },
     {
       "parameters": {
-        "mode": "combine",
+        "mode": "append",
         "options": {}
       },
       "type": "n8n-nodes-base.merge",
