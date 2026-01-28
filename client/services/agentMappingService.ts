@@ -66,22 +66,39 @@ class AgentMappingService {
     // Lowercase the target text for matching
     const textLower = targetText.toLowerCase().trim();
 
-    // Check if text contains "agent" or "assistant" (bonus confirmation)
+    console.log(`🔍 Finding agent for: "${targetText}"`);
+
+    // Strategy 1: Match by agent display name (most reliable)
+    // e.g., "Social Media Manager" matches agent with name "Social Media Manager"
+    for (const agent of this.agents) {
+      const nameLower = agent.name.toLowerCase();
+      if (textLower.includes(nameLower) || nameLower.includes(textLower)) {
+        console.log(`✅ Matched by display name: "${agent.name}" (${agent.id})`);
+        return agent.id;
+      }
+    }
+
+    // Strategy 2: Match by agent ID words
+    // e.g., "social media agent" matches agent ID "social_media_agent"
     const hasAgentWord = textLower.includes('agent') || textLower.includes('assistant');
 
-    console.log(`🔍 Finding agent for: "${targetText}"`);
-    console.log(`   Has agent/assistant word: ${hasAgentWord}`);
-
-    // Find the best matching agent
-    // Agents are sorted by word count (most specific first)
     for (const agent of this.agents) {
-      // Check if ALL words from agent ID are present in the text
       const allWordsMatch = agent.words.every(word => textLower.includes(word));
 
       if (allWordsMatch && (hasAgentWord || agent.words.length >= 2)) {
-        // Match found! Either has "agent/assistant" word OR has multiple ID words
-        console.log(`✅ Matched: "${agent.name}" (${agent.id})`);
-        console.log(`   Words found: [${agent.words.join(', ')}]`);
+        console.log(`✅ Matched by ID words: "${agent.name}" (${agent.id})`);
+        return agent.id;
+      }
+    }
+
+    // Strategy 3: Match by significant name words (skip generic words)
+    // e.g., "Social Media Manager" -> significant words ["social", "media", "manager"]
+    // matches agent "Social Media Manager" with words ["social", "media"]
+    const genericWords = new Set(['agent', 'assistant', 'manager', 'the', 'with', 'and', 'for']);
+    for (const agent of this.agents) {
+      const nameWords = agent.name.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !genericWords.has(w));
+      if (nameWords.length > 0 && nameWords.every(word => textLower.includes(word))) {
+        console.log(`✅ Matched by name words: "${agent.name}" (${agent.id})`);
         return agent.id;
       }
     }

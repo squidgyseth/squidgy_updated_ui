@@ -170,6 +170,9 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
       if (chatMatch) {
         const agentName = chatMatch[1].trim();
 
+        // Ensure mappings are loaded before resolving
+        await agentMappingService.loadAgentMappings();
+
         // Try to get agent ID for navigation
         const agentId = agentMappingService.getAgentId(agentName);
 
