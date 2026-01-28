@@ -1029,6 +1029,15 @@ export default function IntegrationsSettings() {
         if (response.ok) {
           const data = await response.json();
           console.log('✅ All accounts response (fetchAll=true):', data);
+          console.log('📊 Response structure:', {
+            hasResults: !!data.results,
+            hasGroups: !!data.results?.groups,
+            groupsLength: data.results?.groups?.length || 0,
+            hasAccounts: !!data.results?.accounts,
+            accountsLength: data.results?.accounts?.length || 0,
+            groups: data.results?.groups,
+            accounts: data.results?.accounts
+          });
           
           // Check for OAuth ID in groups array (this is where GHL stores OAuth connections)
           if (data.success && data.results && data.results.groups && data.results.groups.length > 0) {
