@@ -912,8 +912,8 @@ export default function IntegrationsSettings() {
       if (popup && popup.closed) {
         clearInterval(checkPopup);
         window.removeEventListener('message', messageHandler);
-        // After OAuth, try to fetch OAuth connections and then accounts
-        fetchSocialMediaAccounts('facebook');
+        // Don't auto-fetch - user may have cancelled OAuth
+        console.log('Facebook OAuth popup closed');
       }
     }, 1000);
   };
@@ -954,8 +954,8 @@ export default function IntegrationsSettings() {
       if (popup && popup.closed) {
         clearInterval(checkPopup);
         window.removeEventListener('message', messageHandler);
-        // After OAuth, try to fetch OAuth connections and then accounts
-        fetchSocialMediaAccounts('instagram');
+        // Don't auto-fetch - user may have cancelled OAuth
+        console.log('Instagram OAuth popup closed');
       }
     }, 1000);
   };
@@ -1032,8 +1032,10 @@ export default function IntegrationsSettings() {
           
           // Check if we have accounts with oauthId
           if (data.success && data.results && data.results.accounts && data.results.accounts.length > 0) {
-            // Filter accounts by platform
-            const platformAccounts = data.results.accounts.filter((acc: any) => acc.platform === platform);
+            // Filter accounts by platform and exclude deleted accounts
+            const platformAccounts = data.results.accounts.filter((acc: any) => 
+              acc.platform === platform && !acc.deleted
+            );
             
             if (platformAccounts.length > 0) {
               const account = platformAccounts[0];
