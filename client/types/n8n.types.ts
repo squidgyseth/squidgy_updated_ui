@@ -43,7 +43,7 @@ export interface N8nResponse {
     agent_name: string;
     communication_tone?: string;
     target_audience?: string;
-    primary_goals?: string[];
+    primary_goals?: string;
     brand_voice?: string;
   };
   // Routing fields for Master Agent redirects

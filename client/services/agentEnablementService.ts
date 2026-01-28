@@ -344,8 +344,8 @@ class AgentEnablementService {
           }
 
           if (primaryGoals && primaryGoals !== 'REUSE_EXISTING') {
-            // Handle both array and string formats
-            profileUpdate.primary_goals = Array.isArray(primaryGoals) ? primaryGoals : [primaryGoals];
+            // Store as comma-separated string
+            profileUpdate.primary_goals = Array.isArray(primaryGoals) ? primaryGoals.join(', ') : primaryGoals;
           }
 
           if (Object.keys(profileUpdate).length > 0) {

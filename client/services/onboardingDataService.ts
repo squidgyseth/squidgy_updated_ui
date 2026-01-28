@@ -42,7 +42,7 @@ export interface CompanyDetails {
   city?: string;
   state?: string;
   time_zone?: string;
-  primary_goals?: string[];
+  primary_goals?: string;
   ai_experience_level?: string;
   preferred_working_hours?: string;
 }

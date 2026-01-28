@@ -309,3 +309,16 @@ FROM
   LEFT JOIN calendar_types ct ON ct.user_id = p.user_id
   LEFT JOIN notification_options no ON no.user_id = p.user_id
   LEFT JOIN business_types bt ON bt.user_id = p.user_id;
+
+-- Dependent view: user skip status (used by SA_Personal_Assistant workflow)
+DROP VIEW IF EXISTS public.vw_user_skip_status;
+
+CREATE OR REPLACE VIEW public.vw_user_skip_status AS
+SELECT
+  user_id,
+  has_completed_onboarding,
+  CASE
+    WHEN has_completed_onboarding THEN 'One-time configs: SKIP'
+    ELSE 'One-time configs: ASK'
+  END AS skip_status
+FROM vw_personal_assistant_config_llm;
