@@ -1008,11 +1008,12 @@ export default function IntegrationsSettings() {
         attempts++;
         console.log(`📱 Polling for social media OAuth connections (attempt ${attempts}/${maxAttempts})...`);
         
-        // First, try to get OAuth connections to find the oAuthId
-        const connectionsUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/connections`;
+        // Try to fetch available pages directly from OAuth endpoint
+        // This endpoint should return pages available to connect after OAuth
+        const oauthPagesUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/pages`;
         
         try {
-          const connectionsResponse = await fetch(connectionsUrl, {
+          const oauthPagesResponse = await fetch(oauthPagesUrl, {
             method: 'GET',
             headers: {
               'token-id': firebaseToken,
@@ -1023,27 +1024,32 @@ export default function IntegrationsSettings() {
             }
           });
 
-          if (connectionsResponse.ok) {
-            const connectionsData = await connectionsResponse.json();
-            console.log('✅ OAuth connections response:', connectionsData);
+          if (oauthPagesResponse.ok) {
+            const pagesData = await oauthPagesResponse.json();
+            console.log(`✅ OAuth ${platform} pages response:`, pagesData);
             
-            // Look for the platform-specific OAuth connection
-            if (connectionsData.connections && connectionsData.connections.length > 0) {
-              const platformConnection = connectionsData.connections.find((conn: any) => 
-                conn.platform?.toLowerCase() === platform.toLowerCase()
-              );
+            // If we got pages, show them for selection
+            if (pagesData.pages && pagesData.pages.length > 0) {
+              console.log(`✅ Found ${pagesData.pages.length} available ${platform} pages`);
               
-              if (platformConnection && platformConnection.id) {
-                const oAuthId = platformConnection.id;
-                console.log(`✅ Found ${platform} OAuth connection with ID:`, oAuthId);
-                await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
-                setSocialMediaLoading(false);
-                return; // Stop polling
+              // Set the pages for display
+              if (platform === 'facebook') {
+                setSocialMediaPages(pagesData.pages);
+              } else {
+                setSocialMediaPages(pagesData.pages);
               }
+              
+              // Store the OAuth ID if provided
+              if (pagesData.oauthId) {
+                setSocialMediaOAuthId(pagesData.oauthId);
+              }
+              
+              setSocialMediaLoading(false);
+              return; // Stop polling
             }
           }
-        } catch (connectionsError) {
-          console.log('⚠️ OAuth connections endpoint not available, falling back to accounts endpoint');
+        } catch (oauthPagesError) {
+          console.log(`⚠️ OAuth ${platform} pages endpoint returned error, continuing to poll...`);
         }
         
         // Fallback: Fetch all accounts (connected + available to connect) with fetchAll=true
