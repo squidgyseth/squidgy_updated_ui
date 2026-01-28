@@ -345,6 +345,7 @@ export default function IntegrationsSettings() {
       const response = await fetch(ghlBackendUrl, {
         method: 'GET',
         headers: {
+          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -398,6 +399,7 @@ export default function IntegrationsSettings() {
       const connectedResponse = await fetch(`${connectedPagesUrl}?getAll=true`, {
         method: 'GET',
         headers: {
+          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -418,6 +420,7 @@ export default function IntegrationsSettings() {
       const allPagesResponse = await fetch(`${allPagesUrl}?limit=100`, {
         method: 'GET',
         headers: {
+          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -817,6 +820,7 @@ export default function IntegrationsSettings() {
       const response = await fetch(ghlBackendUrl, {
         method: 'POST',
         headers: {
+          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -964,7 +968,7 @@ export default function IntegrationsSettings() {
     }
 
     try {
-      const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
+      const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts`;
       
       const response = await fetch(accountsUrl, {
         method: 'GET',
@@ -1009,9 +1013,7 @@ export default function IntegrationsSettings() {
         attempts++;
         console.log(`📱 Polling for social media OAuth connections (attempt ${attempts}/${maxAttempts})...`);
         
-        // Check if we have any OAuth connections by calling /accounts endpoint
-        // After OAuth completes, GHL returns the OAuth ID in the response
-        // This matches GHL's exact flow: first call /accounts, then use OAuth ID to fetch available pages
+        // Fetch all accounts (connected + available to connect) with fetchAll=true
         const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
         
         const response = await fetch(accountsUrl, {
@@ -1028,39 +1030,32 @@ export default function IntegrationsSettings() {
 
         if (response.ok) {
           const data = await response.json();
-          console.log('✅ Accounts response:', data);
-          console.log('📊 Response structure:', {
-            hasResults: !!data.results,
-            hasAccounts: !!data.results?.accounts,
-            accountsLength: data.results?.accounts?.length || 0,
-            accounts: data.results?.accounts
-          });
+          console.log('✅ All accounts response (fetchAll=true):', data);
           
-          // Extract OAuth ID from accounts array
-          // After OAuth completes, GHL returns accounts with oauthId field
+          // Check if we have accounts with oauthId
           if (data.success && data.results && data.results.accounts && data.results.accounts.length > 0) {
-            console.log(`✅ Found ${data.results.accounts.length} account(s) in response`);
+            // Filter accounts by platform
+            const platformAccounts = data.results.accounts.filter((acc: any) => acc.platform === platform);
             
-            // Filter by platform if multiple accounts exist
-            const platformAccounts = data.results.accounts.filter((acc: any) => 
-              acc.platform?.toLowerCase() === platform.toLowerCase()
-            );
-            
-            const account = platformAccounts.length > 0 ? platformAccounts[0] : data.results.accounts[0];
-            const oAuthId = account.oauthId;
-            
-            if (oAuthId) {
-              console.log(`✅ Found ${platform} OAuth ID from accounts:`, oAuthId);
-              console.log(`🔗 Fetching available ${platform} pages with OAuth ID...`);
+            if (platformAccounts.length > 0) {
+              const account = platformAccounts[0];
+              const oAuthId = account.oauthId;
               
-              await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
-              setSocialMediaLoading(false);
-              return; // Stop polling
+              console.log(`✅ Found ${platform} account with OAuth ID:`, oAuthId);
+              console.log(`🔗 Will fetch ${platform} accounts from:`, `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`);
+              
+              if (oAuthId) {
+                await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
+                setSocialMediaLoading(false);
+                return; // Stop polling
+              } else {
+                console.warn(`⚠️ ${platform} account found but no oauthId, will retry...`);
+              }
             } else {
-              console.warn(`⚠️ Account found but no oauthId, will retry...`);
+              console.log(`⏳ No ${platform} accounts found yet, waiting for OAuth completion...`);
             }
           } else {
-            console.log(`⏳ No accounts found yet, waiting for OAuth completion...`);
+            console.log('⏳ No accounts found yet, waiting for OAuth completion...');
           }
         }
         
@@ -1422,27 +1417,7 @@ export default function IntegrationsSettings() {
                         size="sm"
                         onClick={() => {
                           if (facebookOAuthUrl) {
-                            const popup = window.open(facebookOAuthUrl, 'FacebookOAuth', 'width=600,height=700');
-                            
-                            // Poll for popup closure
-                            if (popup) {
-                              const pollTimer = setInterval(() => {
-                                try {
-                                  if (popup.closed) {
-                                    clearInterval(pollTimer);
-                                    console.log('✅ Facebook OAuth popup closed, fetching pages...');
-                                    toast.info('Fetching Facebook pages...');
-                                    
-                                    // Wait 2 seconds for GHL to process OAuth, then fetch pages
-                                    setTimeout(() => {
-                                      fetchFacebookPagesFromGHL();
-                                    }, 2000);
-                                  }
-                                } catch (e) {
-                                  clearInterval(pollTimer);
-                                }
-                              }, 500);
-                            }
+                            window.open(facebookOAuthUrl, '_blank', 'width=600,height=700');
                           } else {
                             toast.error('OAuth URL not available. Please refresh the page.');
                           }
