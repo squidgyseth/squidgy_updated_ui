@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCompanyBranding } from "../hooks/useCompanyBranding";
 import { useUser } from "../hooks/useUser";
@@ -120,39 +120,32 @@ export default function Index() {
   }, [userId]);
 
   // Fetch enabled agents from assistant_personalizations
-  const fetchEnabledAgents = useCallback(async () => {
-    if (!userId) return;
+  useEffect(() => {
+    const fetchEnabledAgents = async () => {
+      if (!userId) return;
 
-    try {
-      const { data, error } = await supabase
-        .from('assistant_personalizations')
-        .select('assistant_id')
-        .eq('user_id', userId)
-        .eq('is_enabled', true);
+      try {
+        const { data, error } = await supabase
+          .from('assistant_personalizations')
+          .select('assistant_id')
+          .eq('user_id', userId)
+          .eq('is_enabled', true);
 
-      if (error) {
-        console.error('❌ Dashboard: Error fetching enabled agents:', error);
-        return;
+        if (error) {
+          console.error('❌ Dashboard: Error fetching enabled agents:', error);
+          return;
+        }
+
+        const agentIds = data?.map((row: { assistant_id: string }) => row.assistant_id) || [];
+        setEnabledAgentIds(agentIds);
+        console.log('✅ Dashboard: Enabled agents:', agentIds);
+      } catch (error) {
+        console.error('❌ Dashboard: Error in fetchEnabledAgents:', error);
       }
+    };
 
-      const agentIds = data?.map((row: { assistant_id: string }) => row.assistant_id) || [];
-      setEnabledAgentIds(agentIds);
-      console.log('✅ Dashboard: Enabled agents:', agentIds);
-    } catch (error) {
-      console.error('❌ Dashboard: Error in fetchEnabledAgents:', error);
-    }
-  }, [userId]);
-
-  useEffect(() => {
     fetchEnabledAgents();
-  }, [fetchEnabledAgents]);
-
-  // Listen for agent enablement events to refresh dashboard
-  useEffect(() => {
-    const handler = () => fetchEnabledAgents();
-    window.addEventListener('agent-enabled', handler);
-    return () => window.removeEventListener('agent-enabled', handler);
-  }, [fetchEnabledAgents]);
+  }, [userId]);
 
   const desktopLayout = (
     <div className="h-screen overflow-y-auto bg-white">

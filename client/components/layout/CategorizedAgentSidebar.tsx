@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CreateGroupChatModal from '../modals/CreateGroupChatModal';
 import OptimizedAgentService from '../../services/optimizedAgentService';
@@ -29,22 +29,20 @@ export default function CategorizedAgentSidebar() {
   const [categories, setCategories] = useState<AssistantCategory[]>([]);
   const [selectedAssistant, setSelectedAssistant] = useState<string | null>(null);
 
-  // Use ref to always have the latest loadAgentsFromYAML without stale closures
-  const loadAgentsRef = useRef(loadAgentsFromYAML);
-  loadAgentsRef.current = loadAgentsFromYAML;
-
   useEffect(() => {
     loadAgentsFromYAML();
   }, []);
 
-  // Expose refresh function to window for N8N webhook calls
-  // Using ref ensures we always call the latest version of loadAgentsFromYAML
-  useEffect(() => {
-    (window as any).refreshAgentSidebar = () => {
-      console.log('🔄 CategorizedAgentSidebar: Refreshing agents');
-      loadAgentsRef.current();
-    };
+  // Refresh agents when needed (can be called from outside)
+  const refreshAgents = () => {
+    console.log('🔄 CategorizedAgentSidebar: Refreshing agents');
+    loadAgentsFromYAML();
+  };
 
+  // Expose refresh function to window for N8N webhook calls
+  useEffect(() => {
+    (window as any).refreshAgentSidebar = refreshAgents;
+    
     return () => {
       delete (window as any).refreshAgentSidebar;
     };
