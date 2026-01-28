@@ -49,20 +49,21 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     const options: ButtonOption[] = [];
 
     // Handle multiple formats:
-    // 1. $$emoji Text - Description$$ (current format from screenshot)
-    // 2. $$**TEXT**$$ (bold format)
-    // 3. $****TEXT****$ (old format)
+    // 1. $$**emoji Text - Description**$$ (preferred, from updated DB view)
+    // 2. $$emoji Text - Description$$ (double dollar, no bold)
+    // 3. $**emoji Text - Description**$ (legacy single dollar bold)
+    // 4. $emoji Text - Description$ (legacy single dollar, no bold)
 
-    // Pattern for $$content$$ - captures everything between $$ markers
-    const dollarPattern = /\$\$([^$]+)\$\$/g;
+    // Pattern 1: $$content$$ - double dollar markers (preferred)
+    const doubleDollarPattern = /\$\$([^$]+)\$\$/g;
+    // Pattern 2: $content$ - single dollar markers (fallback/legacy)
+    // Uses negative lookbehind/lookahead to avoid matching $$...$$ again
+    const singleDollarPattern = /(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g;
 
-    let match;
-    while ((match = dollarPattern.exec(text)) !== null) {
-      const [fullMatch, innerContent] = match;
-
+    const processMatch = (fullMatch: string, innerContent: string) => {
       // Skip IMG: patterns - these are image previews, not buttons
       if (innerContent.trim().startsWith('IMG:')) {
-        continue;
+        return;
       }
 
       // Parse inner content - may have emoji at start, may have description after dash
@@ -96,6 +97,17 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
           fullText: fullMatch
         });
       }
+    };
+
+    // First pass: double dollar patterns (preferred)
+    let match;
+    while ((match = doubleDollarPattern.exec(text)) !== null) {
+      processMatch(match[0], match[1]);
+    }
+
+    // Second pass: single dollar patterns (fallback for legacy $**...**$ and $...$)
+    while ((match = singleDollarPattern.exec(text)) !== null) {
+      processMatch(match[0], match[1]);
     }
 
     console.log('🔍 InteractiveMessageButtons: Found button options:', options);
@@ -107,11 +119,12 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
     // Remove image patterns first: $$IMG:url$$
     let cleaned = text.replace(/\$\$IMG:https?:\/\/[^$]+\$\$/g, '');
 
-    // Remove both formats: $$**TEXT**$$ and $**TEXT**$
+    // Remove all button formats:
+    // 1. $$content$$ (double dollar - preferred)
+    // 2. $content$ (single dollar - legacy fallback)
     cleaned = cleaned
-      .replace(/\$\$([^$]+)\$\$/g, '') // New format
-      .replace(/\$\$\*\*[^*]+\*\*\$\$/g, '') // New format
-      .replace(/\$\*\*\*\*[^*]+\*\*\*\*\$/g, ''); // Old format
+      .replace(/\$\$([^$]+)\$\$/g, '') // Double dollar: $$..$$
+      .replace(/(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g, ''); // Single dollar: $..$
 
     // Remove stray empty list bullets that often remain after stripping $$buttons$$
     // e.g. lines that are only '-', '•', or '*' (optionally with whitespace)
