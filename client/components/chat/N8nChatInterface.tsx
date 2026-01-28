@@ -557,14 +557,14 @@ export default function N8nChatInterface({
   // Helper function to detect if message contains interactive buttons
   const hasInteractiveButtons = (content: string): boolean => {
     // Look for all button patterns:
-    // 1. $$**text**$$ (bold format)
-    // 2. $****text****$ (old format)
-    // 3. $$emoji text - description$$ (emoji format without bold)
-    const boldFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
-    const oldFormatPattern = /\$\*\*\*\*([^*]+)\*\*\*\*\$/g;
-    const generalPattern = /\$\$([^$]+)\$\$/g; // Matches any $$content$$ pattern
-    
-    return boldFormatPattern.test(content) || oldFormatPattern.test(content) || generalPattern.test(content);
+    // 1. $$**text**$$ (preferred double dollar bold)
+    // 2. $$content$$ (double dollar)
+    // 3. $**text**$ (legacy single dollar bold)
+    // 4. $content$ (legacy single dollar)
+    const doubleDollarPattern = /\$\$([^$]+)\$\$/g;
+    const singleDollarPattern = /(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g;
+
+    return doubleDollarPattern.test(content) || singleDollarPattern.test(content);
   };
 
   // Helper function to extract button texts from content
