@@ -114,7 +114,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Pre-process: Combine all instructions + config + user KB into ONE system prompt\n// IMPORTANT: Build the full system prompt here in JS to avoid n8n's {{ }} template\n// engine stripping $$ to $ (n8n treats $$ as escape for literal $)\nconst webhook = $('PA Webhook').first().json;\nconst allInstructions = $('Load All Instructions').all();\nconst config = $('Get Agent Config').first().json || {};\nconst userKB = $('Pre-Fetch User KB').all();\n\n// Build instructions from all loaded files\nlet instructions = '## INSTRUCTIONS\\n\\n';\nfor (const item of allInstructions) {\n  const doc = item.json;\n  if (doc.document) {\n    instructions += `### ${doc.source_file}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n  }\n}\n\n// Build user knowledge base section (always-on RAG)\nlet kbSection = '';\nif (userKB.length > 0 && userKB[0].json.document) {\n  kbSection = '## USER KNOWLEDGE BASE\\n\\n';\n  for (const item of userKB) {\n    if (item.json.document) {\n      kbSection += `[${item.json.category || 'general'}]: ${item.json.document}\\n\\n`;\n    }\n  }\n  kbSection += '---\\n\\n';\n}\n\n// Append KB to instructions\ninstructions += kbSection;\n\n// Build the FULL system prompt here (not in n8n {{ }} templates)\n// This preserves $$ characters that n8n templates would strip\nconst userSettingsStr = config.user_settings\n  ? JSON.stringify(config.user_settings, null, 2)\n  : 'NOT SET - This is a first-time agent setup. Collect all settings and include user_settings in your response.';\n\nconst systemPrompt = instructions + '\\n\\n---\\n\\n' +\n  '## AGENT/SYSTEM CONFIG:\\n\\n' +\n  '### Enabled Agents:\\n' + (config.enabled_agents || '') + '\\n\\n' +\n  '### Available Assistants:\\n' + (config.assistants || '') + '\\n\\n' +\n  '### Agent ID Mapping:\\n' + (config.agent_department_value || '') + '\\n\\n' +\n  '### User Settings (for agent onboarding reuse):\\n' + userSettingsStr + '\\n\\n' +\n  '---\\n\\n' +\n  '## TOOLS:\\n\\n' +\n  '### Knowledge Base Tools:\\n' +\n  '- **Vector Search** - Find info from KB (categories: website, branding, company, products, contacts, social_media, sales, marketing, operations, competitive)\\n' +\n  '- **Save to KB** - Store NEW information\\n' +\n  '- **Update KB** - Correct/update EXISTING info (granular, not whole category)\\n' +\n  '- **Delete from KB** - Remove specific entry\\n' +\n  '- **Upload File** - Process file (.pdf, .txt, .md, .json, .docx) and store in KB. ALWAYS use when user uploads a file or a Supabase storage URL is in the message.\\n\\n' +\n  '### Agent Setup Tools:\\n' +\n  '- **Save User Settings** - Save to profiles table (FIRST agent only: brand_voice, target_audience, etc.)\\n' +\n  '- **Enable Agent** - Create entry in assistant_personalizations (EVERY agent: inserts with communication_tone)\\n\\n' +\n  '### Other Tools:\\n' +\n  '- **Web Analysis** - Scrape and analyze website URL\\n' +\n  '- **Get Agent Setup** - Check agent config before redirect/onboarding';\n\nconst body = webhook.body || {};\n\nreturn {\n  json: {\n    user_id: body.user_id,\n    session_id: body.session_id,\n    user_mssg: (body.user_mssg || '').trim(),\n    agent_name: body.agent_name || 'personal_assistant',\n    request_id: body.request_id || crypto.randomUUID(),\n    timestamp: new Date().toISOString(),\n    system_prompt: systemPrompt,\n    instructions: instructions || 'No instructions found.',\n    enabled_agents: config.enabled_agents || '',\n    assistants: config.assistants || '',\n    values_not_enabled: config.values_not_enabled || '',\n    agent_department_value: config.agent_department_value || '',\n    website_analysis_info: config.website_analysis_info || '',\n    brand_voices: config.brand_voices || '',\n    target_audiences: config.target_audiences || '',\n    primary_goals: config.primary_goals || '',\n    calendar_types: config.calendar_types || '',\n    notification_options: config.notification_options || '',\n    business_types: config.business_types || '',\n    has_completed_onboarding: config.has_completed_onboarding || false\n  }\n};"
+        "jsCode": "// Pre-process: Combine all instructions + config + user KB into ONE system prompt\n// IMPORTANT: Build the full system prompt here in JS to avoid n8n's {{ }} template\n// engine stripping $$ to $ (n8n treats $$ as escape for literal $)\nconst webhook = $('PA Webhook').first().json;\nconst allInstructions = $('Load All Instructions').all();\nconst config = $('Get Agent Config').first().json || {};\nconst userKB = $('Pre-Fetch User KB').all();\n\n// Build instructions from all loaded files\nlet instructions = '## INSTRUCTIONS\\n\\n';\nfor (const item of allInstructions) {\n  const doc = item.json;\n  if (doc.document) {\n    instructions += `### ${doc.source_file}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n  }\n}\n\n// Build user knowledge base section (always-on RAG)\nlet kbSection = '';\nif (userKB.length > 0 && userKB[0].json.document) {\n  kbSection = '## USER KNOWLEDGE BASE\\n\\n';\n  for (const item of userKB) {\n    if (item.json.document) {\n      kbSection += `[${item.json.category || 'general'}]: ${item.json.document}\\n\\n`;\n    }\n  }\n  kbSection += '---\\n\\n';\n}\n\n// Append KB to instructions\ninstructions += kbSection;\n\n// Build the FULL system prompt here (not in n8n {{ }} templates)\n// This preserves $$ characters that n8n templates would strip\nconst userSettingsStr = config.user_settings\n  ? JSON.stringify(config.user_settings, null, 2)\n  : 'NOT SET - This is a first-time agent setup. Collect all settings and include user_settings in your response.';\n\nconst systemPrompt = instructions + '\\n\\n---\\n\\n' +\n  '## AGENT/SYSTEM CONFIG:\\n\\n' +\n  '### Enabled Agents:\\n' + (config.enabled_agents || '') + '\\n\\n' +\n  '### Available Assistants:\\n' + (config.assistants || '') + '\\n\\n' +\n  '### Agent ID Mapping:\\n' + (config.agent_department_value || '') + '\\n\\n' +\n  '### User Settings (for agent onboarding reuse):\\n' + userSettingsStr + '\\n\\n' +\n  '---\\n\\n' +\n  '## TOOLS:\\n\\n' +\n  '### Knowledge Base Tools:\\n' +\n  '- **Vector Search** - Find info from KB (categories: company_overview, icp_target_audience, branding_identity, messaging_positioning, product_services, sales_process, marketing_channels, development_technical, operations_workflows, contacts_stakeholders, customer_success, competitive_landscape, documents)\\n' +\n  '- **Save to KB** - Store NEW information or extracted file content into a KB category\\n' +\n  '- **Update KB** - Correct/update EXISTING info with granular find-and-replace (requires old_content + new_content)\\n' +\n  '- **Delete from KB** - Remove specific entry by category and content match\\n' +\n  '- **Upload File** - Process file (.pdf, .txt, .md, .json, .docx) and store in KB. ALWAYS use when user uploads a file or a Supabase storage URL is in the message.\\n\\n' +\n  '### Agent Setup Tools:\\n' +\n  '- **Save User Settings** - Save to profiles table (FIRST agent only: brand_voice, target_audience, primary_goals as comma-separated string, calendar_type, notifications_enabled)\\n' +\n  '- **Enable Agent** - Insert into assistant_personalizations with is_enabled=true (agent_id e.g. newsletter_multi, smm, content_repurposer, sol)\\n' +\n  '- **Get Agent Setup** - Check agent config from assistant_personalizations before redirect/onboarding\\n\\n' +\n  '### Other Tools:\\n' +\n  '- **Web Analysis** - Scrape and analyze website URL for company info, products, brand voice';\n\nconst body = webhook.body || {};\n\nreturn {\n  json: {\n    user_id: body.user_id,\n    session_id: body.session_id,\n    user_mssg: (body.user_mssg || '').trim(),\n    agent_name: body.agent_name || 'personal_assistant',\n    request_id: body.request_id || crypto.randomUUID(),\n    timestamp: new Date().toISOString(),\n    system_prompt: systemPrompt,\n    instructions: instructions || 'No instructions found.',\n    enabled_agents: config.enabled_agents || '',\n    assistants: config.assistants || '',\n    values_not_enabled: config.values_not_enabled || '',\n    agent_department_value: config.agent_department_value || '',\n    website_analysis_info: config.website_analysis_info || '',\n    brand_voices: config.brand_voices || '',\n    target_audiences: config.target_audiences || '',\n    primary_goals: config.primary_goals || '',\n    calendar_types: config.calendar_types || '',\n    notification_options: config.notification_options || '',\n    business_types: config.business_types || '',\n    has_completed_onboarding: config.has_completed_onboarding || false\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -217,7 +217,7 @@
     },
     {
       "parameters": {
-        "description": "Save information to the Knowledge Base. Use when user provides business information, wants to update details, or asks you to remember something.\n\nCategories:\n- company_overview\n- icp_target_audience\n- branding_identity\n- messaging_positioning\n- product_services\n- sales_process\n- marketing_channels\n- development_technical\n- operations_workflows\n- contacts_stakeholders\n- customer_success\n- competitive_landscape",
+        "description": "Save NEW information to the Knowledge Base. Use when user provides business information, wants to store details, or asks you to remember something. Also use when saving extracted content from uploaded files.\n\nCategories:\n- company_overview\n- icp_target_audience\n- branding_identity\n- messaging_positioning\n- product_services\n- sales_process\n- marketing_channels\n- development_technical\n- operations_workflows\n- contacts_stakeholders\n- customer_success\n- competitive_landscape\n- documents",
         "workflowId": {
           "__rl": true,
           "value": "7BTVETTR7FRURw9D",
@@ -278,7 +278,7 @@
     {
       "parameters": {
         "descriptionType": "manual",
-        "toolDescription": "get a row or rows in Supabase\nThis if for getting the info on how the assistants are setup for this user\n\nit will return each currently configured setup \n\nso separate each and return only the one asked for or all of them \n\nit should be displayed based on the\n\"assistant_id\": \nbut if they've named it include that as well please \n\"custom_name\":\n\nso when giving response state for example \nnewsletter \nthen the data",
+        "toolDescription": "Get agent configuration from assistant_personalizations table. Returns the current setup for a specific agent (or all agents) for this user. Use before redirecting to an agent chat or during onboarding to check if agent is already configured. Response includes assistant_id, custom_name, communication_tone, is_enabled, and other settings.",
         "useCustomSchema": true,
         "operation": "getAll",
         "tableId": "assistant_personalizations",
@@ -316,7 +316,7 @@
     },
     {
       "parameters": {
-        "toolDescription": "Analyze a website URL to extract company information. Use when user provides their website URL. Returns company details, products, brand voice, etc.",
+        "toolDescription": "Analyze a website URL to extract company information. Use when user provides their website URL during onboarding or asks to analyze a site. Returns company details, products, services, brand voice, target audience, and other business intelligence.",
         "method": "POST",
         "url": "https://squidgy-backend-00f664bf1f3d.herokuapp.com/api/website/analysis_complete",
         "sendHeaders": true,
@@ -358,7 +358,7 @@
     },
     {
       "parameters": {
-        "description": "Update specific information in the Knowledge Base. Use when user corrects or updates existing information (e.g., 'Actually I live in India, not Pakistan'). This does a granular update, not replacing the whole category.",
+        "description": "Update specific information in the Knowledge Base. Use when user corrects or updates existing information (e.g., 'Actually our target audience is B2B, not B2C'). This does a granular find-and-replace update, not replacing the whole category. Requires both old_content (what to find) and new_content (what to replace with).",
         "workflowId": {
           "__rl": true,
           "value": "aDM99m2gYlQJexdF",
@@ -429,7 +429,7 @@
     {
       "parameters": {
         "descriptionType": "manual",
-        "toolDescription": "Update a row in Supabase\nANY UPDATE TO ASSISTANTS NEEDS TO USE THIS TOOL IT WONT CHANGE OTHERWISE\nthis updates the setup for the assistant\nusing the id gathered if you dont have any use the get assistants tool\nthen for any edits its important the configuration remains the same so just replace the section they want changed\nthe brand_voice should just be a string \nthe target_audience should just be a string\nthe primary_goals should just be an array (e.g., [\"Lead generation\", \"Thought leadership\"])\nthe calendar_type should just be a string\nthe notifications_enabled should just be a Boolean (e.g., true or false)",
+        "toolDescription": "Save user profile settings to the profiles table in Supabase. Use ONLY for the FIRST agent onboarding to store brand_voice, target_audience, primary_goals, calendar_type, and notifications_enabled.\n\nField formats:\n- brand_voice: string (e.g., 'Professional and authoritative')\n- target_audience: string (e.g., 'B2B SaaS founders')\n- primary_goals: comma-separated string (e.g., 'Lead generation, Thought leadership')\n- calendar_type: string (google, outlook, or skip)\n- notifications_enabled: boolean (true or false)",
         "useCustomSchema": true,
         "operation": "update",
         "tableId": "profiles",
@@ -455,7 +455,7 @@
             },
             {
               "fieldId": "primary_goals",
-              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fieldValues2_Field_Value', `Array of primary goals (e.g., [\"Lead generation\", \"Thought leadership\"])`, 'string') }}"
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fieldValues2_Field_Value', `Comma-separated primary goals (e.g., Lead generation, Thought leadership)`, 'string') }}"
             },
             {
               "fieldId": "calendar_type",
@@ -486,7 +486,7 @@
     {
       "parameters": {
         "descriptionType": "manual",
-        "toolDescription": "This tool is used for enabling the Child Agents like newsletter, smm and others this is the capability of the Personal Assistant agent only can enable other agents",
+        "toolDescription": "Enable a child agent (newsletter, smm, content_repurposer, sol, etc.) by inserting a row into assistant_personalizations with is_enabled=true. Only the Personal Assistant can enable other agents. Requires the agent_id (e.g., newsletter_multi, smm, content_repurposer, sol).",
         "useCustomSchema": true,
         "tableId": "assistant_personalizations",
         "fieldsUi": {
@@ -604,7 +604,7 @@
     },
     {
       "parameters": {
-        "description": "Delete specific information from the Knowledge Base. Use when user wants to remove outdated or incorrect information completely.",
+        "description": "Delete specific information from the Knowledge Base. Use when user explicitly asks to remove outdated or incorrect information completely. Requires category and the content text to match and delete.",
         "workflowId": {
           "__rl": true,
           "value": "Sur1f0TnJWL8gMVg",
