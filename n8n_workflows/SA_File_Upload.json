@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## SA_File_Upload Workflow\n\nProcess uploaded files and store in KB.\n\n### Supported:\n- .txt, .md (text files)\n- .pdf (requires extraction)\n- .json (structured data)\n\n### Flow:\n1. Receive file URL/base64\n2. Detect file type\n3. Extract text content\n4. Chunk if needed\n5. Embed and store in KB",
+        "content": "## SA_File_Upload Workflow\n\nProcess uploaded files and store in KB.\n\n### Supported:\n- .txt, .md (text files)\n- .pdf (fetched as reference; full extraction TBD)\n- .json (structured data)\n- .docx (fetched as reference; full extraction TBD)\n\n### Flow:\n1. Receive file URL from Supabase storage\n2. Detect file type\n3. Extract text content (text/json) or store reference (pdf/docx)\n4. Embed and store in KB",
         "height": 408,
         "width": 400
       },
