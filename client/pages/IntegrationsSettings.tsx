@@ -1008,12 +1008,10 @@ export default function IntegrationsSettings() {
         attempts++;
         console.log(`📱 Polling for social media OAuth connections (attempt ${attempts}/${maxAttempts})...`);
         
-        // Check if we have any OAuth connections by looking at accounts with fetchAll
-        // After OAuth completes, GHL creates an OAuth connection but doesn't auto-connect accounts
-        // We need to find the OAuth ID from the accounts response
-        
-        // Fallback: Fetch all accounts (connected + available to connect) with fetchAll=true
-        const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
+        // Check if we have any OAuth connections by calling /accounts endpoint
+        // After OAuth completes, GHL returns the OAuth ID in the response
+        // This matches GHL's exact flow: first call /accounts, then use OAuth ID to fetch available pages
+        const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts`;
         
         const response = await fetch(accountsUrl, {
           method: 'GET',
@@ -1028,56 +1026,54 @@ export default function IntegrationsSettings() {
 
         if (response.ok) {
           const data = await response.json();
-          console.log('✅ All accounts response (fetchAll=true):', data);
+          console.log('✅ Accounts response:', data);
           console.log('📊 Response structure:', {
             hasResults: !!data.results,
-            hasGroups: !!data.results?.groups,
-            groupsLength: data.results?.groups?.length || 0,
-            hasAccounts: !!data.results?.accounts,
-            accountsLength: data.results?.accounts?.length || 0,
-            groups: data.results?.groups,
-            accounts: data.results?.accounts
+            hasPages: !!data.results?.pages,
+            pagesLength: data.results?.pages?.length || 0,
+            pages: data.results?.pages
           });
           
-          // Check for OAuth ID in groups array (this is where GHL stores OAuth connections)
-          if (data.success && data.results && data.results.groups && data.results.groups.length > 0) {
-            console.log('📦 Found groups (OAuth connections):', data.results.groups);
-            
-            // Find the platform-specific OAuth group
-            const platformGroup = data.results.groups.find((group: any) => 
-              group.platform?.toLowerCase() === platform.toLowerCase()
-            );
-            
-            if (platformGroup && platformGroup.oauthId) {
-              const oAuthId = platformGroup.oauthId;
-              console.log(`✅ Found ${platform} OAuth ID from groups:`, oAuthId);
-              console.log(`🔗 Fetching available ${platform} pages...`);
+          // GHL returns pages directly with OAuth ID in the response
+          // The response structure is: { results: { pages: [...] } }
+          // Each page may have an oauthId or the response may have it at a different level
+          if (data.success && data.results) {
+            // Check if we have pages (this means OAuth completed and GHL has the connection)
+            if (data.results.pages && data.results.pages.length > 0) {
+              console.log(`✅ Found ${data.results.pages.length} ${platform} pages in response`);
               
-              await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
-              setSocialMediaLoading(false);
-              return; // Stop polling
-            }
-          }
-          
-          // Fallback: Check if we have already-connected accounts with oauthId
-          if (data.success && data.results && data.results.accounts && data.results.accounts.length > 0) {
-            const platformAccounts = data.results.accounts.filter((acc: any) => acc.platform === platform);
-            
-            if (platformAccounts.length > 0) {
-              const account = platformAccounts[0];
-              const oAuthId = account.oauthId;
+              // Look for OAuth ID in the response
+              // It might be in the first page, or in a separate field
+              let oAuthId = null;
               
-              console.log(`✅ Found ${platform} account with OAuth ID:`, oAuthId);
+              // Check if there's an oauthId field at the results level
+              if (data.results.oauthId) {
+                oAuthId = data.results.oauthId;
+              }
+              // Or check the first page for oauthId
+              else if (data.results.pages[0]?.oauthId) {
+                oAuthId = data.results.pages[0].oauthId;
+              }
               
               if (oAuthId) {
+                console.log(`✅ Found ${platform} OAuth ID:`, oAuthId);
+                console.log(`🔗 Fetching available ${platform} pages with OAuth ID...`);
+                
                 await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
                 setSocialMediaLoading(false);
                 return; // Stop polling
+              } else {
+                // If we have pages but no OAuth ID, the pages themselves might be the final result
+                console.log(`✅ Got ${platform} pages directly, displaying them...`);
+                setSocialMediaPages(data.results.pages);
+                setShowSocialMediaPages(true);
+                setSocialMediaLoading(false);
+                return;
               }
             }
           }
           
-          console.log(`⏳ No ${platform} OAuth connection found yet, waiting...`);
+          console.log(`⏳ No ${platform} pages found yet, waiting for OAuth completion...`);
         }
         
         // If we haven't found OAuth connection yet and haven't exceeded max attempts, poll again
