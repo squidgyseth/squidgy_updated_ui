@@ -1,0 +1,115 @@
+{
+  "name": "SA_KB_Delete",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## SA_KB_Delete Workflow\n\nDelete specific content from KB.\n\n### Table: user_vector_knowledge_base\n\n### Flow:\n1. Search for matching content by text\n2. Delete matching rows\n\n### Called By:\n- Personal Assistant (Delete from KB tool)",
+        "height": 340,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -400,
+        240
+      ],
+      "typeVersion": 1,
+      "id": "8b013288-7c66-4502-8f3e-49a2b28c5997",
+      "name": "Overview"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "userID"
+            },
+            {
+              "name": "category"
+            },
+            {
+              "name": "content_to_delete"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        448
+      ],
+      "id": "a6e8abca-d13a-4a00-9e7f-7c525f9367d9",
+      "name": "When Called"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM public.user_vector_knowledge_base \nWHERE user_id = '{{ $json.userID }}'\nAND category = '{{ $json.category }}'\nAND document ILIKE '%' || '{{ $json.content_to_delete }}' || '%'\nRETURNING id, document;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        336,
+        448
+      ],
+      "id": "88481aa5-3710-49e3-8705-04d3863d3598",
+      "name": "Delete Matching Content",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const deleted = $input.all();\nconst deletedCount = deleted.length;\n\nreturn {\n  json: {\n    success: true,\n    action: 'kb_delete',\n    user_id: $('When Called').first().json.userID,\n    category: $('When Called').first().json.category,\n    deleted_count: deletedCount,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        448
+      ],
+      "id": "6a24e610-ce78-4113-b931-2f5cc4d33328",
+      "name": "Response"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called": {
+      "main": [
+        [
+          {
+            "node": "Delete Matching Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Matching Content": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c9a7202e-9675-4f74-98db-d722e537e7f4",
+  "meta": {
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "Sur1f0TnJWL8gMVg",
+  "tags": []
+}

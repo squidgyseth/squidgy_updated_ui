@@ -1,0 +1,1013 @@
+{
+  "name": "SA_Personal_Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# Personal Assistant - Master Agent (v4 - Always-On RAG)\n\n## Flow:\n1. Webhook receives request\n2. Load ALL instructions (single query, ~7 files)\n3. Get AGENT config from flattened view (one row per user)\n4. **Pre-Fetch User KB** (always-on RAG from user_vector_knowledge_base)\n5. Pre-process request (combine instructions + config + user KB)\n6. AI Agent decides: ANSWER, REDIRECT, ONBOARD, or CLARIFY\n7. Build response\n8. Return to webhook\n\n## Always-On RAG:\n- Pre-fetches top 10 user KB entries every request\n- Injected into system prompt as ## USER KNOWLEDGE BASE\n- Agent always has user's custom instructions + uploaded files\n- Vector Search tool still available for deeper semantic queries\n\n## Data Sources:\n- agent_instructions (Neon) → instructions + shared files\n- vw_personal_assistant_config_llm (Supabase) → agent config\n- user_vector_knowledge_base (Neon) → user KB (always loaded)",
+        "height": 728,
+        "width": 544,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4272,
+        -128
+      ],
+      "typeVersion": 1,
+      "id": "b83d20f5-7f29-4c6d-8237-61f310892883",
+      "name": "Overview"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "personal_assistant_new",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -3680,
+        96
+      ],
+      "id": "2bb50c5b-a5b6-4c81-a2a2-c08958347fc8",
+      "name": "PA Webhook",
+      "webhookId": "personal-assistant-main"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Load ALL instructions for PA (single query, ~480 tokens total)\n-- PA agent files + ALL shared format files\nSELECT document, source_file, agent_id FROM public.agent_instructions\nWHERE agent_id = 'personal_assistant'\n   OR agent_id = 'shared'\nORDER BY agent_id, source_file;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -3456,
+        96
+      ],
+      "id": "839546ee-52fc-420d-8f82-5b263c07bba2",
+      "name": "Load All Instructions",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "vw_personal_assistant_config_llm",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "agent",
+              "keyValue": "personal_assistant"
+            },
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('PA Webhook').item.json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -3232,
+        96
+      ],
+      "id": "a7bb57dc-0a95-4eca-8da7-668b66c1e6f5",
+      "name": "Get Agent Config",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Pre-fetch ALL user knowledge base entries (always-on RAG)\nSELECT document, category FROM public.user_vector_knowledge_base\nWHERE user_id = '{{ $('PA Webhook').item.json.body.user_id }}'\nORDER BY updated_at DESC\nLIMIT 10;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -3024,
+        96
+      ],
+      "id": "9fd0cbca-b646-4bf9-bafb-7246a2bf1af2",
+      "name": "Pre-Fetch User KB",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pre-process: Combine all instructions + config + user KB into ONE system prompt\n// IMPORTANT: Build the full system prompt here in JS to avoid n8n's {{ }} template\n// engine stripping $$ to $ (n8n treats $$ as escape for literal $)\nconst webhook = $('PA Webhook').first().json;\nconst allInstructions = $('Load All Instructions').all();\nconst config = $('Get Agent Config').first().json || {};\nconst userKB = $('Pre-Fetch User KB').all();\n\n// Build instructions from all loaded files\nlet instructions = '## INSTRUCTIONS\\n\\n';\nfor (const item of allInstructions) {\n  const doc = item.json;\n  if (doc.document) {\n    instructions += `### ${doc.source_file}\\n\\n${doc.document}\\n\\n---\\n\\n`;\n  }\n}\n\n// Build user knowledge base section (always-on RAG)\nlet kbSection = '';\nif (userKB.length > 0 && userKB[0].json.document) {\n  kbSection = '## USER KNOWLEDGE BASE\\n\\n';\n  for (const item of userKB) {\n    if (item.json.document) {\n      kbSection += `[${item.json.category || 'general'}]: ${item.json.document}\\n\\n`;\n    }\n  }\n  kbSection += '---\\n\\n';\n}\n\n// Append KB to instructions\ninstructions += kbSection;\n\n// Build the FULL system prompt here (not in n8n {{ }} templates)\n// This preserves $$ characters that n8n templates would strip\nconst userSettingsStr = config.user_settings\n  ? JSON.stringify(config.user_settings, null, 2)\n  : 'NOT SET - This is a first-time agent setup. Collect all settings and include user_settings in your response.';\n\nconst systemPrompt = instructions + '\\n\\n---\\n\\n' +\n  '## AGENT/SYSTEM CONFIG:\\n\\n' +\n  '### Enabled Agents:\\n' + (config.enabled_agents || '') + '\\n\\n' +\n  '### Available Assistants:\\n' + (config.assistants || '') + '\\n\\n' +\n  '### Agent ID Mapping:\\n' + (config.agent_department_value || '') + '\\n\\n' +\n  '### User Settings (for agent onboarding reuse):\\n' + userSettingsStr + '\\n\\n' +\n  '---\\n\\n' +\n  '## TOOLS:\\n\\n' +\n  '### Knowledge Base Tools:\\n' +\n  '- **Vector Search** - Find info from KB (categories: website, branding, company, products, contacts, social_media, sales, marketing, operations, competitive)\\n' +\n  '- **Save to KB** - Store NEW information\\n' +\n  '- **Update KB** - Correct/update EXISTING info (granular, not whole category)\\n' +\n  '- **Delete from KB** - Remove specific entry\\n' +\n  '- **Upload File** - Process file (.txt, .md, .json) and store in KB\\n\\n' +\n  '### Agent Setup Tools:\\n' +\n  '- **Save User Settings** - Save to profiles table (FIRST agent only: brand_voice, target_audience, etc.)\\n' +\n  '- **Enable Agent** - Create entry in assistant_personalizations (EVERY agent: inserts with communication_tone)\\n\\n' +\n  '### Other Tools:\\n' +\n  '- **Web Analysis** - Scrape and analyze website URL\\n' +\n  '- **Get Agent Setup** - Check agent config before redirect/onboarding';\n\nconst body = webhook.body || {};\n\nreturn {\n  json: {\n    user_id: body.user_id,\n    session_id: body.session_id,\n    user_mssg: (body.user_mssg || '').trim(),\n    agent_name: body.agent_name || 'personal_assistant',\n    request_id: body.request_id || crypto.randomUUID(),\n    timestamp: new Date().toISOString(),\n    system_prompt: systemPrompt,\n    instructions: instructions || 'No instructions found.',\n    enabled_agents: config.enabled_agents || '',\n    assistants: config.assistants || '',\n    values_not_enabled: config.values_not_enabled || '',\n    agent_department_value: config.agent_department_value || '',\n    website_analysis_info: config.website_analysis_info || '',\n    brand_voices: config.brand_voices || '',\n    target_audiences: config.target_audiences || '',\n    primary_goals: config.primary_goals || '',\n    calendar_types: config.calendar_types || '',\n    notification_options: config.notification_options || '',\n    business_types: config.business_types || '',\n    has_completed_onboarding: config.has_completed_onboarding || false\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2800,
+        96
+      ],
+      "id": "7a8853ee-3719-4883-9fd9-00a63cf4e182",
+      "name": "Pre-Process"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-3.5-turbo"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -3024,
+        352
+      ],
+      "id": "f482ce5c-843e-44ae-a8c6-f6cd356a4108",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "xeFNBBSMiFQf7cQv",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Pre-Process').item.json.session_id }}",
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -2720,
+        320
+      ],
+      "id": "0c736727-4330-42fd-a809-8d78aa1d1f1b",
+      "name": "Session Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -2560,
+        544
+      ],
+      "id": "c1ef857c-d35d-4dd6-8b30-e9a2de9dfcee",
+      "name": "OpenRouter Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "xeFNBBSMiFQf7cQv",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the Knowledge Base for information about the user's business. Use this to answer questions about company details, contacts, products, services, etc. Query with natural language.",
+        "tableName": "user_vector_knowledge_base",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "user_id",
+                "value": "={{ $('Pre-Process').item.json.user_id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        -2560,
+        320
+      ],
+      "id": "79c6808c-5a6d-4fdc-9e8f-456c374f470a",
+      "name": "Vector Search (RAG)",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Save information to the Knowledge Base. Use when user provides business information, wants to update details, or asks you to remember something.\n\nCategories:\n- company_overview\n- icp_target_audience\n- branding_identity\n- messaging_positioning\n- product_services\n- sales_process\n- marketing_channels\n- development_technical\n- operations_workflows\n- contacts_stakeholders\n- customer_success\n- competitive_landscape",
+        "workflowId": {
+          "__rl": true,
+          "value": "7BTVETTR7FRURw9D",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/7BTVETTR7FRURw9D",
+          "cachedResultName": "SA_RAG"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "userID": "={{ $('Pre-Process').item.json.user_id }}",
+            "category": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('category', `The KB category to save to (e.g., company_overview, contacts_stakeholders)`, 'string') }}",
+            "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('query', `The information to save, formatted clearly`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "userID",
+              "displayName": "userID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -2320,
+        432
+      ],
+      "id": "3e33af04-9a37-493d-bd0c-c298093333c5",
+      "name": "Save to KB"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "get a row or rows in Supabase\nThis if for getting the info on how the assistants are setup for this user\n\nit will return each currently configured setup \n\nso separate each and return only the one asked for or all of them \n\nit should be displayed based on the\n\"assistant_id\": \nbut if they've named it include that as well please \n\"custom_name\":\n\nso when giving response state for example \nnewsletter \nthen the data",
+        "useCustomSchema": true,
+        "operation": "getAll",
+        "tableId": "assistant_personalizations",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Pre-Process').item.json.user_id }}"
+            },
+            {
+              "keyName": "assistant_id",
+              "condition": "eq",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Field_Value', `This is the agent_id we need to pass here`, 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -2080,
+        320
+      ],
+      "id": "e7902517-4eb8-4941-8db5-c74ed9897a53",
+      "name": "Get Agent Setup",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Analyze a website URL to extract company information. Use when user provides their website URL. Returns company details, products, brand voice, etc.",
+        "method": "POST",
+        "url": "https://squidgy-backend-00f664bf1f3d.herokuapp.com/api/website/analysis_complete",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $fromAI('url', 'The website URL to analyze', 'string') }}"
+            },
+            {
+              "name": "firm_user_id",
+              "value": "={{ $('Pre-Process').item.json.user_id }}"
+            },
+            {
+              "name": "agent_id",
+              "value": "personal_assistant"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -2240,
+        288
+      ],
+      "id": "9eb8f231-a96a-4a84-92e5-b665e20ac31b",
+      "name": "Web Analysis"
+    },
+    {
+      "parameters": {
+        "description": "Update specific information in the Knowledge Base. Use when user corrects or updates existing information (e.g., 'Actually I live in India, not Pakistan'). This does a granular update, not replacing the whole category.",
+        "workflowId": {
+          "__rl": true,
+          "value": "aDM99m2gYlQJexdF",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/aDM99m2gYlQJexdF",
+          "cachedResultName": "SA_KB_Update"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "userID": "={{ $('Pre-Process').item.json.user_id }}",
+            "category": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('category', `The KB category (e.g., branding, company, competitive, contacts, marketing, operations, products, sales, social_media, website)`, 'string') }}",
+            "old_content": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('old_content', `The incorrect/outdated information to find and replace`, 'string') }}",
+            "new_content": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('new_content', `The corrected/updated information`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "userID",
+              "displayName": "userID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "old_content",
+              "displayName": "old_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "new_content",
+              "displayName": "new_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -1920,
+        320
+      ],
+      "id": "043bb79a-19be-42c3-94bb-182ce7fc9be0",
+      "name": "Update KB"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Update a row in Supabase\nANY UPDATE TO ASSISTANTS NEEDS TO USE THIS TOOL IT WONT CHANGE OTHERWISE\nthis updates the setup for the assistant\nusing the id gathered if you dont have any use the get assistants tool\nthen for any edits its important the configuration remains the same so just replace the section they want changed\nthe brand_voice should just be a string \nthe target_audience should just be a string\nthe primary_goals should just be an array (e.g., [\"Lead generation\", \"Thought leadership\"])\nthe calendar_type should just be a string\nthe notifications_enabled should just be a Boolean (e.g., true or false)",
+        "useCustomSchema": true,
+        "operation": "update",
+        "tableId": "profiles",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Pre-Process').item.json.user_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "brand_voice",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fieldValues0_Field_Value', `The selected brand voice (e.g., Professional and authoritative)`, 'string') }}"
+            },
+            {
+              "fieldId": "target_audience",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fieldValues1_Field_Value', `The target audience description`, 'string') }}"
+            },
+            {
+              "fieldId": "primary_goals",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fieldValues2_Field_Value', `Array of primary goals (e.g., [\"Lead generation\", \"Thought leadership\"])`, 'string') }}"
+            },
+            {
+              "fieldId": "calendar_type",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fieldValues3_Field_Value', `Calendar connection type: google, outlook, or skip`, 'string') }}"
+            },
+            {
+              "fieldId": "notifications_enabled",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fieldValues4_Field_Value', `Notifications either True or False`, 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -1424,
+        320
+      ],
+      "id": "1cb44af3-2a4d-4897-820e-254d427517b8",
+      "name": "Save User Settings",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "This tool is used for enabling the Child Agents like newsletter, smm and others this is the capability of the Personal Assistant agent only can enable other agents",
+        "useCustomSchema": true,
+        "tableId": "assistant_personalizations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Pre-Process').item.json.user_id }}"
+            },
+            {
+              "fieldId": "assistant_id",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fieldValues2_Field_Value', `This is the agent_id we need to pass here`, 'string') }}"
+            },
+            {
+              "fieldId": "is_enabled",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -1264,
+        320
+      ],
+      "id": "1607a7ed-6fe8-4b5c-be8c-0f8398d55709",
+      "name": "Enable Agent",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Pre-Process').item.json.user_mssg }}",
+        "options": {
+          "systemMessage": "={{ $('Pre-Process').item.json.system_prompt }}",
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        -2480,
+        -304
+      ],
+      "id": "40b85993-741e-441f-bedf-604ee48e67e5",
+      "name": "PA AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Response Builder: Format AI output for webhook response\nconst preProcess = $('Pre-Process').first().json;\nconst aiOutput = $input.first().json.output || $input.first().json.text || '';\n\n// Initialize all possible fields\nlet message = aiOutput;\nlet routing = null;\nlet finished = false;\nlet agentData = null;\nlet actionsPerformed = [];\nlet actionsTodo = [];\nlet preview = null;\nlet userSettings = null;\nlet reusedSettings = false;\n\ntry {\n  // Check if output is JSON\n  if (aiOutput.trim().startsWith('{')) {\n    const parsedOutput = JSON.parse(aiOutput);\n    \n    // Core fields\n    message = parsedOutput.message || parsedOutput.response || aiOutput;\n    routing = parsedOutput.routing || null;\n    finished = parsedOutput.finished || false;\n    agentData = parsedOutput.agent_data || null;\n    \n    // Actions tracking\n    actionsPerformed = parsedOutput.actions_performed || [];\n    actionsTodo = parsedOutput.actions_todo || [];\n    \n    // Content preview\n    preview = parsedOutput.preview || null;\n    \n    // User settings (for first agent setup)\n    userSettings = parsedOutput.user_settings || null;\n    reusedSettings = parsedOutput.reused_settings || false;\n  }\n} catch (e) {\n  // Not JSON, use as plain text\n  message = aiOutput;\n}\n\n// Build standardized response\nconst response = {\n  // Request tracking\n  user_id: preProcess.user_id,\n  session_id: preProcess.session_id,\n  agent_name: preProcess.agent_name,\n  timestamp_of_call_made: preProcess.timestamp,\n  request_id: preProcess.request_id,\n  \n  // Main response\n  agent_response: message,\n  \n  // Actions tracking (always include, even if empty)\n  actions_performed: actionsPerformed,\n  actions_todo: actionsTodo\n};\n\n// Add routing if present (for redirects)\nif (routing) {\n  response.routing = routing;\n}\n\n// Add preview if present (for content display)\nif (preview) {\n  response.preview = preview;\n}\n\n// Add agent_data if present (for onboarding completion)\nif (finished) {\n  response.finished = finished;\n  if (agentData) {\n    response.agent_data = agentData;\n  }\n}\n\n// Add user_settings if present (for first agent setup - backend will save)\nif (userSettings) {\n  response.user_settings = userSettings;\n}\n\n// Add reused_settings flag if agent reused existing settings\nif (reusedSettings) {\n  response.reused_settings = true;\n}\n\nreturn { json: response };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1904,
+        -224
+      ],
+      "id": "2a2f14a8-979d-4734-af6f-7b6a2d375e37",
+      "name": "Response Builder"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -1424,
+        -192
+      ],
+      "id": "153a1a2a-d916-4fa4-bcab-9e8d92e4df83",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "content": "## Tools Available to AI Agent\n\n### KB Tools:\n1. **Vector Search** - Find data from KB\n2. **Save to KB** - Store new info\n3. **Update KB** - Granular update\n4. **Delete from KB** - Remove specific entry\n5. **Upload File** - Process & store files\n\n### Agent Setup Tools:\n6. **Save User Settings** - profiles table (FIRST agent)\n7. **Enable Agent** - assistant_personalizations (EVERY agent)\n\n### Other Tools:\n8. **Web Analysis** - Analyze website\n9. **Get Agent Setup** - Check agent config\n\n## Two-Tier Settings:\n- User-level: profiles table\n- Agent-level: assistant_personalizations table",
+        "height": 556,
+        "width": 492,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2624,
+        736
+      ],
+      "typeVersion": 1,
+      "id": "095e5983-49fd-4ddf-a1b5-a8d7bdee6936",
+      "name": "Tools Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -2880,
+        304
+      ],
+      "id": "fc5fbebf-7dda-44a9-9b8c-5246538514a4",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "gqfcukoTW36RdT3Q",
+          "name": "Peritus Newsletter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Delete specific information from the Knowledge Base. Use when user wants to remove outdated or incorrect information completely.",
+        "workflowId": {
+          "__rl": true,
+          "value": "Sur1f0TnJWL8gMVg",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Sur1f0TnJWL8gMVg",
+          "cachedResultName": "SA_KB_Delete"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "userID": "={{ $('Pre-Process').item.json.user_id }}",
+            "category": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('category', `The Knowledge base category (e.g., branding, company, competitive, contacts, marketing, operations, products, sales, social_media, website)`, 'string') }}",
+            "content_to_delete": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('content_to_delete', `The incorrect/outdated information to be removed`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "userID",
+              "displayName": "userID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "content_to_delete",
+              "displayName": "content_to_delete",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -1744,
+        320
+      ],
+      "id": "9a83fd09-c703-483d-983b-8a4761bf0fd6",
+      "name": "Delete from KB"
+    },
+    {
+      "parameters": {
+        "description": "Upload and process a file to store in the Knowledge Base. Supports .txt, .md, .json files. Use when user uploads or shares a file URL.",
+        "workflowId": {
+          "__rl": true,
+          "value": "yDwKGhEBbVT8hQyh",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/yDwKGhEBbVT8hQyh",
+          "cachedResultName": "SA_File_Upload"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "userID": "={{ $('Pre-Process').item.json.user_id }}",
+            "category": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('category', `The Knowledge base category (e.g., branding, company, competitive, contacts, marketing, operations, products, sales, social_media, website)`, 'string') }}",
+            "file_url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('file_url', `The file url or the supabase file storage url`, 'string') }}",
+            "file_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('file_name', `The file name`, 'string') }}",
+            "file_type": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('file_type', `The type of txt, .md, .json `, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "userID",
+              "displayName": "userID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "file_url",
+              "displayName": "file_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "file_name",
+              "displayName": "file_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "file_type",
+              "displayName": "file_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -1584,
+        320
+      ],
+      "id": "6c8d7c69-0b94-4848-9f6b-926419d4d402",
+      "name": "Upload File"
+    }
+  ],
+  "pinData": {
+    "PA Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.theaiteam.uk",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+            "content-length": "306",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://app.squidgy.ai",
+            "priority": "u=1, i",
+            "referer": "https://app.squidgy.ai/",
+            "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "49.37.150.84",
+            "x-forwarded-host": "n8n.theaiteam.uk",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "user_id": "cc072026-f80a-4f8b-9f45-7ff0b486e582",
+            "user_mssg": "can you try again please",
+            "session_id": "cc072026-f80a-4f8b-9f45-7ff0b486e582_personal_assistant_1769567840129_6pv4l63gh7x",
+            "agent_name": "personal_assistant",
+            "timestamp_of_call_made": "2026-01-28T03:29:19.145Z",
+            "request_id": "1769570958892-9039"
+          },
+          "webhookUrl": "https://n8n.theaiteam.uk/webhook/personal_assistant_new",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "PA Webhook": {
+      "main": [
+        [
+          {
+            "node": "Load All Instructions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load All Instructions": {
+      "main": [
+        [
+          {
+            "node": "Get Agent Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Agent Config": {
+      "main": [
+        [
+          {
+            "node": "Pre-Fetch User KB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pre-Fetch User KB": {
+      "main": [
+        [
+          {
+            "node": "Pre-Process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pre-Process": {
+      "main": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Search (RAG)": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to KB": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Web Analysis": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Agent Setup": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update KB": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save User Settings": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enable Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PA AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Response Builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Builder": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Vector Search (RAG)",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete from KB": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload File": {
+      "ai_tool": [
+        [
+          {
+            "node": "PA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d9fd9155-07ca-4f21-8c61-eff1fa07b6d5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "oRu1jpN8YvXEsNFn",
+  "tags": []
+}

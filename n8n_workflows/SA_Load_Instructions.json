@@ -1,0 +1,292 @@
+{
+  "name": "SA_Load_Instructions",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## SA_Load_Instructions Workflow (v2 - Token Optimized)\n\nLoads ALL instruction files, stores with folder as agent_id.\n\n### Records Created:\n- shared: 5 files → agent_id='shared' (compressed format files)\n- personal_assistant: 2 files → agent_id='personal_assistant' (instructions + onboarding_flow)\n- newsletter_multi: 2 files\n- content_repurposer: 2 files\n- smm: 2 files\n- sol: 3 files (includes domain_knowledge.md)\n\n**Total: 16 records**\n\n### Changes from v1:\n- Merged actions_performed.md + actions_todo.md → actions_format.md\n- Added onboarding_flow.md for PA\n- Compressed all shared format files (~73% token savings)",
+        "height": 664,
+        "width": 404
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1552,
+        -320
+      ],
+      "typeVersion": 1,
+      "id": "737cca3a-d57a-423a-af26-f71d5a459d46",
+      "name": "Overview"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        -112
+      ],
+      "id": "4601a413-22b6-4413-9689-d05c0ced0d84",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "load-instructions",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        64
+      ],
+      "id": "37163bfa-6b0c-4f2c-87fc-6ec0a3d0de40",
+      "name": "Webhook Trigger",
+      "webhookId": "load-instructions"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Hardcode all files - simple and reliable (v2 - Token Optimized)\nconst baseUrl = 'https://raw.githubusercontent.com/Squidgy-AI/squidgy_updated_ui/main/knowledge_base';\n\nconst files = [\n  // SHARED (5 files - compressed format files)\n  { agent_id: 'shared', source_file: 'security_rules.md', url: `${baseUrl}/shared/security_rules.md` },\n  { agent_id: 'shared', source_file: 'button_patterns.md', url: `${baseUrl}/shared/button_patterns.md` },\n  { agent_id: 'shared', source_file: 'response_format.md', url: `${baseUrl}/shared/response_format.md` },\n  { agent_id: 'shared', source_file: 'content_previews.md', url: `${baseUrl}/shared/content_previews.md` },\n  { agent_id: 'shared', source_file: 'actions_format.md', url: `${baseUrl}/shared/actions_format.md` },\n  \n  // PERSONAL ASSISTANT (2 files - core + onboarding)\n  { agent_id: 'personal_assistant', source_file: 'instructions.md', url: `${baseUrl}/agents/personal_assistant/instructions.md` },\n  { agent_id: 'personal_assistant', source_file: 'onboarding_flow.md', url: `${baseUrl}/agents/personal_assistant/onboarding_flow.md` },\n  \n  // NEWSLETTER MULTI (2 files)\n  { agent_id: 'newsletter_multi', source_file: 'instructions.md', url: `${baseUrl}/agents/newsletter_multi/instructions.md` },\n  { agent_id: 'newsletter_multi', source_file: 'custom_instructions.md', url: `${baseUrl}/agents/newsletter_multi/custom_instructions.md` },\n  \n  // CONTENT REPURPOSER (2 files)\n  { agent_id: 'content_repurposer', source_file: 'instructions.md', url: `${baseUrl}/agents/content_repurposer/instructions.md` },\n  { agent_id: 'content_repurposer', source_file: 'custom_instructions.md', url: `${baseUrl}/agents/content_repurposer/custom_instructions.md` },\n  \n  // SMM (2 files)\n  { agent_id: 'smm', source_file: 'instructions.md', url: `${baseUrl}/agents/smm/instructions.md` },\n  { agent_id: 'smm', source_file: 'custom_instructions.md', url: `${baseUrl}/agents/smm/custom_instructions.md` },\n  \n  // SOL (3 files - includes domain knowledge)\n  { agent_id: 'sol', source_file: 'instructions.md', url: `${baseUrl}/agents/sol/instructions.md` },\n  { agent_id: 'sol', source_file: 'custom_instructions.md', url: `${baseUrl}/agents/sol/custom_instructions.md` },\n  { agent_id: 'sol', source_file: 'domain_knowledge.md', url: `${baseUrl}/agents/sol/domain_knowledge.md` }\n];\n\n// Total: 16 files (added sol/domain_knowledge.md)\nreturn files.map(f => ({ json: f }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        -112
+      ],
+      "id": "bc5dfdf1-e5f1-4d36-a44a-c6b2cc30311c",
+      "name": "Define All Files"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -640,
+        -112
+      ],
+      "id": "ad28868d-ceb0-4797-a179-bff69067f7a9",
+      "name": "Fetch File Content",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process ALL items and merge file info with content\nconst allFiles = $('Define All Files').all();\nconst allResponses = $input.all();\n\nconst results = [];\n\nfor (let i = 0; i < allFiles.length; i++) {\n  const fileInfo = allFiles[i].json;\n  const rawContent = allResponses[i]?.json || {};\n  \n  // Handle response - could be string or object with data property\n  let document = '';\n  if (typeof rawContent === 'string') {\n    document = rawContent;\n  } else if (rawContent.data) {\n    document = rawContent.data;\n  } else if (rawContent.body) {\n    document = rawContent.body;\n  } else {\n    document = JSON.stringify(rawContent);\n  }\n  \n  results.push({\n    json: {\n      agent_id: fileInfo.agent_id,\n      source_file: fileInfo.source_file,\n      document: document\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        -112
+      ],
+      "id": "36b8ef00-bdad-40da-8c10-2d340db4f648",
+      "name": "Prepare Document"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer OPENROUTER_API_KEY_REDACTED"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "openai/text-embedding-3-small"
+            },
+            {
+              "name": "input",
+              "value": "={{ $json.document }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -192,
+        -112
+      ],
+      "id": "1abe4450-b932-4ffe-bdf6-2152399b8199",
+      "name": "Generate Embedding"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge document info with embeddings\nconst allDocs = $('Prepare Document').all();\nconst allEmbeddings = $input.all();\n\nconst results = [];\n\nfor (let i = 0; i < allDocs.length; i++) {\n  const doc = allDocs[i].json;\n  const embeddingResponse = allEmbeddings[i]?.json || {};\n  \n  // Extract embedding from response\n  const embedding = embeddingResponse.data?.[0]?.embedding || [];\n  \n  results.push({\n    json: {\n      agent_id: doc.agent_id,\n      source_file: doc.source_file,\n      document: doc.document,\n      embedding: embedding\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48,
+        -112
+      ],
+      "id": "a8e826e9-af1b-4b72-ba98-94f830a36c98",
+      "name": "Merge Data"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Delete existing entry if exists\nDELETE FROM public.agent_instructions\nWHERE agent_id = $1\n  AND source_file = $2;\n\n-- Insert new entry\nINSERT INTO public.agent_instructions (agent_id, source_file, document, embedding)\nVALUES ($1, $2, $3, $4)\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [$json.agent_id, $json.source_file, $json.document, JSON.stringify($json.embedding)] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        272,
+        -112
+      ],
+      "id": "b98818ff-97f1-4333-b529-06e5903bfa31",
+      "name": "Upsert Instruction",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn {\n  json: {\n    success: true,\n    total_files: items.length,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        -112
+      ],
+      "id": "203acf1e-e48a-4a33-a39b-c80aa9f0a40a",
+      "name": "Summary"
+    }
+  ],
+  "pinData": {
+    "Manual Trigger": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Define All Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Define All Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Define All Files": {
+      "main": [
+        [
+          {
+            "node": "Fetch File Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch File Content": {
+      "main": [
+        [
+          {
+            "node": "Prepare Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Document": {
+      "main": [
+        [
+          {
+            "node": "Generate Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Embedding": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "Upsert Instruction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Instruction": {
+      "main": [
+        [
+          {
+            "node": "Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4d719fbd-11d8-45fa-b643-5449b621b1bc",
+  "meta": {
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "6D4gmDewnGmHswb9",
+  "tags": []
+}

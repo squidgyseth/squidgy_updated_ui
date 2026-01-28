@@ -1,0 +1,261 @@
+{
+  "name": "SA_File_Upload",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## SA_File_Upload Workflow\n\nProcess uploaded files and store in KB.\n\n### Supported:\n- .txt, .md (text files)\n- .pdf (requires extraction)\n- .json (structured data)\n\n### Flow:\n1. Receive file URL/base64\n2. Detect file type\n3. Extract text content\n4. Chunk if needed\n5. Embed and store in KB",
+        "height": 408,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -432,
+        16
+      ],
+      "typeVersion": 1,
+      "id": "03ee2e2e-df41-4459-988d-d15f6f8c33f3",
+      "name": "Overview"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "userID"
+            },
+            {
+              "name": "file_url"
+            },
+            {
+              "name": "file_name"
+            },
+            {
+              "name": "file_type"
+            },
+            {
+              "name": "category"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        64,
+        272
+      ],
+      "id": "389896be-1232-4c72-aea4-4955f97370bb",
+      "name": "When Called"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.file_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        320,
+        272
+      ],
+      "id": "9e4c4f8b-a67e-402e-8b0d-55d5fddaf305",
+      "name": "Fetch File",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('When Called').first().json;\nconst fileContent = $input.first().json.data || $input.first().json.body || '';\nconst fileType = input.file_type?.toLowerCase() || '';\nconst fileName = input.file_name || 'uploaded_file';\n\nlet textContent = '';\n\n// Handle different file types\nif (fileType === 'txt' || fileType === 'md' || fileType === 'text/plain' || fileType === 'text/markdown') {\n  textContent = typeof fileContent === 'string' ? fileContent : JSON.stringify(fileContent);\n} else if (fileType === 'json' || fileType === 'application/json') {\n  try {\n    const parsed = typeof fileContent === 'string' ? JSON.parse(fileContent) : fileContent;\n    textContent = JSON.stringify(parsed, null, 2);\n  } catch (e) {\n    textContent = String(fileContent);\n  }\n} else if (fileType === 'pdf' || fileType === 'application/pdf') {\n  // PDF extraction would need a separate service\n  // For now, mark as needing processing\n  textContent = `[PDF File: ${fileName} - Content extraction pending]`;\n} else {\n  textContent = String(fileContent);\n}\n\n// Prepare for embedding\nconst documentText = `File: ${fileName}\\nType: ${fileType}\\n\\n${textContent}`;\n\nreturn {\n  json: {\n    userID: input.userID,\n    category: input.category || 'documents',\n    file_name: fileName,\n    file_type: fileType,\n    content: documentText\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        272
+      ],
+      "id": "e79493f7-7bdd-45dc-b7d0-ac7c8919f58e",
+      "name": "Process File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        448
+      ],
+      "id": "ed0bc71e-6de3-4d26-b8db-e7518ff4343f",
+      "name": "OpenRouter Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "xeFNBBSMiFQf7cQv",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        272
+      ],
+      "id": "98a5b708-8962-45d5-8937-1918e68ce91a",
+      "name": "Store in KB",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $('Process File').item.json.content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "user_id",
+                "value": "={{ $('Process File').item.json.userID }}"
+              },
+              {
+                "name": "category",
+                "value": "={{ $('Process File').item.json.category }}"
+              },
+              {
+                "name": "file_name",
+                "value": "={{ $('Process File').item.json.file_name }}"
+              },
+              {
+                "name": "file_type",
+                "value": "={{ $('Process File').item.json.file_type }}"
+              },
+              {
+                "name": "timestamp",
+                "value": "={{ new Date().toISOString() }}"
+              },
+              {
+                "name": "source",
+                "value": "file_upload"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        912,
+        448
+      ],
+      "id": "110c4b25-34fe-41b1-b55b-17ff7f3349d3",
+      "name": "Data Loader"
+    },
+    {
+      "parameters": {
+        "jsCode": "const processed = $('Process File').first().json;\n\nreturn {\n  json: {\n    success: true,\n    action: 'file_uploaded',\n    user_id: processed.userID,\n    file_name: processed.file_name,\n    file_type: processed.file_type,\n    category: processed.category,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        272
+      ],
+      "id": "1d23c531-4757-43c5-b57f-f0002b82a85b",
+      "name": "Response"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called": {
+      "main": [
+        [
+          {
+            "node": "Fetch File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch File": {
+      "main": [
+        [
+          {
+            "node": "Process File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process File": {
+      "main": [
+        [
+          {
+            "node": "Store in KB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Store in KB",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store in KB": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Store in KB",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "206f198f-0e73-47d5-a0be-d7c9a2fa2cfc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "yDwKGhEBbVT8hQyh",
+  "tags": []
+}
