@@ -1453,7 +1453,27 @@ export default function IntegrationsSettings() {
                         size="sm"
                         onClick={() => {
                           if (facebookOAuthUrl) {
-                            window.open(facebookOAuthUrl, '_blank', 'width=600,height=700');
+                            const popup = window.open(facebookOAuthUrl, 'FacebookOAuth', 'width=600,height=700');
+                            
+                            // Poll for popup closure
+                            if (popup) {
+                              const pollTimer = setInterval(() => {
+                                try {
+                                  if (popup.closed) {
+                                    clearInterval(pollTimer);
+                                    console.log('✅ Facebook OAuth popup closed, fetching pages...');
+                                    toast.info('Fetching Facebook pages...');
+                                    
+                                    // Wait 2 seconds for GHL to process OAuth, then fetch pages
+                                    setTimeout(() => {
+                                      fetchFacebookPagesFromGHL();
+                                    }, 2000);
+                                  }
+                                } catch (e) {
+                                  clearInterval(pollTimer);
+                                }
+                              }, 500);
+                            }
                           } else {
                             toast.error('OAuth URL not available. Please refresh the page.');
                           }
