@@ -345,7 +345,6 @@ export default function IntegrationsSettings() {
       const response = await fetch(ghlBackendUrl, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -399,7 +398,6 @@ export default function IntegrationsSettings() {
       const connectedResponse = await fetch(`${connectedPagesUrl}?getAll=true`, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -420,7 +418,6 @@ export default function IntegrationsSettings() {
       const allPagesResponse = await fetch(`${allPagesUrl}?limit=100`, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -1019,7 +1016,6 @@ export default function IntegrationsSettings() {
         const response = await fetch(accountsUrl, {
           method: 'GET',
           headers: {
-            'authorization': `Bearer ${accessToken}`,
             'token-id': firebaseToken,
             'version': '2021-07-28',
             'channel': 'APP',
@@ -1098,7 +1094,6 @@ export default function IntegrationsSettings() {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -1172,7 +1167,6 @@ export default function IntegrationsSettings() {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
