@@ -179,19 +179,14 @@ class AgentEnablementService {
   }
 
   private refreshAgentSidebar(): void {
-    // Small delay to ensure Supabase write is fully committed before re-fetching
-    setTimeout(() => {
-      try {
-        if ((window as any).refreshAgentSidebar) {
-          (window as any).refreshAgentSidebar();
-          console.log('🔄 AgentEnablementService: Refreshed agent sidebar');
-        }
-        // Dispatch event so Dashboard and other components can also refresh
-        window.dispatchEvent(new Event('agent-enabled'));
-      } catch (error) {
-        console.error('❌ AgentEnablementService: Error refreshing sidebar:', error);
+    try {
+      if ((window as any).refreshAgentSidebar) {
+        (window as any).refreshAgentSidebar();
+        console.log('🔄 AgentEnablementService: Refreshed agent sidebar');
       }
-    }, 500);
+    } catch (error) {
+      console.error('❌ AgentEnablementService: Error refreshing sidebar:', error);
+    }
   }
 
   private showEnablementNotification(agentId: string, customName?: string): void {
