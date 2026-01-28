@@ -3,8 +3,8 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## SA_Knowledge_Base_Save Workflow\n\nWebhook-triggered workflow for saving user knowledge to Neon Postgres.\nCalled from Agent Settings page (frontend).\n\n### Accepts:\n- type: 'text' → Custom instructions (direct text)\n- type: 'file' → File URL (Supabase Storage) → calls backend to extract text\n\n### Flow:\n1. Receive webhook: { user_id, agent_id, type, content/file_url, category }\n2. Route by type (text vs file)\n3. For text: use content directly\n4. For files: call backend /api/file/extract-text → get extracted text\n5. Generate embedding (OpenRouter text-embedding-3-small)\n6. INSERT into user_vector_knowledge_base (Neon)\n7. Return success response\n\n### Backend extracts: PDF, DOCX, JSON, TXT, MD\n### Table: user_vector_knowledge_base\nColumns: user_id, document, category, embedding, source",
-        "height": 640,
+        "content": "## SA_Knowledge_Base_Save Workflow\n\nWebhook-triggered workflow for saving user knowledge to Neon Postgres.\nCalled from Agent Settings page (frontend).\n\n### Accepts:\n- type: 'text' → Custom instructions (direct text)\n- type: 'file' → File URL (Supabase Storage) → calls backend to extract text\n\n### Flow:\n1. Receive webhook: { user_id, agent_id, type, content/file_url, category }\n2. Route by type (text vs file)\n3. For text: chunk if needed, output items\n4. For files: call backend /api/file/extract-text → get pre-chunked text\n5. Output one item per chunk\n6. Generate embedding per chunk (OpenRouter text-embedding-3-small)\n7. INSERT each chunk into user_vector_knowledge_base (Neon)\n8. Return success response\n\n### Chunking:\n- Backend returns pre-chunked text (~1500 chars, 200 overlap)\n- Text input chunked in n8n if > 1500 chars\n- Each chunk = separate row in DB with its own embedding\n\n### Backend extracts: PDF, DOCX, JSON, TXT, MD\n### Table: user_vector_knowledge_base\nColumns: user_id, document, category, embedding, source",
+        "height": 700,
         "width": 420,
         "color": 6
       },
@@ -88,7 +88,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Process extracted file content from backend\nconst webhook = $('Webhook').first().json.body;\nconst backendResponse = $input.first().json;\n\n// Backend returns: { success, file_name, extracted_text, char_count }\nconst extractedText = backendResponse.extracted_text || '';\nconst fileName = webhook.file_name || backendResponse.file_name || 'uploaded_file';\n\nif (!extractedText.trim()) {\n  throw new Error(`No text could be extracted from file: ${fileName}`);\n}\n\nconst document = `File: ${fileName}\\n\\n${extractedText}`;\n\nreturn {\n  json: {\n    user_id: webhook.user_id,\n    agent_id: webhook.agent_id,\n    category: webhook.category || 'documents',\n    document: document,\n    source: 'file_upload'\n  }\n};"
+        "jsCode": "// Process extracted file content from backend — outputs one item per chunk\nconst webhook = $('Webhook').first().json.body;\nconst backendResponse = $input.first().json;\n\n// Backend returns: { success, file_name, extracted_text, chunks, chunk_count, char_count }\nconst chunks = backendResponse.chunks || [];\nconst fileName = webhook.file_name || backendResponse.file_name || 'uploaded_file';\n\nif (!chunks.length) {\n  // Fallback: use extracted_text as single chunk\n  const extractedText = backendResponse.extracted_text || '';\n  if (!extractedText.trim()) {\n    throw new Error(`No text could be extracted from file: ${fileName}`);\n  }\n  return {\n    json: {\n      user_id: webhook.user_id,\n      agent_id: webhook.agent_id,\n      category: webhook.category || 'documents',\n      document: `File: ${fileName}\\n\\n${extractedText}`,\n      source: 'file_upload',\n      chunk_index: 0,\n      total_chunks: 1\n    }\n  };\n}\n\n// Return one item per chunk — n8n will process each through subsequent nodes\nreturn chunks.map((chunk, index) => ({\n  json: {\n    user_id: webhook.user_id,\n    agent_id: webhook.agent_id,\n    category: webhook.category || 'documents',\n    document: `File: ${fileName} [Part ${index + 1}/${chunks.length}]\\n\\n${chunk}`,\n    source: 'file_upload',\n    chunk_index: index,\n    total_chunks: chunks.length\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -97,11 +97,11 @@
         160
       ],
       "id": "b2ca36c2-f8d3-4116-b282-ab249f237cf7",
-      "name": "Process File Content"
+      "name": "Process File Chunks"
     },
     {
       "parameters": {
-        "jsCode": "// Process text content directly\nconst webhook = $('Webhook').first().json.body;\n\nreturn {\n  json: {\n    user_id: webhook.user_id,\n    agent_id: webhook.agent_id,\n    category: webhook.category || 'custom_instructions',\n    document: webhook.content || '',\n    source: 'agent_settings'\n  }\n};"
+        "jsCode": "// Process text content — chunk if too large for embedding\nconst webhook = $('Webhook').first().json.body;\nconst fullText = webhook.content || '';\n\nif (!fullText.trim()) {\n  throw new Error('No text content provided');\n}\n\nconst CHUNK_SIZE = 1500;\nconst CHUNK_OVERLAP = 200;\n\n// If text fits in one chunk, return directly\nif (fullText.length <= CHUNK_SIZE) {\n  return {\n    json: {\n      user_id: webhook.user_id,\n      agent_id: webhook.agent_id,\n      category: webhook.category || 'custom_instructions',\n      document: fullText,\n      source: 'agent_settings',\n      chunk_index: 0,\n      total_chunks: 1\n    }\n  };\n}\n\n// Chunk the text\nconst chunks = [];\nlet start = 0;\n\nwhile (start < fullText.length) {\n  let end = start + CHUNK_SIZE;\n\n  if (end >= fullText.length) {\n    const chunk = fullText.slice(start).trim();\n    if (chunk) chunks.push(chunk);\n    break;\n  }\n\n  const segment = fullText.slice(start, end);\n  let breakPos = segment.lastIndexOf('\\n\\n');\n  if (breakPos === -1 || breakPos < CHUNK_SIZE * 0.3) breakPos = segment.lastIndexOf('\\n');\n  if (breakPos === -1 || breakPos < CHUNK_SIZE * 0.3) {\n    // Find last sentence end\n    const sentenceMatch = segment.match(/.*[.!?]\\s/s);\n    if (sentenceMatch) breakPos = sentenceMatch[0].length;\n  }\n  if (breakPos === -1 || breakPos < CHUNK_SIZE * 0.3) breakPos = segment.lastIndexOf(' ');\n  if (breakPos === -1 || breakPos < CHUNK_SIZE * 0.3) breakPos = CHUNK_SIZE;\n\n  const chunk = fullText.slice(start, start + breakPos).trim();\n  if (chunk) chunks.push(chunk);\n  start = start + breakPos - CHUNK_OVERLAP;\n  if (start < 0) start = 0;\n}\n\nreturn chunks.map((chunk, index) => ({\n  json: {\n    user_id: webhook.user_id,\n    agent_id: webhook.agent_id,\n    category: webhook.category || 'custom_instructions',\n    document: chunk,\n    source: 'agent_settings',\n    chunk_index: index,\n    total_chunks: chunks.length\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -110,7 +110,7 @@
         400
       ],
       "id": "26334908-775c-40f4-9b88-a7294cf31bce",
-      "name": "Process Text Content"
+      "name": "Process Text Chunks"
     },
     {
       "parameters": {
@@ -152,7 +152,7 @@
             },
             {
               "name": "input",
-              "value": "={{ $('Merge Paths').item.json.document }}"
+              "value": "={{ $json.document }}"
             }
           ]
         },
@@ -190,7 +190,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const trigger = $('Merge Paths').first().json;\nconst inserted = $input.first().json;\n\nreturn {\n  json: {\n    success: true,\n    action: 'knowledge_saved',\n    user_id: trigger.user_id,\n    agent_id: trigger.agent_id,\n    category: trigger.category,\n    source: trigger.source,\n    inserted_id: inserted?.id || null,\n    timestamp: new Date().toISOString()\n  }\n};"
+        "jsCode": "// Collect all inserted chunk IDs and return final response\nconst allItems = $input.all();\nconst insertedIds = allItems.map(item => item.json?.id || null).filter(Boolean);\n\n// Get metadata from Merge Paths (first item)\nconst trigger = $('Merge Paths').first().json;\n\nreturn {\n  json: {\n    success: true,\n    action: 'knowledge_saved',\n    user_id: trigger.user_id,\n    agent_id: trigger.agent_id,\n    category: trigger.category,\n    source: trigger.source,\n    chunks_inserted: insertedIds.length,\n    inserted_ids: insertedIds,\n    timestamp: new Date().toISOString()\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -226,7 +226,7 @@
         ],
         [
           {
-            "node": "Process Text Content",
+            "node": "Process Text Chunks",
             "type": "main",
             "index": 0
           }
@@ -237,14 +237,14 @@
       "main": [
         [
           {
-            "node": "Process File Content",
+            "node": "Process File Chunks",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Process File Content": {
+    "Process File Chunks": {
       "main": [
         [
           {
@@ -255,7 +255,7 @@
         ]
       ]
     },
-    "Process Text Content": {
+    "Process Text Chunks": {
       "main": [
         [
           {
