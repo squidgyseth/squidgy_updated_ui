@@ -101,83 +101,6 @@ class AgentEnablementService {
     }
   }
 
-  /**
-   * Parse onboarding response for agent enablement
-   * Single fallback method: checks agent name from config + (agent/assistant) + enablement keywords
-   */
-  parseOnboardingResponse(responseText: string): AgentEnablementData | null {
-    try {
-      console.log('🔍 AgentEnablementService: Parsing response for agent enablement');
-
-      // Get all agents dynamically from config files
-      const agentService = OptimizedAgentService.getInstance();
-      const allAgents = agentService.getAllAgents();
-
-      // IMPORTANT: Sort agents by name length (longest first) to match more specific agents first
-      // This ensures "Newsletter Agent Multi" is matched before "Newsletter Agent"
-      const sortedAgents = [...allAgents].sort((a, b) =>
-        b.agent.name.length - a.agent.name.length
-      );
-
-      // Convert response to lowercase for matching
-      const textLower = responseText.toLowerCase();
-
-      // Enablement keywords and indicators
-      const enablementKeywords = ['enabled', 'configured', 'ready', 'available', 'activated', 'set up'];
-      const enablementIndicators = ['✅', '✓', '🎉'];
-
-      // Check for "agent" or "assistant" word in text
-      const hasAgentOrAssistant = textLower.includes('agent') || textLower.includes('assistant');
-
-      // Check for enablement keyword or indicator
-      const hasEnablement = enablementKeywords.some(kw => textLower.includes(kw)) ||
-                           enablementIndicators.some(ind => responseText.includes(ind));
-
-      // If no enablement signals, exit early
-      if (!hasEnablement) {
-        console.log('❌ AgentEnablementService: No enablement keywords/indicators found');
-        return null;
-      }
-
-      // Check each agent from config (sorted by name length, longest first)
-      for (const config of sortedAgents) {
-        const agentName = config.agent.name;
-        const agentId = config.agent.id;
-
-        // Skip Personal Assistant - already enabled by default
-        if (agentId === 'personal_assistant') {
-          continue;
-        }
-
-        // Get significant words from agent name (exclude "agent"/"assistant", keep words > 2 chars)
-        const nameWords = agentName.toLowerCase()
-          .split(/\s+/)
-          .filter(word => word.length > 2 && word !== 'agent' && word !== 'assistant');
-
-        // Check if ALL significant name words exist in the text
-        const hasAllNameWords = nameWords.every(word => textLower.includes(word));
-
-        // Match if: all name words found + (agent/assistant word OR just enablement)
-        if (hasAllNameWords && (hasAgentOrAssistant || hasEnablement)) {
-          console.log(`✅ AgentEnablementService: Matched "${agentName}" (${agentId})`);
-          console.log(`   Name words found: [${nameWords.join(', ')}]`);
-
-          return {
-            agentId: agentId,
-            customName: agentName
-          };
-        }
-      }
-
-      console.log('❌ AgentEnablementService: No agent matched from config');
-      console.log('   Available agents:', allAgents.map(a => `${a.agent.name} (${a.agent.id})`).join(', '));
-      return null;
-    } catch (error) {
-      console.error('❌ AgentEnablementService: Error parsing response:', error);
-      return null;
-    }
-  }
-
   private refreshAgentSidebar(): void {
     try {
       if ((window as any).refreshAgentSidebar) {
@@ -192,29 +115,20 @@ class AgentEnablementService {
   private showEnablementNotification(agentId: string, customName?: string): void {
     try {
       const agentName = customName || agentId.replace('_', ' ');
-      
+
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('Agent Enabled! 🎉', {
           body: `${agentName} is now configured and ready to help!`,
           icon: '/favicon.ico'
         });
       }
-      
+
       if ((window as any).showToast) {
         (window as any).showToast(`✅ ${agentName} enabled and ready!`, 'success');
       }
     } catch (error) {
       console.error('❌ AgentEnablementService: Error showing notification:', error);
     }
-  }
-
-  shouldTriggerEnablement(responseText: string): boolean {
-    const textLower = responseText.toLowerCase();
-    const enablementKeywords = ['enabled', 'configured', 'ready', 'available', 'activated', 'set up'];
-    const enablementIndicators = ['✅', '✓', '🎉'];
-
-    return enablementKeywords.some(kw => textLower.includes(kw)) ||
-           enablementIndicators.some(ind => responseText.includes(ind));
   }
 
   refreshAgentMapping(): void {
@@ -234,7 +148,7 @@ class AgentEnablementService {
         actualData = responseData[0];
       }
 
-      // PRIORITY 1: Check actions_performed for Enable_Agent tool call (NEW - source of truth)
+      // Check actions_performed for Enable_Agent tool call (SOURCE OF TRUTH)
       if (typeof actualData === 'object' && Array.isArray(actualData.actions_performed)) {
         const enableAction = actualData.actions_performed.find((action: any) =>
           action.action === 'Enable_Agent' && action.result === 'success'
@@ -246,7 +160,6 @@ class AgentEnablementService {
           console.log('   agent_id:', agentId);
 
           const enablementData = {
-            finished: true,
             agent_data: {
               agent_id: agentId,
               agent_name: agentId.replace(/_/g, ' ')
@@ -258,63 +171,8 @@ class AgentEnablementService {
         }
       }
 
-      // PRIORITY 2: Check new_agent_id_is_enabled flag (current approach)
-      if (typeof actualData === 'object' && actualData.new_agent_id_is_enabled === true && actualData.new_agent_id) {
-        console.log('✅ AgentEnablementService: Detected new_agent_id_is_enabled flag');
-        console.log('   agent_id:', actualData.new_agent_id);
-
-        const enablementData = {
-          finished: true,
-          agent_data: {
-            agent_id: actualData.new_agent_id,
-            agent_name: actualData.new_agent_id.replace(/_/g, ' ')
-          },
-          user_id: actualData.user_id
-        };
-
-        return this.handleStructuredEnablement(enablementData);
-      }
-
-      // PRIORITY 3: Handle structured format with agent_data (legacy - old onboarding flow)
-      if (typeof actualData === 'object' && actualData.finished === true && actualData.agent_data) {
-        console.log('✅ AgentEnablementService: Processing structured agent enablement with agent_data');
-        console.log('   agent_id:', actualData.agent_data.agent_id);
-        console.log('   agent_name:', actualData.agent_data.agent_name);
-        return this.handleStructuredEnablement(actualData);
-      }
-
-      // PRIORITY 4: Fallback - parse enablement text when no structured data present
-      if (typeof actualData === 'object' && actualData.agent_response &&
-          typeof actualData.agent_response === 'string' &&
-          (actualData.agent_response.includes('is now enabled') ||
-           actualData.agent_response.includes('is now configured') ||
-           actualData.agent_response.includes('configured and enabled'))) {
-        console.log('🔄 AgentEnablementService: Fallback - parsing enablement text (no structured data found)');
-
-        const agentInfo = this.parseOnboardingResponse(actualData.agent_response);
-        if (agentInfo) {
-          const enablementData = {
-            finished: true,
-            agent_data: agentInfo,
-            user_id: actualData.user_id
-          };
-
-          console.log('✅ AgentEnablementService: Created structured enablement from text:', enablementData);
-          return this.handleStructuredEnablement(enablementData);
-        }
-      }
-
-      // Handle legacy text parsing
-      if (typeof responseData === 'string') {
-        console.log('🔄 AgentEnablementService: Using legacy text parsing');
-        const agentData = this.parseOnboardingResponse(responseData);
-        if (agentData) {
-          await this.enableAgentFromOnboarding(agentData);
-        }
-        return;
-      }
-
       console.log('❌ AgentEnablementService: No agent enablement action detected');
+      console.log('   Expected: actions_performed array with Enable_Agent action');
     } catch (error) {
       console.error('❌ AgentEnablementService: Error handling onboarding response:', error);
     }

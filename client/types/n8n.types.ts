@@ -36,16 +36,14 @@ export interface N8nResponse {
     current_question_index: number;
     answers: Record<string, Record<string, string>>;
   };
-  // Onboarding-specific fields (optional, only for Personal Assistant)
-  finished?: boolean;
-  agent_data?: {
-    agent_id: string;
-    agent_name: string;
-    communication_tone?: string;
-    target_audience?: string;
-    primary_goals?: string;
-    brand_voice?: string;
-  };
+  // Template preview fields
+  preview?: string;
+  template_options?: Array<{
+    id: string;
+    name: string;
+    thumbnail: string;
+    description?: string;
+  }>;
   // Routing fields for Master Agent redirects
   routing?: {
     should_redirect: boolean;
@@ -53,10 +51,11 @@ export interface N8nResponse {
     target_url: string;
     context_to_pass?: Record<string, unknown>;
   };
-  // Actions tracking (optional)
+  // Actions tracking (SOURCE OF TRUTH for tools executed)
   actions_performed?: Array<{
     action: string;
-    [key: string]: unknown;
+    input: Record<string, any>;
+    result: 'success' | 'pending' | 'error';
   }>;
   actions_todo?: Array<{
     action: string;
