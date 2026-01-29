@@ -207,6 +207,34 @@ export default function N8nChatInterface({
 
   const getExistingHistoryId = () => existingHistoryId;
 
+  // Get appropriate intro message based on onboarding status
+  const getIntroMessage = async (): Promise<string> => {
+    // Only check for Personal Assistant
+    if (agent.id !== 'personal_assistant') {
+      return agent.introMessage || '';
+    }
+
+    try {
+      // Check if user has completed onboarding (website_analysis exists)
+      const { data, error } = await supabase
+        .from('website_analysis')
+        .select('website_url')
+        .eq('firm_user_id', userId)
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        // User has completed onboarding
+        return "Hey! I see you've already completed your setup. Great to have you back! 🎉\n\nWhat would you like help with today? I can:\n• Set up another AI agent\n• Update your existing configuration\n• Help with specific tasks\n\nJust let me know!";
+      } else {
+        // New user - show onboarding intro
+        return agent.introMessage || '';
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+      return agent.introMessage || '';
+    }
+  };
+
   const loadSessionMessages = async () => {
     console.log(`🔍 loadSessionMessages called with sessionId: ${sessionId}`);
     if (!sessionId) {
@@ -219,7 +247,7 @@ export default function N8nChatInterface({
       // Load existing messages for this session
       const existingMessages = await chatSessionService.getSessionMessages(sessionId);
       console.log(`📊 Found ${existingMessages.length} existing messages`);
-      
+
       if (existingMessages.length > 0) {
         // Convert database messages to ChatMessage format
         const chatMessages: ChatMessage[] = existingMessages.map(msg => {
@@ -243,12 +271,15 @@ export default function N8nChatInterface({
           };
         });
 
+        // Get context-aware intro message
+        const introText = await getIntroMessage();
+
         // Always prepend the intro message to existing messages
-        const messagesWithIntro = agent.introMessage
+        const messagesWithIntro = introText
           ? [
               {
                 id: `intro_${sessionId}`,
-                content: agent.introMessage,
+                content: introText,
                 sender: 'agent' as const,
                 timestamp: new Date(existingMessages[0].timestamp.getTime() - 1000) // 1 second before first message
               },
@@ -261,11 +292,13 @@ export default function N8nChatInterface({
         console.log(`✅ Loaded ${chatMessages.length} messages + intro for session ${sessionId}`);
       } else {
         console.log(`📝 No existing messages, showing intro message (not saving to DB)`);
-        // New session - show intro message in UI but DON'T save to database
-        if (agent.introMessage) {
+        // New session - get context-aware intro message
+        const introText = await getIntroMessage();
+
+        if (introText) {
           const introMessage: ChatMessage = {
             id: generateRequestId(),
-            content: agent.introMessage,
+            content: introText,
             sender: 'agent',
             timestamp: new Date()
           };
@@ -277,11 +310,12 @@ export default function N8nChatInterface({
       }
     } catch (error) {
       console.error('❌ Error loading session messages:', error);
-      // Fallback to intro message for new sessions (but don't save to DB)
-      if (agent.introMessage) {
+      // Fallback to default intro message for new sessions (but don't save to DB)
+      const introText = await getIntroMessage();
+      if (introText) {
         setMessages([{
           id: generateRequestId(),
-          content: agent.introMessage,
+          content: introText,
           sender: 'agent',
           timestamp: new Date()
         }]);
