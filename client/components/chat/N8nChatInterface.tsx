@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader, Paperclip, Mic } from 'lucide-react';
 import type { N8nResponse, ChatMessage } from '../../types/n8n.types';
-import AgentResponseHandler from './AgentResponseHandler';
+import StreamingAgentMessage from './StreamingAgentMessage';
 import HTMLPreview from './HTMLPreview';
 import SocialMediaPreview from './SocialMediaPreview';
 import EnableContentRepurposerButton from './EnableContentRepurposerButton';
@@ -1057,8 +1057,8 @@ export default function N8nChatInterface({
                   )}
                   <div className="flex-1">
                     {message.status ? (
-                      // Use AgentResponseHandler for agent messages with status
-                      <AgentResponseHandler
+                      // Use StreamingAgentMessage for agent messages with streaming support
+                      <StreamingAgentMessage
                         response={{
                           user_id: userId,
                           session_id: sessionId,
@@ -1068,7 +1068,8 @@ export default function N8nChatInterface({
                           agent_response: message.content,
                           agent_status: message.status
                         }}
-                        onAnswerQuestion={handleAnswerQuestion}
+                        enableStreaming={true}
+                        streamingSpeed={15}
                       />
                     ) : (
                       // Regular message display with interactive buttons support
