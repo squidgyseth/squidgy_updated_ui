@@ -242,10 +242,23 @@ export default function N8nChatInterface({
               : undefined
           };
         });
-        
-        console.log(`✅ Setting ${chatMessages.length} messages in state`);
-        setMessages(chatMessages);
-        console.log(`✅ Loaded ${chatMessages.length} messages for session ${sessionId}`);
+
+        // Always prepend the intro message to existing messages
+        const messagesWithIntro = agent.introMessage
+          ? [
+              {
+                id: `intro_${sessionId}`,
+                content: agent.introMessage,
+                sender: 'agent' as const,
+                timestamp: new Date(existingMessages[0].timestamp.getTime() - 1000) // 1 second before first message
+              },
+              ...chatMessages
+            ]
+          : chatMessages;
+
+        console.log(`✅ Setting ${messagesWithIntro.length} messages in state (including intro)`);
+        setMessages(messagesWithIntro);
+        console.log(`✅ Loaded ${chatMessages.length} messages + intro for session ${sessionId}`);
       } else {
         console.log(`📝 No existing messages, showing intro message (not saving to DB)`);
         // New session - show intro message in UI but DON'T save to database
