@@ -228,13 +228,54 @@ class AgentEnablementService {
   async handleOnboardingResponse(responseData: any, userId?: string): Promise<void> {
     try {
       console.log('🔍 AgentEnablementService: Received responseData:', responseData);
-      
+
       let actualData = responseData;
       if (Array.isArray(responseData) && responseData.length > 0) {
         actualData = responseData[0];
       }
 
-      // PRIORITY 1: Handle structured format with agent_data (preferred - use exact data from N8N)
+      // PRIORITY 1: Check actions_performed for Enable_Agent tool call (NEW - source of truth)
+      if (typeof actualData === 'object' && Array.isArray(actualData.actions_performed)) {
+        const enableAction = actualData.actions_performed.find((action: any) =>
+          action.action === 'Enable_Agent' && action.result === 'success'
+        );
+
+        if (enableAction && enableAction.input?.fieldValues2_Field_Value) {
+          const agentId = enableAction.input.fieldValues2_Field_Value;
+          console.log('✅ AgentEnablementService: Detected Enable_Agent in actions_performed');
+          console.log('   agent_id:', agentId);
+
+          const enablementData = {
+            finished: true,
+            agent_data: {
+              agent_id: agentId,
+              agent_name: agentId.replace(/_/g, ' ')
+            },
+            user_id: actualData.user_id
+          };
+
+          return this.handleStructuredEnablement(enablementData);
+        }
+      }
+
+      // PRIORITY 2: Check new_agent_id_is_enabled flag (current approach)
+      if (typeof actualData === 'object' && actualData.new_agent_id_is_enabled === true && actualData.new_agent_id) {
+        console.log('✅ AgentEnablementService: Detected new_agent_id_is_enabled flag');
+        console.log('   agent_id:', actualData.new_agent_id);
+
+        const enablementData = {
+          finished: true,
+          agent_data: {
+            agent_id: actualData.new_agent_id,
+            agent_name: actualData.new_agent_id.replace(/_/g, ' ')
+          },
+          user_id: actualData.user_id
+        };
+
+        return this.handleStructuredEnablement(enablementData);
+      }
+
+      // PRIORITY 3: Handle structured format with agent_data (legacy - old onboarding flow)
       if (typeof actualData === 'object' && actualData.finished === true && actualData.agent_data) {
         console.log('✅ AgentEnablementService: Processing structured agent enablement with agent_data');
         console.log('   agent_id:', actualData.agent_data.agent_id);
@@ -242,12 +283,13 @@ class AgentEnablementService {
         return this.handleStructuredEnablement(actualData);
       }
 
-      // PRIORITY 2: Fallback - parse enablement text when agent_data is not present
+      // PRIORITY 4: Fallback - parse enablement text when no structured data present
       if (typeof actualData === 'object' && actualData.agent_response &&
           typeof actualData.agent_response === 'string' &&
-          (actualData.agent_response.includes('is now configured and enabled') ||
+          (actualData.agent_response.includes('is now enabled') ||
+           actualData.agent_response.includes('is now configured') ||
            actualData.agent_response.includes('configured and enabled'))) {
-        console.log('🔄 AgentEnablementService: Fallback - parsing enablement text (no agent_data found)');
+        console.log('🔄 AgentEnablementService: Fallback - parsing enablement text (no structured data found)');
 
         const agentInfo = this.parseOnboardingResponse(actualData.agent_response);
         if (agentInfo) {
