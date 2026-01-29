@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { sendToSethAgent } from "../lib/n8nService";
 import LinkDetectingTextArea from "./ui/LinkDetectingTextArea";
+import StreamingText from "./chat/StreamingText";
 
 interface TemplateOption {
   id: string;
@@ -15,6 +16,9 @@ interface Message {
   timestamp: string;
   imageUrl?: string; // For template previews from Templated.io
   templateOptions?: TemplateOption[]; // For showing template choices
+  newAgentEnabled?: boolean; // Whether a new agent was enabled
+  newAgentId?: string; // ID of the newly enabled agent
+  isStreaming?: boolean; // Whether this message should animate with typing effect
 }
 
 interface ChatInterfaceProps {
@@ -244,7 +248,10 @@ export function ChatInterface({
             content: botContent,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             imageUrl: imageUrl || undefined,
-            templateOptions: templateOptions || undefined
+            templateOptions: templateOptions || undefined,
+            isStreaming: true,
+            newAgentEnabled: result.new_agent_id_is_enabled || false,
+            newAgentId: result.new_agent_id || undefined
           };
           setMessages(prev => [...prev, botMessage]);
         }
@@ -333,12 +340,28 @@ export function ChatInterface({
                   ? 'bg-gray-100 rounded-xl p-3 max-w-[80%]'
                   : 'bg-gray-50 rounded-lg p-3'
               }`}>
-                <LinkDetectingTextArea
-                  content={message.content}
-                  className="text-text-primary text-sm leading-relaxed whitespace-pre-line"
-                />
+                {message.type === 'bot' && message.isStreaming ? (
+                  <StreamingText
+                    content={message.content}
+                    speed={15}
+                    className="text-text-primary text-sm leading-relaxed"
+                    shouldStream={true}
+                    onComplete={() => {
+                      setMessages(prev => prev.map(msg =>
+                        msg === message ? { ...msg, isStreaming: false } : msg
+                      ));
+                    }}
+                  />
+                ) : (
+                  <LinkDetectingTextArea
+                    content={message.content}
+                    className="text-text-primary text-sm leading-relaxed whitespace-pre-line"
+                  />
+                )}
                 {message.imageUrl && (
-                  <div className="mt-3">
+                  <div className={`mt-3 transition-all duration-700 ${
+                    message.isStreaming ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+                  }`}>
                     <img
                       src={message.imageUrl}
                       alt="Template preview"
@@ -348,7 +371,9 @@ export function ChatInterface({
                   </div>
                 )}
                 {message.templateOptions && message.templateOptions.length > 0 && (
-                  <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div className={`mt-3 grid grid-cols-2 gap-3 transition-opacity duration-700 ${
+                    message.isStreaming ? 'opacity-0' : 'opacity-100'
+                  }`}>
                     {message.templateOptions.map((template, idx) => (
                       <button
                         key={idx}
@@ -356,6 +381,9 @@ export function ChatInterface({
                           setInputMessage(`I'd like to use template: ${template.name} (ID: ${template.id})`);
                         }}
                         className="flex flex-col items-center p-2 border border-gray-200 rounded-lg hover:border-squidgy-purple hover:bg-purple-50 transition-colors cursor-pointer"
+                        style={{
+                          animation: message.isStreaming ? 'none' : `fadeInUp 0.5s ease-out ${idx * 0.1}s both`
+                        }}
                       >
                         <img
                           src={template.thumbnail}
