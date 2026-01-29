@@ -248,6 +248,18 @@ export function ChatInterface({
           };
           setMessages(prev => [...prev, botMessage]);
         }
+
+        // Check if a new agent was enabled and refresh the sidebar
+        if (result.new_agent_id_is_enabled && result.new_agent_id) {
+          console.log('🔄 New agent enabled:', result.new_agent_id, '- Refreshing sidebar');
+          // Call the global refresh function exposed by CategorizedAgentSidebar
+          if ((window as any).refreshAgentSidebar) {
+            // Add a small delay to ensure the database has been updated
+            setTimeout(() => {
+              (window as any).refreshAgentSidebar();
+            }, 500);
+          }
+        }
       } else {
         // No response from N8N
         const botMessage: Message = {
