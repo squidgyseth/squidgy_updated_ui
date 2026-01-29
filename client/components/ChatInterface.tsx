@@ -2,10 +2,19 @@ import { useState } from "react";
 import { sendToSethAgent } from "../lib/n8nService";
 import LinkDetectingTextArea from "./ui/LinkDetectingTextArea";
 
+interface TemplateOption {
+  id: string;
+  name: string;
+  thumbnail: string;
+  description?: string;
+}
+
 interface Message {
   type: 'user' | 'bot';
   content: string;
   timestamp: string;
+  imageUrl?: string; // For template previews from Templated.io
+  templateOptions?: TemplateOption[]; // For showing template choices
 }
 
 interface ChatInterfaceProps {
@@ -193,7 +202,19 @@ export function ChatInterface({
       // Handle N8N response - check for various possible response formats
       if (result) {
         let botContent = null;
-        
+        let imageUrl = null;
+        let templateOptions = null;
+
+        // Extract preview image URL if present
+        if (result.preview) {
+          imageUrl = result.preview;
+        }
+
+        // Extract template options if present
+        if (result.template_options && Array.isArray(result.template_options)) {
+          templateOptions = result.template_options;
+        }
+
         // Check for different possible response properties
         if (result.agent_response) {
           botContent = result.agent_response;
@@ -216,12 +237,14 @@ export function ChatInterface({
           console.log('N8N response structure:', Object.keys(result));
           botContent = 'I received your message and I\'m processing it. The response format is being configured.';
         }
-        
+
         if (botContent) {
           const botMessage: Message = {
             type: 'bot',
             content: botContent,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            imageUrl: imageUrl || undefined,
+            templateOptions: templateOptions || undefined
           };
           setMessages(prev => [...prev, botMessage]);
         }
@@ -294,14 +317,51 @@ export function ChatInterface({
               message.type === 'user' ? 'ml-8 flex flex-col items-end' : 'mr-8'
             }`}>
               <div className={`${
-                message.type === 'user' 
-                  ? 'bg-gray-100 rounded-xl p-3 max-w-[80%]' 
+                message.type === 'user'
+                  ? 'bg-gray-100 rounded-xl p-3 max-w-[80%]'
                   : 'bg-gray-50 rounded-lg p-3'
               }`}>
-                <LinkDetectingTextArea 
+                <LinkDetectingTextArea
                   content={message.content}
                   className="text-text-primary text-sm leading-relaxed whitespace-pre-line"
                 />
+                {message.imageUrl && (
+                  <div className="mt-3">
+                    <img
+                      src={message.imageUrl}
+                      alt="Template preview"
+                      className="rounded-lg max-w-full h-auto shadow-md border border-gray-200"
+                      style={{ maxHeight: '400px' }}
+                    />
+                  </div>
+                )}
+                {message.templateOptions && message.templateOptions.length > 0 && (
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    {message.templateOptions.map((template, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setInputMessage(`I'd like to use template: ${template.name} (ID: ${template.id})`);
+                        }}
+                        className="flex flex-col items-center p-2 border border-gray-200 rounded-lg hover:border-squidgy-purple hover:bg-purple-50 transition-colors cursor-pointer"
+                      >
+                        <img
+                          src={template.thumbnail}
+                          alt={template.name}
+                          className="w-full h-32 object-cover rounded-md mb-2"
+                        />
+                        <span className="text-xs font-medium text-text-primary text-center">
+                          {template.name}
+                        </span>
+                        {template.description && (
+                          <span className="text-xs text-text-subtle text-center mt-1">
+                            {template.description}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <p className={`text-text-subtle text-xs mt-1 ${
                 message.type === 'user' ? 'text-right' : 'text-left'
