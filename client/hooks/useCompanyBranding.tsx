@@ -120,6 +120,11 @@ export function useCompanyBranding(): CompanyBranding {
 
     fetchCompanyBranding();
 
+    // Set up polling as backup (every 10 seconds) to catch updates that real-time might miss
+    const pollingInterval = setInterval(() => {
+      fetchCompanyBranding();
+    }, 10000);
+
     // Set up real-time subscription for website_analysis updates
     const websiteChannel = supabase
       .channel(`website_analysis_branding_${userId}`)
@@ -158,8 +163,9 @@ export function useCompanyBranding(): CompanyBranding {
       )
       .subscribe();
 
-    // Cleanup subscriptions on unmount
+    // Cleanup subscriptions and polling on unmount
     return () => {
+      clearInterval(pollingInterval);
       websiteChannel.unsubscribe();
       businessChannel.unsubscribe();
     };

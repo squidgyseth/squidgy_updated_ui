@@ -50,6 +50,16 @@ export default function ChatHistory({
 
   useEffect(() => {
     loadSessions();
+
+    // Set up polling to refresh chat history every 30 seconds
+    const pollingInterval = setInterval(() => {
+      loadSessions();
+    }, 30000);
+
+    // Cleanup polling on unmount
+    return () => {
+      clearInterval(pollingInterval);
+    };
   }, [userId, agentId]);
 
   const loadSessions = async () => {
