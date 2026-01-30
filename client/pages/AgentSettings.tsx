@@ -226,23 +226,33 @@ export default function AgentSettings() {
     let failCount = 0;
 
     try {
-      // Handle text input — send to agent's chat webhook and wait for response
+      // Handle text input — send to agent's config webhook with user_instruction format
       if (currentText.trim()) {
-        const webhookUrl = agentConfig?.n8n?.webhook_url;
+        // Use FK_RAG_SAVE for Personal Assistant, otherwise use agent's configured webhook
+        const webhookUrl = agentId === 'personal_assistant' 
+          ? 'https://n8n.theaiteam.uk/webhook/FK_RAG_SAVE'
+          : agentConfig?.n8n?.webhook_url;
+        
         if (webhookUrl) {
-          const sessionId = generateSessionId(userId, agentId || '');
+          console.log('🔍 AgentSettings DEBUG - Sending to webhook:', webhookUrl);
           try {
-            await sendToN8nWorkflow(
-              userId,
-              currentText.trim(),
-              agentId || '',
-              sessionId,
-              generateRequestId(),
-              webhookUrl
-            );
-            console.log('Text instructions sent successfully');
+            const payload = {
+              user_id: userId,
+              user_instruction: currentText.trim(),
+              file_url: '',
+              session_id: generateSessionId(userId, agentId || ''),
+              agent_name: agentId,
+              timestamp_of_call_made: new Date().toISOString(),
+              request_id: generateRequestId()
+            };
+            await fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            console.log('Text instructions sent successfully with payload:', payload);
           } catch (err) {
-            console.error('n8n chat webhook error:', err);
+            console.error('n8n config webhook error:', err);
           }
         }
       }
@@ -303,30 +313,42 @@ export default function AgentSettings() {
             console.error('Error calling backend processing:', backendError);
           }
 
-          // Step 2: Processing - sending to n8n
+          // Step 2: Processing - sending to n8n with user_instruction format
           updateFileStatus(i, 'processing');
 
-          const webhookUrl = agentConfig?.n8n?.webhook_url;
-          if (webhookUrl) {
-            const sessionId = generateSessionId(userId, agentId || '');
-            const message = `File uploaded via Configurable Data section\n\nFile: ${file.name}\nURL: ${publicUrl}`;
-            
-            // Wait for n8n response
-            const response = await sendToN8nWorkflow(
-              userId,
-              message,
-              agentId || '',
-              sessionId,
-              generateRequestId(),
-              webhookUrl
-            );
-            
-            if (response) {
-              updateFileStatus(i, 'completed');
-              successCount++;
-              console.log(`File ${file.name} processed successfully`);
-            } else {
-              updateFileStatus(i, 'failed', 'No response from processing service');
+          // Use FK_RAG_SAVE for Personal Assistant, otherwise use agent's configured webhook
+          const fileWebhookUrl = agentId === 'personal_assistant' 
+            ? 'https://n8n.theaiteam.uk/webhook/FK_RAG_SAVE'
+            : agentConfig?.n8n?.webhook_url;
+          
+          if (fileWebhookUrl) {
+            try {
+              const payload = {
+                user_id: userId,
+                user_instruction: '',
+                file_url: publicUrl,
+                session_id: generateSessionId(userId, agentId || ''),
+                agent_name: agentId,
+                timestamp_of_call_made: new Date().toISOString(),
+                request_id: generateRequestId()
+              };
+              const response = await fetch(fileWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+              
+              if (response.ok) {
+                updateFileStatus(i, 'completed');
+                successCount++;
+                console.log(`File ${file.name} processed successfully with payload:`, payload);
+              } else {
+                updateFileStatus(i, 'failed', 'No response from processing service');
+                failCount++;
+              }
+            } catch (err) {
+              console.error('n8n config webhook error:', err);
+              updateFileStatus(i, 'failed', 'Error sending to n8n');
               failCount++;
             }
           } else {

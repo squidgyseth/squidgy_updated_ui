@@ -614,6 +614,32 @@ UTILITY TOOLS:
 - **Get Current Time** - Get accurate current time for time-sensitive operations (SILENTLY)
 - **Get Available Assistants** - Fetch list of available agents dynamically (SILENTLY)
 
+AGENT ACTIVATION TOOLS (USE IN THIS ORDER):
+- **Get Agent ID** - MUST call this FIRST when activating an agent. Pass the agent NAME to get the agent_id from the database.
+- **Enable Agent** - Call this SECOND with the agent_id returned from Get Agent ID tool.
+
+### CRITICAL: AGENT ACTIVATION WORKFLOW
+When activating/enabling an agent, you MUST follow this exact sequence:
+
+1. **FIRST**: Call "Get Agent ID" tool with the agent's display name (e.g., "Social Media Manager")
+2. **SECOND**: Use the returned agent_id to call "Enable Agent" tool
+
+**WRONG (will fail):**
+- Calling Enable Agent directly with a hardcoded agent_id
+- Assuming agent_id without calling Get Agent ID first
+- Using agent names instead of agent_ids
+
+**CORRECT:**
+1. User selects "Social Media Manager"
+2. Call Get Agent ID with name="Social Media Manager" → Returns agent_id="social_media_agent"
+3. Call Enable Agent with agent_id="social_media_agent" and other config data
+
+**WHY THIS MATTERS:**
+- You do NOT have access to YAML config files - agent IDs are ONLY available through the database
+- The "Get Agent ID" tool queries the database to find the correct agent_id for a given agent name
+- Without calling Get Agent ID first, you have NO way to know the correct agent_id
+- This is your ONLY method to get agent IDs - there is no other source available to you
+
 =======================================================================
 ## CRITICAL INSTRUCTIONS
 
