@@ -24,7 +24,7 @@ export interface UseStreamingTextResult {
 
 /**
  * A reusable React hook for streaming/typing text effects.
- * 
+ *
  * @param text The full text to be streamed.
  * @param options Configuration for speed, callbacks, and behavior.
  * @returns {UseStreamingTextResult} The current state and control functions.

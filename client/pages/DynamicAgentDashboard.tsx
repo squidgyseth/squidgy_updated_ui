@@ -7,6 +7,7 @@ import { AgentConfigService } from '../services/agentConfigService';
 import { navigationService } from '../services/navigationService';
 import { useNavigationService } from '../hooks/useNavigationService';
 import { chatSessionService } from '../services/chatSessionService';
+import { queryByUserId } from '../services/supabaseQueryService';
 
 /**
  * Dynamic Agent Dashboard - A single component that handles ALL agents
@@ -24,6 +25,7 @@ export default function DynamicAgentDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [recentActionTrigger, setRecentActionTrigger] = useState(0);
+  const [hasWebsiteInfo, setHasWebsiteInfo] = useState<boolean>(false);
 
   // Callback to trigger recent actions refresh when a message is sent
   const handleMessageSent = () => {
@@ -45,6 +47,22 @@ export default function DynamicAgentDashboard() {
         if (config) {
           setAgentConfig(config);
           console.log(`${config.agent.name} config loaded from YAML`);
+
+          // For Personal Assistant, check if user has website info
+          if (agentId === 'personal_assistant' && userId) {
+            try {
+              const result = await queryByUserId('vw_personal_assistant_config_llm', userId);
+
+              if (result.success && result.data && result.data.length > 0) {
+                const websiteInfo = result.data[0].website_analysis_info;
+                setHasWebsiteInfo(!!websiteInfo && websiteInfo.trim() !== '');
+                console.log('📊 Website info status:', !!websiteInfo);
+              }
+            } catch (err) {
+              console.warn('Could not fetch PA config for intro message:', err);
+              // Continue with default behavior on error
+            }
+          }
         } else {
           setError(`Failed to load configuration for agent: ${agentId}`);
         }
@@ -57,7 +75,7 @@ export default function DynamicAgentDashboard() {
     };
 
     loadAgentConfig();
-  }, [agentId, configService]);
+  }, [agentId, configService, userId]);
 
   const handlePinToggle = (agentId: string, pinned: boolean) => {
     console.log(`Agent ${agentId} pin toggled to: ${pinned}`);
@@ -149,7 +167,7 @@ export default function DynamicAgentDashboard() {
     name: agentConfig.agent.name,
     tagline: agentConfig.agent.tagline || agentConfig.agent.description,
     avatar: agentConfig.agent.avatar,
-    introMessage: generateIntroMessage(agentConfig.agent, location.state?.fromSidebar),
+    introMessage: generateIntroMessage(agentConfig.agent, location.state?.fromSidebar, hasWebsiteInfo),
     suggestionButtons: agentConfig.suggestions || []
   };
 
@@ -178,14 +196,19 @@ export default function DynamicAgentDashboard() {
 }
 
 /**
- * Generate intro message based on agent configuration
+ * Generate intro message based on agent configuration and user state
  */
-function generateIntroMessage(agent: any, fromSidebar?: boolean): string {
-  const { initial_message, sidebar_greeting } = agent;
+function generateIntroMessage(agent: any, fromSidebar?: boolean, hasWebsiteInfo?: boolean): string {
+  const { initial_message, sidebar_greeting, id } = agent;
 
   // Use sidebar_greeting when navigating from sidebar (if available), otherwise use initial_message
   if (fromSidebar && sidebar_greeting) {
     return sidebar_greeting;
+  }
+
+  // For Personal Assistant: Check if user already has website info
+  if (id === 'personal_assistant' && hasWebsiteInfo) {
+    return "Seems like you have already given the website information. What else can I help you with?";
   }
 
   // Return the initial_message from YAML config

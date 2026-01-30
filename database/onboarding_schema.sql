@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS onboarding_company_details (
     time_zone VARCHAR(50) DEFAULT 'America/New_York',
     
     -- Business Goals and Preferences
-    primary_goals TEXT[], -- Array of primary business goals
+    primary_goals TEXT, -- Comma-separated primary business goals
     ai_experience_level VARCHAR(50), -- 'beginner', 'intermediate', 'advanced'
     preferred_working_hours VARCHAR(100), -- 'Business hours', '24/7', 'Flexible'
     

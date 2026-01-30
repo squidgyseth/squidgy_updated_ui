@@ -41,6 +41,12 @@ export default function AgentSettings() {
   const [previousFiles, setPreviousFiles] = useState<PreviousFile[]>([]);
   const [loadingPreviousFiles, setLoadingPreviousFiles] = useState(false);
 
+  // Existing knowledge base data from backend API
+  const [existingFiles, setExistingFiles] = useState<any[]>([]);
+  const [existingInstructions, setExistingInstructions] = useState<string>('');
+  const [loadingExisting, setLoadingExisting] = useState(false);
+  const [instructionsLoaded, setInstructionsLoaded] = useState(false);
+
   // Toast notification state
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState({ title: '', subtitle: '', isError: false });
@@ -120,6 +126,54 @@ export default function AgentSettings() {
       fetchPreviousFiles();
     }
   }, [userId, agentId]);
+
+  // Load existing knowledge base data from Neon database via backend API
+  useEffect(() => {
+    const fetchExistingData = async () => {
+      if (!userId || !agentId) return;
+
+      setLoadingExisting(true);
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      try {
+        // Fetch files from Neon database via backend API
+        const filesResponse = await fetch(`${backendUrl}/api/knowledge-base/files/${userId}`);
+        if (filesResponse.ok) {
+          const filesData = await filesResponse.json();
+          setExistingFiles(filesData.files || []);
+        } else {
+          console.error('Failed to fetch files:', await filesResponse.text());
+          setExistingFiles([]);
+        }
+
+        // Fetch custom instructions from Neon database via backend API
+        const instructionsResponse = await fetch(`${backendUrl}/api/knowledge-base/instructions/${userId}`);
+        if (instructionsResponse.ok) {
+          const instructionsData = await instructionsResponse.json();
+          setExistingInstructions(instructionsData.instructions || '');
+        } else {
+          console.error('Failed to fetch instructions:', await instructionsResponse.text());
+          setExistingInstructions('');
+        }
+      } catch (error) {
+        console.error('Error fetching existing knowledge:', error);
+        setExistingFiles([]);
+        setExistingInstructions('');
+      } finally {
+        setLoadingExisting(false);
+      }
+    };
+
+    fetchExistingData();
+  }, [userId, agentId]);
+
+  // Pre-fill textarea with existing custom instructions
+  useEffect(() => {
+    if (existingInstructions && !instructionsLoaded && !currentText) {
+      setCurrentText(existingInstructions);
+      setInstructionsLoaded(true);
+    }
+  }, [existingInstructions, instructionsLoaded, currentText]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -720,6 +774,64 @@ export default function AgentSettings() {
                         >
                           View
                         </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Existing Knowledge Base Section (from Backend API) */}
+          {(existingFiles.length > 0 || loadingExisting) && (
+            <div className="mt-8 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-4">
+                <h2 className="text-xl font-bold text-white">Existing Knowledge Base</h2>
+                <p className="text-emerald-100 text-sm">Files stored in your knowledge base</p>
+              </div>
+              
+              <div className="p-6">
+                {loadingExisting ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader size={24} className="text-emerald-500 animate-spin" />
+                    <span className="ml-3 text-gray-600">Loading knowledge base...</span>
+                  </div>
+                ) : existingFiles.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No files in knowledge base yet</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {existingFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
+                            <File size={20} className="text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-800 truncate mb-1">
+                              {file.file_name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(file.created_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </p>
+                            {file.file_url && (
+                              <a
+                                href={file.file_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-emerald-600 hover:text-emerald-700 hover:underline mt-1 inline-block"
+                              >
+                                Download
+                              </a>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>

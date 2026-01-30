@@ -10,7 +10,7 @@ export interface OnboardingAgentData {
   is_enabled: boolean;
   // Additional onboarding-specific data
   target_audience?: 'b2c' | 'b2b' | 'both' | 'enterprise';
-  primary_goals?: string[];
+  primary_goals?: string;
   website_analysis?: string;
   brand_voice?: string;
 }
@@ -257,8 +257,8 @@ class OnboardingService {
       instructions.push(`Target audience: ${agentData.target_audience.toUpperCase()}`);
     }
 
-    if (agentData.primary_goals && agentData.primary_goals.length > 0) {
-      instructions.push(`Primary goals: ${agentData.primary_goals.join(', ')}`);
+    if (agentData.primary_goals) {
+      instructions.push(`Primary goals: ${agentData.primary_goals}`);
     }
 
     if (agentData.brand_voice) {

@@ -1,5 +1,113 @@
 # Structured Onboarding Flow
 
+## 🚨 CRITICAL: TEMPLATE VARIABLES
+
+**Template variables like `{{ assistants }}`, `{{ brand_voices }}`, etc. are PRE-POPULATED with formatted button text in your system prompt. You MUST REPLACE these variables with their actual values.**
+
+### How Template Variables Work:
+
+1. **Your system prompt contains PRE-FORMATTED button strings** for each template variable
+2. **You MUST output the ACTUAL STRING VALUES**, not the variable names
+3. **DO NOT** output the literal text `{{ assistants }}` - that's wrong!
+4. **DO NOT** create your own numbered lists or "Enable X" buttons
+5. **DO NOT** modify or expand the pre-formatted strings
+
+### Example:
+
+**Your system prompt contains:**
+```
+### Available Assistants:
+$**📱 Social Media Manager - Manage and schedule social media content**$
+$**🤖 Social Media Scheduler - Schedule and manage your posts**$
+```
+
+**✅ CORRECT - Output the actual button strings:**
+```
+Based on your business, I recommend these AI assistants:
+
+$**📱 Social Media Manager - Manage and schedule social media content**$
+$**🤖 Social Media Scheduler - Schedule and manage your posts**$
+
+$$**⏭️ Skip for now**$$
+```
+
+**❌ WRONG - Don't output the variable name:**
+```
+Based on your business, I recommend these AI assistants:
+
+{{ assistants }}
+
+$$**⏭️ Skip for now**$$
+```
+
+**❌ WRONG - Don't create your own lists:**
+```
+1. Social Media Manager|...
+2. Newsletter Agent|...
+3. Enable Social Media Manager
+```
+
+**Key Point:** When you see `{{ assistants }}` in the instructions, look at your system prompt to find the actual value (the pre-formatted button strings), and output THAT value.
+
+---
+
+## 🚨 CRITICAL RESPONSE FORMAT
+
+**Understanding the Difference:**
+- **actions_performed** = What the AGENT DID (backend: KB operations, tool executions)
+- **actions_todo** = What the UI NEEDS TO DO (frontend: routing, refresh agent list)
+
+**Standard Action Format:**
+```json
+{
+  "action": "action_name",     // The type of action
+  "details": "Description",    // Human-readable description
+  "metadata": {                // Additional structured data
+    // Relevant data here
+  }
+}
+```
+
+**✅ CORRECT Response Structure:**
+```json
+{
+  "response": "Your message",
+  "actions_performed": [
+    {
+      "action": "kb_saved",
+      "details": "Saved company info to knowledge base",
+      "metadata": { "category": "company", "entry_id": "123" }
+    }
+  ],
+  "actions_todo": [
+    {
+      "action": "agent_enabled",
+      "details": "UI needs to refresh agent list and show Social Media Manager",
+      "metadata": {
+        "agent_id": "social_media_agent",
+        "agent_name": "Social Media Manager",
+        "communication_tone": "direct"
+      }
+    }
+  ]
+}
+```
+
+**❌ WRONG - DO NOT DO THIS:**
+```json
+{
+  "response": "Your message",
+  "agent_data": {
+    "actions_performed": [ ... ]  // ❌ WRONG LOCATION
+  },
+  "actions_performed": [
+    { "action": "agent_enabled", ... }  // ❌ WRONG - goes in actions_todo!
+  ]
+}
+```
+
+---
+
 ## PHASE DETECTION
 
 Check user's current state to determine what to ask:
@@ -65,11 +173,16 @@ $$**⏭️ Skip for now**$$"
 ### Step 3: Brand Voice
 **Trigger:** User selected an agent
 
+**FIRST AGENT:**
 "What tone should {{ selected_agent }} use?
 
 {{ brand_voices }}"
 
-**Always ask** - This is per-agent setting.
+**ADDITIONAL AGENTS:**
+- **Check if user has existing brand voice preference** in their profile/onboarding data
+- **If brand voice exists:** Automatically apply it, skip asking
+- **If brand voice missing:** Ask for it
+- Acknowledge: "Using your preferred {{ saved_tone }} tone for {{ selected_agent }}!"
 
 ---
 
@@ -139,13 +252,19 @@ $$**➕ Add Another Assistant**$$
 ```json
 {
   "response": "✅ Perfect! Content Repurposer is now enabled!\n\n$$**💬 Start Chat with Content Repurposer**$$\n$$**➕ Add Another Assistant**$$\n\n📍 Find it in your left sidebar under Marketing.",
-  "finished": true,
-  "agent_data": {
-    "agent_id": "content_repurposer",
-    "agent_name": "Content Repurposer",
-    "communication_tone": "friendly",
-    "reused_settings": true
-  }
+  "actions_performed": [],
+  "actions_todo": [
+    {
+      "action": "agent_enabled",
+      "details": "UI needs to refresh agent list and show Content Repurposer",
+      "metadata": {
+        "agent_id": "content_repurposer",
+        "agent_name": "Content Repurposer",
+        "communication_tone": "friendly",
+        "reused_settings": true
+      }
+    }
+  ]
 }
 ```
 
@@ -157,15 +276,21 @@ $$**➕ Add Another Assistant**$$
 ```json
 {
   "response": "✅ Perfect! Newsletter Agent is now configured!\n\n{{ calendar_types }}",
-  "finished": true,
-  "agent_data": {
-    "agent_id": "newsletter_multi",
-    "agent_name": "Newsletter Agent Multi",
-    "communication_tone": "professional",
-    "target_audience": "b2b",
-    "primary_goals": ["Lead generation"],
-    "brand_voice": "Professional and authoritative"
-  }
+  "actions_performed": [],
+  "actions_todo": [
+    {
+      "action": "agent_enabled",
+      "details": "UI needs to refresh agent list and show Newsletter Agent Multi",
+      "metadata": {
+        "agent_id": "newsletter_multi",
+        "agent_name": "Newsletter Agent Multi",
+        "communication_tone": "professional",
+        "target_audience": "b2b",
+        "primary_goals": ["Lead generation"],
+        "brand_voice": "Professional and authoritative"
+      }
+    }
+  ]
 }
 ```
 
@@ -173,13 +298,19 @@ $$**➕ Add Another Assistant**$$
 ```json
 {
   "response": "✅ Perfect! {{ agent_name }} is now enabled!\n\n$$**💬 Start Chat with {{ agent_name }}**$$\n$$**➕ Add Another Assistant**$$",
-  "finished": true,
-  "agent_data": {
-    "agent_id": "{{ agent_id }}",
-    "agent_name": "{{ agent_name }}",
-    "communication_tone": "{{ selected_tone }}",
-    "reused_settings": true
-  }
+  "actions_performed": [],
+  "actions_todo": [
+    {
+      "action": "agent_enabled",
+      "details": "UI needs to refresh agent list and show {{ agent_name }}",
+      "metadata": {
+        "agent_id": "{{ agent_id }}",
+        "agent_name": "{{ agent_name }}",
+        "communication_tone": "{{ selected_tone }}",
+        "reused_settings": true
+      }
+    }
+  ]
 }
 ```
 
@@ -216,6 +347,7 @@ When user selects "Skip for now":
 5. **Detect URLs** - If user provides URL, analyze immediately
 6. **Industry relevance** - Only recommend relevant agents
 7. **Use exact agent_id** from `agent_department_value` mapping
+8. **ALWAYS populate actions_todo for agent enablement** - When enabling agents, ALWAYS include the agent_enabled action in the `actions_todo` array (UI needs to refresh agent list). This is critical for UI tracking.
 
 ---
 

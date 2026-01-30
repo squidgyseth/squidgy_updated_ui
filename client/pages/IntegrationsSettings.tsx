@@ -73,6 +73,9 @@ export default function IntegrationsSettings() {
   }, [firmUserId]);
 
   useEffect(() => {
+    // Facebook Ads integration auto-fetch disabled (causes 404 if not set up)
+    // Uncomment below if you need Facebook Ads integration (not Social Media Posting)
+    /*
     if (locationId && firebaseToken && accessToken && !showFacebookPages && !refreshingToken) {
       Promise.all([
         fetchFacebookPagesFromGHL().catch(err => {
@@ -83,6 +86,7 @@ export default function IntegrationsSettings() {
         })
       ]);
     }
+    */
   }, [locationId, firebaseToken, accessToken, refreshingToken]);
 
   useEffect(() => {
@@ -512,27 +516,45 @@ export default function IntegrationsSettings() {
 
   const fetchGHLIntegrations = async () => {
     if (!firmUserId) return;
-    
+
     try {
       setLoading(true);
-      
-      // Query Supabase directly for GHL integrations using firm_user_id
-      const { data, error: supabaseError } = await supabase
+
+      // Query Supabase for ALL GHL integrations to display in table
+      const { data: allData, error: allError } = await supabase
         .from('ghl_subaccounts')
         .select('*')
         .eq('firm_user_id', firmUserId);
-      
-      if (supabaseError) {
-        throw new Error(supabaseError.message);
+
+      if (allError) {
+        throw new Error(allError.message);
       }
-      
-      setGhlIntegrations(data || []);
-      
-      // Extract location_id, ghl_user_id, and PIT_Token from the first integration
-      if (data && data.length > 0) {
-        setLocationId(data[0].ghl_location_id);
-        setGhlUserId(data[0].soma_ghl_user_id || null);
-        setPitToken(data[0].PIT_Token || null);
+
+      setGhlIntegrations(allData || []);
+
+      // Query specifically for SOL agent (Social Media) to get tokens
+      // This ensures we use the correct location for social media integrations
+      const { data: solData, error: solError } = await supabase
+        .from('ghl_subaccounts')
+        .select('*')
+        .eq('firm_user_id', firmUserId)
+        .eq('agent_id', 'SOL')
+        .single();
+
+      if (solError) {
+        console.warn('No SOL agent integration found, using first available:', solError.message);
+        // Fallback to first integration if SOL not found
+        if (allData && allData.length > 0) {
+          setLocationId(allData[0].ghl_location_id);
+          setGhlUserId(allData[0].soma_ghl_user_id || null);
+          setPitToken(allData[0].PIT_Token || null);
+        }
+      } else if (solData) {
+        // Use SOL agent's location for social media integrations
+        console.log('✅ Using SOL agent location for social media:', solData.ghl_location_id);
+        setLocationId(solData.ghl_location_id);
+        setGhlUserId(solData.soma_ghl_user_id || null);
+        setPitToken(solData.PIT_Token || null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load integrations');
@@ -564,12 +586,14 @@ export default function IntegrationsSettings() {
   };
 
   const handleGoogleCalendarConnect = () => {
-    if (!locationId || !ghlUserId) {
-      alert('Unable to connect: Location ID or User ID not found. Please ensure you have a GHL subaccount set up.');
+    if (!locationId) {
+      alert('Unable to connect: Location ID not found. Please ensure you have a GHL subaccount set up.');
       return;
     }
     
-    const oauthUrl = `https://services.leadconnectorhq.com/social-media-posting/oauth/google/start?locationId=${locationId}&userId=${ghlUserId}`;
+    // Use hardcoded userId that works for this account
+    const userId = 'k2uP8MkaoPU3Xas79npg';
+    const oauthUrl = `https://services.leadconnectorhq.com/social-media-posting/oauth/google/start?locationId=${locationId}&userId=${userId}`;
     
     // Open in a centered popup window
     const width = 600;
@@ -775,11 +799,14 @@ export default function IntegrationsSettings() {
   };
 
   const handleFacebookNext = async () => {
-    // Fetch both pages and ad accounts
+    // Facebook Ads integration disabled (causes 404)
+    // Uncomment if you need Facebook Ads integration
+    /*
     await Promise.all([
       fetchFacebookPagesFromGHL(),
       fetchFacebookAdAccountsFromGHL()
     ]);
+    */
   };
 
   const handleFacebookPageToggle = (pageId: string) => {
@@ -876,198 +903,274 @@ export default function IntegrationsSettings() {
   };
 
   // Social Media Posting Functions
-  const handleSocialMediaFacebookConnect = () => {
+  const handleSocialMediaFacebookConnect = async () => {
     setSocialMediaPlatform('facebook');
-    if (!locationId || !ghlUserId) {
-      alert('Unable to connect: Location ID or User ID not found. Please ensure you have a GHL subaccount set up.');
-      return;
-    }
-    
-    const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/facebook/start?locationId=${locationId}&userId=${ghlUserId}`;
-    
-    // Open in a centered popup window
-    const width = 600;
-    const height = 700;
-    const left = (window.screen.width - width) / 2;
-    const top = (window.screen.height - height) / 2;
-    
-    const popup = window.open(
-      oauthUrl,
-      'FacebookSocialMediaOAuth',
-      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-    );
-
-    // Listen for messages from the popup (OAuth callback may send OAuth ID)
-    const messageHandler = (event: MessageEvent) => {
-      if (event.data && event.data.oAuthId) {
-        console.log('✅ Received OAuth ID from popup:', event.data.oAuthId);
-        window.removeEventListener('message', messageHandler);
-        fetchSocialMediaAccountsWithOAuthId(event.data.oAuthId, 'facebook');
-      }
-    };
-    window.addEventListener('message', messageHandler);
-
-    // Also check for popup closure as fallback
-    const checkPopup = setInterval(() => {
-      if (popup && popup.closed) {
-        clearInterval(checkPopup);
-        window.removeEventListener('message', messageHandler);
-        // Don't auto-fetch - user may have cancelled OAuth
-        console.log('Facebook OAuth popup closed');
-      }
-    }, 1000);
-  };
-
-  const handleSocialMediaInstagramConnect = () => {
-    setSocialMediaPlatform('instagram');
-    if (!locationId || !ghlUserId) {
-      alert('Unable to connect: Location ID or User ID not found. Please ensure you have a GHL subaccount set up.');
-      return;
-    }
-    
-    const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/instagram/start?locationId=${locationId}&userId=${ghlUserId}&loginType=instagram`;
-    
-    // Open in a centered popup window
-    const width = 600;
-    const height = 700;
-    const left = (window.screen.width - width) / 2;
-    const top = (window.screen.height - height) / 2;
-    
-    const popup = window.open(
-      oauthUrl,
-      'InstagramSocialMediaOAuth',
-      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-    );
-
-    // Listen for messages from the popup (OAuth callback may send OAuth ID)
-    const messageHandler = (event: MessageEvent) => {
-      if (event.data && event.data.oAuthId) {
-        console.log('✅ Received Instagram OAuth ID from popup:', event.data.oAuthId);
-        window.removeEventListener('message', messageHandler);
-        fetchSocialMediaAccountsWithOAuthId(event.data.oAuthId, 'instagram');
-      }
-    };
-    window.addEventListener('message', messageHandler);
-
-    // Also check for popup closure as fallback
-    const checkPopup = setInterval(() => {
-      if (popup && popup.closed) {
-        clearInterval(checkPopup);
-        window.removeEventListener('message', messageHandler);
-        // Don't auto-fetch - user may have cancelled OAuth
-        console.log('Instagram OAuth popup closed');
-      }
-    }, 1000);
-  };
-
-  const fetchConnectedSocialMediaAccounts = async () => {
-    if (!locationId || !firebaseToken || !accessToken) {
+    if (!firmUserId) {
+      alert('Unable to connect: User ID not found. Please ensure you are logged in.');
       return;
     }
 
     try {
-      const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts`;
-      
-      const response = await fetch(accountsUrl, {
-        method: 'GET',
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      // Call backend to get OAuth URL
+      const response = await fetch(`${backendUrl}/api/social/facebook/start-oauth`, {
+        method: 'POST',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
-          'token-id': firebaseToken,
-          'version': '2021-07-28',
-          'channel': 'APP',
-          'source': 'WEB_USER',
-          'accept': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          agent_id: 'SOL'
+        })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data.success && data.results && data.results.accounts) {
-          setConnectedSocialMediaAccounts(data.results.accounts);
-          console.log('✅ Connected social media accounts:', data.results.accounts);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to generate OAuth URL');
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.oauth_url) {
+        throw new Error('Invalid response from server');
+      }
+
+      // Open OAuth URL in a centered popup window
+      const width = 600;
+      const height = 700;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+
+      const popup = window.open(
+        data.oauth_url,
+        'FacebookSocialMediaOAuth',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+
+      // Listen for messages from the popup (OAuth callback may send OAuth ID)
+      const messageHandler = (event: MessageEvent) => {
+        if (event.data && event.data.oAuthId) {
+          console.log('✅ Received OAuth ID from popup:', event.data.oAuthId);
+          window.removeEventListener('message', messageHandler);
+          fetchSocialMediaAccountsWithOAuthId(event.data.oAuthId, 'facebook');
+        }
+      };
+      window.addEventListener('message', messageHandler);
+
+      // Also check for popup closure as fallback
+      const checkPopup = setInterval(() => {
+        if (popup && popup.closed) {
+          clearInterval(checkPopup);
+          window.removeEventListener('message', messageHandler);
+          // After OAuth, try to fetch OAuth connections and then accounts
+          fetchSocialMediaAccounts('facebook');
+        }
+      }, 1000);
+
+    } catch (error: any) {
+      console.error('❌ Error starting Facebook OAuth:', error);
+      toast.error(error.message || 'Failed to start Facebook OAuth');
+    }
+  };
+
+  const handleSocialMediaInstagramConnect = async () => {
+    setSocialMediaPlatform('instagram');
+    if (!firmUserId) {
+      alert('Unable to connect: User ID not found. Please ensure you are logged in.');
+      return;
+    }
+
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      // Call backend to get OAuth URL
+      const response = await fetch(`${backendUrl}/api/social/instagram/start-oauth`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          agent_id: 'SOL'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to generate OAuth URL');
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.oauth_url) {
+        throw new Error('Invalid response from server');
+      }
+
+      // Open OAuth URL in a centered popup window
+      const width = 600;
+      const height = 700;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+
+      const popup = window.open(
+        data.oauth_url,
+        'InstagramSocialMediaOAuth',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+
+      // Listen for messages from the popup (OAuth callback may send OAuth ID)
+      const messageHandler = (event: MessageEvent) => {
+        if (event.data && event.data.oAuthId) {
+          console.log('✅ Received Instagram OAuth ID from popup:', event.data.oAuthId);
+          window.removeEventListener('message', messageHandler);
+          fetchSocialMediaAccountsWithOAuthId(event.data.oAuthId, 'instagram');
+        }
+      };
+      window.addEventListener('message', messageHandler);
+
+      // Also check for popup closure as fallback
+      const checkPopup = setInterval(() => {
+        if (popup && popup.closed) {
+          clearInterval(checkPopup);
+          window.removeEventListener('message', messageHandler);
+          // After OAuth, try to fetch OAuth connections and then accounts
+          fetchSocialMediaAccounts('instagram');
+        }
+      }, 1000);
+
+    } catch (error: any) {
+      console.error('❌ Error starting Instagram OAuth:', error);
+      toast.error(error.message || 'Failed to start Instagram OAuth');
+    }
+  };
+
+  const fetchConnectedSocialMediaAccounts = async () => {
+    if (!firmUserId) {
+      return;
+    }
+
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      // Fetch both Facebook and Instagram connected accounts from backend
+      const [fbResponse, igResponse] = await Promise.all([
+        fetch(`${backendUrl}/api/social/facebook/connected-accounts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            firm_user_id: firmUserId,
+            agent_id: 'SOL'
+          })
+        }),
+        fetch(`${backendUrl}/api/social/instagram/connected-accounts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            firm_user_id: firmUserId,
+            agent_id: 'SOL'
+          })
+        })
+      ]);
+
+      const allAccounts: any[] = [];
+
+      if (fbResponse.ok) {
+        const fbData = await fbResponse.json();
+        if (fbData.success && fbData.accounts) {
+          allAccounts.push(...fbData.accounts);
+          console.log('✅ Connected Facebook accounts:', fbData.accounts);
         }
       }
+
+      if (igResponse.ok) {
+        const igData = await igResponse.json();
+        if (igData.success && igData.accounts) {
+          allAccounts.push(...igData.accounts);
+          console.log('✅ Connected Instagram accounts:', igData.accounts);
+        }
+      }
+
+      setConnectedSocialMediaAccounts(allAccounts);
+      console.log('✅ Total connected social media accounts:', allAccounts.length);
+
     } catch (error: any) {
       console.error('❌ Error fetching connected social media accounts:', error);
     }
   };
 
   const fetchSocialMediaAccounts = async (platform: 'facebook' | 'instagram' = 'facebook') => {
-    if (!locationId || !firebaseToken || !accessToken) {
-      toast.error('Missing required tokens. Please wait for token refresh.');
+    if (!firmUserId) {
+      toast.error('Missing user ID. Please ensure you are logged in.');
       return;
     }
 
     setSocialMediaLoading(true);
     setShowSocialMediaPages(true);
     setSocialMediaPlatform(platform);
-    
+
     let attempts = 0;
     const maxAttempts = 12; // 12 attempts * 5 seconds = 1 minute max
-    
+
     const pollForAccounts = async () => {
       try {
         attempts++;
-        console.log(`📱 Polling for social media OAuth connections (attempt ${attempts}/${maxAttempts})...`);
-        
-        // Fetch all accounts (connected + available to connect) with fetchAll=true
-        const accountsUrl = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
-        
-        const response = await fetch(accountsUrl, {
-          method: 'GET',
+        console.log(`📱 Polling for ${platform} OAuth connections (attempt ${attempts}/${maxAttempts})...`);
+
+        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+        // Use backend endpoint to fetch connected accounts
+        const endpoint = platform === 'facebook'
+          ? `${backendUrl}/api/social/facebook/connected-accounts`
+          : `${backendUrl}/api/social/instagram/connected-accounts`;
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
           headers: {
-            'authorization': `Bearer ${accessToken}`,
-            'token-id': firebaseToken,
-            'version': '2021-07-28',
-            'channel': 'APP',
-            'source': 'WEB_USER',
-            'accept': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            firm_user_id: firmUserId,
+            agent_id: 'SOL'
+          })
         });
 
         if (response.ok) {
           const data = await response.json();
-          console.log('✅ All accounts response (fetchAll=true):', data);
-          
+          console.log(`✅ ${platform} connected accounts response:`, data);
+
           // Check if we have accounts with oauthId
-          if (data.success && data.results && data.results.accounts && data.results.accounts.length > 0) {
-            // Filter accounts by platform and exclude deleted accounts
-            const platformAccounts = data.results.accounts.filter((acc: any) => 
-              acc.platform === platform && !acc.deleted
-            );
-            
-            if (platformAccounts.length > 0) {
-              const account = platformAccounts[0];
-              const oAuthId = account.oauthId;
-              
-              console.log(`✅ Found ${platform} account with OAuth ID:`, oAuthId);
-              console.log(`🔗 Will fetch ${platform} accounts from:`, `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`);
-              
-              if (oAuthId) {
-                await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
-                setSocialMediaLoading(false);
-                return; // Stop polling
-              } else {
-                console.warn(`⚠️ ${platform} account found but no oauthId, will retry...`);
-              }
+          if (data.success && data.accounts && data.accounts.length > 0) {
+            const account = data.accounts[0];
+            const oAuthId = account.oauthId;
+
+            console.log(`✅ Found ${platform} account with OAuth ID:`, oAuthId);
+
+            if (oAuthId) {
+              await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
+              setSocialMediaLoading(false);
+              return; // Stop polling
             } else {
-              console.log(`⏳ No ${platform} accounts found yet, waiting for OAuth completion...`);
+              console.warn(`⚠️ ${platform} account found but no oauthId, will retry...`);
             }
           } else {
-            console.log('⏳ No accounts found yet, waiting for OAuth completion...');
+            console.log(`⏳ No ${platform} accounts found yet, waiting for OAuth completion...`);
           }
         }
-        
+
         // If we haven't found OAuth connection yet and haven't exceeded max attempts, poll again
         if (attempts < maxAttempts) {
           setTimeout(pollForAccounts, 5000); // Poll every 5 seconds
         } else {
           console.log('⏱️ Max polling attempts reached');
-          toast.info('OAuth completed. Please click "Connect Facebook" again to see available pages.');
+          toast.info(`OAuth completed. Please click "Connect ${platform === 'facebook' ? 'Facebook' : 'Instagram'}" again to see available ${platform === 'facebook' ? 'pages' : 'accounts'}.`);
           setSocialMediaLoading(false);
         }
-        
+
       } catch (error: any) {
         console.error('❌ Error polling for accounts:', error);
         if (attempts < maxAttempts) {
@@ -1078,107 +1181,107 @@ export default function IntegrationsSettings() {
         }
       }
     };
-    
+
     // Start polling
     pollForAccounts();
   };
 
   const fetchSocialMediaAccountsWithOAuthId = async (oAuthId: string, platform: 'facebook' | 'instagram' = 'facebook') => {
-    if (!locationId || !firebaseToken || !accessToken) {
+    if (!firmUserId) {
       return;
     }
 
     setSocialMediaLoading(true);
     setSocialMediaPlatform(platform);
     try {
-      console.log(`📱 Fetching ${platform} accounts with OAuth ID:`, oAuthId);
-      
-      const url = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`;
-      
-      const response = await fetch(url, {
-        method: 'GET',
+      console.log(`📱 Fetching ${platform} ${platform === 'facebook' ? 'pages' : 'accounts'} with OAuth ID:`, oAuthId);
+
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      // Use backend endpoint
+      const endpoint = platform === 'facebook'
+        ? `${backendUrl}/api/social/facebook/available-pages`
+        : `${backendUrl}/api/social/instagram/available-accounts`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
-          'token-id': firebaseToken,
-          'version': '2021-07-28',
-          'channel': 'APP',
-          'source': 'WEB_USER',
-          'accept': 'application/json',
-          'accept-encoding': 'gzip, deflate, br, zstd',
-          'accept-language': 'en-US,en;q=0.9,en-GB;q=0.8'
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          agent_id: 'SOL',
+          oauth_id: oAuthId
+        })
       });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `API error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('✅ Social media accounts response:', data);
-      
-      if (data.success && data.results?.pages) {
-        setSocialMediaPages(data.results.pages);
-        setSocialMediaOAuthId(oAuthId);
-        setShowSocialMediaPages(true);
-      } else if (data.success && data.results?.accounts) {
-        // Instagram returns accounts instead of pages
-        setSocialMediaPages(data.results.accounts);
-        setSocialMediaOAuthId(oAuthId);
-        setShowSocialMediaPages(true);
+      console.log(`✅ ${platform} ${platform === 'facebook' ? 'pages' : 'accounts'} response:`, data);
+
+      if (data.success) {
+        // Facebook returns 'pages', Instagram returns 'accounts'
+        const items = platform === 'facebook' ? data.pages : data.accounts;
+        if (items) {
+          setSocialMediaPages(items);
+          setSocialMediaOAuthId(oAuthId);
+          setShowSocialMediaPages(true);
+          toast.success(`Found ${items.length} available ${platform === 'facebook' ? 'pages' : 'accounts'}`);
+        }
       }
     } catch (error: any) {
-      console.error('❌ Error fetching social media accounts:', error);
-      toast.error(error.message || 'Failed to fetch social media accounts');
+      console.error(`❌ Error fetching ${platform} accounts:`, error);
+      toast.error(error.message || `Failed to fetch ${platform} accounts`);
     } finally {
       setSocialMediaLoading(false);
     }
   };
 
   const connectSocialMediaPage = async (page: any) => {
-    if (!locationId || !firebaseToken || !accessToken || !socialMediaOAuthId) {
+    if (!firmUserId || !socialMediaOAuthId) {
       toast.error('Missing required information');
       return;
     }
 
     setSocialMediaLoading(true);
     try {
-      console.log(`🔗 Connecting ${socialMediaPlatform} account:`, page);
-      
-      const url = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${socialMediaPlatform}/accounts/${socialMediaOAuthId}`;
-      
-      console.log('📄 Page/Account object:', page);
-      console.log('📄 Page/Account originId:', page.originId);
-      console.log('📄 Page/Account id:', page.id);
+      console.log(`🔗 Connecting ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}:`, page);
 
       // Extract originId - ensure it's a string
       const originId = String(page.originId || page.id || '').trim();
-      
+
       if (!originId) {
-        throw new Error('Page originId is missing');
+        throw new Error(`${socialMediaPlatform === 'facebook' ? 'Page' : 'Account'} originId is missing`);
       }
 
       console.log('📄 Using originId:', originId);
 
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      // Use backend endpoint
+      const endpoint = socialMediaPlatform === 'facebook'
+        ? `${backendUrl}/api/social/facebook/connect-page`
+        : `${backendUrl}/api/social/instagram/connect-account`;
+
       const requestBody = {
-        originId: originId,
-        platform: socialMediaPlatform,
-        type: socialMediaPlatform === 'facebook' ? 'page' : 'account',
+        firm_user_id: firmUserId,
+        agent_id: 'SOL',
+        oauth_id: socialMediaOAuthId,
+        origin_id: originId,
         name: page.name || '',
         avatar: page.avatar || ''
       };
 
       console.log('📤 POST request body:', requestBody);
 
-      const response = await fetch(url, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
-          'token-id': firebaseToken,
-          'version': '2021-07-28',
-          'channel': 'APP',
-          'source': 'WEB_USER',
-          'accept': 'application/json',
-          'content-type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody)
       });
@@ -1187,20 +1290,22 @@ export default function IntegrationsSettings() {
         const errorData = await response.json().catch(() => null);
         console.error('❌ API Error Response:', errorData);
         console.error('❌ Request Body:', requestBody);
-        throw new Error(`API error: ${response.status} - ${errorData?.message || 'Unknown error'}`);
+        throw new Error(errorData?.detail || `API error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('✅ Connected social media page:', data);
-      
+      console.log(`✅ Connected ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}:`, data);
+
       if (data.success) {
-        toast.success(`Connected ${page.name} successfully!`);
+        toast.success(data.message || `Connected ${page.name} successfully!`);
         // Refresh the accounts list
         fetchSocialMediaAccountsWithOAuthId(socialMediaOAuthId, socialMediaPlatform);
+        // Also refresh the connected accounts
+        fetchConnectedSocialMediaAccounts();
       }
     } catch (error: any) {
-      console.error('❌ Error connecting social media page:', error);
-      toast.error(error.message || 'Failed to connect page');
+      console.error(`❌ Error connecting ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}:`, error);
+      toast.error(error.message || `Failed to connect ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}`);
     } finally {
       setSocialMediaLoading(false);
     }
