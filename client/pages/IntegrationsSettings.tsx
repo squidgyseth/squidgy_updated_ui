@@ -957,8 +957,10 @@ export default function IntegrationsSettings() {
     }
 
     try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
       // Call backend to get OAuth URL
-      const response = await fetch('/api/social/instagram/start-oauth', {
+      const response = await fetch(`${backendUrl}/api/social/instagram/start-oauth`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1024,9 +1026,11 @@ export default function IntegrationsSettings() {
     }
 
     try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
       // Fetch both Facebook and Instagram connected accounts from backend
       const [fbResponse, igResponse] = await Promise.all([
-        fetch('/api/social/facebook/connected-accounts', {
+        fetch(`${backendUrl}/api/social/facebook/connected-accounts`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1036,7 +1040,7 @@ export default function IntegrationsSettings() {
             agent_id: 'SOL'
           })
         }),
-        fetch('/api/social/instagram/connected-accounts', {
+        fetch(`${backendUrl}/api/social/instagram/connected-accounts`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1092,10 +1096,12 @@ export default function IntegrationsSettings() {
         attempts++;
         console.log(`📱 Polling for ${platform} OAuth connections (attempt ${attempts}/${maxAttempts})...`);
 
+        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
         // Use backend endpoint to fetch connected accounts
         const endpoint = platform === 'facebook'
-          ? '/api/social/facebook/connected-accounts'
-          : '/api/social/instagram/connected-accounts';
+          ? `${backendUrl}/api/social/facebook/connected-accounts`
+          : `${backendUrl}/api/social/instagram/connected-accounts`;
 
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -1165,10 +1171,12 @@ export default function IntegrationsSettings() {
     try {
       console.log(`📱 Fetching ${platform} ${platform === 'facebook' ? 'pages' : 'accounts'} with OAuth ID:`, oAuthId);
 
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
       // Use backend endpoint
       const endpoint = platform === 'facebook'
-        ? '/api/social/facebook/available-pages'
-        : '/api/social/instagram/available-accounts';
+        ? `${backendUrl}/api/social/facebook/available-pages`
+        : `${backendUrl}/api/social/instagram/available-accounts`;
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -1227,10 +1235,12 @@ export default function IntegrationsSettings() {
 
       console.log('📄 Using originId:', originId);
 
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
       // Use backend endpoint
       const endpoint = socialMediaPlatform === 'facebook'
-        ? '/api/social/facebook/connect-page'
-        : '/api/social/instagram/connect-account';
+        ? `${backendUrl}/api/social/facebook/connect-page`
+        : `${backendUrl}/api/social/instagram/connect-account`;
 
       const requestBody = {
         firm_user_id: firmUserId,
