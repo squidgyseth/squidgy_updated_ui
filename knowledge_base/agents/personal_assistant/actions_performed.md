@@ -2,6 +2,19 @@
 
 PA-specific actions in addition to shared actions.
 
+## Standard Action Structure
+
+**EVERY action must follow this structure:**
+```json
+{
+  "action": "action_name",     // The type of action performed
+  "details": "Description",    // Human-readable description of what happened
+  "metadata": {                // Additional structured data about the action
+    // Relevant data here (agent_id, urls, config, etc.)
+  }
+}
+```
+
 ---
 
 ## Elevated Action Types

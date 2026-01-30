@@ -2,6 +2,20 @@
 
 PA-specific todos in addition to shared todos.
 
+## Standard Todo Structure
+
+**EVERY todo must follow this structure:**
+```json
+{
+  "action": "action_name",     // The type of todo action
+  "details": "Description",    // Human-readable description
+  "metadata": {                // Additional structured data
+    "priority": "high",        // Optional: high, medium, low
+    // Other relevant data
+  }
+}
+```
+
 ---
 
 ## Elevated Todo Types
@@ -27,8 +41,8 @@ PA-specific todos in addition to shared todos.
 {
   "action": "business_context_required",
   "details": "Need to learn about your business before setting up assistants",
-  "priority": "high",
   "metadata": {
+    "priority": "high",
     "reason": "KB is empty - no website, company, or branding data",
     "options": ["analyze_website", "tell_about_business"],
     "blocks": "agent_setup"
@@ -41,8 +55,8 @@ PA-specific todos in addition to shared todos.
 {
   "action": "awaiting_website_url",
   "details": "Share your website URL so I can learn about your business",
-  "priority": "high",
   "metadata": {
+    "priority": "high",
     "next_step": "web_analysis",
     "fallback": "manual_business_info"
   }
@@ -54,8 +68,8 @@ PA-specific todos in addition to shared todos.
 {
   "action": "awaiting_agent_selection",
   "details": "Which assistant would you like to set up?",
-  "priority": "high",
   "metadata": {
+    "priority": "high",
     "available_agents": ["newsletter_multi", "content_repurposer", "SOL"],
     "options_shown": true
   }
@@ -66,8 +80,8 @@ PA-specific todos in addition to shared todos.
 {
   "action": "pending_onboarding",
   "details": "Content Repurposer agent needs configuration before use",
-  "priority": "medium",
   "metadata": {
+    "priority": "medium",
     "agent_id": "content_repurposer",
     "missing_config": ["content_types", "platforms"],
     "can_skip": false
@@ -79,8 +93,8 @@ PA-specific todos in addition to shared todos.
 {
   "action": "kb_gap_detected",
   "details": "Your Knowledge Base is missing competitor information",
-  "priority": "medium",
   "metadata": {
+    "priority": "medium",
     "category": "competitive_landscape",
     "impact": "Limits competitive positioning in content",
     "suggested_action": "Tell me about your main competitors"

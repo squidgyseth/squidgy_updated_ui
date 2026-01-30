@@ -4,16 +4,33 @@
 
 **Your JSON response MUST have actions_performed at ROOT level, NOT inside agent_data:**
 
+**Standard Action Format (ALWAYS use this structure):**
+```json
+{
+  "action": "action_name",     // The type of action
+  "details": "Description",    // Human-readable description (NOT "reason")
+  "metadata": {                // Additional structured data
+    // Relevant data here
+  }
+}
+```
+
+**✅ CORRECT Response Structure:**
 ```json
 {
   "response": "Your message",
-  "actions_performed": [   // ✅ AT ROOT LEVEL
+  "actions_performed": [   // ✅ AT ROOT LEVEL - Array of action objects
     {
       "action": "agent_enabled",
-      "details": "...",
-      "metadata": { ... }
+      "details": "Social Media Manager is now enabled with direct tone",
+      "metadata": {
+        "agent_id": "social_media_agent",
+        "agent_name": "Social Media Manager",
+        "config_applied": { "tone": "direct" }
+      }
     }
   ],
+  "actions_todo": [],      // ✅ AT ROOT LEVEL - Array of action objects
   "finished": true,
   "agent_data": { ... }
 }
