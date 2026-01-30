@@ -170,7 +170,22 @@ $$**➕ Add Another Assistant**$$
     "target_audience": "b2b",
     "primary_goals": ["Lead generation"],
     "brand_voice": "Professional and authoritative"
-  }
+  },
+  "actions_performed": [
+    {
+      "action": "agent_enabled",
+      "details": "Newsletter Agent Multi is now enabled and configured",
+      "metadata": {
+        "agent_id": "newsletter_multi",
+        "agent_name": "Newsletter Agent Multi",
+        "config_applied": {
+          "tone": "professional",
+          "target_audience": "b2b",
+          "primary_goals": ["Lead generation"]
+        }
+      }
+    }
+  ]
 }
 ```
 
@@ -184,7 +199,20 @@ $$**➕ Add Another Assistant**$$
     "agent_name": "{{ agent_name }}",
     "communication_tone": "{{ selected_tone }}",
     "reused_settings": true
-  }
+  },
+  "actions_performed": [
+    {
+      "action": "agent_enabled",
+      "details": "{{ agent_name }} is now enabled with {{ selected_tone }} tone",
+      "metadata": {
+        "agent_id": "{{ agent_id }}",
+        "agent_name": "{{ agent_name }}",
+        "config_applied": {
+          "tone": "{{ selected_tone }}"
+        }
+      }
+    }
+  ]
 }
 ```
 
@@ -221,6 +249,7 @@ When user selects "Skip for now":
 5. **Detect URLs** - If user provides URL, analyze immediately
 6. **Industry relevance** - Only recommend relevant agents
 7. **Use exact agent_id** from `agent_department_value` mapping
+8. **ALWAYS populate actions_performed** - When enabling agents, ALWAYS include the `actions_performed` array in your response with the agent_enabled action. This is critical for UI tracking.
 
 ---
 
