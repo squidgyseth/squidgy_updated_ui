@@ -219,11 +219,14 @@ Expected: `file_name` and `file_url` should be populated for file uploads
 
 ## Backend API Integration ✅
 
-**Files Created**:
-- `/server/routes/knowledge-base.ts` - API route handlers for Neon queries
-- `/server/routes/knowledge-base-router.ts` - Express router for knowledge-base endpoints
+**Backend Location**: `Backend_SquidgyBackend_Updated/routes/knowledge_base.py`
 
-**Endpoints Created**:
+**Architecture**:
+- FastAPI endpoints in Python backend server
+- Frontend calls backend via `VITE_BACKEND_URL`
+- Backend queries Neon database using REST API
+
+**Endpoints Created** (in Backend):
 1. `GET /api/knowledge-base/files/:userId`
    - Queries Neon database for uploaded files
    - Returns deduplicated list of files with metadata
@@ -253,13 +256,13 @@ Expected: `file_name` and `file_url` should be populated for file uploads
      ```
 
 **Frontend Integration** (`/client/pages/AgentSettings.tsx`):
-- Updated to call backend API endpoints instead of querying Supabase
+- Calls backend API using `import.meta.env.VITE_BACKEND_URL`
 - Fetches files and instructions on component mount
 - Displays loading state while fetching data
 
-**Environment Variables** (`.env.example`):
-- Added `NEON_API_URL` - Neon REST API endpoint
-- Added `NEON_API_KEY` - Neon API authentication key
+**Environment Variables**:
+- Backend `.env`: `NEON_API_URL` and `NEON_API_KEY`
+- Frontend `.env`: `VITE_BACKEND_URL` (to call backend API)
 
 ## Next Steps
 
