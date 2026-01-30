@@ -217,9 +217,57 @@ Expected: `file_name` and `file_url` should be populated for file uploads
 ✅ **Debugging** - Identify which file caused issues
 ✅ **Future features** - Enable file management UI
 
+## Backend API Integration ✅
+
+**Files Created**:
+- `/server/routes/knowledge-base.ts` - API route handlers for Neon queries
+- `/server/routes/knowledge-base-router.ts` - Express router for knowledge-base endpoints
+
+**Endpoints Created**:
+1. `GET /api/knowledge-base/files/:userId`
+   - Queries Neon database for uploaded files
+   - Returns deduplicated list of files with metadata
+   - Example response:
+     ```json
+     {
+       "success": true,
+       "files": [
+         {
+           "file_name": "document.pdf",
+           "file_url": "https://...",
+           "created_at": "2026-01-30T..."
+         }
+       ]
+     }
+     ```
+
+2. `GET /api/knowledge-base/instructions/:userId`
+   - Queries Neon database for custom instructions
+   - Combines all instruction chunks into single string
+   - Example response:
+     ```json
+     {
+       "success": true,
+       "instructions": "Combined instruction text..."
+     }
+     ```
+
+**Frontend Integration** (`/client/pages/AgentSettings.tsx`):
+- Updated to call backend API endpoints instead of querying Supabase
+- Fetches files and instructions on component mount
+- Displays loading state while fetching data
+
+**Environment Variables** (`.env.example`):
+- Added `NEON_API_URL` - Neon REST API endpoint
+- Added `NEON_API_KEY` - Neon API authentication key
+
 ## Next Steps
 
-- [ ] Run migration in Neon Postgres
-- [ ] Import workflow to n8n
-- [ ] Test end-to-end file upload
-- [ ] (Future) Build file management UI to show uploaded files
+- [x] Run migration in Neon Postgres
+- [x] Import workflow to n8n
+- [x] Create backend API endpoints for querying Neon
+- [x] Update frontend to use backend API
+- [ ] Add NEON_API_KEY to production environment variables
+- [ ] Test end-to-end file upload and retrieval
+- [ ] (Future) Add file deletion functionality
+- [ ] (Future) Build advanced file management UI

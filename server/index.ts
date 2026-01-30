@@ -7,6 +7,7 @@ import { createSubaccountAndUser } from "./routes/ghl";
 import agentsRouter from "./routes/agents";
 import storageProxyRouter from "./routes/storage-proxy";
 import googleCalendarRouter from "./routes/googleCalendar";
+import knowledgeBaseRouter from "./routes/knowledge-base-router";
 
 export function createServer() {
   const app = express();
@@ -40,6 +41,9 @@ export function createServer() {
 
   // Google Calendar integration routes
   app.use("/api/google/calendar", googleCalendarRouter);
+
+  // Knowledge base routes (Neon database queries)
+  app.use("/api/knowledge-base", knowledgeBaseRouter);
 
   return app;
 }

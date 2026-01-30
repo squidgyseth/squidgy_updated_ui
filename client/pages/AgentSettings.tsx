@@ -63,21 +63,36 @@ export default function AgentSettings() {
     loadAgentConfig();
   }, [agentId]);
 
-  // TODO: Load existing knowledge base data from Neon database
-  // This requires a backend API endpoint to query the user_vector_knowledge_base table in Neon
-  // Temporarily disabled until backend endpoint is created
+  // Load existing knowledge base data from Neon database via backend API
   useEffect(() => {
     const fetchExistingData = async () => {
       if (!userId || !agentId) return;
 
       setLoadingExisting(true);
       try {
-        // TODO: Call backend API endpoint to fetch data from Neon
-        // For now, set empty data
-        setExistingFiles([]);
-        setExistingInstructions('');
+        // Fetch files from Neon database via backend API
+        const filesResponse = await fetch(`/api/knowledge-base/files/${userId}`);
+        if (filesResponse.ok) {
+          const filesData = await filesResponse.json();
+          setExistingFiles(filesData.files || []);
+        } else {
+          console.error('Failed to fetch files:', await filesResponse.text());
+          setExistingFiles([]);
+        }
+
+        // Fetch custom instructions from Neon database via backend API
+        const instructionsResponse = await fetch(`/api/knowledge-base/instructions/${userId}`);
+        if (instructionsResponse.ok) {
+          const instructionsData = await instructionsResponse.json();
+          setExistingInstructions(instructionsData.instructions || '');
+        } else {
+          console.error('Failed to fetch instructions:', await instructionsResponse.text());
+          setExistingInstructions('');
+        }
       } catch (error) {
         console.error('Error fetching existing knowledge:', error);
+        setExistingFiles([]);
+        setExistingInstructions('');
       } finally {
         setLoadingExisting(false);
       }
