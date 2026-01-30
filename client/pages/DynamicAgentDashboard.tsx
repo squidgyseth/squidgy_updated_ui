@@ -130,8 +130,8 @@ export default function DynamicAgentDashboard() {
     initializeSession();
   }, [userId, agentId]);
 
-  // Loading state
-  if (loading) {
+  // Loading state - wait for both agent config AND session initialization
+  if (loading || !currentSessionId) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">

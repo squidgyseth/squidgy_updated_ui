@@ -24,15 +24,25 @@ export default function PreviousSessions({
 
   useEffect(() => {
     loadPreviousSessions();
-  }, [userId, agentId]);
+  }, [userId, agentId, currentSessionId]); // Reload when current session changes
 
   const loadPreviousSessions = async () => {
     if (!userId) return;
 
     setLoading(true);
     try {
-      const recentSessions = await chatSessionService.getRecentSessions(userId, agentId, 2);
-      setSessions(recentSessions);
+      // Fetch 3 sessions to ensure we have 2 previous sessions after filtering out current
+      const recentSessions = await chatSessionService.getRecentSessions(userId, agentId, 3);
+
+      // Filter out the current session from previous sessions list
+      const previousSessions = currentSessionId
+        ? recentSessions.filter(session => session.session_id !== currentSessionId)
+        : recentSessions;
+
+      // Keep only the 2 most recent previous sessions
+      setSessions(previousSessions.slice(0, 2));
+
+      console.log(`📋 PreviousSessions: Loaded ${previousSessions.length} previous sessions (filtered out current: ${currentSessionId})`);
     } catch (error) {
       console.error('Error loading previous sessions:', error);
       setSessions([]);

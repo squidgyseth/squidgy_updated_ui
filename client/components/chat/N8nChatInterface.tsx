@@ -51,7 +51,10 @@ export default function N8nChatInterface({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId] = useState(initialSessionId || generateSessionId(userId, agent.id));
+
+  // Use sessionId from prop directly - parent manages session persistence
+  // Fall back to generating new session only if parent doesn't provide one
+  const sessionId = initialSessionId || generateSessionId(userId, agent.id);
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, { name: string; status: string }>>(new Map());
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null);
   const [showNewsletterSelector, setShowNewsletterSelector] = useState(false);
