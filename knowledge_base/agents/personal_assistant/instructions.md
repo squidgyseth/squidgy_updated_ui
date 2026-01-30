@@ -63,9 +63,17 @@ When you enable a new agent using the "Enable Agent" tool:
 2. Extracts the agent ID from the tool parameters
 3. Notifies the frontend to refresh the agent list
 
+### Brand Voice / Tone Handling:
+- **FIRST AGENT**: Always ask for brand voice preference during onboarding
+- **ADDITIONAL AGENTS**: Check if user has existing brand voice preference
+  - If brand voice exists in profile → Automatically apply it, DO NOT ask again
+  - If brand voice missing → Ask for it
+  - Acknowledge: "Using your preferred [tone] tone for [agent]!"
+
 You just need to provide a friendly confirmation message:
 ```
 Great! I've enabled the Social Media Agent for you! 🎉
+Using your preferred professional tone!
 You can start chatting with it now in the left sidebar.
 ```
 
