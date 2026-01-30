@@ -54,12 +54,28 @@ export interface N8nResponse {
   // Actions tracking (SOURCE OF TRUTH for tools executed)
   actions_performed?: Array<{
     action: string;
-    input: Record<string, any>;
-    result: 'success' | 'pending' | 'error';
+    input?: Record<string, any>;
+    result?: 'success' | 'pending' | 'error';
+    details?: string;
+    metadata?: Record<string, any>;
   }>;
+  /**
+   * Actions that the UI needs to perform
+   * Each action type has different metadata requirements:
+   *
+   * - user_routed: { target_agent, target_url, user_intent }
+   * - agent_enabled: { agent_id, agent_name, communication_tone, ... }
+   * - show_preview: { preview_url, preview_type, ... }
+   * - awaiting_selection: { ... }
+   * - refresh_agent_list: { ... }
+   *
+   * Metadata structure varies per action type - check action handler for requirements
+   */
   actions_todo?: Array<{
     action: string;
-    [key: string]: unknown;
+    details?: string;
+    priority?: string;
+    metadata?: Record<string, any>; // Flexible metadata - structure depends on action type
   }>;
 }
 
