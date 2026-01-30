@@ -436,7 +436,7 @@ export default function N8nChatInterface({
       );
 
       if (response) {
-        // NEW: Handle redirect responses from Master Agent
+        // NEW: Handle redirect responses from Master Agent (legacy routing field)
         if (response.routing?.should_redirect && response.routing?.target_url) {
           console.log('🔀 Redirect response detected:', response.routing);
 
@@ -456,6 +456,33 @@ export default function N8nChatInterface({
           setTimeout(() => {
             console.log('🚀 Navigating to:', response.routing.target_url);
             window.location.href = response.routing.target_url;
+          }, 1500);
+
+          setIsLoading(false);
+          return; // Exit early - redirect will handle the rest
+        }
+
+        // NEW: Handle redirect from actions_todo (new routing approach)
+        const userRoutedAction = response.actions_todo?.find((action: any) => action.action === 'user_routed');
+        if (userRoutedAction?.metadata?.target_url) {
+          console.log('🔀 User routed action detected:', userRoutedAction);
+
+          // Show the redirect message first
+          const redirectMessage: ChatMessage = {
+            id: response.request_id || generateRequestId(),
+            content: response.agent_response || `Redirecting you to ${userRoutedAction.metadata.target_agent}...`,
+            sender: 'agent',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, redirectMessage]);
+
+          // Save redirect message to history
+          await saveMessageToHistory(redirectMessage.content, 'Agent', redirectMessage.timestamp);
+
+          // Redirect after a short delay to let user see the message
+          setTimeout(() => {
+            console.log('🚀 Navigating to:', userRoutedAction.metadata.target_url);
+            window.location.href = userRoutedAction.metadata.target_url;
           }, 1500);
 
           setIsLoading(false);

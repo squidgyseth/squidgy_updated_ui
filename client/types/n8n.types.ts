@@ -54,12 +54,21 @@ export interface N8nResponse {
   // Actions tracking (SOURCE OF TRUTH for tools executed)
   actions_performed?: Array<{
     action: string;
-    input: Record<string, any>;
-    result: 'success' | 'pending' | 'error';
+    input?: Record<string, any>;
+    result?: 'success' | 'pending' | 'error';
+    details?: string;
+    metadata?: Record<string, any>;
   }>;
   actions_todo?: Array<{
     action: string;
-    [key: string]: unknown;
+    details?: string;
+    priority?: string;
+    metadata?: {
+      target_agent?: string;
+      target_url?: string;
+      user_intent?: string;
+      [key: string]: any;
+    };
   }>;
 }
 
