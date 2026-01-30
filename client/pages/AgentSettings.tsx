@@ -21,6 +21,11 @@ export default function AgentSettings() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
+  // Existing knowledge base data
+  const [existingFiles, setExistingFiles] = useState<any[]>([]);
+  const [existingInstructions, setExistingInstructions] = useState<string>('');
+  const [loadingExisting, setLoadingExisting] = useState(false);
+
   // Toast notification state
   const [showToast, setShowToast] = useState(false);
 
@@ -58,9 +63,61 @@ export default function AgentSettings() {
     loadAgentConfig();
   }, [agentId]);
 
-  // --- COMMENTED OUT: firm_users_knowledge_base code (now using n8n webhook → Neon) ---
-  // fetchCustomInstructions, fetchPreviousFiles, realtime subscription removed
-  // Data now goes directly to user_vector_knowledge_base via n8n SA_Knowledge_Base_Save workflow
+  // Load existing knowledge base data from user_vector_knowledge_base
+  useEffect(() => {
+    const fetchExistingData = async () => {
+      if (!userId || !agentId) return;
+
+      setLoadingExisting(true);
+      try {
+        // Fetch files (source='file_upload')
+        const { data: filesData, error: filesError } = await supabase
+          .from('user_vector_knowledge_base')
+          .select('file_name, file_url, created_at')
+          .eq('user_id', userId)
+          .eq('source', 'file_upload')
+          .not('file_name', 'is', null)
+          .order('created_at', { ascending: false });
+
+        if (!filesError && filesData) {
+          // Group by file_url to remove duplicates (chunks of same file)
+          const uniqueFiles = Array.from(
+            filesData.reduce((map, file) => {
+              if (!map.has(file.file_url)) {
+                map.set(file.file_url, file);
+              }
+              return map;
+            }, new Map()).values()
+          );
+          setExistingFiles(uniqueFiles);
+        }
+
+        // Fetch custom instructions (source='agent_settings', category='custom_instructions')
+        const { data: instructionsData, error: instructionsError } = await supabase
+          .from('user_vector_knowledge_base')
+          .select('document, created_at')
+          .eq('user_id', userId)
+          .eq('source', 'agent_settings')
+          .eq('category', 'custom_instructions')
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (!instructionsError && instructionsData && instructionsData.length > 0) {
+          // Combine all instruction chunks
+          const combinedInstructions = instructionsData
+            .map(item => item.document)
+            .join('\n\n');
+          setExistingInstructions(combinedInstructions);
+        }
+      } catch (error) {
+        console.error('Error fetching existing knowledge:', error);
+      } finally {
+        setLoadingExisting(false);
+      }
+    };
+
+    fetchExistingData();
+  }, [userId, agentId]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -569,7 +626,86 @@ export default function AgentSettings() {
             </div>
           </div>
 
-          {/* --- REMOVED: Previously Uploaded Files section (firm_users_knowledge_base) --- */}
+          {/* Previously Saved Data Section */}
+          {(existingFiles.length > 0 || existingInstructions) && (
+            <div className="mt-8 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-500 to-cyan-500 px-8 py-6">
+                <h2 className="text-2xl font-bold text-white mb-2">Previously Saved Data</h2>
+                <p className="text-blue-100">
+                  Your uploaded files and custom instructions for {agentConfig?.agent?.name}
+                </p>
+              </div>
+
+              <div className="p-8 space-y-6">
+                {/* Custom Instructions */}
+                {existingInstructions && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      Custom Instructions
+                    </h3>
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{existingInstructions}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Uploaded Files */}
+                {existingFiles.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      Uploaded Files ({existingFiles.length})
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {existingFiles.map((file, index) => (
+                        <div
+                          key={index}
+                          className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                              <File size={20} className="text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-800 truncate mb-1">
+                                {file.file_name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(file.created_at).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </p>
+                              {file.file_url && (
+                                <a
+                                  href={file.file_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-blue-600 hover:text-blue-700 hover:underline mt-1 inline-block"
+                                >
+                                  Download
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {loadingExisting && (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+                    <p className="text-sm text-gray-500 mt-2">Loading your data...</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
