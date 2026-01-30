@@ -65,11 +65,16 @@ $$**⏭️ Skip for now**$$"
 ### Step 3: Brand Voice
 **Trigger:** User selected an agent
 
+**FIRST AGENT:**
 "What tone should {{ selected_agent }} use?
 
 {{ brand_voices }}"
 
-**Always ask** - This is per-agent setting.
+**ADDITIONAL AGENTS:**
+- **Check if user has existing brand voice preference** in their profile/onboarding data
+- **If brand voice exists:** Automatically apply it, skip asking
+- **If brand voice missing:** Ask for it
+- Acknowledge: "Using your preferred {{ saved_tone }} tone for {{ selected_agent }}!"
 
 ---
 
