@@ -73,6 +73,9 @@ export default function IntegrationsSettings() {
   }, [firmUserId]);
 
   useEffect(() => {
+    // Facebook Ads integration auto-fetch disabled (causes 404 if not set up)
+    // Uncomment below if you need Facebook Ads integration (not Social Media Posting)
+    /*
     if (locationId && firebaseToken && accessToken && !showFacebookPages && !refreshingToken) {
       Promise.all([
         fetchFacebookPagesFromGHL().catch(err => {
@@ -83,6 +86,7 @@ export default function IntegrationsSettings() {
         })
       ]);
     }
+    */
   }, [locationId, firebaseToken, accessToken, refreshingToken]);
 
   useEffect(() => {
@@ -795,11 +799,14 @@ export default function IntegrationsSettings() {
   };
 
   const handleFacebookNext = async () => {
-    // Fetch both pages and ad accounts
+    // Facebook Ads integration disabled (causes 404)
+    // Uncomment if you need Facebook Ads integration
+    /*
     await Promise.all([
       fetchFacebookPagesFromGHL(),
       fetchFacebookAdAccountsFromGHL()
     ]);
+    */
   };
 
   const handleFacebookPageToggle = (pageId: string) => {
