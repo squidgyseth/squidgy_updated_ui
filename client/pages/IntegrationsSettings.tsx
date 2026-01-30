@@ -886,8 +886,10 @@ export default function IntegrationsSettings() {
     }
 
     try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
       // Call backend to get OAuth URL
-      const response = await fetch('/api/social/facebook/start-oauth', {
+      const response = await fetch(`${backendUrl}/api/social/facebook/start-oauth`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
