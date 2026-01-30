@@ -59,16 +59,23 @@ export interface N8nResponse {
     details?: string;
     metadata?: Record<string, any>;
   }>;
+  /**
+   * Actions that the UI needs to perform
+   * Each action type has different metadata requirements:
+   *
+   * - user_routed: { target_agent, target_url, user_intent }
+   * - agent_enabled: { agent_id, agent_name, communication_tone, ... }
+   * - show_preview: { preview_url, preview_type, ... }
+   * - awaiting_selection: { ... }
+   * - refresh_agent_list: { ... }
+   *
+   * Metadata structure varies per action type - check action handler for requirements
+   */
   actions_todo?: Array<{
     action: string;
     details?: string;
     priority?: string;
-    metadata?: {
-      target_agent?: string;
-      target_url?: string;
-      user_intent?: string;
-      [key: string]: any;
-    };
+    metadata?: Record<string, any>; // Flexible metadata - structure depends on action type
   }>;
 }
 

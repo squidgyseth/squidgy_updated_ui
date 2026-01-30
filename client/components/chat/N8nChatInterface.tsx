@@ -462,31 +462,76 @@ export default function N8nChatInterface({
           return; // Exit early - redirect will handle the rest
         }
 
-        // NEW: Handle redirect from actions_todo (new routing approach)
-        const userRoutedAction = response.actions_todo?.find((action: any) => action.action === 'user_routed');
-        if (userRoutedAction?.metadata?.target_url) {
-          console.log('🔀 User routed action detected:', userRoutedAction);
+        // NEW: Process actions_todo - Generic action handler
+        if (response.actions_todo && response.actions_todo.length > 0) {
+          console.log('📋 Processing actions_todo:', response.actions_todo);
 
-          // Show the redirect message first
-          const redirectMessage: ChatMessage = {
-            id: response.request_id || generateRequestId(),
-            content: response.agent_response || `Redirecting you to ${userRoutedAction.metadata.target_agent}...`,
-            sender: 'agent',
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, redirectMessage]);
+          // Process each action in order
+          for (const action of response.actions_todo) {
+            const actionType = action.action;
+            const metadata = action.metadata || {};
 
-          // Save redirect message to history
-          await saveMessageToHistory(redirectMessage.content, 'Agent', redirectMessage.timestamp);
+            console.log(`🎬 Processing action: ${actionType}`, metadata);
 
-          // Redirect after a short delay to let user see the message
-          setTimeout(() => {
-            console.log('🚀 Navigating to:', userRoutedAction.metadata.target_url);
-            window.location.href = userRoutedAction.metadata.target_url;
-          }, 1500);
+            // Handle different action types
+            switch (actionType) {
+              case 'user_routed':
+                // User routing - redirect to another agent chat
+                if (metadata.target_url) {
+                  console.log('🔀 User routed action detected:', action);
 
-          setIsLoading(false);
-          return; // Exit early - redirect will handle the rest
+                  // Show the redirect message first
+                  const redirectMessage: ChatMessage = {
+                    id: response.request_id || generateRequestId(),
+                    content: response.agent_response || `Redirecting you to ${metadata.target_agent}...`,
+                    sender: 'agent',
+                    timestamp: new Date()
+                  };
+                  setMessages(prev => [...prev, redirectMessage]);
+
+                  // Save redirect message to history
+                  await saveMessageToHistory(redirectMessage.content, 'Agent', redirectMessage.timestamp);
+
+                  // Redirect after a short delay to let user see the message
+                  setTimeout(() => {
+                    console.log('🚀 Navigating to:', metadata.target_url);
+                    window.location.href = metadata.target_url;
+                  }, 1500);
+
+                  setIsLoading(false);
+                  return; // Exit early - redirect will handle the rest
+                }
+                break;
+
+              case 'agent_enabled':
+                // Agent enablement - handled separately by AgentEnablementService
+                console.log('✅ Agent enabled action detected - will be processed by enablement service');
+                // Don't return - let the response continue to be processed
+                break;
+
+              case 'show_preview':
+                // Show preview - metadata might contain preview_url, preview_type, etc.
+                console.log('👁️ Show preview action detected:', metadata);
+                // Future: Handle preview display
+                break;
+
+              case 'awaiting_selection':
+                // Waiting for user input - no action needed, just log
+                console.log('⏳ Awaiting user selection:', action.details);
+                break;
+
+              case 'refresh_agent_list':
+                // Refresh agent list - future implementation
+                console.log('🔄 Refresh agent list action detected');
+                // Future: Trigger agent list refresh in sidebar
+                break;
+
+              default:
+                // Unknown action - log for debugging
+                console.warn(`⚠️ Unknown action type: ${actionType}`, action);
+                break;
+            }
+          }
         }
 
         // Store conversation state for multi-turn agents (like newsletter_multi)
