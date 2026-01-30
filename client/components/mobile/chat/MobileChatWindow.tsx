@@ -4,13 +4,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { TouchButton } from '../layout/TouchButton';
 import { Input } from '../../ui/input';
 import { cn } from '../../../lib/utils';
+import StreamingChatMessage from '../../chat/StreamingChatMessage';
+import LinkDetectingTextArea from '../../ui/LinkDetectingTextArea';
 
 interface Message {
   id: string;
   content: string;
   timestamp: Date;
   isUser: boolean;
-  type?: 'text' | 'image' | 'file';
+  type?: 'text' | 'image' | 'file' | 'demo_stream';
+  isStreaming?: boolean;
 }
 
 interface Agent {
@@ -46,19 +49,63 @@ const quickSuggestions = [
 
 export function MobileChatWindow({
   agent,
-  messages = sampleMessages,
+  messages: initialMessages = sampleMessages,
   onBack,
   onSendMessage,
   isTyping = false,
 }: MobileChatWindowProps) {
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputValue, setInputValue] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Add demo message ONLY with ?demo=1 flag
+    const isDemoMode = new URLSearchParams(window.location.search).has('demo');
+    if (isDemoMode && !messages.find(m => m.id === 'demo-streaming-msg')) {
+      const demoMessage: Message = {
+        id: 'demo-streaming-msg',
+        content: '',
+        timestamp: new Date(),
+        isUser: false,
+        type: 'demo_stream'
+      };
+      setMessages([demoMessage, ...initialMessages]);
+    } else {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Enhanced auto-scroll for streaming content using ResizeObserver
+  useEffect(() => {
+    if (!scrollAreaRef.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      const isAnyMessageStreaming = messages.some(m => m.isStreaming);
+      if (isAnyMessageStreaming) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }
+    });
+
+    const scrollContent = scrollAreaRef.current.firstElementChild;
+    if (scrollContent) {
+      resizeObserver.observe(scrollContent);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, [messages]);
+
+  const handleStreamComplete = (messageId: string) => {
+    setMessages(prev => prev.map(msg =>
+      msg.id === messageId ? { ...msg, isStreaming: false } : msg
+    ));
+  };
 
   const handleSend = () => {
     if (inputValue.trim() && onSendMessage) {
@@ -116,7 +163,7 @@ export function MobileChatWindow({
                 <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 border-2 border-background rounded-full" />
               )}
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-foreground truncate">
                 {agent.name}
@@ -143,67 +190,84 @@ export function MobileChatWindow({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={cn(
-              'flex gap-3',
-              message.isUser ? 'justify-end' : 'justify-start'
-            )}
-          >
-            {/* Avatar for agent messages */}
-            {!message.isUser && (
-              <Avatar className="h-8 w-8 flex-shrink-0">
+      <div
+        ref={scrollAreaRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+      >
+        <div className="space-y-4">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={cn(
+                'flex gap-3',
+                message.isUser ? 'justify-end' : 'justify-start'
+              )}
+            >
+              {/* Avatar for agent messages */}
+              {!message.isUser && (
+                <Avatar className="h-8 w-8 flex-shrink-0">
+                  <AvatarImage src={agent.avatar} alt={agent.name} />
+                  <AvatarFallback className="bg-gradient-to-br from-red-500 to-purple-600 text-white text-xs">
+                    {agent.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              )}
+
+              {/* Message bubble */}
+              {message.type === 'demo_stream' ? (
+                <div className="flex-1 min-w-0">
+                  <StreamingChatMessage />
+                  <p className="text-xs mt-1 text-muted-foreground">
+                    {formatTime(message.timestamp)}
+                  </p>
+                </div>
+              ) : (
+                <div className={cn(
+                  'max-w-[280px] rounded-2xl px-4 py-2',
+                  message.isUser
+                    ? 'bg-primary text-primary-foreground rounded-br-sm'
+                    : 'bg-muted text-foreground rounded-bl-sm'
+                )}>
+                  <LinkDetectingTextArea
+                    content={message.content}
+                    className="text-sm leading-relaxed"
+                    shouldStream={message.isStreaming}
+                    onStreamComplete={() => handleStreamComplete(message.id)}
+                  />
+                  <p className={cn(
+                    'text-xs mt-1',
+                    message.isUser
+                      ? 'text-primary-foreground/70'
+                      : 'text-muted-foreground'
+                  )}>
+                    {formatTime(message.timestamp)}
+                  </p>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Typing indicator */}
+          {isTyping && (
+            <div className="flex gap-3">
+              <Avatar className="h-8 w-8">
                 <AvatarImage src={agent.avatar} alt={agent.name} />
                 <AvatarFallback className="bg-gradient-to-br from-red-500 to-purple-600 text-white text-xs">
                   {agent.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-            )}
-
-            {/* Message bubble */}
-            <div className={cn(
-              'max-w-[280px] rounded-2xl px-4 py-2',
-              message.isUser
-                ? 'bg-primary text-primary-foreground rounded-br-sm'
-                : 'bg-muted text-foreground rounded-bl-sm'
-            )}>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                {message.content}
-              </p>
-              <p className={cn(
-                'text-xs mt-1',
-                message.isUser
-                  ? 'text-primary-foreground/70'
-                  : 'text-muted-foreground'
-              )}>
-                {formatTime(message.timestamp)}
-              </p>
-            </div>
-          </div>
-        ))}
-
-        {/* Typing indicator */}
-        {isTyping && (
-          <div className="flex gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={agent.avatar} alt={agent.name} />
-              <AvatarFallback className="bg-gradient-to-br from-red-500 to-purple-600 text-white text-xs">
-                {agent.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-2">
-              <div className="flex gap-1">
-                <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" />
-                <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce delay-100" />
-                <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce delay-200" />
+              <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-2">
+                <div className="flex gap-1">
+                  <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" />
+                  <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce delay-100" />
+                  <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce delay-200" />
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* Quick suggestions */}
@@ -238,7 +302,7 @@ export function MobileChatWindow({
               placeholder={`Message ${agent.name}...`}
               className="pr-20 h-11 bg-muted/30 border-muted focus:border-primary resize-none"
             />
-            
+
             {/* Input actions */}
             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
               <TouchButton variant="ghost" size="sm" className="p-1 h-6 w-6">
@@ -267,8 +331,8 @@ export function MobileChatWindow({
               onClick={() => setIsRecording(!isRecording)}
               className={cn(
                 "h-11 w-11 rounded-full p-0",
-                isRecording 
-                  ? "bg-red-500 hover:bg-red-600" 
+                isRecording
+                  ? "bg-red-500 hover:bg-red-600"
                   : "bg-primary hover:bg-primary/90"
               )}
             >

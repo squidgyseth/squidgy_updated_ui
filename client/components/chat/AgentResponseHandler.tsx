@@ -10,6 +10,8 @@ interface AgentResponseHandlerProps {
   response: N8nResponse;
   className?: string;
   onAnswerQuestion?: (answer: string) => void;
+  shouldStream?: boolean;
+  onStreamComplete?: () => void;
 }
 
 /**
@@ -18,17 +20,19 @@ interface AgentResponseHandlerProps {
  * - Waiting: Shows agent's question as a regular message
  * - Nothing: Shows idle state
  */
-export default function AgentResponseHandler({ 
-  response, 
+export default function AgentResponseHandler({
+  response,
   className = '',
-  onAnswerQuestion
+  onAnswerQuestion,
+  shouldStream = false,
+  onStreamComplete
 }: AgentResponseHandlerProps) {
-  
+
   // Check if response is social media content
   const isSocialMediaContent = () => {
     try {
       const parsed = JSON.parse(response.agent_response);
-      
+
       // Handle error structure with raw JSON content
       if (parsed && parsed.error && parsed.raw) {
         try {
@@ -42,7 +46,7 @@ export default function AgentResponseHandler({
           // If inner parsing fails, continue with outer checks
         }
       }
-      
+
       // Check for ContentRepurposerPosts structure
       if (Array.isArray(parsed) && parsed[0] && parsed[0].ContentRepurposerPosts) {
         return true;
@@ -67,8 +71,8 @@ export default function AgentResponseHandler({
       if (response.agent_name === 'content_repurposer') {
         return (
           <div className={`agent-response ready-state ${className}`}>
-            <SocialMediaPreview 
-              content={response.agent_response} 
+            <SocialMediaPreview
+              content={response.agent_response}
               historyId={response.request_id}
             />
           </div>
@@ -91,10 +95,10 @@ export default function AgentResponseHandler({
           </div>
         );
       }
-      
+
       // Check if content looks like HTML (contains HTML tags)
       const looksLikeHtml = /<[a-z][\s\S]*>/i.test(response.agent_response);
-      
+
       if (looksLikeHtml) {
         // For HTML content, use HTMLPreview
         return (
@@ -103,33 +107,37 @@ export default function AgentResponseHandler({
           </div>
         );
       }
-      
+
       // For plain text/markdown content, use LinkDetectingTextArea
       return (
         <div className={`agent-response ready-state ${className}`}>
           <div className="bg-gray-100 rounded-lg px-4 py-2">
-            <LinkDetectingTextArea 
+            <LinkDetectingTextArea
               content={response.agent_response}
               className="text-text-primary whitespace-pre-wrap"
+              shouldStream={shouldStream}
+              onStreamComplete={onStreamComplete}
             />
           </div>
         </div>
       );
-      
+
     case 'Waiting':
       // For Waiting status, display the question as a normal message
       // The user will respond using the regular chat input
       return (
         <div className={`agent-response waiting-state ${className}`}>
           <div className="bg-gray-100 rounded-lg px-4 py-2">
-            <LinkDetectingTextArea 
+            <LinkDetectingTextArea
               content={response.agent_response}
               className="text-text-primary whitespace-pre-wrap"
+              shouldStream={shouldStream}
+              onStreamComplete={onStreamComplete}
             />
           </div>
         </div>
       );
-      
+
     case 'Nothing':
       // For Nothing status, show idle or default state
       return (
@@ -139,15 +147,17 @@ export default function AgentResponseHandler({
           </div>
         </div>
       );
-      
+
     default:
       // Fallback for any unexpected status
       return (
         <div className={`agent-response default-state ${className}`}>
           <div className="p-3 bg-gray-50 rounded-lg">
-            <LinkDetectingTextArea 
+            <LinkDetectingTextArea
               content={response.agent_response}
               className="text-gray-700"
+              shouldStream={shouldStream}
+              onStreamComplete={onStreamComplete}
             />
           </div>
         </div>

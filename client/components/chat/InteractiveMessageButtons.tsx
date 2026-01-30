@@ -7,6 +7,8 @@ import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 interface InteractiveMessageButtonsProps {
   content: string;
   onButtonClick: (text: string) => void;
+  shouldStream?: boolean;
+  onStreamComplete?: () => void;
 }
 
 interface ButtonOption {
@@ -22,8 +24,14 @@ interface ImagePreview {
   index: number;
 }
 
-export default function InteractiveMessageButtons({ content, onButtonClick }: InteractiveMessageButtonsProps) {
+export default function InteractiveMessageButtons({
+  content,
+  onButtonClick,
+  shouldStream = false,
+  onStreamComplete
+}: InteractiveMessageButtonsProps) {
   const agentMappingService = AgentMappingService.getInstance();
+  const [isStreamingComplete, setIsStreamingComplete] = React.useState(!shouldStream);
 
   // Load agent mappings on component mount
   useEffect(() => {
@@ -147,6 +155,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
   };
 
   const handleButtonClick = async (option: ButtonOption) => {
+    console.log('👆 InteractiveMessageButtons: Button clicked:', option.text);
     // Check for special button types that need real functionality
     const buttonText = option.text.toLowerCase();
 
@@ -254,12 +263,20 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
         <LinkDetectingTextArea
           content={textContent}
           className="whitespace-pre-wrap text-gray-800"
+          shouldStream={shouldStream}
+          onStreamComplete={() => {
+            setIsStreamingComplete(true);
+            onStreamComplete?.();
+          }}
         />
       )}
 
-      {/* Display interactive buttons */}
-      {buttonOptions.length > 0 && (
-        <div className="space-y-2 mt-4">
+      {/* Display interactive buttons - only after streaming complete and reveal styling */}
+      {buttonOptions.length > 0 && isStreamingComplete && (
+        <div
+          className="space-y-3 mt-6 animate-in fade-in duration-700 fill-mode-forwards relative z-50 pointer-events-auto"
+          style={{ pointerEvents: 'auto', position: 'relative', zIndex: 50 }}
+        >
           {buttonOptions.map((option, index) => {
             const imageUrl = getImageForButton(option.text);
 
@@ -267,9 +284,8 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
               <button
                 key={index}
                 onClick={() => handleButtonClick(option)}
-                className={`w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors text-left group ${
-                  imageUrl ? 'flex-col sm:flex-row' : ''
-                }`}
+                className={`w-full flex items-center gap-3 p-3 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all hover:border-purple-200 hover:shadow-md text-left group ${imageUrl ? 'flex-col sm:flex-row' : ''
+                  }`}
               >
                 {/* Show image thumbnail if this is an image selection button */}
                 {imageUrl && (
@@ -284,19 +300,16 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
                     />
                   </div>
                 )}
-                {option.emoji && !imageUrl && <span className="text-lg flex-shrink-0">{option.emoji}</span>}
+                {option.emoji && !imageUrl && <span className="text-xl flex-shrink-0 mt-0.5">{option.emoji}</span>}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-gray-900 group-hover:text-purple-700">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors">
                       {option.text}
                     </span>
                     {option.description && (
-                      <>
-                        <span className="text-gray-500">-</span>
-                        <span className="text-gray-600 text-sm">
-                          {option.description}
-                        </span>
-                      </>
+                      <span className="text-gray-500 text-sm leading-snug">
+                        {option.description}
+                      </span>
                     )}
                   </div>
                 </div>
