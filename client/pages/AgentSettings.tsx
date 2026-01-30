@@ -76,18 +76,19 @@ export default function AgentSettings() {
           .select('file_name, file_url, created_at')
           .eq('user_id', userId)
           .eq('source', 'file_upload')
-          .filter('file_name', 'not.is', null)
           .order('created_at', { ascending: false });
 
         if (!filesError && filesData) {
-          // Group by file_url to remove duplicates (chunks of same file)
+          // Filter out records with null file_name and deduplicate by file_url
           const uniqueFiles = Array.from(
-            filesData.reduce((map, file) => {
-              if (!map.has(file.file_url)) {
-                map.set(file.file_url, file);
-              }
-              return map;
-            }, new Map()).values()
+            filesData
+              .filter(file => file.file_name && file.file_url) // Filter out nulls in JS
+              .reduce((map, file) => {
+                if (!map.has(file.file_url)) {
+                  map.set(file.file_url, file);
+                }
+                return map;
+              }, new Map()).values()
           );
           setExistingFiles(uniqueFiles);
         }
