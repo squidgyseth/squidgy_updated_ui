@@ -76,7 +76,7 @@ export default function AgentSettings() {
           .select('file_name, file_url, created_at')
           .eq('user_id', userId)
           .eq('source', 'file_upload')
-          .not('file_name', 'is', null)
+          .filter('file_name', 'not.is', null)
           .order('created_at', { ascending: false });
 
         if (!filesError && filesData) {
