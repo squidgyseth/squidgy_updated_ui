@@ -25,6 +25,7 @@ export default function AgentSettings() {
   const [existingFiles, setExistingFiles] = useState<any[]>([]);
   const [existingInstructions, setExistingInstructions] = useState<string>('');
   const [loadingExisting, setLoadingExisting] = useState(false);
+  const [instructionsLoaded, setInstructionsLoaded] = useState(false);
 
   // Toast notification state
   const [showToast, setShowToast] = useState(false);
@@ -102,6 +103,14 @@ export default function AgentSettings() {
 
     fetchExistingData();
   }, [userId, agentId]);
+
+  // Pre-fill textarea with existing custom instructions
+  useEffect(() => {
+    if (existingInstructions && !instructionsLoaded && !currentText) {
+      setCurrentText(existingInstructions);
+      setInstructionsLoaded(true);
+    }
+  }, [existingInstructions, instructionsLoaded, currentText]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -611,30 +620,17 @@ export default function AgentSettings() {
           </div>
 
           {/* Previously Saved Data Section */}
-          {(existingFiles.length > 0 || existingInstructions) && (
+          {existingFiles.length > 0 && (
             <div className="mt-8 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
               {/* Header */}
               <div className="bg-gradient-to-r from-blue-500 to-cyan-500 px-8 py-6">
-                <h2 className="text-2xl font-bold text-white mb-2">Previously Saved Data</h2>
+                <h2 className="text-2xl font-bold text-white mb-2">Uploaded Files</h2>
                 <p className="text-blue-100">
-                  Your uploaded files and custom instructions for {agentConfig?.agent?.name}
+                  Your uploaded files for {agentConfig?.agent?.name}
                 </p>
               </div>
 
               <div className="p-8 space-y-6">
-                {/* Custom Instructions */}
-                {existingInstructions && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      Custom Instructions
-                    </h3>
-                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{existingInstructions}</p>
-                    </div>
-                  </div>
-                )}
-
                 {/* Uploaded Files */}
                 {existingFiles.length > 0 && (
                   <div>
