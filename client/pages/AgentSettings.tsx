@@ -63,53 +63,19 @@ export default function AgentSettings() {
     loadAgentConfig();
   }, [agentId]);
 
-  // Load existing knowledge base data from user_vector_knowledge_base
+  // TODO: Load existing knowledge base data from Neon database
+  // This requires a backend API endpoint to query the user_vector_knowledge_base table in Neon
+  // Temporarily disabled until backend endpoint is created
   useEffect(() => {
     const fetchExistingData = async () => {
       if (!userId || !agentId) return;
 
       setLoadingExisting(true);
       try {
-        // Fetch files (source='file_upload')
-        const { data: filesData, error: filesError } = await supabase
-          .from('user_vector_knowledge_base')
-          .select('file_name, file_url, created_at')
-          .eq('user_id', userId)
-          .eq('source', 'file_upload')
-          .order('created_at', { ascending: false });
-
-        if (!filesError && filesData) {
-          // Filter out records with null file_name and deduplicate by file_url
-          const uniqueFiles = Array.from(
-            filesData
-              .filter(file => file.file_name && file.file_url) // Filter out nulls in JS
-              .reduce((map, file) => {
-                if (!map.has(file.file_url)) {
-                  map.set(file.file_url, file);
-                }
-                return map;
-              }, new Map()).values()
-          );
-          setExistingFiles(uniqueFiles);
-        }
-
-        // Fetch custom instructions (source='agent_settings', category='custom_instructions')
-        const { data: instructionsData, error: instructionsError } = await supabase
-          .from('user_vector_knowledge_base')
-          .select('document, created_at')
-          .eq('user_id', userId)
-          .eq('source', 'agent_settings')
-          .eq('category', 'custom_instructions')
-          .order('created_at', { ascending: false })
-          .limit(10);
-
-        if (!instructionsError && instructionsData && instructionsData.length > 0) {
-          // Combine all instruction chunks
-          const combinedInstructions = instructionsData
-            .map(item => item.document)
-            .join('\n\n');
-          setExistingInstructions(combinedInstructions);
-        }
+        // TODO: Call backend API endpoint to fetch data from Neon
+        // For now, set empty data
+        setExistingFiles([]);
+        setExistingInstructions('');
       } catch (error) {
         console.error('Error fetching existing knowledge:', error);
       } finally {
