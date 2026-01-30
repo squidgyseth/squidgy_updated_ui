@@ -69,9 +69,11 @@ export default function AgentSettings() {
       if (!userId || !agentId) return;
 
       setLoadingExisting(true);
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
       try {
         // Fetch files from Neon database via backend API
-        const filesResponse = await fetch(`/api/knowledge-base/files/${userId}`);
+        const filesResponse = await fetch(`${backendUrl}/api/knowledge-base/files/${userId}`);
         if (filesResponse.ok) {
           const filesData = await filesResponse.json();
           setExistingFiles(filesData.files || []);
@@ -81,7 +83,7 @@ export default function AgentSettings() {
         }
 
         // Fetch custom instructions from Neon database via backend API
-        const instructionsResponse = await fetch(`/api/knowledge-base/instructions/${userId}`);
+        const instructionsResponse = await fetch(`${backendUrl}/api/knowledge-base/instructions/${userId}`);
         if (instructionsResponse.ok) {
           const instructionsData = await instructionsResponse.json();
           setExistingInstructions(instructionsData.instructions || '');
