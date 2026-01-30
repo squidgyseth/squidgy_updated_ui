@@ -18,7 +18,6 @@ import NewsletterSelector from './NewsletterSelector';
 import InteractiveMessageButtons from './InteractiveMessageButtons';
 import { googleCalendarService } from '../../lib/googleCalendar';
 import { toast } from 'sonner';
-import AgentEnablementService from '../../services/agentEnablementService';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -504,8 +503,23 @@ export default function N8nChatInterface({
                 break;
 
               case 'agent_enabled':
-                // Agent enablement - handled separately by AgentEnablementService
-                console.log('✅ Agent enabled action detected - will be processed by enablement service');
+                // Agent enablement - refresh sidebar to show new agent
+                console.log('✅ Agent enabled action detected:', metadata);
+
+                // Refresh sidebar to show newly enabled agent
+                if ((window as any).refreshAgentSidebar) {
+                  (window as any).refreshAgentSidebar();
+                  console.log('🔄 Refreshed agent sidebar for:', metadata.agent_name);
+                } else {
+                  console.warn('⚠️ refreshAgentSidebar not available on window');
+                }
+
+                // Show success notification
+                const agentName = metadata.agent_name || 'Agent';
+                if ((window as any).showToast) {
+                  (window as any).showToast(`✅ ${agentName} enabled and ready!`, 'success');
+                }
+
                 // Don't return - let the response continue to be processed
                 break;
 
@@ -605,27 +619,8 @@ export default function N8nChatInterface({
         console.log('🔍 N8N DEBUG: Agent response received from agent.id:', agent.id);
         console.log('🔍 N8N DEBUG: Response object:', response);
 
-        // Handle agent enablement for Personal Assistant onboarding
-        if (agent.id === 'personal_assistant') {
-          console.log('🔍 N8N DEBUG: Personal Assistant detected, checking for agent enablement');
-          const enablementService = AgentEnablementService.getInstance();
-          // Ensure user_id is included in the enablement data
-          const enablementData = {
-            ...response,
-            user_id: response.user_id || userId // Use response user_id or fallback to component userId
-          };
-          console.log('🔍 N8N DEBUG: Agent response for enablement check:', enablementData);
-          
-          try {
-            // Pass the full response object with user_id guaranteed
-            await enablementService.handleOnboardingResponse(enablementData, userId);
-            console.log('🔍 N8N DEBUG: AgentEnablementService called successfully');
-          } catch (error) {
-            console.error('❌ N8N DEBUG: Error calling AgentEnablementService:', error);
-          }
-        } else {
-          console.log('🔍 N8N DEBUG: Not Personal Assistant, skipping enablement check for agent:', agent.id);
-        }
+        // NOTE: Agent enablement is now handled via actions_todo (see agent_enabled case above)
+        // No need for separate AgentEnablementService check
       } else {
         // Handle error case
         const errorMessage = 'Sorry, I encountered an error processing your request. Please try again.';
