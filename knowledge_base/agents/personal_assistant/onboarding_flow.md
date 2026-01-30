@@ -2,13 +2,15 @@
 
 ## 🚨 CRITICAL RESPONSE FORMAT
 
-**Your JSON response MUST have actions_performed at ROOT level, NOT inside agent_data:**
+**Understanding the Difference:**
+- **actions_performed** = What the AGENT DID (backend: KB operations, tool executions)
+- **actions_todo** = What the UI NEEDS TO DO (frontend: routing, refresh agent list)
 
-**Standard Action Format (ALWAYS use this structure):**
+**Standard Action Format:**
 ```json
 {
   "action": "action_name",     // The type of action
-  "details": "Description",    // Human-readable description (NOT "reason")
+  "details": "Description",    // Human-readable description
   "metadata": {                // Additional structured data
     // Relevant data here
   }
@@ -19,18 +21,24 @@
 ```json
 {
   "response": "Your message",
-  "actions_performed": [   // ✅ AT ROOT LEVEL - Array of action objects
+  "actions_performed": [   // ✅ What agent DID (backend operations)
+    {
+      "action": "kb_saved",
+      "details": "Saved company info to knowledge base",
+      "metadata": { "category": "company", "entry_id": "123" }
+    }
+  ],
+  "actions_todo": [        // ✅ What UI needs to DO (frontend actions)
     {
       "action": "agent_enabled",
-      "details": "Social Media Manager is now enabled with direct tone",
+      "details": "UI needs to refresh agent list and show Social Media Manager",
       "metadata": {
         "agent_id": "social_media_agent",
         "agent_name": "Social Media Manager",
-        "config_applied": { "tone": "direct" }
+        "communication_tone": "direct"
       }
     }
   ],
-  "actions_todo": [],      // ✅ AT ROOT LEVEL - Array of action objects
   "agent_data": {
     "agent_id": "social_media_agent",
     "agent_name": "Social Media Manager",
@@ -39,17 +47,16 @@
 }
 ```
 
-**Note:**
-- No "routing" object needed - routing info goes in actions_performed metadata
-- No "finished" field needed - system determines completion from agent_data presence
-
 **❌ WRONG - DO NOT DO THIS:**
 ```json
 {
   "response": "Your message",
   "agent_data": {
     "actions_performed": [ ... ]  // ❌ WRONG LOCATION
-  }
+  },
+  "actions_performed": [
+    { "action": "agent_enabled", ... }  // ❌ WRONG - goes in actions_todo!
+  ]
 }
 ```
 
@@ -199,16 +206,15 @@ $$**➕ Add Another Assistant**$$
 ```json
 {
   "response": "✅ Perfect! Content Repurposer is now enabled!\n\n$$**💬 Start Chat with Content Repurposer**$$\n$$**➕ Add Another Assistant**$$\n\n📍 Find it in your left sidebar under Marketing.",
-  "actions_performed": [
+  "actions_performed": [],
+  "actions_todo": [
     {
       "action": "agent_enabled",
-      "details": "Content Repurposer is now enabled with friendly tone",
+      "details": "UI needs to refresh agent list and show Content Repurposer",
       "metadata": {
         "agent_id": "content_repurposer",
         "agent_name": "Content Repurposer",
-        "config_applied": {
-          "tone": "friendly"
-        }
+        "communication_tone": "friendly"
       }
     }
   ],
@@ -229,18 +235,17 @@ $$**➕ Add Another Assistant**$$
 ```json
 {
   "response": "✅ Perfect! Newsletter Agent is now configured!\n\n{{ calendar_types }}",
-  "actions_performed": [
+  "actions_performed": [],
+  "actions_todo": [
     {
       "action": "agent_enabled",
-      "details": "Newsletter Agent Multi is now enabled and configured",
+      "details": "UI needs to refresh agent list and show Newsletter Agent Multi",
       "metadata": {
         "agent_id": "newsletter_multi",
         "agent_name": "Newsletter Agent Multi",
-        "config_applied": {
-          "tone": "professional",
-          "target_audience": "b2b",
-          "primary_goals": ["Lead generation"]
-        }
+        "communication_tone": "professional",
+        "target_audience": "b2b",
+        "primary_goals": ["Lead generation"]
       }
     }
   ],
@@ -259,16 +264,15 @@ $$**➕ Add Another Assistant**$$
 ```json
 {
   "response": "✅ Perfect! {{ agent_name }} is now enabled!\n\n$$**💬 Start Chat with {{ agent_name }}**$$\n$$**➕ Add Another Assistant**$$",
-  "actions_performed": [
+  "actions_performed": [],
+  "actions_todo": [
     {
       "action": "agent_enabled",
-      "details": "{{ agent_name }} is now enabled with {{ selected_tone }} tone",
+      "details": "UI needs to refresh agent list and show {{ agent_name }}",
       "metadata": {
         "agent_id": "{{ agent_id }}",
         "agent_name": "{{ agent_name }}",
-        "config_applied": {
-          "tone": "{{ selected_tone }}"
-        }
+        "communication_tone": "{{ selected_tone }}"
       }
     }
   ],
@@ -314,7 +318,7 @@ When user selects "Skip for now":
 5. **Detect URLs** - If user provides URL, analyze immediately
 6. **Industry relevance** - Only recommend relevant agents
 7. **Use exact agent_id** from `agent_department_value` mapping
-8. **ALWAYS populate actions_performed** - When enabling agents, ALWAYS include the `actions_performed` array in your response with the agent_enabled action. This is critical for UI tracking.
+8. **ALWAYS populate actions_todo for agent enablement** - When enabling agents, ALWAYS include the agent_enabled action in the `actions_todo` array (UI needs to refresh agent list). This is critical for UI tracking.
 
 ---
 

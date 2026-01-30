@@ -1,6 +1,6 @@
 # Personal Assistant - Actions Performed (Elevated)
 
-PA-specific actions in addition to shared actions.
+**What goes in actions_performed:** Backend operations the AGENT executed (tools, KB operations, web analysis)
 
 ## Standard Action Structure
 
@@ -10,29 +10,26 @@ PA-specific actions in addition to shared actions.
   "action": "action_name",     // The type of action performed
   "details": "Description",    // Human-readable description of what happened
   "metadata": {                // Additional structured data about the action
-    // Relevant data here (agent_id, urls, config, etc.)
+    // Relevant data here (category, entry_id, urls, etc.)
   }
 }
 ```
 
 ---
 
-## Elevated Action Types
+## Elevated Action Types (Backend Operations)
 
 | Action Type | Description | Example |
 |-------------|-------------|---------|
 | `business_context_collected` | Got business info (website or manual) | Analyzed website, extracted brand |
 | `website_analyzed` | Scraped and analyzed website | Extracted branding from homepage |
-| `agent_enabled` | Enabled a child agent | Enabled Newsletter Multi |
-| `agent_disabled` | Disabled a child agent | Disabled SOL agent |
-| `agent_configured` | Updated agent settings | Set newsletter tone to casual |
 | `kb_saved` | Saved to any KB category | Saved company overview |
 | `kb_updated` | Updated existing KB data | Updated branding colors |
 | `kb_deleted` | Removed KB data | Deleted outdated product info |
-| `user_routed` | Redirected user to agent | Sent to Newsletter agent |
-| `onboarding_started` | Started agent onboarding | Beginning Newsletter setup |
-| `onboarding_completed` | Finished agent onboarding | Newsletter fully configured |
-| `settings_updated` | Changed user/system settings | Updated timezone |
+| `tool_executed` | Ran a specific tool | Executed Vector Search |
+| `settings_saved` | Saved user settings to backend | Saved timezone preference |
+
+**Note:** Actions like `agent_enabled`, `user_routed` go in **actions_todo** (UI operations), not here!
 
 ---
 
@@ -52,22 +49,7 @@ PA-specific actions in addition to shared actions.
 }
 ```
 
-### Agent Enabled:
-```json
-{
-  "action": "agent_enabled",
-  "details": "Newsletter Multi agent is now enabled and ready to use",
-  "metadata": {
-    "agent_id": "newsletter_multi",
-    "agent_name": "Newsletter Multi",
-    "config_applied": {
-      "tone": "professional",
-      "target_audience": "B2B CTOs"
-    }
-  }
-}
-```
-
+### Website Analyzed:
 ```json
 {
   "action": "website_analyzed",
@@ -83,16 +65,28 @@ PA-specific actions in addition to shared actions.
 }
 ```
 
+### KB Saved:
 ```json
 {
-  "action": "user_routed",
-  "details": "Connecting you with the Newsletter agent",
+  "action": "kb_saved",
+  "details": "Saved company overview to knowledge base",
   "metadata": {
-    "target_agent": "newsletter_multi",
-    "target_url": "/chat/newsletter_multi",
-    "user_intent": "create_newsletter"
+    "category": "company",
+    "entry_id": "kb_123",
+    "content_preview": "Acme Corp is a leading provider..."
   }
 }
 ```
 
-**Note:** No separate "routing" object needed - frontend reads target_agent and target_url directly from this action's metadata.
+### KB Updated:
+```json
+{
+  "action": "kb_updated",
+  "details": "Updated branding colors in knowledge base",
+  "metadata": {
+    "category": "branding",
+    "entry_id": "kb_456",
+    "fields_updated": ["primary_color", "secondary_color"]
+  }
+}
+```
