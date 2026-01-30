@@ -843,19 +843,26 @@ export default function N8nChatInterface({
     // Create file input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.pdf,.txt,.docx';
+    fileInput.accept = '.pdf,.txt,.docx,.png,.jpg,.jpeg';
     fileInput.style.display = 'none';
-    
+
     fileInput.onchange = async (e) => {
       const target = e.target as HTMLInputElement;
       const file = target.files?.[0];
-      
+
       if (!file) return;
-      
+
       // Validate file type
-      const allowedTypes = ['application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      const allowedTypes = [
+        'application/pdf',
+        'text/plain',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/png',
+        'image/jpeg',
+        'image/jpg'
+      ];
       if (!allowedTypes.includes(file.type)) {
-        alert('Only PDF, TXT, and DOCX files are supported');
+        alert('Only PDF, TXT, DOCX, PNG, JPG, and JPEG files are supported');
         return;
       }
       
