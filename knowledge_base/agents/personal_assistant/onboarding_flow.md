@@ -21,14 +21,14 @@
 ```json
 {
   "response": "Your message",
-  "actions_performed": [   // ✅ What agent DID (backend operations)
+  "actions_performed": [
     {
       "action": "kb_saved",
       "details": "Saved company info to knowledge base",
       "metadata": { "category": "company", "entry_id": "123" }
     }
   ],
-  "actions_todo": [        // ✅ What UI needs to DO (frontend actions)
+  "actions_todo": [
     {
       "action": "agent_enabled",
       "details": "UI needs to refresh agent list and show Social Media Manager",
@@ -38,12 +38,7 @@
         "communication_tone": "direct"
       }
     }
-  ],
-  "agent_data": {
-    "agent_id": "social_media_agent",
-    "agent_name": "Social Media Manager",
-    "communication_tone": "direct"
-  }
+  ]
 }
 ```
 
@@ -214,16 +209,11 @@ $$**➕ Add Another Assistant**$$
       "metadata": {
         "agent_id": "content_repurposer",
         "agent_name": "Content Repurposer",
-        "communication_tone": "friendly"
+        "communication_tone": "friendly",
+        "reused_settings": true
       }
     }
-  ],
-  "agent_data": {
-    "agent_id": "content_repurposer",
-    "agent_name": "Content Repurposer",
-    "communication_tone": "friendly",
-    "reused_settings": true
-  }
+  ]
 }
 ```
 
@@ -245,18 +235,11 @@ $$**➕ Add Another Assistant**$$
         "agent_name": "Newsletter Agent Multi",
         "communication_tone": "professional",
         "target_audience": "b2b",
-        "primary_goals": ["Lead generation"]
+        "primary_goals": ["Lead generation"],
+        "brand_voice": "Professional and authoritative"
       }
     }
-  ],
-  "agent_data": {
-    "agent_id": "newsletter_multi",
-    "agent_name": "Newsletter Agent Multi",
-    "communication_tone": "professional",
-    "target_audience": "b2b",
-    "primary_goals": ["Lead generation"],
-    "brand_voice": "Professional and authoritative"
-  }
+  ]
 }
 ```
 
@@ -272,16 +255,11 @@ $$**➕ Add Another Assistant**$$
       "metadata": {
         "agent_id": "{{ agent_id }}",
         "agent_name": "{{ agent_name }}",
-        "communication_tone": "{{ selected_tone }}"
+        "communication_tone": "{{ selected_tone }}",
+        "reused_settings": true
       }
     }
-  ],
-  "agent_data": {
-    "agent_id": "{{ agent_id }}",
-    "agent_name": "{{ agent_name }}",
-    "communication_tone": "{{ selected_tone }}",
-    "reused_settings": true
-  }
+  ]
 }
 ```
 

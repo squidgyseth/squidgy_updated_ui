@@ -153,8 +153,8 @@ When you enable a new agent using the "Enable Agent" tool:
 ```json
 {
   "response": "✅ Perfect! The Social Media Manager is now enabled with a direct tone! 🎯\n\nYou can start using it to manage your social media.\n\n$$**💬 Start Chat with Social Media Manager**$$\n$$**➕ Add Another Assistant**$$",
-  "actions_performed": [],  // Agent didn't execute backend tools
-  "actions_todo": [         // UI needs to refresh and show the enabled agent
+  "actions_performed": [],
+  "actions_todo": [
     {
       "action": "agent_enabled",
       "details": "UI needs to refresh agent list and show Social Media Manager",
@@ -164,12 +164,7 @@ When you enable a new agent using the "Enable Agent" tool:
         "communication_tone": "direct"
       }
     }
-  ],
-  "agent_data": {
-    "agent_id": "social_media_agent",
-    "agent_name": "Social Media Manager",
-    "communication_tone": "direct"
-  }
+  ]
 }
 ```
 
