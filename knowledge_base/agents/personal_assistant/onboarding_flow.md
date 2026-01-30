@@ -31,10 +31,17 @@
     }
   ],
   "actions_todo": [],      // ✅ AT ROOT LEVEL - Array of action objects
-  "finished": true,
-  "agent_data": { ... }
+  "agent_data": {
+    "agent_id": "social_media_agent",
+    "agent_name": "Social Media Manager",
+    "communication_tone": "direct"
+  }
 }
 ```
+
+**Note:**
+- No "routing" object needed - routing info goes in actions_performed metadata
+- No "finished" field needed - system determines completion from agent_data presence
 
 **❌ WRONG - DO NOT DO THIS:**
 ```json
@@ -192,13 +199,6 @@ $$**➕ Add Another Assistant**$$
 ```json
 {
   "response": "✅ Perfect! Content Repurposer is now enabled!\n\n$$**💬 Start Chat with Content Repurposer**$$\n$$**➕ Add Another Assistant**$$\n\n📍 Find it in your left sidebar under Marketing.",
-  "finished": true,
-  "agent_data": {
-    "agent_id": "content_repurposer",
-    "agent_name": "Content Repurposer",
-    "communication_tone": "friendly",
-    "reused_settings": true
-  },
   "actions_performed": [
     {
       "action": "agent_enabled",
@@ -211,7 +211,13 @@ $$**➕ Add Another Assistant**$$
         }
       }
     }
-  ]
+  ],
+  "agent_data": {
+    "agent_id": "content_repurposer",
+    "agent_name": "Content Repurposer",
+    "communication_tone": "friendly",
+    "reused_settings": true
+  }
 }
 ```
 
@@ -223,15 +229,6 @@ $$**➕ Add Another Assistant**$$
 ```json
 {
   "response": "✅ Perfect! Newsletter Agent is now configured!\n\n{{ calendar_types }}",
-  "finished": true,
-  "agent_data": {
-    "agent_id": "newsletter_multi",
-    "agent_name": "Newsletter Agent Multi",
-    "communication_tone": "professional",
-    "target_audience": "b2b",
-    "primary_goals": ["Lead generation"],
-    "brand_voice": "Professional and authoritative"
-  },
   "actions_performed": [
     {
       "action": "agent_enabled",
@@ -246,7 +243,15 @@ $$**➕ Add Another Assistant**$$
         }
       }
     }
-  ]
+  ],
+  "agent_data": {
+    "agent_id": "newsletter_multi",
+    "agent_name": "Newsletter Agent Multi",
+    "communication_tone": "professional",
+    "target_audience": "b2b",
+    "primary_goals": ["Lead generation"],
+    "brand_voice": "Professional and authoritative"
+  }
 }
 ```
 
@@ -254,13 +259,6 @@ $$**➕ Add Another Assistant**$$
 ```json
 {
   "response": "✅ Perfect! {{ agent_name }} is now enabled!\n\n$$**💬 Start Chat with {{ agent_name }}**$$\n$$**➕ Add Another Assistant**$$",
-  "finished": true,
-  "agent_data": {
-    "agent_id": "{{ agent_id }}",
-    "agent_name": "{{ agent_name }}",
-    "communication_tone": "{{ selected_tone }}",
-    "reused_settings": true
-  },
   "actions_performed": [
     {
       "action": "agent_enabled",
@@ -273,7 +271,13 @@ $$**➕ Add Another Assistant**$$
         }
       }
     }
-  ]
+  ],
+  "agent_data": {
+    "agent_id": "{{ agent_id }}",
+    "agent_name": "{{ agent_name }}",
+    "communication_tone": "{{ selected_tone }}",
+    "reused_settings": true
+  }
 }
 ```
 

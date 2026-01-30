@@ -90,9 +90,9 @@ PA-specific actions in addition to shared actions.
   "metadata": {
     "target_agent": "newsletter_multi",
     "target_url": "/chat/newsletter_multi",
-    "context_passed": {
-      "user_intent": "create_newsletter"
-    }
+    "user_intent": "create_newsletter"
   }
 }
 ```
+
+**Note:** No separate "routing" object needed - frontend reads target_agent and target_url directly from this action's metadata.
