@@ -7,6 +7,7 @@ import { AgentConfigService } from '../services/agentConfigService';
 import { navigationService } from '../services/navigationService';
 import { useNavigationService } from '../hooks/useNavigationService';
 import { chatSessionService } from '../services/chatSessionService';
+import { queryByUserId } from '../services/supabaseQueryService';
 
 /**
  * Dynamic Agent Dashboard - A single component that handles ALL agents
@@ -50,24 +51,12 @@ export default function DynamicAgentDashboard() {
           // For Personal Assistant, check if user has website info
           if (agentId === 'personal_assistant' && userId) {
             try {
-              const response = await fetch('/api/supabase/query', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  table: 'vw_personal_assistant_config_llm',
-                  filters: [
-                    { column: 'user_id', operator: 'eq', value: userId }
-                  ]
-                })
-              });
+              const result = await queryByUserId('vw_personal_assistant_config_llm', userId);
 
-              if (response.ok) {
-                const data = await response.json();
-                if (data && data.length > 0) {
-                  const websiteInfo = data[0].website_analysis_info;
-                  setHasWebsiteInfo(!!websiteInfo && websiteInfo.trim() !== '');
-                  console.log('📊 Website info status:', !!websiteInfo);
-                }
+              if (result.success && result.data && result.data.length > 0) {
+                const websiteInfo = result.data[0].website_analysis_info;
+                setHasWebsiteInfo(!!websiteInfo && websiteInfo.trim() !== '');
+                console.log('📊 Website info status:', !!websiteInfo);
               }
             } catch (err) {
               console.warn('Could not fetch PA config for intro message:', err);
