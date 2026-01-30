@@ -1,5 +1,36 @@
 # Structured Onboarding Flow
 
+## 🚨 CRITICAL RESPONSE FORMAT
+
+**Your JSON response MUST have actions_performed at ROOT level, NOT inside agent_data:**
+
+```json
+{
+  "response": "Your message",
+  "actions_performed": [   // ✅ AT ROOT LEVEL
+    {
+      "action": "agent_enabled",
+      "details": "...",
+      "metadata": { ... }
+    }
+  ],
+  "finished": true,
+  "agent_data": { ... }
+}
+```
+
+**❌ WRONG - DO NOT DO THIS:**
+```json
+{
+  "response": "Your message",
+  "agent_data": {
+    "actions_performed": [ ... ]  // ❌ WRONG LOCATION
+  }
+}
+```
+
+---
+
 ## PHASE DETECTION
 
 Check user's current state to determine what to ask:
@@ -150,7 +181,20 @@ $$**➕ Add Another Assistant**$$
     "agent_name": "Content Repurposer",
     "communication_tone": "friendly",
     "reused_settings": true
-  }
+  },
+  "actions_performed": [
+    {
+      "action": "agent_enabled",
+      "details": "Content Repurposer is now enabled with friendly tone",
+      "metadata": {
+        "agent_id": "content_repurposer",
+        "agent_name": "Content Repurposer",
+        "config_applied": {
+          "tone": "friendly"
+        }
+      }
+    }
+  ]
 }
 ```
 
