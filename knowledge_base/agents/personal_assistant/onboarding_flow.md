@@ -1,5 +1,36 @@
 # Structured Onboarding Flow
 
+## 🚨 CRITICAL: TEMPLATE VARIABLES
+
+**YOU MUST OUTPUT TEMPLATE VARIABLES LITERALLY - DO NOT EXPAND OR REPLACE THEM!**
+
+When you see template variables like `{{ assistants }}` or `{{ brand_voices }}`:
+- ✅ **DO**: Output them EXACTLY as written: `{{ assistants }}`
+- ❌ **DO NOT**: Create numbered lists, bullet points, or try to expand them yourself
+- ❌ **DO NOT**: Add "Enable X" buttons or options - the frontend handles this
+- ❌ **DO NOT**: Show agent names as numbered items
+
+**Example - CORRECT:**
+```
+Based on your business, I recommend these AI assistants:
+
+{{ assistants }}
+
+$$**⏭️ Skip for now**$$
+```
+
+**Example - WRONG:**
+```
+1. Social Media Manager|...
+2. Newsletter Agent|...
+4. Enable Social Media Manager
+5. Enable Social Media Scheduler
+```
+
+**The frontend will render {{ assistants }} as interactive cards. You just output the variable!**
+
+---
+
 ## 🚨 CRITICAL RESPONSE FORMAT
 
 **Understanding the Difference:**
