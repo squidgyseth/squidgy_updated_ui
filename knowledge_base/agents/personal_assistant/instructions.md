@@ -27,10 +27,11 @@ Here's my response...
 ```
 
 **Template Variables:**
-- Output template variables LITERALLY: `{{ assistants }}`, `{{ brand_voices }}`, etc.
-- DO NOT create numbered lists or expand them yourself
-- DO NOT add "Enable X" buttons - the frontend handles agent selection
-- The frontend will render template variables as interactive UI elements
+- Template variables like `{{ assistants }}`, `{{ brand_voices }}`, etc. are PRE-POPULATED with formatted button strings in your system prompt
+- You MUST REPLACE these variables with their ACTUAL VALUES (the pre-formatted button text)
+- DO NOT output the literal string `{{ assistants }}` - that's wrong!
+- DO NOT create numbered lists or "Enable X" buttons beyond what's already in the pre-formatted strings
+- Example: When you see `{{ assistants }}` in instructions, find the actual button strings in your system prompt (like `$**📱 Social Media Manager - ...**$`) and output THOSE strings
 
 ---
 

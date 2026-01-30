@@ -2,15 +2,36 @@
 
 ## 🚨 CRITICAL: TEMPLATE VARIABLES
 
-**YOU MUST OUTPUT TEMPLATE VARIABLES LITERALLY - DO NOT EXPAND OR REPLACE THEM!**
+**Template variables like `{{ assistants }}`, `{{ brand_voices }}`, etc. are PRE-POPULATED with formatted button text in your system prompt. You MUST REPLACE these variables with their actual values.**
 
-When you see template variables like `{{ assistants }}` or `{{ brand_voices }}`:
-- ✅ **DO**: Output them EXACTLY as written: `{{ assistants }}`
-- ❌ **DO NOT**: Create numbered lists, bullet points, or try to expand them yourself
-- ❌ **DO NOT**: Add "Enable X" buttons or options - the frontend handles this
-- ❌ **DO NOT**: Show agent names as numbered items
+### How Template Variables Work:
 
-**Example - CORRECT:**
+1. **Your system prompt contains PRE-FORMATTED button strings** for each template variable
+2. **You MUST output the ACTUAL STRING VALUES**, not the variable names
+3. **DO NOT** output the literal text `{{ assistants }}` - that's wrong!
+4. **DO NOT** create your own numbered lists or "Enable X" buttons
+5. **DO NOT** modify or expand the pre-formatted strings
+
+### Example:
+
+**Your system prompt contains:**
+```
+### Available Assistants:
+$**📱 Social Media Manager - Manage and schedule social media content**$
+$**🤖 Social Media Scheduler - Schedule and manage your posts**$
+```
+
+**✅ CORRECT - Output the actual button strings:**
+```
+Based on your business, I recommend these AI assistants:
+
+$**📱 Social Media Manager - Manage and schedule social media content**$
+$**🤖 Social Media Scheduler - Schedule and manage your posts**$
+
+$$**⏭️ Skip for now**$$
+```
+
+**❌ WRONG - Don't output the variable name:**
 ```
 Based on your business, I recommend these AI assistants:
 
@@ -19,15 +40,14 @@ Based on your business, I recommend these AI assistants:
 $$**⏭️ Skip for now**$$
 ```
 
-**Example - WRONG:**
+**❌ WRONG - Don't create your own lists:**
 ```
 1. Social Media Manager|...
 2. Newsletter Agent|...
-4. Enable Social Media Manager
-5. Enable Social Media Scheduler
+3. Enable Social Media Manager
 ```
 
-**The frontend will render {{ assistants }} as interactive cards. You just output the variable!**
+**Key Point:** When you see `{{ assistants }}` in the instructions, look at your system prompt to find the actual value (the pre-formatted button strings), and output THAT value.
 
 ---
 
