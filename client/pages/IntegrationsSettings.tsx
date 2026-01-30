@@ -512,27 +512,45 @@ export default function IntegrationsSettings() {
 
   const fetchGHLIntegrations = async () => {
     if (!firmUserId) return;
-    
+
     try {
       setLoading(true);
-      
-      // Query Supabase directly for GHL integrations using firm_user_id
-      const { data, error: supabaseError } = await supabase
+
+      // Query Supabase for ALL GHL integrations to display in table
+      const { data: allData, error: allError } = await supabase
         .from('ghl_subaccounts')
         .select('*')
         .eq('firm_user_id', firmUserId);
-      
-      if (supabaseError) {
-        throw new Error(supabaseError.message);
+
+      if (allError) {
+        throw new Error(allError.message);
       }
-      
-      setGhlIntegrations(data || []);
-      
-      // Extract location_id, ghl_user_id, and PIT_Token from the first integration
-      if (data && data.length > 0) {
-        setLocationId(data[0].ghl_location_id);
-        setGhlUserId(data[0].soma_ghl_user_id || null);
-        setPitToken(data[0].PIT_Token || null);
+
+      setGhlIntegrations(allData || []);
+
+      // Query specifically for SOL agent (Social Media) to get tokens
+      // This ensures we use the correct location for social media integrations
+      const { data: solData, error: solError } = await supabase
+        .from('ghl_subaccounts')
+        .select('*')
+        .eq('firm_user_id', firmUserId)
+        .eq('agent_id', 'SOL')
+        .single();
+
+      if (solError) {
+        console.warn('No SOL agent integration found, using first available:', solError.message);
+        // Fallback to first integration if SOL not found
+        if (allData && allData.length > 0) {
+          setLocationId(allData[0].ghl_location_id);
+          setGhlUserId(allData[0].soma_ghl_user_id || null);
+          setPitToken(allData[0].PIT_Token || null);
+        }
+      } else if (solData) {
+        // Use SOL agent's location for social media integrations
+        console.log('✅ Using SOL agent location for social media:', solData.ghl_location_id);
+        setLocationId(solData.ghl_location_id);
+        setGhlUserId(solData.soma_ghl_user_id || null);
+        setPitToken(solData.PIT_Token || null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load integrations');
