@@ -88,17 +88,15 @@ export default function StreamingAgentMessage({
     const isSocial = isSocialMediaContent();
     const isContentRepurposer = response.agent_name === 'content_repurposer';
     const isNewsletter = response.agent_name === 'newsletter';
-    const hasButtons = hasInteractiveButtons(response.agent_response);
 
     // Only stream plain text/markdown for Ready, Waiting states, or when status is undefined
     // Don't stream for 'Nothing' status (agent is idle)
-    // Don't stream if content has buttons (buttons render separately)
+    // When content has buttons, we still stream the text part (InteractiveMessageButtons handles separation)
     const shouldStreamContent =
       !looksLikeHtml &&
       !isSocial &&
       !isContentRepurposer &&
       !isNewsletter &&
-      !hasButtons && // Don't stream when buttons are present
       (response.agent_status === 'Ready' ||
        response.agent_status === 'Waiting' ||
        !response.agent_status); // Also stream when status is undefined
@@ -106,9 +104,23 @@ export default function StreamingAgentMessage({
     setShouldStream(shouldStreamContent);
   }, [response.agent_response, response.agent_status, response.agent_name, enableStreaming]);
 
+  // Determine content to stream: if buttons present, stream only text part
+  const contentToStream = React.useMemo(() => {
+    if (!shouldStream) return '';
+
+    const hasButtons = hasInteractiveButtons(response.agent_response);
+    if (hasButtons) {
+      // Stream only the text content (buttons will render separately)
+      return extractTextContent(response.agent_response);
+    }
+
+    // Stream full content
+    return response.agent_response;
+  }, [shouldStream, response.agent_response]);
+
   // Use streaming hook for text content
   const { streamedText, isStreaming } = useStreamingText(
-    shouldStream ? response.agent_response : '',
+    contentToStream,
     {
       speed: streamingSpeed,
       autoStart: shouldStream,
@@ -166,10 +178,25 @@ export default function StreamingAgentMessage({
         // Check if content has interactive buttons
         const hasButtons = hasInteractiveButtons(response.agent_response);
 
-        // For content with interactive buttons - use InteractiveMessageButtons
+        // For content with interactive buttons - render text + buttons separately
+        // Text streams, buttons appear immediately
         if (hasButtons && onButtonClick) {
           return (
-            <div className="bg-gray-100 rounded-lg px-4 py-2">
+            <div className="bg-gray-100 rounded-lg px-4 py-2 space-y-3">
+              {/* Streaming text content (buttons removed) */}
+              <div>
+                <LinkDetectingTextArea
+                  content={displayContent}
+                  className="text-text-primary whitespace-pre-wrap"
+                />
+                {/* Show streaming cursor while text is streaming */}
+                {isStreaming && (
+                  <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
+                    ▍
+                  </span>
+                )}
+              </div>
+              {/* Buttons rendered immediately from full content */}
               <InteractiveMessageButtons
                 content={response.agent_response}
                 onButtonClick={onButtonClick}
