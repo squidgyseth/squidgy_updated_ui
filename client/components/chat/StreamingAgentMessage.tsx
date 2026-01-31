@@ -76,13 +76,16 @@ export default function StreamingAgentMessage({
     const isContentRepurposer = response.agent_name === 'content_repurposer';
     const isNewsletter = response.agent_name === 'newsletter';
 
-    // Only stream plain text/markdown for Ready and Waiting states
+    // Only stream plain text/markdown for Ready, Waiting states, or when status is undefined
+    // Don't stream for 'Nothing' status (agent is idle)
     const shouldStreamContent =
       !looksLikeHtml &&
       !isSocial &&
       !isContentRepurposer &&
       !isNewsletter &&
-      (response.agent_status === 'Ready' || response.agent_status === 'Waiting');
+      (response.agent_status === 'Ready' ||
+       response.agent_status === 'Waiting' ||
+       !response.agent_status); // Also stream when status is undefined
 
     setShouldStream(shouldStreamContent);
   }, [response.agent_response, response.agent_status, response.agent_name, enableStreaming]);

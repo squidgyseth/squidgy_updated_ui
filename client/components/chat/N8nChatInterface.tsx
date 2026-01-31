@@ -260,6 +260,7 @@ export default function N8nChatInterface({
             content: fileInfo.messageText,
             sender: msg.sender.toLowerCase() as 'user' | 'agent',
             timestamp: new Date(msg.timestamp),
+            status: msg.sender.toLowerCase() === 'agent' ? 'Ready' : undefined, // Add status for agent messages
             fileUpload: fileInfo.hasFile
               ? {
                   fileName: fileInfo.fileName,
@@ -283,7 +284,8 @@ export default function N8nChatInterface({
                 id: `intro_${sessionId}`,
                 content: introText,
                 sender: 'agent' as const,
-                timestamp: new Date(existingMessages[0].timestamp.getTime() - 1000) // 1 second before first message
+                timestamp: new Date(existingMessages[0].timestamp.getTime() - 1000), // 1 second before first message
+                status: 'Ready' as const // Enable streaming for intro message
               },
               ...chatMessages
             ]
@@ -302,7 +304,8 @@ export default function N8nChatInterface({
             id: generateRequestId(),
             content: introText,
             sender: 'agent',
-            timestamp: new Date()
+            timestamp: new Date(),
+            status: 'Ready' // Enable streaming for intro message
           };
           setMessages([introMessage]);
           // NOTE: Not saving intro message to database - only save real conversations
@@ -319,7 +322,8 @@ export default function N8nChatInterface({
           id: generateRequestId(),
           content: introText,
           sender: 'agent',
-          timestamp: new Date()
+          timestamp: new Date(),
+          status: 'Ready' // Enable streaming for intro message
         }]);
       } else {
         setMessages([]);
@@ -338,7 +342,8 @@ export default function N8nChatInterface({
           id: generateRequestId(),
           content: '✅ Google Calendar connected successfully! Your assistant can now manage your schedule, create meetings, and check availability.',
           sender: 'agent',
-          timestamp: new Date()
+          timestamp: new Date(),
+          status: 'Ready' // Enable streaming
         };
         setMessages(prev => [...prev, successMessage]);
       } else {
@@ -347,6 +352,7 @@ export default function N8nChatInterface({
           id: generateRequestId(),
           content: '❌ Failed to connect to Google Calendar. Please try again.',
           sender: 'agent',
+          status: 'Ready',
           timestamp: new Date()
         };
         setMessages(prev => [...prev, errorMessage]);
@@ -447,7 +453,8 @@ export default function N8nChatInterface({
             id: response.request_id || generateRequestId(),
             content: response.agent_response || `Redirecting you to ${response.routing.target_agent}...`,
             sender: 'agent',
-            timestamp: new Date()
+            timestamp: new Date(),
+            status: 'Ready' // Enable streaming
           };
           setMessages(prev => [...prev, redirectMessage]);
 
@@ -487,7 +494,8 @@ export default function N8nChatInterface({
                     id: response.request_id || generateRequestId(),
                     content: response.agent_response || `Redirecting you to ${metadata.target_agent}...`,
                     sender: 'agent',
-                    timestamp: new Date()
+                    timestamp: new Date(),
+                    status: 'Ready' // Enable streaming
                   };
                   setMessages(prev => [...prev, redirectMessage]);
 
@@ -631,7 +639,8 @@ export default function N8nChatInterface({
           id: generateRequestId(),
           content: errorMessage,
           sender: 'agent',
-          timestamp: new Date()
+          timestamp: new Date(),
+          status: 'Ready' // Enable streaming
         }]);
         
         // Save error message to database
@@ -644,7 +653,8 @@ export default function N8nChatInterface({
         id: generateRequestId(),
         content: errorMessage,
         sender: 'agent',
-        timestamp: new Date()
+        timestamp: new Date(),
+        status: 'Ready' // Enable streaming
       }]);
       
       // Save error message to database
