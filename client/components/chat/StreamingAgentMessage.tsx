@@ -32,13 +32,28 @@ export default function StreamingAgentMessage({
   const [displayContent, setDisplayContent] = useState(response.agent_response);
 
   // Helper to detect if content contains interactive buttons
+  // Check for both $$....$$ and $...$ patterns
   const hasInteractiveButtons = (text: string): boolean => {
-    return /\$\$[^$]+\$\$/.test(text);
+    return /\$\$[^$]+\$\$/.test(text) || /\$[^$]+\$/.test(text);
   };
 
   // Helper to extract text-only content (remove buttons) for streaming
+  // Remove both $$...$$ and $...$ patterns
   const extractTextContent = (text: string): string => {
-    return text.replace(/\$\$[^$]+\$\$/g, '').trim();
+    let cleaned = text
+      .replace(/\$\$([^$]+)\$\$/g, '') // Remove double dollar patterns
+      .replace(/\$([^$]+)\$/g, '');     // Remove single dollar patterns
+
+    // Remove stray empty list bullets that often remain
+    cleaned = cleaned
+      .split('\n')
+      .filter((line) => !/^\s*[-*•]\s*$/.test(line))
+      .join('\n');
+
+    // Clean up extra whitespace
+    return cleaned
+      .replace(/\n\s*\n\s*\n/g, '\n\n')
+      .trim();
   };
 
   // Check if response is social media content
