@@ -605,16 +605,16 @@ export default function N8nChatInterface({
           content: displayMessage,
           sender: 'agent',
           timestamp: new Date(response.timestamp_of_call_made),
-          status: response.agent_status,
-          isHtml: response.agent_status === 'Ready'
+          status: response.agent_status || 'Ready', // Default to 'Ready' to enable streaming
+          isHtml: (response.agent_status || 'Ready') === 'Ready'
         };
 
         // Save agent response to database and get back the saved record
         const savedRecord = await saveMessageToHistory(
-          displayMessage, 
-          'Agent', 
+          displayMessage,
+          'Agent',
           new Date(response.timestamp_of_call_made),
-          response.agent_status  // Pass agent_status
+          response.agent_status || 'Ready'  // Default to 'Ready' for streaming
         );
 
         // Update agentMessage with content_repurposer_history_id if available
