@@ -17,7 +17,9 @@
 --   - assistants (always show available agents)
 -- ============================================================================
 
-DROP VIEW IF EXISTS public.vw_personal_assistant_config_llm;
+-- Drop dependent views first, then recreate
+DROP VIEW IF EXISTS public.vw_user_skip_status CASCADE;
+DROP VIEW IF EXISTS public.vw_personal_assistant_config_llm CASCADE;
 
 CREATE OR REPLACE VIEW public.vw_personal_assistant_config_llm AS
 WITH user_onboarding_status AS (
@@ -222,8 +224,6 @@ GROUP BY
 -- Use this to get a formatted skip_status string for a user
 -- This can be passed directly to the LLM as {{ $json.skip_status }}
 -- ============================================================================
-
-DROP VIEW IF EXISTS public.vw_user_skip_status;
 
 CREATE OR REPLACE VIEW public.vw_user_skip_status AS
 SELECT
