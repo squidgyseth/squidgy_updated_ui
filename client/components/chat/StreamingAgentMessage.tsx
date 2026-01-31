@@ -6,12 +6,14 @@ import SocialMediaPreview from './SocialMediaPreview';
 import SocialMediaLink from './SocialMediaLink';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 import EnableContentRepurposerButton from './EnableContentRepurposerButton';
+import InteractiveMessageButtons from './InteractiveMessageButtons';
 
 interface StreamingAgentMessageProps {
   response: N8nResponse;
   className?: string;
   enableStreaming?: boolean; // Allow disabling streaming for specific cases
   streamingSpeed?: number; // Configurable streaming speed (ms per character)
+  onButtonClick?: (text: string) => void; // Handler for button clicks
 }
 
 /**
@@ -23,10 +25,21 @@ export default function StreamingAgentMessage({
   response,
   className = '',
   enableStreaming = true,
-  streamingSpeed = 15
+  streamingSpeed = 15,
+  onButtonClick
 }: StreamingAgentMessageProps) {
   const [shouldStream, setShouldStream] = useState(false);
   const [displayContent, setDisplayContent] = useState(response.agent_response);
+
+  // Helper to detect if content contains interactive buttons
+  const hasInteractiveButtons = (text: string): boolean => {
+    return /\$\$[^$]+\$\$/.test(text);
+  };
+
+  // Helper to extract text-only content (remove buttons) for streaming
+  const extractTextContent = (text: string): string => {
+    return text.replace(/\$\$[^$]+\$\$/g, '').trim();
+  };
 
   // Check if response is social media content
   const isSocialMediaContent = () => {
@@ -75,14 +88,17 @@ export default function StreamingAgentMessage({
     const isSocial = isSocialMediaContent();
     const isContentRepurposer = response.agent_name === 'content_repurposer';
     const isNewsletter = response.agent_name === 'newsletter';
+    const hasButtons = hasInteractiveButtons(response.agent_response);
 
     // Only stream plain text/markdown for Ready, Waiting states, or when status is undefined
     // Don't stream for 'Nothing' status (agent is idle)
+    // Don't stream if content has buttons (buttons render separately)
     const shouldStreamContent =
       !looksLikeHtml &&
       !isSocial &&
       !isContentRepurposer &&
       !isNewsletter &&
+      !hasButtons && // Don't stream when buttons are present
       (response.agent_status === 'Ready' ||
        response.agent_status === 'Waiting' ||
        !response.agent_status); // Also stream when status is undefined
@@ -145,6 +161,21 @@ export default function StreamingAgentMessage({
 
         if (looksLikeHtml) {
           return <HTMLPreview content={displayContent} />;
+        }
+
+        // Check if content has interactive buttons
+        const hasButtons = hasInteractiveButtons(response.agent_response);
+
+        // For content with interactive buttons - use InteractiveMessageButtons
+        if (hasButtons && onButtonClick) {
+          return (
+            <div className="bg-gray-100 rounded-lg px-4 py-2">
+              <InteractiveMessageButtons
+                content={response.agent_response}
+                onButtonClick={onButtonClick}
+              />
+            </div>
+          );
         }
 
         // For plain text/markdown content (with streaming)

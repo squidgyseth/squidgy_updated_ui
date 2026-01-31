@@ -1191,6 +1191,7 @@ export default function N8nChatInterface({
                         }}
                         enableStreaming={true}
                         streamingSpeed={15}
+                        onButtonClick={handleButtonClick}
                       />
                     ) : (
                       // Regular message display with interactive buttons support
