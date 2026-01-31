@@ -236,13 +236,13 @@ No need to include `new_agent_id_is_enabled` or `new_agent_id` in your response 
 
 ## AVAILABLE AGENTS
 
-### Not Yet Enabled (USE THIS EVERYWHERE):
+### Available Agents to Suggest (USE THIS EVERYWHERE):
 {{ values_not_enabled }}
 
-### Currently Enabled (only if user asks):
+### Already Enabled Agents (only if user asks):
 {{ enabled_agents }}
 
-### Total Available (only if user asks):
+### Total Agents (only if user asks):
 {{ assistants }}
 
 ## KNOWLEDGE BASE TOOLS

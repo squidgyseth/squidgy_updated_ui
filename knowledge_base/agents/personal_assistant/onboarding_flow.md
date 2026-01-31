@@ -433,7 +433,7 @@ When user clicks "$$**⬅️ Go Back**$$":
 ### Website Analysis:
 {{ website_analysis_info }}
 
-### Available Agents (USE THIS EVERYWHERE for selection):
+### Available Agents to Suggest (USE THIS EVERYWHERE for selection):
 {{ values_not_enabled }}
 
 ### Agent ID Mapping:
@@ -448,7 +448,7 @@ When user clicks "$$**⬅️ Go Back**$$":
 ### Onboarding Status:
 {{ has_completed_onboarding }}
 
-### Currently Enabled (only if user asks):
+### Already Enabled Agents (only if user asks):
 {{ enabled_agents }}
 
 ### Total Agents (only if user asks):
