@@ -31,7 +31,7 @@ WITH user_onboarding_status AS (
     AND ap.is_enabled = true
   GROUP BY p.user_id
 )
-SELECT
+SELECT DISTINCT
   'personal_assistant'::text AS agent,
   p.user_id,
   pac.config_type,

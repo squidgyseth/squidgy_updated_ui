@@ -249,7 +249,7 @@ $$**⚙️ Review Settings|Go back and change something**$$
 ### Step 1: Agent Selection
 "Great! **Which additional AI assistant would you like to add?**
 
-{{ assistants }}
+{{ values_not_enabled }}
 
 $$**⏭️ Skip for now**$$"
 
@@ -433,8 +433,14 @@ When user clicks "$$**⬅️ Go Back**$$":
 ### Website Analysis:
 {{ website_analysis_info }}
 
-### All Assistants:
+### All Assistants (use for FIRST AGENT selection):
 {{ assistants }}
+
+### Not Enabled Assistants (use for ADDITIONAL AGENTS):
+{{ values_not_enabled }}
+
+### Currently Enabled Assistants:
+{{ enabled_agents }}
 
 ### Agent ID Mapping:
 {{ agent_department_value }}
