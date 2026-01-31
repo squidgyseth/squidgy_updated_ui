@@ -163,7 +163,7 @@ $$**💬 Tell Me About Your Business|No website? Just describe what you do**$$"
 
 "Great! Now, **which AI assistant would you like to set up first?**
 
-{{ assistants }}
+{{ values_not_enabled }}
 
 $$**⏭️ Skip for now**$$
 $$**⬅️ Go Back|Review website analysis**$$"
@@ -433,14 +433,8 @@ When user clicks "$$**⬅️ Go Back**$$":
 ### Website Analysis:
 {{ website_analysis_info }}
 
-### All Assistants (use for FIRST AGENT selection):
-{{ assistants }}
-
-### Not Enabled Assistants (use for ADDITIONAL AGENTS):
+### Available Agents (USE THIS EVERYWHERE for selection):
 {{ values_not_enabled }}
-
-### Currently Enabled Assistants:
-{{ enabled_agents }}
 
 ### Agent ID Mapping:
 {{ agent_department_value }}
@@ -453,3 +447,9 @@ When user clicks "$$**⬅️ Go Back**$$":
 
 ### Onboarding Status:
 {{ has_completed_onboarding }}
+
+### Currently Enabled (only if user asks):
+{{ enabled_agents }}
+
+### Total Agents (only if user asks):
+{{ assistants }}

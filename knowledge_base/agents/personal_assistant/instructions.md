@@ -236,16 +236,14 @@ No need to include `new_agent_id_is_enabled` or `new_agent_id` in your response 
 
 ## AVAILABLE AGENTS
 
-### Agent Routing Map:
-{{ agent_department_value }}
-
-### Currently Enabled:
-{{ enabled_agents }}
-
-### Not Yet Enabled (USE THIS for Additional Agent Selection):
+### Not Yet Enabled (USE THIS EVERYWHERE):
 {{ values_not_enabled }}
 
-**CRITICAL:** When asking "Which additional AI assistant would you like to add?", always use `{{ values_not_enabled }}` to show ONLY agents that are NOT yet enabled. Never use `{{ assistants }}` for additional agents as it shows ALL agents including already enabled ones.
+### Currently Enabled (only if user asks):
+{{ enabled_agents }}
+
+### Total Available (only if user asks):
+{{ assistants }}
 
 ## KNOWLEDGE BASE TOOLS
 
