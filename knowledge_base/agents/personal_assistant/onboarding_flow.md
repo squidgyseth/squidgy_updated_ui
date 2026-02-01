@@ -215,9 +215,14 @@ $$**⬅️ Go Back|Choose a different assistant**$$"
 $$**⬅️ Go Back|Change brand voice**$$"
 
 **After user responds:**
-- Call "Enable Agent" tool with both `communication_tone` and `target_audience`
-- **IMMEDIATELY show completion message** (Completion step)
-- **DO NOT** ask for primary goals, calendar, or any other questions
+1. **CRITICAL: Call "Enable Agent" tool FIRST**
+   - Tool name: `Enable Agent`
+   - Pass `assistant_id` (the agent_id being enabled, e.g., "social_media_agent")
+   - Tool will insert into `assistant_personalizations` with `is_enabled=true`
+2. **AFTER tool succeeds**, show completion message with `actions_todo`
+3. **DO NOT** ask for primary goals, calendar, or any other questions
+
+**IMPORTANT:** You MUST call the tool. Do NOT just return `actions_todo` without calling the tool!
 
 ---
 
@@ -272,8 +277,11 @@ $$**⬅️ Go Back|Choose a different assistant**$$"
 $$**⬅️ Go Back|Change brand voice**$$"
 
 ### Step 4: Enable & Ask Next Action
-1. Call "Enable Agent" tool
-2. **IMMEDIATELY show completion message:**
+1. **CRITICAL: Call "Enable Agent" tool FIRST**
+   - Tool name: `Enable Agent`
+   - Pass `assistant_id` (the agent_id being enabled, e.g., "social_media_agent", "content_repurposer")
+   - Tool will insert into `assistant_personalizations` with `is_enabled=true`
+2. **AFTER tool succeeds**, show completion message:
 
 "Excellent! {{ agent_name }} is now enabled! 🎉
 
@@ -284,6 +292,8 @@ $$**➕ Add Another Assistant**$$
 $$**⚙️ Review Settings|Change tone or settings**$$
 
 📍 Find {{ agent_name }} in your left sidebar under {{ category }}."
+
+**IMPORTANT:** You MUST call the Enable Agent tool. Do NOT just return `actions_todo` without calling it!
 
 **Example Response after Target Audience (Enablement):**
 ```json
@@ -416,8 +426,9 @@ When user selects "Skip for now":
 - **Detect URLs** - If user provides URL, analyze immediately and ask next question
 - **Industry relevance** - Only recommend relevant agents
 - **Use exact agent_id** from `agent_department_value` mapping
-- **ALWAYS populate actions_todo for agent enablement** - When enabling agents, ALWAYS include the agent_enabled action in the `actions_todo` array (UI needs to refresh agent list). This is critical for UI tracking.
-- **After tool execution, ask question** - After calling any tool (Web Analysis, Enable Agent, Save Settings), IMMEDIATELY ask the next question
+- **🚨 MUST CALL "Enable Agent" TOOL 🚨** - When enabling any agent, you MUST call the "Enable Agent" tool to insert into assistant_personalizations table. Do NOT just return `actions_todo` without calling the tool first!
+- **ALWAYS populate actions_todo AFTER tool call** - After calling "Enable Agent" tool successfully, include the agent_enabled action in the `actions_todo` array (UI needs to refresh agent list)
+- **Tool execution order** - First call tools (Save Settings, Enable Agent), THEN show completion message
 
 ### 7. HANDLING "GO BACK" REQUESTS
 When user clicks "$$**⬅️ Go Back**$$":
