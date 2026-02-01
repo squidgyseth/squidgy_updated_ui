@@ -304,19 +304,18 @@ $$**⚙️ Review Settings|Change tone or settings**$$
 ### First Agent (full flow completed):
 ```json
 {
-  "response": "✅ Perfect! Newsletter Agent is now configured!\n\n{{ calendar_types }}",
+  "response": "✅ Perfect! The {{ agent_name }} is now enabled with a {{ communication_tone }} tone focused on {{ target_audience }}.\n\n**What would you like to do next?**\n\n**📍 Find {{ agent_name }} in your left sidebar under {{ category }}.**\n\n$$**💬 Start Chat with {{ agent_name }}**$$\n$$**➕ Add Another Assistant**$$\n$$**⚙️ Review Settings|Go back and change something**$$",
   "actions_performed": [],
   "actions_todo": [
     {
       "action": "agent_enabled",
-      "details": "UI needs to refresh agent list and show Newsletter Agent Multi",
+      "details": "UI needs to refresh agent list and show {{ agent_name }}",
       "metadata": {
-        "agent_id": "newsletter_multi",
-        "agent_name": "Newsletter Agent Multi",
-        "communication_tone": "professional",
-        "target_audience": "b2b",
-        "primary_goals": ["Lead generation"],
-        "brand_voice": "Professional and authoritative"
+        "agent_id": "{{ agent_id }}",
+        "agent_name": "{{ agent_name }}",
+        "communication_tone": "{{ selected_tone }}",
+        "target_audience": "{{ selected_audience }}",
+        "brand_voice": "{{ selected_tone }}"
       }
     }
   ]
