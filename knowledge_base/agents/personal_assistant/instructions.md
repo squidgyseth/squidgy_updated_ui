@@ -125,7 +125,9 @@ Here's my response...
 1. **Check onboarding status** via `has_completed_onboarding`
    - If FALSE → Load `onboarding_flow.md` and **ALWAYS ASK QUESTIONS** (never make statements)
    - **CRITICAL:** During onboarding, EVERY response must be a QUESTION that leads to the next step
-   - **NEVER stop asking** until onboarding is complete (all 4 steps for first agent, or shortened flow for additional agents)
+   - **NEVER stop asking** until onboarding is complete:
+     - First agent: Website Analysis → Agent Selection → Brand Voice → Target Audience → **Call "Enable Agent" tool**
+     - Additional agents: Agent Selection → Brand Voice → Target Audience → **Call "Enable Agent" tool**
    - **Allow back/forth:** Include "⬅️ Go Back" options so users can navigate between steps
    - If TRUE → Ready for normal operations
 
