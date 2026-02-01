@@ -203,8 +203,8 @@ $$**⬅️ Go Back|Choose a different assistant**$$"
 
 ---
 
-### Step 4: Target Audience (FIRST AGENT ONLY)
-**Skip if:** `skip_status` shows SKIP for target_audiences
+### Step 4: Target Audience (ALL AGENTS)
+**Skip if:** `skip_status` shows SKIP for target_audiences (rare - usually always ask)
 
 **CRITICAL: ALWAYS phrase as a QUESTION**
 
@@ -215,8 +215,9 @@ $$**⬅️ Go Back|Choose a different assistant**$$"
 $$**⬅️ Go Back|Change brand voice**$$"
 
 **After user responds:**
-- Call "Enable Agent" tool
+- Call "Enable Agent" tool with both `communication_tone` and `target_audience`
 - **IMMEDIATELY show completion message** (Completion step)
+- **DO NOT** ask for primary goals, calendar, or any other questions
 
 ---
 
@@ -242,7 +243,7 @@ $$**⚙️ Review Settings|Go back and change something**$$
 
 **When:** User already has `enabled_agents` (not first agent)
 
-### Flow: Agent Selection → Brand Voice → Enable → Ask Next Action
+### Flow: Agent Selection → Brand Voice → Target Audience → Enable → Ask Next Action
 
 **CRITICAL: ALWAYS use QUESTIONS, never statements**
 
@@ -263,9 +264,16 @@ $$**⬅️ Go Back|Choose a different assistant**$$"
 **If user has existing brand voice:**
 - STILL ASK: "I can use your preferred {{ saved_tone }} tone for {{ selected_agent }}. **Is that okay, or would you like to choose a different tone?**"
 
-### Step 3: Enable & Ask Next Action
+### Step 3: Target Audience Selection
+"Got it! **Who is your primary target audience?**
+
+{{ target_audiences }}
+
+$$**⬅️ Go Back|Change brand voice**$$"
+
+### Step 4: Enable & Ask Next Action
 1. Call "Enable Agent" tool
-2. **ALWAYS ask next question:**
+2. **IMMEDIATELY show completion message:**
 
 "Excellent! {{ agent_name }} is now enabled! 🎉
 
@@ -277,20 +285,20 @@ $$**⚙️ Review Settings|Change tone or settings**$$
 
 📍 Find {{ agent_name }} in your left sidebar under {{ category }}."
 
-**Example Response after Brand Voice:**
+**Example Response after Target Audience (Enablement):**
 ```json
 {
-  "response": "Excellent! Content Repurposer is now enabled! 🎉\n\n**What would you like to do next?**\n\n$$**💬 Start Chat with Content Repurposer**$$\n$$**➕ Add Another Assistant**$$\n$$**⚙️ Review Settings|Change tone or settings**$$\n\n📍 Find it in your left sidebar under Marketing.",
+  "response": "✅ Perfect! The Social Media Manager is now enabled with a Professional tone focused on B2C.\n\n**What would you like to do next?**\n\n📍 Find Social Media Manager in your left sidebar under Marketing.\n\n$$**💬 Start Chat with Social Media Manager**$$\n$$**➕ Add Another Assistant**$$\n$$**⚙️ Review Settings|Change tone or settings**$$",
   "actions_performed": [],
   "actions_todo": [
     {
       "action": "agent_enabled",
-      "details": "UI needs to refresh agent list and show Content Repurposer",
+      "details": "UI needs to refresh agent list and show Social Media Manager",
       "metadata": {
-        "agent_id": "content_repurposer",
-        "agent_name": "Content Repurposer",
-        "communication_tone": "friendly",
-        "reused_settings": true
+        "agent_id": "social_media_agent",
+        "agent_name": "Social Media Manager",
+        "communication_tone": "professional",
+        "target_audience": "b2c"
       }
     }
   ]
