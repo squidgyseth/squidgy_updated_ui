@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { AgentConfigService } from '../services/agentConfigService';
-import { Mic, Upload, Send, File, X, ArrowLeft, Trash2, FileText, Loader2, CheckCircle, Loader, AlertCircle } from 'lucide-react';
+import { Mic, Upload, Send, File, X, ArrowLeft, Trash2, FileText, Loader2, CheckCircle, Loader, AlertCircle, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface PreviousFile {
@@ -37,10 +37,24 @@ export default function AgentSettings() {
   }
   const [fileProcessingStates, setFileProcessingStates] = useState<FileProcessingState[]>([]);
 
-  // Previously uploaded files state
+  // Previously uploaded files state - Neon (analysed) files
   const [previousFiles, setPreviousFiles] = useState<PreviousFile[]>([]);
   const [loadingPreviousFiles, setLoadingPreviousFiles] = useState(true);
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+
+  // Original files from Supabase
+  interface SupabaseFile {
+    file_id: string;
+    file_name: string;
+    file_url: string;
+    created_at: string;
+    agent_id: string;
+  }
+  const [originalFiles, setOriginalFiles] = useState<SupabaseFile[]>([]);
+  const [loadingOriginalFiles, setLoadingOriginalFiles] = useState(true);
+
+  // Tab state for file sections - 'analysed' (left) is default, 'original' (right)
+  const [activeFileTab, setActiveFileTab] = useState<'analysed' | 'original'>('analysed');
 
   // Toast message state (from dev branch)
   const [toastMessage, setToastMessage] = useState({ title: '', subtitle: '', isError: false });
@@ -145,10 +159,51 @@ export default function AgentSettings() {
     }
   };
 
+  // Function to fetch original files from Supabase (not yet analysed)
+  const fetchOriginalFiles = async () => {
+    if (!userId) {
+      setLoadingOriginalFiles(false);
+      return;
+    }
+    
+    setLoadingOriginalFiles(true);
+    try {
+      const { data, error } = await supabase
+        .from('firm_users_knowledge_base')
+        .select('file_id,file_name,file_url,created_at,agent_id')
+        .eq('firm_user_id', userId);
+
+      if (error) {
+        console.error('Error fetching original files:', error);
+        setOriginalFiles([]);
+        return;
+      }
+
+      // Filter by current agent if agentId is available
+      const filteredFiles = agentId 
+        ? data?.filter(f => f.agent_id === agentId) || []
+        : data || [];
+      
+      // Sort by created_at descending (newest first)
+      const sortedFiles = filteredFiles.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      setOriginalFiles(sortedFiles);
+      console.log(`Loaded ${filteredFiles.length} original files from Supabase for agent ${agentId}`);
+    } catch (error) {
+      console.error('Error fetching original files:', error);
+      setOriginalFiles([]);
+    } finally {
+      setLoadingOriginalFiles(false);
+    }
+  };
+
   // Fetch custom instructions and files on mount
   useEffect(() => {
     fetchCustomInstructions();
     fetchPreviousFiles();
+    fetchOriginalFiles();
   }, [userId, agentId]);
 
   // Initialize speech recognition
@@ -656,79 +711,169 @@ export default function AgentSettings() {
             </div>
           </div>
 
-          {/* Previously Uploaded Files Section */}
+          {/* Tabbed Files Section */}
           <div className="mt-8 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-gray-600 to-gray-700 px-8 py-4">
-              <h2 className="text-xl font-bold text-white">Previously Uploaded Files</h2>
-              <p className="text-gray-200 text-sm">
-                Files you've uploaded for {agentConfig?.agent?.name}
-              </p>
+            {/* Tab Header with gradient based on active tab */}
+            <div className={`px-8 py-4 ${
+              activeFileTab === 'analysed' 
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-500' 
+                : 'bg-gradient-to-r from-blue-500 to-cyan-500'
+            }`}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-white">
+                  {activeFileTab === 'analysed' ? 'Analysed Files' : 'Original Files'}
+                </h2>
+                
+                {/* Tab Switcher */}
+                <div className="flex bg-white/20 rounded-lg p-1">
+                  <button
+                    onClick={() => setActiveFileTab('analysed')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                      activeFileTab === 'analysed'
+                        ? 'bg-white text-amber-600 shadow-sm'
+                        : 'text-white hover:bg-white/10'
+                    }`}
+                  >
+                    Analysed
+                  </button>
+                  <button
+                    onClick={() => setActiveFileTab('original')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                      activeFileTab === 'original'
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-white hover:bg-white/10'
+                    }`}
+                  >
+                    Original
+                  </button>
+                </div>
+              </div>
             </div>
 
+            {/* Tab Content */}
             <div className="p-6">
-              {loadingPreviousFiles ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="animate-spin text-gray-400" size={24} />
-                  <span className="ml-2 text-gray-500">Loading files...</span>
-                </div>
-              ) : previousFiles.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="mx-auto text-gray-300 mb-3" size={48} />
-                  <p className="text-gray-500">No files uploaded yet</p>
-                  <p className="text-gray-400 text-sm">Upload files above to train your agent</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {previousFiles.map((file) => (
-                    <div
-                      key={file.file_id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded-lg border border-gray-200">
-                          <FileText size={20} className="text-gray-600" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-800">{file.file_name}</p>
-                            {file.processing_status && file.processing_status !== 'completed' && (
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                file.processing_status === 'processing'
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : file.processing_status === 'failed'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}>
-                                {file.processing_status}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            Uploaded {new Date(file.created_at).toLocaleDateString('en-GB', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleDeletePreviousFile(file.file_id, file.file_url)}
-                        disabled={deletingFileId === file.file_id}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                        title="Delete file"
-                      >
-                        {deletingFileId === file.file_id ? (
-                          <Loader2 className="animate-spin" size={18} />
-                        ) : (
-                          <Trash2 size={18} />
-                        )}
-                      </button>
+              {/* Analysed Files Tab */}
+              {activeFileTab === 'analysed' && (
+                <>
+                  {loadingPreviousFiles ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="animate-spin text-gray-400" size={24} />
+                      <span className="ml-2 text-gray-500">Loading analysed files...</span>
                     </div>
-                  ))}
-                </div>
+                  ) : previousFiles.length === 0 ? (
+                    <div className="text-center py-8">
+                      <FileText className="mx-auto text-gray-300 mb-3" size={48} />
+                      <p className="text-gray-500">No analysed files yet</p>
+                      <p className="text-gray-400 text-sm">Files will appear here after processing</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {previousFiles.map((file) => (
+                        <div
+                          key={file.file_id}
+                          className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-white rounded-lg border border-amber-200">
+                              <FileText size={20} className="text-amber-600" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-gray-800">{file.file_name}</p>
+                                {file.processing_status && file.processing_status !== 'completed' && (
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                    file.processing_status === 'processing'
+                                      ? 'bg-yellow-100 text-yellow-700'
+                                      : file.processing_status === 'failed'
+                                      ? 'bg-red-100 text-red-700'
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    {file.processing_status}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                Uploaded {new Date(file.created_at).toLocaleDateString('en-GB', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeletePreviousFile(file.file_id, file.file_url)}
+                            disabled={deletingFileId === file.file_id}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Delete file"
+                          >
+                            {deletingFileId === file.file_id ? (
+                              <Loader2 className="animate-spin" size={18} />
+                            ) : (
+                              <Trash2 size={18} />
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Original Files Tab */}
+              {activeFileTab === 'original' && (
+                <>
+                  {loadingOriginalFiles ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="animate-spin text-gray-400" size={24} />
+                      <span className="ml-2 text-gray-500">Loading original files...</span>
+                    </div>
+                  ) : originalFiles.length === 0 ? (
+                    <div className="text-center py-8">
+                      <FileText className="mx-auto text-gray-300 mb-3" size={48} />
+                      <p className="text-gray-500">No original files found</p>
+                      <p className="text-gray-400 text-sm">Upload files above to get started</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {originalFiles.map((file) => (
+                        <div
+                          key={file.file_id}
+                          className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-white rounded-lg border border-blue-200">
+                              <FileText size={20} className="text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-800">{file.file_name}</p>
+                              <p className="text-xs text-gray-500">
+                                Uploaded {new Date(file.created_at).toLocaleDateString('en-GB', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                          <a
+                            href={file.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 text-blue-500 hover:text-blue-700 transition-colors"
+                            title="Preview file"
+                          >
+                            <ExternalLink size={20} />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
