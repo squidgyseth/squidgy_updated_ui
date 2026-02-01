@@ -193,29 +193,22 @@ export default function StreamingAgentMessage({
         // Check if content has interactive buttons
         const hasButtons = hasInteractiveButtons(response.agent_response);
 
-        // For content with interactive buttons - render text + buttons separately
-        // Text streams, buttons appear immediately
+        // For content with interactive buttons - use InteractiveMessageButtons
+        // Pass full content for button parsing + streaming text for display
         if (hasButtons && onButtonClick) {
           return (
-            <div className="bg-gray-100 rounded-lg px-4 py-2 space-y-3">
-              {/* Streaming text content (buttons removed) */}
-              <div>
-                <LinkDetectingTextArea
-                  content={displayContent}
-                  className="text-text-primary whitespace-pre-wrap"
-                />
-                {/* Show streaming cursor while text is streaming */}
-                {isStreaming && (
-                  <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
-                    ▍
-                  </span>
-                )}
-              </div>
-              {/* Buttons rendered immediately from full content */}
+            <div className="bg-gray-100 rounded-lg px-4 py-2">
               <InteractiveMessageButtons
                 content={response.agent_response}
+                streamingText={displayContent}
                 onButtonClick={onButtonClick}
               />
+              {/* Show streaming cursor while text is streaming */}
+              {isStreaming && (
+                <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
+                  ▍
+                </span>
+              )}
             </div>
           );
         }

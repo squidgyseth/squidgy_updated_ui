@@ -7,6 +7,7 @@ import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 interface InteractiveMessageButtonsProps {
   content: string;
   onButtonClick: (text: string) => void;
+  streamingText?: string; // Optional: use this for text display while content is used for button parsing
 }
 
 interface ButtonOption {
@@ -22,7 +23,7 @@ interface ImagePreview {
   index: number;
 }
 
-export default function InteractiveMessageButtons({ content, onButtonClick }: InteractiveMessageButtonsProps) {
+export default function InteractiveMessageButtons({ content, onButtonClick, streamingText }: InteractiveMessageButtonsProps) {
   const agentMappingService = AgentMappingService.getInstance();
 
   // Load agent mappings on component mount
@@ -142,7 +143,8 @@ export default function InteractiveMessageButtons({ content, onButtonClick }: In
 
   const buttonOptions = parseButtonOptions(content);
   const imagePreviews = parseImagePreviews(content);
-  const textContent = cleanContent(content);
+  // Use streamingText if provided, otherwise clean the content
+  const textContent = streamingText || cleanContent(content);
 
   console.log('🔍 InteractiveMessageButtons: Clean text content:', textContent);
   console.log('🔍 InteractiveMessageButtons: Button options count:', buttonOptions.length);
