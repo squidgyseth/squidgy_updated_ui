@@ -1200,7 +1200,7 @@ export default function N8nChatInterface({
                         if ((agent.id === 'newsletter' || agent.id === 'newsletter_multi') && hasHTMLContent(message.content)) {
                           return (
                             <div className="html-preview-wrapper">
-                              <HTMLPreview content={message.content} />
+                              <HTMLPreview content={message.content} agentName={agent.id} />
                               <EnableContentRepurposerButton />
                             </div>
                           );

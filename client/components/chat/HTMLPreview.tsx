@@ -5,13 +5,14 @@ import { useNavigate } from 'react-router-dom';
 interface HTMLPreviewProps {
   content: string;
   className?: string;
+  agentName?: string; // Optional agent name for context-aware labeling
 }
 
 /**
  * Safely previews HTML content in a sandboxed iframe
  * Used when agent_status is "Ready" (e.g., newsletter HTML generation)
  */
-export default function HTMLPreview({ content, className = '' }: HTMLPreviewProps) {
+export default function HTMLPreview({ content, className = '', agentName }: HTMLPreviewProps) {
   const navigate = useNavigate();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -153,7 +154,7 @@ export default function HTMLPreview({ content, className = '' }: HTMLPreviewProp
       {/* Toolbar */}
       <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
         <span className="text-sm font-medium text-gray-700">
-          {isSocialMedia ? 'Social Media Content' : 'Newsletter Preview'}
+          {isSocialMedia ? 'Social Media Content' : (agentName === 'newsletter' || agentName === 'newsletter_multi') ? 'Newsletter Preview' : 'Content Preview'}
         </span>
         <div className="flex items-center gap-2">
           <button

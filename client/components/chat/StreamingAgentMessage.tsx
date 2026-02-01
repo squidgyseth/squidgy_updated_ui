@@ -98,8 +98,15 @@ export default function StreamingAgentMessage({
       return;
     }
 
-    // Don't stream HTML content or social media content
-    const looksLikeHtml = /<[a-z][\s\S]*>/i.test(response.agent_response);
+    // Don't stream full HTML documents or social media content
+    // Simple inline HTML like <br>, <strong> should still stream as text
+    const isFullHtmlDocument = (
+      /<!DOCTYPE/i.test(response.agent_response) ||
+      /<html[\s>]/i.test(response.agent_response) ||
+      /<body[\s>]/i.test(response.agent_response) ||
+      /<table[\s>]/i.test(response.agent_response) ||
+      /<style[\s>]/i.test(response.agent_response)
+    );
     const isSocial = isSocialMediaContent();
     const isContentRepurposer = response.agent_name === 'content_repurposer';
     const isNewsletter = response.agent_name === 'newsletter';
@@ -108,7 +115,7 @@ export default function StreamingAgentMessage({
     // Don't stream for 'Nothing' status (agent is idle)
     // When content has buttons, we still stream the text part (InteractiveMessageButtons handles separation)
     const shouldStreamContent =
-      !looksLikeHtml &&
+      !isFullHtmlDocument &&
       !isSocial &&
       !isContentRepurposer &&
       !isNewsletter &&
@@ -183,11 +190,18 @@ export default function StreamingAgentMessage({
           return <SocialMediaLink content={displayContent} />;
         }
 
-        // Check if content looks like HTML
-        const looksLikeHtml = /<[a-z][\s\S]*>/i.test(response.agent_response);
+        // Check if content is a full HTML document (not just simple inline formatting)
+        // Only use HTMLPreview for actual HTML documents with structural tags
+        const isFullHtmlDocument = (
+          /<!DOCTYPE/i.test(response.agent_response) ||
+          /<html[\s>]/i.test(response.agent_response) ||
+          /<body[\s>]/i.test(response.agent_response) ||
+          /<table[\s>]/i.test(response.agent_response) ||
+          /<style[\s>]/i.test(response.agent_response)
+        );
 
-        if (looksLikeHtml) {
-          return <HTMLPreview content={displayContent} />;
+        if (isFullHtmlDocument) {
+          return <HTMLPreview content={displayContent} agentName={response.agent_name} />;
         }
 
         // Check if content has interactive buttons
