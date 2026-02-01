@@ -42,7 +42,7 @@ export default function AgentSettings() {
   const [loadingPreviousFiles, setLoadingPreviousFiles] = useState(true);
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
 
-  // Original files from Supabase
+  // Original files from Neon (same table as analysed files)
   interface SupabaseFile {
     file_id: string;
     file_name: string;
@@ -159,38 +159,26 @@ export default function AgentSettings() {
     }
   };
 
-  // Function to fetch original files from Supabase (not yet analysed)
+  // Function to fetch original files from Neon via backend API
   const fetchOriginalFiles = async () => {
-    if (!userId) {
+    if (!userId || !agentId) {
       setLoadingOriginalFiles(false);
       return;
     }
     
     setLoadingOriginalFiles(true);
     try {
-      const { data, error } = await supabase
-        .from('firm_users_knowledge_base')
-        .select('file_id,file_name,file_url,created_at,agent_id')
-        .eq('firm_user_id', userId);
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const response = await fetch(`${backendUrl}/api/knowledge-base/files/${userId}/${agentId}`);
 
-      if (error) {
-        console.error('Error fetching original files:', error);
+      if (response.ok) {
+        const data = await response.json();
+        setOriginalFiles(data.files || []);
+        console.log(`Loaded ${data.files?.length || 0} original files from Neon for agent ${agentId}`);
+      } else {
+        console.error('Error fetching original files');
         setOriginalFiles([]);
-        return;
       }
-
-      // Filter by current agent if agentId is available
-      const filteredFiles = agentId 
-        ? data?.filter(f => f.agent_id === agentId) || []
-        : data || [];
-      
-      // Sort by created_at descending (newest first)
-      const sortedFiles = filteredFiles.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      
-      setOriginalFiles(sortedFiles);
-      console.log(`Loaded ${filteredFiles.length} original files from Supabase for agent ${agentId}`);
     } catch (error) {
       console.error('Error fetching original files:', error);
       setOriginalFiles([]);
@@ -411,44 +399,27 @@ export default function AgentSettings() {
 
         for (const file of uploadedFiles) {
           try {
-            // Upload to Supabase Storage first
-            const timestamp = Date.now();
-            const fileName = `${userId}_${timestamp}_${file.name}`;
+            // Send file to backend via multipart/form-data
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('user_id', userId);
+            formData.append('agent_id', agentId || '');
+            formData.append('agent_name', agentConfig?.agent?.name || 'Unknown Agent');
 
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('newsletter')
-              .upload(fileName, file);
-
-            if (uploadError) {
-              console.error('Supabase upload error:', uploadError);
-              continue;
-            }
-
-            const { data: { publicUrl } } = supabase.storage
-              .from('newsletter')
-              .getPublicUrl(fileName);
-
-            // Save to Neon database via backend API with background processing
             const response = await fetch(`${backendUrl}/api/knowledge-base/file`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                user_id: userId,
-                agent_id: agentId,
-                agent_name: agentConfig?.agent?.name || 'Unknown Agent',
-                file_name: file.name,
-                file_url: publicUrl
-              })
+              body: formData
             });
 
             if (response.ok) {
               successCount++;
-              console.log('File knowledge saved successfully');
+              console.log('File uploaded successfully:', file.name);
             } else {
-              console.error('Failed to save file knowledge');
+              const errorText = await response.text();
+              console.error('Failed to upload file:', errorText);
             }
           } catch (error) {
-            console.error('Failed to save file knowledge:', error);
+            console.error('Failed to upload file:', error);
           }
         }
       }
