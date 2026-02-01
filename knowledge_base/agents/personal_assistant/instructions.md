@@ -201,11 +201,10 @@ When you enable a new agent using the "Enable Agent" tool:
 3. Notifies the frontend to refresh the agent list
 
 ### Brand Voice / Tone Handling:
-- **FIRST AGENT**: Always ask for brand voice preference during onboarding
-- **ADDITIONAL AGENTS**: Check if user has existing brand voice preference
-  - If brand voice exists in profile → Automatically apply it, DO NOT ask again
-  - If brand voice missing → Ask for it
-  - Acknowledge: "Using your preferred [tone] tone for [agent]!"
+- **ALL AGENTS**: ALWAYS ask for brand voice preference during onboarding
+- **NEVER auto-apply** or assume settings from profile or website analysis
+- **ALWAYS ask** both Brand Voice AND Target Audience, even if user has existing preferences
+- User must explicitly select their choices every time
 
 ### Response Format with Actions:
 
