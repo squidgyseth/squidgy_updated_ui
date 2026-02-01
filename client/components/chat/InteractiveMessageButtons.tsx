@@ -7,8 +7,7 @@ import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 interface InteractiveMessageButtonsProps {
   content: string;
   onButtonClick: (text: string) => void;
-  shouldStream?: boolean;
-  onStreamComplete?: () => void;
+  streamingText?: string; // Optional: use this for text display while content is used for button parsing
 }
 
 interface ButtonOption {
@@ -24,14 +23,8 @@ interface ImagePreview {
   index: number;
 }
 
-export default function InteractiveMessageButtons({
-  content,
-  onButtonClick,
-  shouldStream = false,
-  onStreamComplete
-}: InteractiveMessageButtonsProps) {
+export default function InteractiveMessageButtons({ content, onButtonClick, streamingText }: InteractiveMessageButtonsProps) {
   const agentMappingService = AgentMappingService.getInstance();
-  const [isStreamingComplete, setIsStreamingComplete] = React.useState(!shouldStream);
 
   // Load agent mappings on component mount
   useEffect(() => {
@@ -57,20 +50,21 @@ export default function InteractiveMessageButtons({
     const options: ButtonOption[] = [];
 
     // Handle multiple formats:
-    // 1. $$emoji Text - Description$$ (current format from screenshot)
-    // 2. $$**TEXT**$$ (bold format)
-    // 3. $****TEXT****$ (old format)
+    // 1. $$**emoji Text - Description**$$ (preferred, from updated DB view)
+    // 2. $$emoji Text - Description$$ (double dollar, no bold)
+    // 3. $**emoji Text - Description**$ (legacy single dollar bold)
+    // 4. $emoji Text - Description$ (legacy single dollar, no bold)
 
-    // Pattern for $$content$$ - captures everything between $$ markers
-    const dollarPattern = /\$\$([^$]+)\$\$/g;
+    // Pattern 1: $$content$$ - double dollar markers (preferred)
+    const doubleDollarPattern = /\$\$([^$]+)\$\$/g;
+    // Pattern 2: $content$ - single dollar markers (fallback/legacy)
+    // Uses negative lookbehind/lookahead to avoid matching $$...$$ again
+    const singleDollarPattern = /(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g;
 
-    let match;
-    while ((match = dollarPattern.exec(text)) !== null) {
-      const [fullMatch, innerContent] = match;
-
+    const processMatch = (fullMatch: string, innerContent: string) => {
       // Skip IMG: patterns - these are image previews, not buttons
       if (innerContent.trim().startsWith('IMG:')) {
-        continue;
+        return;
       }
 
       // Parse inner content - may have emoji at start, may have description after dash
@@ -104,6 +98,17 @@ export default function InteractiveMessageButtons({
           fullText: fullMatch
         });
       }
+    };
+
+    // First pass: double dollar patterns (preferred)
+    let match;
+    while ((match = doubleDollarPattern.exec(text)) !== null) {
+      processMatch(match[0], match[1]);
+    }
+
+    // Second pass: single dollar patterns (fallback for legacy $**...**$ and $...$)
+    while ((match = singleDollarPattern.exec(text)) !== null) {
+      processMatch(match[0], match[1]);
     }
 
     console.log('🔍 InteractiveMessageButtons: Found button options:', options);
@@ -115,11 +120,12 @@ export default function InteractiveMessageButtons({
     // Remove image patterns first: $$IMG:url$$
     let cleaned = text.replace(/\$\$IMG:https?:\/\/[^$]+\$\$/g, '');
 
-    // Remove both formats: $$**TEXT**$$ and $**TEXT**$
+    // Remove all button formats:
+    // 1. $$content$$ (double dollar - preferred)
+    // 2. $content$ (single dollar - legacy fallback)
     cleaned = cleaned
-      .replace(/\$\$([^$]+)\$\$/g, '') // New format
-      .replace(/\$\$\*\*[^*]+\*\*\$\$/g, '') // New format
-      .replace(/\$\*\*\*\*[^*]+\*\*\*\*\$/g, ''); // Old format
+      .replace(/\$\$([^$]+)\$\$/g, '') // Double dollar: $$..$$
+      .replace(/(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g, ''); // Single dollar: $..$
 
     // Remove stray empty list bullets that often remain after stripping $$buttons$$
     // e.g. lines that are only '-', '•', or '*' (optionally with whitespace)
@@ -137,7 +143,8 @@ export default function InteractiveMessageButtons({
 
   const buttonOptions = parseButtonOptions(content);
   const imagePreviews = parseImagePreviews(content);
-  const textContent = cleanContent(content);
+  // Use streamingText if provided, otherwise clean the content
+  const textContent = streamingText || cleanContent(content);
 
   console.log('🔍 InteractiveMessageButtons: Clean text content:', textContent);
   console.log('🔍 InteractiveMessageButtons: Button options count:', buttonOptions.length);
@@ -155,7 +162,6 @@ export default function InteractiveMessageButtons({
   };
 
   const handleButtonClick = async (option: ButtonOption) => {
-    console.log('👆 InteractiveMessageButtons: Button clicked:', option.text);
     // Check for special button types that need real functionality
     const buttonText = option.text.toLowerCase();
 
@@ -165,6 +171,9 @@ export default function InteractiveMessageButtons({
       const chatMatch = buttonText.match(/start chat with (.+)/);
       if (chatMatch) {
         const agentName = chatMatch[1].trim();
+
+        // Ensure mappings are loaded before resolving
+        await agentMappingService.loadAgentMappings();
 
         // Try to get agent ID for navigation
         const agentId = agentMappingService.getAgentId(agentName);
@@ -263,20 +272,12 @@ export default function InteractiveMessageButtons({
         <LinkDetectingTextArea
           content={textContent}
           className="whitespace-pre-wrap text-gray-800"
-          shouldStream={shouldStream}
-          onStreamComplete={() => {
-            setIsStreamingComplete(true);
-            onStreamComplete?.();
-          }}
         />
       )}
 
-      {/* Display interactive buttons - only after streaming complete and reveal styling */}
-      {buttonOptions.length > 0 && isStreamingComplete && (
-        <div
-          className="space-y-3 mt-6 animate-in fade-in duration-700 fill-mode-forwards relative z-50 pointer-events-auto"
-          style={{ pointerEvents: 'auto', position: 'relative', zIndex: 50 }}
-        >
+      {/* Display interactive buttons */}
+      {buttonOptions.length > 0 && (
+        <div className="space-y-2 mt-4">
           {buttonOptions.map((option, index) => {
             const imageUrl = getImageForButton(option.text);
 
@@ -284,8 +285,9 @@ export default function InteractiveMessageButtons({
               <button
                 key={index}
                 onClick={() => handleButtonClick(option)}
-                className={`w-full flex items-center gap-3 p-3 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all hover:border-purple-200 hover:shadow-md text-left group ${imageUrl ? 'flex-col sm:flex-row' : ''
-                  }`}
+                className={`w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors text-left group ${
+                  imageUrl ? 'flex-col sm:flex-row' : ''
+                }`}
               >
                 {/* Show image thumbnail if this is an image selection button */}
                 {imageUrl && (
@@ -300,16 +302,19 @@ export default function InteractiveMessageButtons({
                     />
                   </div>
                 )}
-                {option.emoji && !imageUrl && <span className="text-xl flex-shrink-0 mt-0.5">{option.emoji}</span>}
+                {option.emoji && !imageUrl && <span className="text-lg flex-shrink-0">{option.emoji}</span>}
                 <div className="flex-1 min-w-0">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-gray-900 group-hover:text-purple-700">
                       {option.text}
                     </span>
                     {option.description && (
-                      <span className="text-gray-500 text-sm leading-snug">
-                        {option.description}
-                      </span>
+                      <>
+                        <span className="text-gray-500">-</span>
+                        <span className="text-gray-600 text-sm">
+                          {option.description}
+                        </span>
+                      </>
                     )}
                   </div>
                 </div>

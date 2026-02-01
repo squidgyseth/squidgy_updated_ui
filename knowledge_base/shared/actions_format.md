@@ -1,17 +1,22 @@
 # Actions Format
 
 ## ACTIONS PERFORMED
-Track completed actions in `agent_data.actions_performed`:
+Track completed actions at ROOT level in `actions_performed`:
 
 ```json
 {
+  "response": "Your message here",
   "actions_performed": [
     {
       "action": "content_generated",
       "details": "Created newsletter draft",
-      "status": "completed"
+      "metadata": {
+        "content_type": "newsletter",
+        "content_id": "uuid-123"
+      }
     }
-  ]
+  ],
+  "actions_todo": []
 }
 ```
 
@@ -29,15 +34,20 @@ Track completed actions in `agent_data.actions_performed`:
 | `settings_saved` | Saved user settings |
 
 ## ACTIONS TODO
-Track pending actions in `agent_data.actions_todo`:
+Track pending actions at ROOT level in `actions_todo`:
 
 ```json
 {
+  "response": "Please select your brand voice",
+  "actions_performed": [],
   "actions_todo": [
     {
       "action": "awaiting_selection",
       "details": "Select brand voice",
-      "priority": "high"
+      "metadata": {
+        "selection_type": "brand_voice",
+        "priority": "high"
+      }
     }
   ]
 }

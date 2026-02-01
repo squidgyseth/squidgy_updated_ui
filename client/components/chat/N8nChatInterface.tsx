@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Loader, Paperclip, Mic, Image as ImageIcon, RotateCcw } from 'lucide-react';
+import { Send, Loader, Paperclip, Mic } from 'lucide-react';
 import type { N8nResponse, ChatMessage } from '../../types/n8n.types';
-import AgentResponseHandler from './AgentResponseHandler';
+import StreamingAgentMessage from './StreamingAgentMessage';
 import HTMLPreview from './HTMLPreview';
 import SocialMediaPreview from './SocialMediaPreview';
 import EnableContentRepurposerButton from './EnableContentRepurposerButton';
@@ -18,9 +18,6 @@ import NewsletterSelector from './NewsletterSelector';
 import InteractiveMessageButtons from './InteractiveMessageButtons';
 import { googleCalendarService } from '../../lib/googleCalendar';
 import { toast } from 'sonner';
-import AgentEnablementService from '../../services/agentEnablementService';
-import MediaLibrary from '../media/MediaLibrary';
-import StreamingChatMessage from './StreamingChatMessage';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -54,19 +51,18 @@ export default function N8nChatInterface({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId] = useState(initialSessionId || generateSessionId(userId, agent.id));
+
+  // Use sessionId from prop directly - parent manages session persistence
+  // Fall back to generating new session only if parent doesn't provide one
+  const sessionId = initialSessionId || generateSessionId(userId, agent.id);
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, { name: string; status: string }>>(new Map());
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null);
   const [showNewsletterSelector, setShowNewsletterSelector] = useState(false);
   const [existingHistoryId, setExistingHistoryId] = useState<string | null>(null);
   const [activeInteractiveButtons, setActiveInteractiveButtons] = useState<string[]>([]);
   const [conversationState, setConversationState] = useState<Record<string, unknown> | undefined>(undefined); // State for multi-turn agents like newsletter_multi
-  const [showMediaLibrary, setShowMediaLibrary] = useState(false);
-  const [restartKey, setRestartKey] = useState(0); // For forcing re-animation
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
   const chatHistoryService = ChatHistoryService.getInstance();
   const fileUploadService = FileUploadService.getInstance();
 
@@ -106,76 +102,8 @@ export default function N8nChatInterface({
     }
   }, [messages, isLoading]);
 
-  // Enhanced auto-scroll for streaming content using ResizeObserver with throttling
-  useEffect(() => {
-    if (!scrollAreaRef.current) return;
-
-    let lastScrollTime = 0;
-    const scrollThrottle = 150; // ms between scroll attempts for smoother, "slower" feel
-
-    const resizeObserver = new ResizeObserver(() => {
-      const now = Date.now();
-      if (now - lastScrollTime < scrollThrottle) return;
-
-      // Check if any message is currently streaming
-      const isAnyMessageStreaming = messages.some(m => m.isStreaming);
-      if (isAnyMessageStreaming) {
-        const scrollContainer = scrollAreaRef.current;
-        if (!scrollContainer) return;
-
-        // Check if user is near bottom before scrolling (within 150px)
-        const isNearBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 150;
-
-        if (isNearBottom) {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-          lastScrollTime = now;
-        }
-      }
-    });
-
-    // Observe the content inside the scroll area
-    const scrollContent = scrollAreaRef.current.firstElementChild;
-    if (scrollContent) {
-      resizeObserver.observe(scrollContent);
-    }
-
-    return () => resizeObserver.disconnect();
-  }, [messages]);
-
-  // Final scroll when streaming completes
-  useEffect(() => {
-    const isAnyStreaming = messages.some(m => m.isStreaming);
-    if (!isAnyStreaming && messages.length > 0) {
-      const timer = setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 500); // Give a bit of time for the final layout to settle
-      return () => clearTimeout(timer);
-    }
-  }, [messages.map(m => m.isStreaming).join(',')]);
-
-  const handleRestartAnimations = () => {
-    // Increment restartKey to force re-mounting/re-animation of components
-    setRestartKey(prev => prev + 1);
-
-    // Reset streaming state for all agent messages to trigger typing effect
-    setMessages(prev => prev.map(msg => ({
-      ...msg,
-      isStreaming: msg.sender === 'agent'
-    })));
-
-    toast.info('Restarting typing animations...');
-
-    // One smooth scroll to top of latest content? Or bottom?
-    // Let's do a smooth scroll to bottom to ensure visibility of the restart
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  };
-
   // Load messages for the current session
   useEffect(() => {
-    const isDemoMode = new URLSearchParams(window.location.search).has('demo');
-    console.log(`ℹ️ Demo Mode Status: ${isDemoMode}`);
     console.log(`📨 N8nChatInterface: sessionId changed to: ${sessionId}`);
     console.log(`📨 N8nChatInterface: agentId: ${agent.id}, userId: ${userId}`);
 
@@ -226,12 +154,12 @@ export default function N8nChatInterface({
     if (agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') {
       setShowNewsletterSelector(true);
     }
-
+    
     // Handle Google Calendar OAuth callback
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const state = urlParams.get('state');
-
+    
     if (code && state === 'google_calendar_auth') {
       handleCalendarAuthCallback(code);
       // Clean up URL
@@ -243,7 +171,7 @@ export default function N8nChatInterface({
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const preFilledMessage = urlParams.get('message');
-
+    
     if (preFilledMessage) {
       console.log('🔧 Pre-filled message detected:', preFilledMessage);
       setInputValue(decodeURIComponent(preFilledMessage));
@@ -281,6 +209,34 @@ export default function N8nChatInterface({
 
   const getExistingHistoryId = () => existingHistoryId;
 
+  // Get appropriate intro message based on onboarding status
+  const getIntroMessage = async (): Promise<string> => {
+    // Only check for Personal Assistant
+    if (agent.id !== 'personal_assistant') {
+      return agent.introMessage || '';
+    }
+
+    try {
+      // Check if user has completed onboarding (website_analysis exists)
+      const { data, error } = await supabase
+        .from('website_analysis')
+        .select('website_url')
+        .eq('firm_user_id', userId)
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        // User has completed onboarding
+        return "Hey! I see you've already completed your setup. Great to have you back! 🎉\n\nWhat would you like help with today? I can:\n• Set up another AI agent\n• Update your existing configuration\n• Help with specific tasks\n\nJust let me know!";
+      } else {
+        // New user - show onboarding intro
+        return agent.introMessage || '';
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+      return agent.introMessage || '';
+    }
+  };
+
   const loadSessionMessages = async () => {
     console.log(`🔍 loadSessionMessages called with sessionId: ${sessionId}`);
     if (!sessionId) {
@@ -304,74 +260,70 @@ export default function N8nChatInterface({
             content: fileInfo.messageText,
             sender: msg.sender.toLowerCase() as 'user' | 'agent',
             timestamp: new Date(msg.timestamp),
+            status: msg.sender.toLowerCase() === 'agent' ? 'Ready' : undefined, // Add status for agent messages
             fileUpload: fileInfo.hasFile
               ? {
-                fileName: fileInfo.fileName,
-                fileUrl: fileInfo.fileUrl,
-                fileId: `file_${msg.id}`,
-                status: 'completed',
-                agentId: agent.id,
-                agentName: agent.name
-              }
+                  fileName: fileInfo.fileName,
+                  fileUrl: fileInfo.fileUrl,
+                  fileId: `file_${msg.id}`,
+                  status: 'completed',
+                  agentId: agent.id,
+                  agentName: agent.name
+                }
               : undefined
           };
         });
-        console.log(`✅ Setting ${chatMessages.length} messages in state`);
 
-        // Add demo message ONLY with ?demo=1 flag
-        const isDemoMode = new URLSearchParams(window.location.search).has('demo');
-        if (isDemoMode) {
-          const demoMessage: ChatMessage = {
-            id: 'demo-streaming-msg',
-            content: '', // Content is handled inside the component
-            sender: 'agent',
-            type: 'demo_stream',
-            timestamp: new Date()
-          };
-          setMessages([demoMessage, ...chatMessages]);
-        } else {
-          setMessages(chatMessages);
-        }
+        // Get context-aware intro message
+        const introText = await getIntroMessage();
 
-        console.log(`✅ Loaded ${chatMessages.length} messages for session ${sessionId}`);
+        // Always prepend the intro message to existing messages
+        const messagesWithIntro = introText
+          ? [
+              {
+                id: `intro_${sessionId}`,
+                content: introText,
+                sender: 'agent' as const,
+                timestamp: new Date(existingMessages[0].timestamp.getTime() - 1000), // 1 second before first message
+                status: 'Ready' as const // Enable streaming for intro message
+              },
+              ...chatMessages
+            ]
+          : chatMessages;
+
+        console.log(`✅ Setting ${messagesWithIntro.length} messages in state (including intro)`);
+        setMessages(messagesWithIntro);
+        console.log(`✅ Loaded ${chatMessages.length} messages + intro for session ${sessionId}`);
       } else {
         console.log(`📝 No existing messages, showing intro message (not saving to DB)`);
-        // New session - show intro message in UI but DON'T save to database
-        const initialMessages: ChatMessage[] = [];
+        // New session - get context-aware intro message
+        const introText = await getIntroMessage();
 
-        // Add demo message ONLY with ?demo=1 flag
-        const isDemoMode = new URLSearchParams(window.location.search).has('demo');
-        if (isDemoMode) {
-          initialMessages.push({
-            id: 'demo-streaming-msg',
-            content: '',
-            sender: 'agent',
-            type: 'demo_stream',
-            timestamp: new Date()
-          });
-        }
-
-        if (agent.introMessage) {
-          initialMessages.push({
+        if (introText) {
+          const introMessage: ChatMessage = {
             id: generateRequestId(),
-            content: agent.introMessage,
+            content: introText,
             sender: 'agent',
-            timestamp: new Date()
-          });
+            timestamp: new Date(),
+            status: 'Ready' // Enable streaming for intro message
+          };
+          setMessages([introMessage]);
+          // NOTE: Not saving intro message to database - only save real conversations
+        } else {
+          setMessages([]);
         }
-
-        setMessages(initialMessages);
-        // NOTE: Not saving intro/demo message to database - only save real conversations
       }
     } catch (error) {
       console.error('❌ Error loading session messages:', error);
-      // Fallback to intro message for new sessions (but don't save to DB)
-      if (agent.introMessage) {
+      // Fallback to default intro message for new sessions (but don't save to DB)
+      const introText = await getIntroMessage();
+      if (introText) {
         setMessages([{
           id: generateRequestId(),
-          content: agent.introMessage,
+          content: introText,
           sender: 'agent',
-          timestamp: new Date()
+          timestamp: new Date(),
+          status: 'Ready' // Enable streaming for intro message
         }]);
       } else {
         setMessages([]);
@@ -390,7 +342,8 @@ export default function N8nChatInterface({
           id: generateRequestId(),
           content: '✅ Google Calendar connected successfully! Your assistant can now manage your schedule, create meetings, and check availability.',
           sender: 'agent',
-          timestamp: new Date()
+          timestamp: new Date(),
+          status: 'Ready' // Enable streaming
         };
         setMessages(prev => [...prev, successMessage]);
       } else {
@@ -399,6 +352,7 @@ export default function N8nChatInterface({
           id: generateRequestId(),
           content: '❌ Failed to connect to Google Calendar. Please try again.',
           sender: 'agent',
+          status: 'Ready',
           timestamp: new Date()
         };
         setMessages(prev => [...prev, errorMessage]);
@@ -440,8 +394,6 @@ export default function N8nChatInterface({
       return null;
     }
   };
-
-
 
   const handleSendMessage = async (message: string, fileUrl?: string, fileName?: string) => {
     if (!message.trim() || isLoading) return;
@@ -501,7 +453,8 @@ export default function N8nChatInterface({
             id: response.request_id || generateRequestId(),
             content: response.agent_response || `Redirecting you to ${response.routing.target_agent}...`,
             sender: 'agent',
-            timestamp: new Date()
+            timestamp: new Date(),
+            status: 'Ready' // Enable streaming
           };
           setMessages(prev => [...prev, redirectMessage]);
 
@@ -541,7 +494,8 @@ export default function N8nChatInterface({
                     id: response.request_id || generateRequestId(),
                     content: response.agent_response || `Redirecting you to ${metadata.target_agent}...`,
                     sender: 'agent',
-                    timestamp: new Date()
+                    timestamp: new Date(),
+                    status: 'Ready' // Enable streaming
                   };
                   setMessages(prev => [...prev, redirectMessage]);
 
@@ -560,8 +514,23 @@ export default function N8nChatInterface({
                 break;
 
               case 'agent_enabled':
-                // Agent enablement - handled separately by AgentEnablementService
-                console.log('✅ Agent enabled action detected - will be processed by enablement service');
+                // Agent enablement - refresh sidebar to show new agent
+                console.log('✅ Agent enabled action detected:', metadata);
+
+                // Refresh sidebar to show newly enabled agent
+                if ((window as any).refreshAgentSidebar) {
+                  (window as any).refreshAgentSidebar();
+                  console.log('🔄 Refreshed agent sidebar for:', metadata.agent_name);
+                } else {
+                  console.warn('⚠️ refreshAgentSidebar not available on window');
+                }
+
+                // Show success notification
+                const agentName = metadata.agent_name || 'Agent';
+                if ((window as any).showToast) {
+                  (window as any).showToast(`✅ ${agentName} enabled and ready!`, 'success');
+                }
+
                 // Don't return - let the response continue to be processed
                 break;
 
@@ -615,64 +584,29 @@ export default function N8nChatInterface({
 
         // Parse response to handle structured JSON format
         let displayMessage = response.agent_response;
-
-        // Apply empty list filtering
-        displayMessage = filterEmptyLists(displayMessage);
-
-        const isDemoMode = new URLSearchParams(window.location.search).get('demo') === '1';
-
-        if (isDemoMode) {
-          const chunks = chunkResponseForReadability(displayMessage);
-
-          if (chunks.length > 1) {
-            console.log(`🚀 Demo Mode: Splitting response into ${chunks.length} chunks for readability`);
-
-            for (let i = 0; i < chunks.length; i++) {
-              const chunk = chunks[i];
-              const requestId = i === 0 ? response.request_id : `${response.request_id}_${i}`;
-
-              const agentMessage: ChatMessage = {
-                id: requestId,
-                content: chunk,
-                sender: 'agent',
-                timestamp: new Date(response.timestamp_of_call_made),
-                status: response.agent_status,
-                isHtml: response.agent_status === 'Ready',
-                isStreaming: true
-              };
-
-              // Add readability delay between bubbles
-              if (i > 0) {
-                await new Promise(resolve => setTimeout(resolve, 800));
-              }
-
-              setMessages(prev => [...prev, agentMessage]);
-
-              // Only save the first chunk or combined response? 
-              // Usually we save the full response to history, but for UI we split.
-              if (i === 0) {
-                await saveMessageToHistory(
-                  displayMessage, // Save full content once
-                  'Agent',
-                  new Date(response.timestamp_of_call_made),
-                  response.agent_status
-                );
-              }
-            }
-            setIsLoading(false);
-            return;
+        let structuredData = null;
+        
+        // Handle agent enablement for Personal Assistant onboarding
+        if (agent.id === 'personal_assistant') {
+          // Check if we have the exact expected format with finished: true
+          if (response.finished === true && response.agent_data) {
+            console.log('✅ N8nChatInterface: Found exact structured format - processing agent enablement');
+            structuredData = response;
+          }
+          // Otherwise fallback to legacy text parsing
+          else {
+            console.log('🔄 N8nChatInterface: Using legacy text parsing approach');
+            structuredData = response.agent_response;
           }
         }
 
-        // Standard behavior or single chunk
         const agentMessage: ChatMessage = {
           id: response.request_id,
           content: displayMessage,
           sender: 'agent',
           timestamp: new Date(response.timestamp_of_call_made),
-          status: response.agent_status,
-          isHtml: response.agent_status === 'Ready',
-          isStreaming: true
+          status: response.agent_status || 'Ready', // Default to 'Ready' to enable streaming
+          isHtml: (response.agent_status || 'Ready') === 'Ready'
         };
 
         // Save agent response to database and get back the saved record
@@ -680,7 +614,7 @@ export default function N8nChatInterface({
           displayMessage,
           'Agent',
           new Date(response.timestamp_of_call_made),
-          response.agent_status
+          response.agent_status || 'Ready'  // Default to 'Ready' for streaming
         );
 
         // Update agentMessage with content_repurposer_history_id if available
@@ -696,27 +630,8 @@ export default function N8nChatInterface({
         console.log('🔍 N8N DEBUG: Agent response received from agent.id:', agent.id);
         console.log('🔍 N8N DEBUG: Response object:', response);
 
-        // Handle agent enablement for Personal Assistant onboarding
-        if (agent.id === 'personal_assistant') {
-          console.log('🔍 N8N DEBUG: Personal Assistant detected, checking for agent enablement');
-          const enablementService = AgentEnablementService.getInstance();
-          // Ensure user_id is included in the enablement data
-          const enablementData = {
-            ...response,
-            user_id: response.user_id || userId // Use response user_id or fallback to component userId
-          };
-          console.log('🔍 N8N DEBUG: Agent response for enablement check:', enablementData);
-
-          try {
-            // Pass the full response object with user_id guaranteed
-            await enablementService.handleOnboardingResponse(enablementData, userId);
-            console.log('🔍 N8N DEBUG: AgentEnablementService called successfully');
-          } catch (error) {
-            console.error('❌ N8N DEBUG: Error calling AgentEnablementService:', error);
-          }
-        } else {
-          console.log('🔍 N8N DEBUG: Not Personal Assistant, skipping enablement check for agent:', agent.id);
-        }
+        // NOTE: Agent enablement is now handled via actions_todo (see agent_enabled case above)
+        // No need for separate AgentEnablementService check
       } else {
         // Handle error case
         const errorMessage = 'Sorry, I encountered an error processing your request. Please try again.';
@@ -724,9 +639,10 @@ export default function N8nChatInterface({
           id: generateRequestId(),
           content: errorMessage,
           sender: 'agent',
-          timestamp: new Date()
+          timestamp: new Date(),
+          status: 'Ready' // Enable streaming
         }]);
-
+        
         // Save error message to database
         await saveMessageToHistory(errorMessage, 'Agent');
       }
@@ -737,20 +653,15 @@ export default function N8nChatInterface({
         id: generateRequestId(),
         content: errorMessage,
         sender: 'agent',
-        timestamp: new Date()
+        timestamp: new Date(),
+        status: 'Ready' // Enable streaming
       }]);
-
+      
       // Save error message to database
       await saveMessageToHistory(errorMessage, 'Agent');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Helper for Media Library
-  const handleImageSelect = (mediaItem: any) => {
-    handleSendMessage(`I've selected this image: ${mediaItem.url}`);
-    setShowMediaLibrary(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -770,30 +681,17 @@ export default function N8nChatInterface({
     handleSendMessage(text);
   };
 
-  const handleStreamComplete = (messageId: string) => {
-    setMessages(prev => prev.map(msg =>
-      msg.id === messageId ? { ...msg, isStreaming: false } : msg
-    ));
-  };
-
   // Helper function to detect if message contains interactive buttons
   const hasInteractiveButtons = (content: string): boolean => {
     // Look for all button patterns:
-    // 1. $$**text**$$ (bold format)
-    // 2. $****text****$ (old format)
-    // 3. $$emoji text - description$$ (emoji format without bold)
-    // 4. $$content$$ general pattern
-    const boldFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
-    const oldFormatPattern = /\$\*\*\*\*([^*]+)\*\*\*\*\$/g;
-    const generalPattern = /\$\$([^$]+)\$\$/g;
-    const legacyPattern1 = /^(.{1,4})\s*\*\*([^*]+)\*\*\s*-\s*(.+)$/gmu;
-    const legacyPattern2 = /^(.{1,4})\s*\*\*([^*]+)\*\*\s*$/gmu;
+    // 1. $$**text**$$ (preferred double dollar bold)
+    // 2. $$content$$ (double dollar)
+    // 3. $**text**$ (legacy single dollar bold)
+    // 4. $content$ (legacy single dollar)
+    const doubleDollarPattern = /\$\$([^$]+)\$\$/g;
+    const singleDollarPattern = /(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g;
 
-    return boldFormatPattern.test(content) ||
-      oldFormatPattern.test(content) ||
-      generalPattern.test(content) ||
-      legacyPattern1.test(content) ||
-      legacyPattern2.test(content);
+    return doubleDollarPattern.test(content) || singleDollarPattern.test(content);
   };
 
   // Helper function to extract button texts from content
@@ -801,7 +699,7 @@ export default function N8nChatInterface({
     const buttons: string[] = [];
     const newFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
     const oldFormatPattern = /\$\*\*\*\*([^*]+)\*\*\*\*\$/g;
-
+    
     let match;
     while ((match = newFormatPattern.exec(content)) !== null) {
       if (!buttons.includes(match[1].trim())) {
@@ -886,19 +784,19 @@ export default function N8nChatInterface({
     // Find the part with comma-separated options ending with "or X?"
     const match = content.match(/([A-Z][A-Z\s\/&\-]+(?:,\s+[A-Z][A-Z\s\/&\-]+)+,\s+or\s+[A-Z][A-Z\s\/&\-]+)\?/);
     if (!match) return [];
-
+    
     const optionsStr = match[1];
     // Split by ", or " first to get the last option
     const parts = optionsStr.split(/,\s+or\s+/);
     const lastOption = parts[1]?.trim();
     const firstPart = parts[0];
-
+    
     // Split the first part by commas
     const options = firstPart.split(/,\s+/).map(o => o.trim()).filter(o => o.length > 0);
     if (lastOption) {
       options.push(lastOption);
     }
-
+    
     return options;
   };
 
@@ -916,9 +814,9 @@ export default function N8nChatInterface({
   const hasAgentRecommendations = (content: string): boolean => {
     const lowerContent = content.toLowerCase();
     // Check if message mentions selecting/configuring assistants
-    const hasSelectionPrompt = lowerContent.includes('select one') ||
-      lowerContent.includes('choose one') ||
-      lowerContent.includes('configuring one of these');
+    const hasSelectionPrompt = lowerContent.includes('select one') || 
+                               lowerContent.includes('choose one') ||
+                               lowerContent.includes('configuring one of these');
     // Check if message has $$**...**$$ button patterns (agent recommendations)
     const hasButtonPattern = /\$\$\*\*[^*]+\*\*\$\$/.test(content);
     return hasSelectionPrompt || hasButtonPattern;
@@ -927,7 +825,7 @@ export default function N8nChatInterface({
   // Helper function to extract agent names from Personal Assistant recommendations
   const extractAgentRecommendations = (content: string): string[] => {
     const agents: string[] = [];
-
+    
     // First, extract from $$**...**$$ button patterns
     const buttonPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
     let match;
@@ -944,7 +842,7 @@ export default function N8nChatInterface({
         agents.push(agentText);
       }
     }
-
+    
     // If no button patterns found, fall back to keyword detection
     if (agents.length === 0) {
       const lowerContent = content.toLowerCase();
@@ -961,7 +859,7 @@ export default function N8nChatInterface({
         agents.push('Social Media Manager');
       }
     }
-
+    
     return agents;
   };
 
@@ -989,7 +887,7 @@ export default function N8nChatInterface({
   const hasSocialMediaContent = (content: string): boolean => {
     try {
       const parsed = JSON.parse(content);
-
+      
       // Handle error structure with raw JSON content
       if (parsed && parsed.error && parsed.raw) {
         try {
@@ -1003,7 +901,7 @@ export default function N8nChatInterface({
           // If inner parsing fails, continue with outer checks
         }
       }
-
+      
       // Check for ContentRepurposerPosts structure
       if (Array.isArray(parsed) && parsed[0] && parsed[0].ContentRepurposerPosts) {
         return true;
@@ -1021,117 +919,11 @@ export default function N8nChatInterface({
     }
   };
 
-  /**
-   * Cleans text content by removing empty numbered list items and stray bullet points.
-   */
-  const filterEmptyLists = (content: string): string => {
-    let cleaned = content;
-
-    // Standardize: Remove lines that match requested patterns exactly
-    // Strict adherence to: /^\s*\d+\.\s*$/gm and /^\s*-\s*$/gm 
-    // We replace the entire line including the newline
-    cleaned = cleaned.replace(/^\s*\d+\.\s*(\n|$)/gm, '');
-    cleaned = cleaned.replace(/^\s*-\s*(\n|$)/gm, '');
-
-    // Additional cleanup for bullet variants
-    cleaned = cleaned.replace(/^\s*[•*]\s*(\n|$)/gm, '');
-
-    // Clean up excessive newlines caused by removals
-    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-
-    return cleaned.trim();
-  };
-
-  /**
-   * Splits a long agent response into smaller chunks based on key headers
-   * for improved readability in demo mode.
-   */
-  const chunkResponseForReadability = (content: string): string[] => {
-    const introPatterns = [
-      /Analyzing your website/i,
-      /Just a moment while I check/i,
-      /I'm looking at your/i,
-      /Great! I've analyzed/i
-    ];
-
-    const sectionHeaders = [
-      'Summary',
-      'Recommendations',
-      'What would you like to do next?'
-    ];
-
-    // 1. Look for an explicit intro segment first using regex
-    for (const pattern of introPatterns) {
-      const match = content.match(pattern);
-      if (match) {
-        // Find the absolute first natural break after the intro match
-        const searchFrom = match.index! + match[0].length;
-
-        // Potential break points: Dot followed by space/newline, Newline, or Button marker
-        const dotMatch = content.slice(searchFrom).match(/\.\s/);
-        const dotIndex = dotMatch ? searchFrom + dotMatch.index! + 1 : -1;
-        const newlineIndex = content.indexOf('\n', searchFrom);
-        const buttonIndex = content.indexOf('$$', searchFrom);
-
-        // Find the earliest valid break point
-        const indices = [dotIndex, newlineIndex, buttonIndex].filter(i => i > searchFrom);
-        const splitPoint = indices.length > 0 ? Math.min(...indices) : -1;
-
-        if (splitPoint > searchFrom && splitPoint < content.length - 1) {
-          const part1 = content.slice(0, splitPoint).trim();
-          const part2 = content.slice(splitPoint).trim();
-
-          if (part1 && part2) {
-            console.log('🎯 Split detected at index:', splitPoint);
-            return [part1, part2];
-          }
-        }
-      }
-    }
-
-    // 2. Split by major section headers
-    const headerPattern = new RegExp(`(${sectionHeaders.join('|')})`, 'i');
-    const parts = content.split(headerPattern);
-    const chunks: string[] = [];
-
-    let currentChunk = '';
-
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      if (!part.trim()) continue;
-
-      const isHeader = sectionHeaders.some(h => h.toLowerCase() === part.toLowerCase());
-
-      if (isHeader) {
-        if (currentChunk.trim()) {
-          chunks.push(currentChunk.trim());
-        }
-        currentChunk = part;
-      } else {
-        currentChunk += part;
-      }
-    }
-
-    if (currentChunk.trim()) {
-      chunks.push(currentChunk.trim());
-    }
-
-    // 3. Fallback: Split by double newlines if still a single chunk
-    if (chunks.length <= 1) {
-      const dbnlChunks = content.split('\n\n').filter(p => p.trim());
-      if (dbnlChunks.length > 1) {
-        return dbnlChunks;
-      }
-    }
-
-    return chunks;
-  };
-
   const handleAttachmentClick = () => {
     // Create file input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.pdf,.txt,.docx';
+    fileInput.accept = '.pdf,.txt,.docx,.png,.jpg,.jpeg';
     fileInput.style.display = 'none';
 
     fileInput.onchange = async (e) => {
@@ -1139,29 +931,21 @@ export default function N8nChatInterface({
       const file = target.files?.[0];
 
       if (!file) return;
-      // Validate file size (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('File size must be less than 10MB');
-        return;
-      }
 
       // Validate file type
       const allowedTypes = [
         'application/pdf',
         'text/plain',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'text/markdown',
         'image/png',
-        'image/jpeg'
+        'image/jpeg',
+        'image/jpg'
       ];
-      // Also check file extension for .md files (some systems report different MIME types)
-      const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      const isMarkdown = fileExtension === 'md';
-      if (!allowedTypes.includes(file.type) && !isMarkdown) {
-        alert('Only PDF, TXT, DOCX, MD, and image files (PNG, JPG, JPEG) are supported');
+      if (!allowedTypes.includes(file.type)) {
+        alert('Only PDF, TXT, DOCX, PNG, JPG, and JPEG files are supported');
         return;
       }
-
+      
       try {
         await uploadFileToSupabase(file);
       } catch (error) {
@@ -1170,7 +954,7 @@ export default function N8nChatInterface({
         alert(`Failed to upload file. Please try again. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     };
-
+    
     // Add to DOM and trigger click
     document.body.appendChild(fileInput);
     fileInput.click();
@@ -1185,21 +969,21 @@ export default function N8nChatInterface({
 
       // Track the upload immediately so the UI can show an indicator
       setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { name: file.name, status: 'uploading' })));
-
+      
       console.log('Uploading file to Supabase...', fileName);
       console.log('File details:', { name: file.name, size: file.size, type: file.type });
-
+      
       // Step 1: Upload to Supabase storage
       const { data, error } = await supabase.storage
         .from('newsletter')
         .upload(fileName, file);
-
+      
       if (error) {
         console.error('Supabase upload error:', error);
-        console.error('Error details:', { message: error.message });
+        console.error('Error details:', { message: error.message, statusCode: error.statusCode });
         throw new Error(`Upload failed: ${error.message}`);
       }
-
+      
       console.log('File uploaded successfully:', data);
 
       // Step 2: Get public URL
@@ -1239,7 +1023,7 @@ export default function N8nChatInterface({
       formData.append('file_url', fileUrl);
       formData.append('agent_id', agent.id);
       formData.append('agent_name', agent.name);
-
+      
       console.log('Calling backend processing...', {
         firm_user_id: userId,
         file_name: fileName,
@@ -1247,34 +1031,32 @@ export default function N8nChatInterface({
         agent_id: agent.id,
         agent_name: agent.name
       });
-
+      
       // Use the backend URL from environment variables, default to localhost for development
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
       const response = await fetch(`${backendUrl}/api/file/process`, {
         method: 'POST',
         body: formData
       });
-
+      
       console.log('Backend response status:', response.status, response.statusText);
-
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Backend error response:', errorText);
         throw new Error(`Backend processing failed: ${response.statusText} - ${errorText}`);
       }
-
-      const result = await response.json();
-      console.log('Backend response:', result);
-
-      // Track the file upload for status monitoring
-      const fileId = result.data?.file_id;
-      if (fileId) {
-        setUploadingFiles(prev => new Map(prev.set(fileId, { name: fileName, status: 'processing' })));
-
-        // Start monitoring file status
-        monitorFileStatus(fileId, fileName);
-      }
-
+    
+    const result = await response.json();
+    console.log('Backend response:', result);
+    
+    // Track the file upload for status monitoring
+    const fileId = result.data?.file_id;
+    if (fileId) {
+      // Start monitoring file status
+      monitorFileStatus(fileId, fileName);
+    }
+    
       // Automatically send a message with the file URL
       await handleSendMessage(`I've uploaded a file: ${fileName}`, fileUrl, fileName);
     } catch (error) {
@@ -1286,11 +1068,11 @@ export default function N8nChatInterface({
   const monitorFileStatus = async (fileId: string, fileName: string) => {
     let attempts = 0;
     const maxAttempts = 30; // Monitor for 5 minutes (30 attempts * 10 seconds)
-
+    
     const checkStatus = async () => {
       try {
         const file = await fileUploadService.getFileStatus(fileId);
-
+        
         if (file) {
           // Update the file message status
           setMessages(prev => prev.map(msg => {
@@ -1307,7 +1089,7 @@ export default function N8nChatInterface({
             }
             return msg;
           }));
-
+          
           if (file.processing_status === 'completed') {
             // Show completion message
             const completionMessage: ChatMessage = {
@@ -1316,18 +1098,9 @@ export default function N8nChatInterface({
               sender: 'agent',
               timestamp: new Date()
             };
-
+            
             setMessages(prev => [...prev, completionMessage]);
             await saveMessageToHistory(completionMessage.content, 'Agent', completionMessage.timestamp);
-            setMessages(prev => [...prev, completionMessage]);
-            await saveMessageToHistory(completionMessage.content, 'Agent', completionMessage.timestamp);
-
-            // Remove from monitoring
-            setUploadingFiles(prev => {
-              const newMap = new Map(prev);
-              newMap.delete(fileId);
-              return newMap;
-            });
             return;
           } else if (file.processing_status === 'failed') {
             // Show error message
@@ -1337,20 +1110,13 @@ export default function N8nChatInterface({
               sender: 'agent',
               timestamp: new Date()
             };
-
+            
             setMessages(prev => [...prev, errorMessage]);
             await saveMessageToHistory(errorMessage.content, 'Agent', errorMessage.timestamp);
-
-            // Remove from monitoring
-            setUploadingFiles(prev => {
-              const newMap = new Map(prev);
-              newMap.delete(fileId);
-              return newMap;
-            });
             return;
           }
         }
-
+        
         // Continue monitoring if still processing
         attempts++;
         if (attempts < maxAttempts) {
@@ -1366,7 +1132,7 @@ export default function N8nChatInterface({
         }
       }
     };
-
+    
     // Start monitoring after 5 seconds
     setTimeout(checkStatus, 5000);
   };
@@ -1378,15 +1144,6 @@ export default function N8nChatInterface({
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
-      {/* Media Library Modal */}
-      {showMediaLibrary && (
-        <MediaLibrary
-          onSelectImage={handleImageSelect}
-          onClose={() => setShowMediaLibrary(false)}
-          multiSelect={false}
-        />
-      )}
-
       {/* Newsletter Selector for content_repurposer agent */}
       {showNewsletterSelector && (agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') && (
         <div className="p-4 border-b">
@@ -1401,160 +1158,198 @@ export default function N8nChatInterface({
           />
         </div>
       )}
-
-      {/* Restart/Dev Controls - Only in Demo Mode or Dev env */}
-      {(new URLSearchParams(window.location.search).has('demo')) && (
-        <div className="absolute top-4 right-4 z-10">
-          <button
-            onClick={handleRestartAnimations}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white/80 hover:bg-white text-purple-600 rounded-full text-xs font-medium border border-purple-100 shadow-sm backdrop-blur-sm transition-all active:scale-95 group"
-            title="Restart typing animations for all messages"
-          >
-            <RotateCcw size={14} className="group-hover:rotate-[-45deg] transition-transform" />
-            Restart Demo
-          </button>
-        </div>
-      )}
-
+      
       {/* Messages Area */}
-      <div
-        ref={scrollAreaRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
-      >
-        <div className="space-y-4">
-          {messages.map((message, index) => {
-            console.log(`Rendering message ${index}:`, message.type, message.content?.substring(0, 20));
-            return (
-              <div
-                key={`${message.id}-${index}-${restartKey}`}
-                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div className={`max-w-[70%] ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
-                  {message.sender === 'agent' ? (
-                    <div className="flex items-start gap-3">
-                      {agent.avatar && (
-                        <img
-                          src={agent.avatar}
-                          alt={agent.name}
-                          className="w-10 h-10 rounded-full flex-shrink-0 object-cover shadow-sm"
-                        />
-                      )}
-                      <div className="flex-1">
-                        {message.type === 'demo_stream' ? (
-                          <>
-                            {console.log("🎯 MATCHED demo_stream type - rendering component")}
-                            <StreamingChatMessage />
-                          </>
-                        ) : message.status ? (
-                          // Use AgentResponseHandler for agent messages with status
-                          <AgentResponseHandler
-                            response={{
-                              user_id: userId,
-                              session_id: sessionId,
-                              agent_name: agent.id,
-                              timestamp_of_call_made: message.timestamp.toISOString(),
-                              request_id: message.content_repurposer_history_id || message.id,
-                              agent_response: message.content,
-                              agent_status: message.status
-                            }}
-                            onAnswerQuestion={handleAnswerQuestion}
-                            shouldStream={message.isStreaming}
-                            onStreamComplete={() => handleStreamComplete(message.id)}
-                          />
-                        ) : (
-                          // Regular message display with interactive buttons support
-                          <div className="bg-gray-100 rounded-lg px-4 py-2">
-                            {hasInteractiveButtons(message.content) ? (
-                              <InteractiveMessageButtons
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message, index) => (
+          <div
+            key={`${message.id}-${index}`}
+            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div className={`max-w-[70%] ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
+              {message.sender === 'agent' ? (
+                <div className="flex items-start gap-3">
+                  {agent.avatar && (
+                    <img
+                      src={agent.avatar ? createProxyUrl(agent.avatar, 'avatar') : agent.avatar}
+                      alt={agent.name}
+                      className="w-8 h-8 rounded-full flex-shrink-0"
+                    />
+                  )}
+                  <div className="flex-1">
+                    {message.status ? (
+                      // Use StreamingAgentMessage for agent messages with streaming support
+                      <StreamingAgentMessage
+                        response={{
+                          user_id: userId,
+                          session_id: sessionId,
+                          agent_name: agent.id,
+                          timestamp_of_call_made: message.timestamp.toISOString(),
+                          request_id: message.content_repurposer_history_id || message.id,
+                          agent_response: message.content,
+                          agent_status: message.status
+                        }}
+                        enableStreaming={true}
+                        streamingSpeed={15}
+                        onButtonClick={handleButtonClick}
+                      />
+                    ) : (
+                      // Regular message display with interactive buttons support
+                      (() => {
+                        // For newsletter agent (and newsletter_multi), check if content is HTML and use HTMLPreview
+                        if ((agent.id === 'newsletter' || agent.id === 'newsletter_multi') && hasHTMLContent(message.content)) {
+                          return (
+                            <div className="html-preview-wrapper">
+                              <HTMLPreview content={message.content} />
+                              <EnableContentRepurposerButton />
+                            </div>
+                          );
+                        }
+                        
+                        // For content_repurposer agent (and content_repurposer_multi), check if content is social media and use SocialMediaPreview
+                        if ((agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') && hasSocialMediaContent(message.content)) {
+                          const historyId = message.content_repurposer_history_id || getExistingHistoryId() || message.id;
+                          return (
+                            <div className="social-media-preview-wrapper">
+                              <SocialMediaPreview content={message.content} historyId={historyId} />
+                            </div>
+                          );
+                        }
+                        
+                        // For newsletter agent (and newsletter_multi), check for numbered options and make them clickable
+                        if ((agent.id === 'newsletter' || agent.id === 'newsletter_multi') && hasNumberedOptions(message.content)) {
+                          const introText = getContentWithoutNumberedOptions(message.content);
+                          const options = extractNumberedOptions(message.content);
+                          return (
+                            <div className="bg-gray-100 rounded-lg px-4 py-3">
+                              {introText && (
+                                <p className="text-text-primary whitespace-pre-wrap mb-3">{introText}</p>
+                              )}
+                              <div className="space-y-2">
+                                {options.map((option, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => handleSendMessage(option)}
+                                    className="w-full text-left px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium transition-colors"
+                                  >
+                                    {idx + 1}. {option}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        // For newsletter agent (and newsletter_multi), check for inline comma-separated options
+                        if ((agent.id === 'newsletter' || agent.id === 'newsletter_multi') && hasInlineOptions(message.content)) {
+                          const introText = getContentBeforeInlineOptions(message.content);
+                          const options = extractInlineOptions(message.content);
+                          return (
+                            <div className="bg-gray-100 rounded-lg px-4 py-3">
+                              {introText && (
+                                <p className="text-text-primary whitespace-pre-wrap mb-3">{introText}</p>
+                              )}
+                              <div className="space-y-2">
+                                {options.map((option, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => handleSendMessage(option)}
+                                    className="w-full text-left px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium transition-colors"
+                                  >
+                                    {option}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        // For personal_assistant, check for agent recommendations
+                        if (agent.id === 'personal_assistant' && hasAgentRecommendations(message.content)) {
+                          const agents = extractAgentRecommendations(message.content);
+                          if (agents.length > 0) {
+                            // Clean the message content - remove $$**...**$$ patterns
+                            const cleanedContent = cleanButtonPatterns(message.content);
+                            return (
+                              <div className="bg-gray-100 rounded-lg px-4 py-3">
+                                <p className="text-text-primary whitespace-pre-wrap mb-3">{cleanedContent}</p>
+                                <div className="space-y-2">
+                                  {agents.map((agentName, idx) => (
+                                    <button
+                                      key={idx}
+                                      onClick={() => handleSendMessage(agentName)}
+                                      className="w-full text-left px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium transition-colors"
+                                    >
+                                      {idx + 1}. {agentName}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
+                        }
+                        
+                        // Regular message display - check for $$...$$ button patterns
+                        if (hasInteractiveButtons(message.content)) {
+                          return (
+                            <div className="bg-gray-100 rounded-lg px-4 py-3">
+                              <InteractiveMessageButtons 
                                 content={message.content}
                                 onButtonClick={handleButtonClick}
-                                shouldStream={message.isStreaming}
-                                onStreamComplete={() => handleStreamComplete(message.id)}
                               />
-                            ) : (
-                              <LinkDetectingTextArea
-                                content={message.content}
-                                className="text-text-primary whitespace-pre-wrap"
-                                shouldStream={message.isStreaming}
-                                onStreamComplete={() => handleStreamComplete(message.id)}
-                              />
-                            )}
-                          </div>
-                        )}
-                        <span className="text-xs text-gray-500 mt-1 block">
-                          {message.timestamp.toLocaleTimeString()}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    // User message display
-                    <div>
-                      {(() => {
-                        // Check if this is a file upload message (either with fileUpload prop or legacy text format)
-                        if (message.fileUpload) {
-                          return (
-                            <FileMessage
-                              fileInfo={message.fileUpload}
-                              timestamp={message.timestamp}
-                            />
-                          );
-                        }
-
-                        // Check for legacy file upload text pattern
-                        const fileUploadMatch = message.content?.match(/I've uploaded a file: (.+?)(?:\n|$)/);
-                        const urlMatch = message.content?.match(/URL:\s*(https?:\/\/[^\s]+)/);
-
-                        if (fileUploadMatch && urlMatch) {
-                          const fileName = fileUploadMatch[1].trim();
-                          const fileUrl = urlMatch[1].trim();
-
-                          return (
-                            <FileMessage
-                              fileInfo={{
-                                fileName,
-                                fileUrl,
-                                fileId: message.id,
-                                status: 'completed',
-                                agentId: agent.id,
-                                agentName: agent.name
-                              }}
-                              timestamp={message.timestamp}
-                            />
-                          );
-                        }
-
-                        // Regular text message
-                        return (
-                          <>
-                            <div className="bg-blue-500 text-white rounded-lg px-4 py-2">
-                              <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.content}</p>
                             </div>
-                            <span className="text-xs text-gray-500 mt-1 block">
-                              {message.timestamp.toLocaleTimeString()}
-                            </span>
-                          </>
+                          );
+                        }
+                        
+                        // Plain text message display
+                        return (
+                          <div className="bg-gray-100 rounded-lg px-4 py-2">
+                            <LinkDetectingTextArea 
+                              content={message.content}
+                              className="text-text-primary whitespace-pre-wrap"
+                            />
+                          </div>
                         );
-                      })()}
-                    </div>
+                      })()
+                    )}
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      {message.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                // User message display
+                <div>
+                  {message.fileUpload ? (
+                    <FileMessage fileInfo={message.fileUpload} timestamp={message.timestamp} />
+                  ) : (
+                    <>
+                      <div className="bg-blue-500 text-white rounded-lg px-4 py-2 overflow-hidden">
+                        <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.content}</p>
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1 block">
+                        {message.timestamp.toLocaleTimeString()}
+                      </span>
+                    </>
                   )}
                 </div>
-              </div>
-            );
-          })}
-
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-100 rounded-lg px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Loader className="w-4 h-4 animate-spin" />
-                  <span className="text-gray-600">Agent is thinking...</span>
-                </div>
+              )}
+            </div>
+          </div>
+        ))}
+        
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 rounded-lg px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Loader className="w-4 h-4 animate-spin" />
+                <span className="text-gray-600">Agent is thinking...</span>
               </div>
             </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}
@@ -1573,7 +1368,6 @@ export default function N8nChatInterface({
           </div>
         </div>
       )}
-
       <form onSubmit={handleSubmit} className="border-t border-gray-200 p-4">
         <div className="flex gap-3 items-end">
           <textarea
@@ -1601,19 +1395,7 @@ export default function N8nChatInterface({
               }
             }}
           />
-
-          {/* Media Library Button - Only for social_media_scheduler */}
-          {agent.id === 'social_media_scheduler' && (
-            <button
-              type="button"
-              onClick={() => setShowMediaLibrary(true)}
-              className="p-3 bg-purple-100 hover:bg-purple-200 text-purple-600 rounded-xl transition-colors flex items-center justify-center"
-              title="Media Library"
-            >
-              <ImageIcon size={20} />
-            </button>
-          )}
-
+          
           {/* Attachment Button */}
           <button
             type="button"
@@ -1623,7 +1405,7 @@ export default function N8nChatInterface({
           >
             <Paperclip size={20} />
           </button>
-
+          
           {/* Microphone Button */}
           <button
             type="button"
@@ -1633,7 +1415,7 @@ export default function N8nChatInterface({
           >
             <Mic size={20} />
           </button>
-
+          
           {/* Send Button */}
           <button
             type="submit"

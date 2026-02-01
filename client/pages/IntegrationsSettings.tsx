@@ -15,7 +15,7 @@ interface GHLIntegration {
   subaccount_name: string;
   creation_status: string;
   automation_status: string;
-  PIT_Token: string | null;
+  pit_token: string | null;
   soma_ghl_user_id: string | null;
   created_at: string;
 }
@@ -148,7 +148,7 @@ export default function IntegrationsSettings() {
       // Fetch from ghl_subaccounts table including token timestamp
       const { data: ghlData, error: ghlError } = await supabase
         .from('ghl_subaccounts')
-        .select('"Firebase Token", PIT_Token, ghl_location_id, "firebase token time"')
+        .select('firebase_token, pit_token, ghl_location_id, firebase_token_time')
         .eq('firm_user_id', firmUserId)
         .single();
       
@@ -163,7 +163,7 @@ export default function IntegrationsSettings() {
       
       if (ghlData) {
         const fbToken = ghlData['Firebase Token'];
-        const pitTok = ghlData['PIT_Token'];
+        const pitTok = ghlData['pit_token'];
         const locId = ghlData['ghl_location_id'];
         const tokenTime = ghlData['firebase token time'];
         const accessTok = fbData?.access_token || pitTok; // Use access_token if available, fallback to PIT
@@ -222,7 +222,7 @@ export default function IntegrationsSettings() {
       try {
         const { data: ghlData } = await supabase
           .from('ghl_subaccounts')
-          .select('"Firebase Token", "firebase token time"')
+          .select('firebase_token, firebase_token_time')
           .eq('firm_user_id', firmUserId)
           .single();
         
@@ -547,14 +547,14 @@ export default function IntegrationsSettings() {
         if (allData && allData.length > 0) {
           setLocationId(allData[0].ghl_location_id);
           setGhlUserId(allData[0].soma_ghl_user_id || null);
-          setPitToken(allData[0].PIT_Token || null);
+          setPitToken(allData[0].pit_token || null);
         }
       } else if (solData) {
         // Use SOL agent's location for social media integrations
         console.log('✅ Using SOL agent location for social media:', solData.ghl_location_id);
         setLocationId(solData.ghl_location_id);
         setGhlUserId(solData.soma_ghl_user_id || null);
-        setPitToken(solData.PIT_Token || null);
+        setPitToken(solData.pit_token || null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load integrations');

@@ -3,17 +3,13 @@
 ## JSON STRUCTURE (Required for ALL agents)
 ```json
 {
-  "finished": true,
   "response": "User-facing message with $$**emoji Button**$$ options",
-  "agent_data": {
-    "actions_performed": [],
-    "actions_todo": [],
-    "state": {},
-    "content_preview": {}
-  },
+  "actions_performed": [],
+  "actions_todo": [],
   "routing": {
-    "target_agent": "agent_id or null",
-    "reason": "why routing"
+    "should_redirect": false,
+    "target_agent": null,
+    "target_url": null
   }
 }
 ```
@@ -21,37 +17,66 @@
 ## FIELD DEFINITIONS
 | Field | Type | Description |
 |-------|------|-------------|
-| `finished` | boolean | true = task complete / can end, false = expecting more input |
 | `response` | string | User-facing message with buttons |
-| `agent_data` | object | Actions, state, previews, metadata |
-| `agent_data.state` | object | Agent-specific conversation state tracking |
-| `agent_data.content_preview` | object | Generated content for rendering |
-| `agent_data.lead_info` | object | Sales/qualification data (sales agents) |
+| `actions_performed` | array | What the agent DID (backend operations) |
+| `actions_todo` | array | What the UI needs to DO (frontend actions) |
 | `routing` | object | For redirecting to another agent (PA only) |
 
-## AGENT_DATA EXAMPLES
+## RESPONSE EXAMPLES
 
-### Content Agents (Newsletter, SMM, Content Repurposer):
+### Personal Assistant (Master Agent):
 ```json
-"agent_data": {
-  "state": { "phase": "gathering", "current_topic_index": 1 },
-  "content_preview": { "type": "newsletter", "content": "..." }
+{
+  "response": "✅ Perfect! The Social Media Manager is now enabled!\n\n$$**💬 Start Chat**$$\n$$**➕ Add Another Assistant**$$",
+  "actions_performed": [],
+  "actions_todo": [
+    {
+      "action": "agent_enabled",
+      "details": "UI needs to refresh agent list and show Social Media Manager",
+      "metadata": {
+        "agent_id": "social_media_agent",
+        "agent_name": "Social Media Manager",
+        "communication_tone": "direct"
+      }
+    }
+  ]
 }
 ```
 
-### Sales Agents (SOL):
+### Routing to Another Agent:
 ```json
-"agent_data": {
-  "state": { "phase": "qualification", "qualified": false },
-  "lead_info": { "lead_score": 45, "property_type": "single_family" }
+{
+  "response": "I'll connect you with the Newsletter Agent! 🚀",
+  "actions_performed": [],
+  "actions_todo": [
+    {
+      "action": "user_routed",
+      "details": "Redirect user to Newsletter agent",
+      "metadata": {
+        "target_agent": "newsletter_multi",
+        "target_url": "/chat/newsletter_multi",
+        "user_intent": "create_newsletter"
+      }
+    }
+  ]
 }
 ```
 
-### Routing Agent (PA):
+### Knowledge Base Operation:
 ```json
-"agent_data": {
-  "actions_performed": [{"action": "agent_enabled", "status": "completed"}],
-  "agent_id": "newsletter_multi"
+{
+  "response": "✅ I've saved your company information to the knowledge base!",
+  "actions_performed": [
+    {
+      "action": "kb_saved",
+      "details": "Saved company overview to knowledge base",
+      "metadata": {
+        "category": "company_overview",
+        "entry_id": "uuid-123"
+      }
+    }
+  ],
+  "actions_todo": []
 }
 ```
 
