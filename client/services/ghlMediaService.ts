@@ -60,17 +60,17 @@ export class GHLMediaService {
         if (Array.isArray(ghlDataArray) && ghlDataArray.length > 0) {
           console.log('[GHL Media] Using first available record instead');
           const firstRecord = ghlDataArray[0];
-          if (firstRecord.ghl_location_id && firstRecord.PIT_Token) {
+          if (firstRecord.ghl_location_id && firstRecord.pit_token) {
             return {
               locationId: firstRecord.ghl_location_id,
-              bearerToken: firstRecord.PIT_Token
+              bearerToken: firstRecord.pit_token
             };
           }
         }
         return null;
       }
 
-      if (!ghlData.ghl_location_id || !ghlData.PIT_Token) {
+      if (!ghlData.ghl_location_id || !ghlData.pit_token) {
         console.error('[GHL Media] Missing location_id or token in record');
         return null;
       }
@@ -78,7 +78,7 @@ export class GHLMediaService {
       console.log('[GHL Media] Found credentials for location:', ghlData.ghl_location_id);
       return {
         locationId: ghlData.ghl_location_id,
-        bearerToken: ghlData.PIT_Token
+        bearerToken: ghlData.pit_token
       };
     } catch (error) {
       console.error('[GHL Media] Error in getGHLCredentials:', error);
