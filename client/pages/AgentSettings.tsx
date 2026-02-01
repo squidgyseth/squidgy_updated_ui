@@ -29,32 +29,22 @@ export default function AgentSettings() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   // File processing status tracking (from dev branch)
-  type FileStatus = 'pending' | 'uploading' | 'processing' | 'completed' | 'failed';
+  type FileStatus = 'pending' | 'uploading' | 'extracting' | 'embedding' | 'saving' | 'completed' | 'failed';
   interface FileProcessingState {
     file: File;
+    fileId?: string;
     status: FileStatus;
+    message?: string;
+    progress?: number;
     error?: string;
   }
   const [fileProcessingStates, setFileProcessingStates] = useState<FileProcessingState[]>([]);
+  const eventSourcesRef = useRef<Map<string, EventSource>>(new Map());
 
   // Previously uploaded files state - Neon (analysed) files
   const [previousFiles, setPreviousFiles] = useState<PreviousFile[]>([]);
   const [loadingPreviousFiles, setLoadingPreviousFiles] = useState(true);
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
-
-  // Original files from Neon (same table as analysed files)
-  interface SupabaseFile {
-    file_id: string;
-    file_name: string;
-    file_url: string;
-    created_at: string;
-    agent_id: string;
-  }
-  const [originalFiles, setOriginalFiles] = useState<SupabaseFile[]>([]);
-  const [loadingOriginalFiles, setLoadingOriginalFiles] = useState(true);
-
-  // Tab state for file sections - 'analysed' (left) is default, 'original' (right)
-  const [activeFileTab, setActiveFileTab] = useState<'analysed' | 'original'>('analysed');
 
   // Toast message state (from dev branch)
   const [toastMessage, setToastMessage] = useState({ title: '', subtitle: '', isError: false });
@@ -159,39 +149,10 @@ export default function AgentSettings() {
     }
   };
 
-  // Function to fetch original files from Neon via backend API
-  const fetchOriginalFiles = async () => {
-    if (!userId || !agentId) {
-      setLoadingOriginalFiles(false);
-      return;
-    }
-    
-    setLoadingOriginalFiles(true);
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/knowledge-base/files/${userId}/${agentId}`);
-
-      if (response.ok) {
-        const data = await response.json();
-        setOriginalFiles(data.files || []);
-        console.log(`Loaded ${data.files?.length || 0} original files from Neon for agent ${agentId}`);
-      } else {
-        console.error('Error fetching original files');
-        setOriginalFiles([]);
-      }
-    } catch (error) {
-      console.error('Error fetching original files:', error);
-      setOriginalFiles([]);
-    } finally {
-      setLoadingOriginalFiles(false);
-    }
-  };
-
   // Fetch custom instructions and files on mount
   useEffect(() => {
     fetchCustomInstructions();
     fetchPreviousFiles();
-    fetchOriginalFiles();
   }, [userId, agentId]);
 
   // Initialize speech recognition
@@ -279,15 +240,58 @@ export default function AgentSettings() {
 
   // Delete previously uploaded file via backend API
   // Helper function to update file processing status (from dev branch)
-  const updateFileStatus = (index: number, status: FileStatus, error?: string) => {
+  const updateFileStatus = (index: number, status: FileStatus, message?: string, progress?: number, error?: string) => {
     setFileProcessingStates(prev => {
       const newStates = [...prev];
       if (newStates[index]) {
-        newStates[index] = { ...newStates[index], status, error };
+        newStates[index] = { ...newStates[index], status, message, progress, error };
       }
       return newStates;
     });
   };
+
+  // Subscribe to SSE for file processing status updates
+  const subscribeToFileStatus = (fileId: string, fileIndex: number) => {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    const eventSource = new EventSource(`${backendUrl}/api/file/status-stream/${fileId}`);
+    
+    eventSourcesRef.current.set(fileId, eventSource);
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        const status = data.status as FileStatus;
+        updateFileStatus(fileIndex, status, data.message, data.progress);
+        
+        // Close connection when completed or failed
+        if (status === 'completed' || status === 'failed') {
+          eventSource.close();
+          eventSourcesRef.current.delete(fileId);
+          
+          // Refresh files list on completion
+          if (status === 'completed') {
+            fetchPreviousFiles(false);
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing SSE data:', e);
+      }
+    };
+    
+    eventSource.onerror = () => {
+      console.error('SSE connection error for file:', fileId);
+      eventSource.close();
+      eventSourcesRef.current.delete(fileId);
+    };
+  };
+
+  // Cleanup SSE connections on unmount
+  useEffect(() => {
+    return () => {
+      eventSourcesRef.current.forEach((es) => es.close());
+      eventSourcesRef.current.clear();
+    };
+  }, []);
 
   const handleDeletePreviousFile = async (fileId: string, fileUrl: string) => {
     if (!confirm('Are you sure you want to delete this file? This action cannot be undone.')) {
@@ -393,13 +397,28 @@ export default function AgentSettings() {
         }
       }
 
-      // Handle file uploads
+      // Handle file uploads with SSE status tracking - ALL FILES IN PARALLEL
       if (uploadedFiles.length > 0) {
         totalOperations += uploadedFiles.length;
+        
+        // Capture files before clearing state
+        const filesToUpload = [...uploadedFiles];
+        
+        // Initialize file processing states for all files
+        const initialStates: FileProcessingState[] = filesToUpload.map(file => ({
+          file,
+          status: 'uploading' as FileStatus,
+          message: 'Uploading file...',
+          progress: 5
+        }));
+        setFileProcessingStates(initialStates);
+        
+        // Clear uploaded files immediately so they don't show twice
+        setUploadedFiles([]);
 
-        for (const file of uploadedFiles) {
+        // Upload all files in parallel using Promise.all
+        const uploadPromises = filesToUpload.map(async (file, i) => {
           try {
-            // Send file to backend via multipart/form-data
             const formData = new FormData();
             formData.append('file', file);
             formData.append('user_id', userId);
@@ -412,16 +431,37 @@ export default function AgentSettings() {
             });
 
             if (response.ok) {
-              successCount++;
-              console.log('File uploaded successfully:', file.name);
+              const result = await response.json();
+              console.log('File uploaded successfully:', file.name, 'ID:', result.file_id);
+              
+              // Update state with file ID
+              setFileProcessingStates(prev => {
+                const newStates = [...prev];
+                if (newStates[i]) {
+                  newStates[i] = { ...newStates[i], fileId: result.file_id, status: 'extracting', message: 'Processing started...', progress: 10 };
+                }
+                return newStates;
+              });
+              
+              // Subscribe to SSE for real-time status updates
+              subscribeToFileStatus(result.file_id, i);
+              return true;
             } else {
               const errorText = await response.text();
               console.error('Failed to upload file:', errorText);
+              updateFileStatus(i, 'failed', 'Upload failed', 0, errorText);
+              return false;
             }
           } catch (error) {
             console.error('Failed to upload file:', error);
+            updateFileStatus(i, 'failed', 'Upload failed', 0, String(error));
+            return false;
           }
-        }
+        });
+
+        // Wait for all uploads to complete
+        const results = await Promise.all(uploadPromises);
+        successCount += results.filter(Boolean).length;
       }
 
       // Show success/error feedback
@@ -431,26 +471,8 @@ export default function AgentSettings() {
         // Clear voice state (but keep currentText - it's the persistent custom instructions)
         setVoiceText('');
         accumulatedTextRef.current = '';
-
-        // Clear uploaded files list
-        setUploadedFiles([]);
-
-        // Only refresh files list if files were uploaded
-        if (uploadedFiles.length > 0) {
-          await fetchPreviousFiles(false);
-        }
-
-        // Show toast notification
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 6000);
-
-      } else {
+      } else if (totalOperations > 0) {
         console.error(`Only ${successCount}/${totalOperations} operations succeeded`);
-        // Still clear uploaded files and refresh if files were attempted
-        setUploadedFiles([]);
-        if (uploadedFiles.length > 0) {
-          await fetchPreviousFiles(false);
-        }
       }
 
     } catch (error) {
@@ -575,8 +597,8 @@ export default function AgentSettings() {
                 </div>
               </div>
 
-              {/* Live Content Display - Only show while recording or uploading files */}
-              {((isRecording && voiceText) || uploadedFiles.length > 0) && (
+              {/* Live Content Display - Only show while recording, uploading, or processing files */}
+              {((isRecording && voiceText) || uploadedFiles.length > 0 || fileProcessingStates.length > 0) && (
                 <div className="mb-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Current Content</h3>
 
@@ -602,12 +624,49 @@ export default function AgentSettings() {
                     </div>
                   )}
 
-                  {/* Uploaded Files */}
-                  {uploadedFiles.length > 0 && (
+                  {/* Uploaded Files with inline status */}
+                  {(uploadedFiles.length > 0 || fileProcessingStates.length > 0) && (
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Files:</h4>
+                      {/* Show files being processed */}
+                      {fileProcessingStates.map((state, index) => (
+                        <div key={`processing-${index}`} className="p-3 bg-white rounded-lg border border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <File size={20} className="text-gray-600" />
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-800">{state.file.name}</p>
+                                <p className="text-xs text-gray-500">{(state.file.size / 1024 / 1024).toFixed(2)} MB</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {state.status === 'completed' && <CheckCircle size={18} className="text-green-500" />}
+                              {state.status === 'failed' && <X size={18} className="text-red-500" />}
+                              {!['completed', 'failed'].includes(state.status) && (
+                                <div className="animate-spin h-4 w-4 border-2 border-purple-500 border-t-transparent rounded-full" />
+                              )}
+                            </div>
+                          </div>
+                          {/* Progress bar and status message */}
+                          <div className="mt-2">
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div 
+                                className={`h-1.5 rounded-full transition-all duration-300 ${
+                                  state.status === 'completed' ? 'bg-green-500' : 
+                                  state.status === 'failed' ? 'bg-red-500' : 'bg-purple-500'
+                                }`}
+                                style={{ width: `${state.progress || 0}%` }}
+                              />
+                            </div>
+                            <p className={`text-xs mt-1 ${state.status === 'failed' ? 'text-red-500' : 'text-gray-500'}`}>
+                              {state.message || state.status}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      {/* Show files not yet submitted */}
                       {uploadedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+                        <div key={`pending-${index}`} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
                           <div className="flex items-center gap-3">
                             <File size={20} className="text-gray-600" />
                             <div>
@@ -649,25 +708,35 @@ export default function AgentSettings() {
                 )}
               </div>
 
-              {/* Submit Button */}
+              {/* Submit Button - Changes to "Continue" when all files processed */}
               <div className="text-center">
-                <button
-                  onClick={handleSubmit}
-                  disabled={isUploading || loadingCustomInstructions || (!currentText.trim() && uploadedFiles.length === 0)}
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
-                >
-                  {isUploading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <Send size={20} />
-                      Save
-                    </>
-                  )}
-                </button>
+                {fileProcessingStates.length > 0 && fileProcessingStates.every(s => ['completed', 'failed'].includes(s.status)) ? (
+                  <button
+                    onClick={() => setFileProcessingStates([])}
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                  >
+                    <CheckCircle size={20} />
+                    Continue
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSubmit}
+                    disabled={isUploading || loadingCustomInstructions || (!currentText.trim() && uploadedFiles.length === 0)}
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+                  >
+                    {isUploading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={20} />
+                        Save
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
 
               {/* Hidden File Input */}
@@ -682,194 +751,95 @@ export default function AgentSettings() {
             </div>
           </div>
 
-          {/* Tabbed Files Section */}
+          {/* Uploaded Files Section - Merged view with preview and delete */}
           <div className="mt-8 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            {/* Tab Header with gradient based on active tab */}
-            <div className={`px-8 py-4 ${
-              activeFileTab === 'analysed' 
-                ? 'bg-gradient-to-r from-amber-500 to-yellow-500' 
-                : 'bg-gradient-to-r from-blue-500 to-cyan-500'
-            }`}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">
-                  {activeFileTab === 'analysed' ? 'Analysed Files' : 'Original Files'}
-                </h2>
-                
-                {/* Tab Switcher */}
-                <div className="flex bg-white/20 rounded-lg p-1">
-                  <button
-                    onClick={() => setActiveFileTab('analysed')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                      activeFileTab === 'analysed'
-                        ? 'bg-white text-amber-600 shadow-sm'
-                        : 'text-white hover:bg-white/10'
-                    }`}
-                  >
-                    Analysed
-                  </button>
-                  <button
-                    onClick={() => setActiveFileTab('original')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                      activeFileTab === 'original'
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-white hover:bg-white/10'
-                    }`}
-                  >
-                    Original
-                  </button>
-                </div>
-              </div>
+            <div className="px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-500">
+              <h2 className="text-xl font-bold text-white">Uploaded Files</h2>
             </div>
 
-            {/* Tab Content */}
             <div className="p-6">
-              {/* Analysed Files Tab */}
-              {activeFileTab === 'analysed' && (
-                <>
-                  {loadingPreviousFiles ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="animate-spin text-gray-400" size={24} />
-                      <span className="ml-2 text-gray-500">Loading analysed files...</span>
-                    </div>
-                  ) : previousFiles.length === 0 ? (
-                    <div className="text-center py-8">
-                      <FileText className="mx-auto text-gray-300 mb-3" size={48} />
-                      <p className="text-gray-500">No analysed files yet</p>
-                      <p className="text-gray-400 text-sm">Files will appear here after processing</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {previousFiles.map((file) => (
-                        <div
-                          key={file.file_id}
-                          className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-white rounded-lg border border-amber-200">
-                              <FileText size={20} className="text-amber-600" />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium text-gray-800">{file.file_name}</p>
-                                {file.processing_status && file.processing_status !== 'completed' && (
-                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                    file.processing_status === 'processing'
-                                      ? 'bg-yellow-100 text-yellow-700'
-                                      : file.processing_status === 'failed'
-                                      ? 'bg-red-100 text-red-700'
-                                      : 'bg-gray-100 text-gray-600'
-                                  }`}>
-                                    {file.processing_status}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-gray-500">
-                                Uploaded {new Date(file.created_at).toLocaleDateString('en-GB', {
-                                  day: 'numeric',
-                                  month: 'short',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleDeletePreviousFile(file.file_id, file.file_url)}
-                            disabled={deletingFileId === file.file_id}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                            title="Delete file"
-                          >
-                            {deletingFileId === file.file_id ? (
-                              <Loader2 className="animate-spin" size={18} />
-                            ) : (
-                              <Trash2 size={18} />
+              {loadingPreviousFiles ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="animate-spin text-gray-400" size={24} />
+                  <span className="ml-2 text-gray-500">Loading files...</span>
+                </div>
+              ) : previousFiles.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="mx-auto text-gray-300 mb-3" size={48} />
+                  <p className="text-gray-500">No files uploaded yet</p>
+                  <p className="text-gray-400 text-sm">Upload files above to get started</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {previousFiles.map((file) => (
+                    <div
+                      key={file.file_id}
+                      className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-lg border border-amber-200">
+                          <FileText size={20} className="text-amber-600" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-gray-800">{file.file_name}</p>
+                            {file.processing_status && file.processing_status !== 'completed' && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                file.processing_status === 'processing'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : file.processing_status === 'failed'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {file.processing_status}
+                              </span>
                             )}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Original Files Tab */}
-              {activeFileTab === 'original' && (
-                <>
-                  {loadingOriginalFiles ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="animate-spin text-gray-400" size={24} />
-                      <span className="ml-2 text-gray-500">Loading original files...</span>
-                    </div>
-                  ) : originalFiles.length === 0 ? (
-                    <div className="text-center py-8">
-                      <FileText className="mx-auto text-gray-300 mb-3" size={48} />
-                      <p className="text-gray-500">No original files found</p>
-                      <p className="text-gray-400 text-sm">Upload files above to get started</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {originalFiles.map((file) => (
-                        <div
-                          key={file.file_id}
-                          className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-white rounded-lg border border-blue-200">
-                              <FileText size={20} className="text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-800">{file.file_name}</p>
-                              <p className="text-xs text-gray-500">
-                                Uploaded {new Date(file.created_at).toLocaleDateString('en-GB', {
-                                  day: 'numeric',
-                                  month: 'short',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </p>
-                            </div>
                           </div>
-                          <a
-                            href={file.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 text-blue-500 hover:text-blue-700 transition-colors"
-                            title="Preview file"
-                          >
-                            <ExternalLink size={20} />
-                          </a>
+                          <p className="text-xs text-gray-500">
+                            Uploaded {new Date(file.created_at).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
                         </div>
-                      ))}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* Preview button */}
+                        <a
+                          href={file.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Preview file"
+                        >
+                          <ExternalLink size={18} />
+                        </a>
+                        {/* Delete button */}
+                        <button
+                          onClick={() => handleDeletePreviousFile(file.file_id, file.file_url)}
+                          disabled={deletingFileId === file.file_id}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          title="Delete file"
+                        >
+                          {deletingFileId === file.file_id ? (
+                            <Loader2 className="animate-spin" size={18} />
+                          ) : (
+                            <Trash2 size={18} />
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </>
+                  ))}
+                </div>
               )}
             </div>
           </div>
 
         </div>
       </div>
-
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed bottom-6 right-6 z-50 animate-slide-up">
-          <div className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl shadow-2xl">
-            <CheckCircle size={20} />
-            <div>
-              <p className="font-semibold">Thanks for uploading!</p>
-              <p className="text-sm text-purple-100">It will take 2-3 minutes to sync your knowledge base.</p>
-            </div>
-            <button
-              onClick={() => setShowToast(false)}
-              className="ml-4 p-1 hover:bg-white/20 rounded-full transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
