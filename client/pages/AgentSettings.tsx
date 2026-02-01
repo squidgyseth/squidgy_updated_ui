@@ -302,35 +302,30 @@ export default function AgentSettings() {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-      // Extract file path from URL for Supabase storage deletion
-      const urlParts = fileUrl.split('/');
-      const fileName = urlParts[urlParts.length - 1];
-
-      // Delete from Supabase storage first
-      const { error: storageError } = await supabase.storage
-        .from('newsletter')
-        .remove([fileName]);
-
-      if (storageError) {
-        console.error('Error deleting from storage:', storageError);
-        // Continue with database deletion even if storage fails
-      }
-
-      // Delete from Neon database via backend API
+      // Delete from Neon database and Supabase storage via backend API
       const response = await fetch(`${backendUrl}/api/knowledge-base/file/${fileId}`, {
         method: 'DELETE'
       });
 
-      if (!response.ok) {
+      // Handle 404 as success - file already deleted
+      if (!response.ok && response.status !== 404) {
+        const errorText = await response.text();
+        console.error('Backend delete failed:', errorText);
         throw new Error('Failed to delete file from database');
       }
 
-      // Update local state
+      if (response.status === 404) {
+        console.log('File not found in database - already deleted');
+      }
+
+      // Update local state - remove from list regardless
       setPreviousFiles(prev => prev.filter(file => file.file_id !== fileId));
       console.log('File deleted successfully');
     } catch (error) {
       console.error('Error deleting file:', error);
-      alert('Failed to delete file. Please try again.');
+      // Still remove from local state and refresh list
+      setPreviousFiles(prev => prev.filter(file => file.file_id !== fileId));
+      fetchPreviousFiles(false);
     } finally {
       setDeletingFileId(null);
     }
@@ -703,7 +698,10 @@ export default function AgentSettings() {
                     value={currentText}
                     onChange={(e) => setCurrentText(e.target.value)}
                     placeholder="Type your instructions here, or use voice input above. Your instructions will be saved and you can edit them anytime..."
-                    className="w-full h-40 p-4 border-2 border-gray-200 rounded-xl resize-none focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all text-gray-800 leading-relaxed"
+                    disabled={fileProcessingStates.some(s => !['completed', 'failed'].includes(s.status))}
+                    className={`w-full h-40 p-4 border-2 border-gray-200 rounded-xl resize-none focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all text-gray-800 leading-relaxed ${
+                      fileProcessingStates.some(s => !['completed', 'failed'].includes(s.status)) ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''
+                    }`}
                   />
                 )}
               </div>
