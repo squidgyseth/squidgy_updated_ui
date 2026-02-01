@@ -345,11 +345,11 @@ export default function IntegrationsSettings() {
       console.log('📊 Fetching connected Facebook Ad Account from GHL backend API...');
       
       const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/adAccount`;
-      
+
+      // NOTE: Using token-id ONLY (no authorization header needed - verified via testing)
       const response = await fetch(ghlBackendUrl, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -399,11 +399,11 @@ export default function IntegrationsSettings() {
       console.log('📄 Fetching Facebook pages from GHL backend API...');
       
       // First, get connected pages
+      // NOTE: Using token-id ONLY (no authorization header needed - verified via testing)
       const connectedPagesUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/pages`;
       const connectedResponse = await fetch(`${connectedPagesUrl}?getAll=true`, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -420,11 +420,11 @@ export default function IntegrationsSettings() {
       }
       
       // Then, get all available pages
+      // NOTE: Using token-id ONLY (no authorization header needed - verified via testing)
       const allPagesUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/allPages`;
       const allPagesResponse = await fetch(`${allPagesUrl}?limit=100`, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
@@ -840,12 +840,12 @@ export default function IntegrationsSettings() {
       );
       
       // POST to GHL backend API to connect pages
+      // NOTE: Using token-id ONLY (no authorization header needed - verified via testing)
       const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/pages`;
-      
+
       const response = await fetch(ghlBackendUrl, {
         method: 'POST',
         headers: {
-          'authorization': `Bearer ${accessToken}`,
           'token-id': firebaseToken,
           'version': '2021-07-28',
           'channel': 'APP',
