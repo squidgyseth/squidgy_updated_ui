@@ -145,3 +145,8 @@
     transform: translateY(0);
   }
 }
+
+/* Utility class for fade-in-up animation (used for staggered button appearance) */
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+}

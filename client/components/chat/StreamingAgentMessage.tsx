@@ -216,6 +216,7 @@ export default function StreamingAgentMessage({
                 content={response.agent_response}
                 streamingText={displayContent}
                 onButtonClick={onButtonClick}
+                isStreaming={isStreaming}
               />
               {/* Show streaming cursor while text is streaming */}
               {isStreaming && (

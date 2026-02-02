@@ -8,6 +8,7 @@ interface InteractiveMessageButtonsProps {
   content: string;
   onButtonClick: (text: string) => void;
   streamingText?: string; // Optional: use this for text display while content is used for button parsing
+  isStreaming?: boolean; // When true, hide buttons until streaming completes
 }
 
 interface ButtonOption {
@@ -23,7 +24,7 @@ interface ImagePreview {
   index: number;
 }
 
-export default function InteractiveMessageButtons({ content, onButtonClick, streamingText }: InteractiveMessageButtonsProps) {
+export default function InteractiveMessageButtons({ content, onButtonClick, streamingText, isStreaming = false }: InteractiveMessageButtonsProps) {
   const agentMappingService = AgentMappingService.getInstance();
 
   // Load agent mappings on component mount
@@ -275,8 +276,8 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
         />
       )}
 
-      {/* Display interactive buttons */}
-      {buttonOptions.length > 0 && (
+      {/* Display interactive buttons - only after streaming completes, with staggered animation */}
+      {buttonOptions.length > 0 && !isStreaming && (
         <div className="space-y-2 mt-4">
           {buttonOptions.map((option, index) => {
             const imageUrl = getImageForButton(option.text);
@@ -285,9 +286,13 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
               <button
                 key={index}
                 onClick={() => handleButtonClick(option)}
-                className={`w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors text-left group ${
+                className={`w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all text-left group opacity-0 animate-fade-in-up ${
                   imageUrl ? 'flex-col sm:flex-row' : ''
                 }`}
+                style={{
+                  animationDelay: `${index * 150}ms`,
+                  animationFillMode: 'forwards'
+                }}
               >
                 {/* Show image thumbnail if this is an image selection button */}
                 {imageUrl && (
