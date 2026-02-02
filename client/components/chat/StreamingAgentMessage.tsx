@@ -38,11 +38,38 @@ export default function StreamingAgentMessage({
   };
 
   // Helper to extract text-only content (remove buttons) for streaming
-  // Remove both $$...$$ and $...$ patterns
+  // KEEP $$IMG:url$$ patterns - they will render as images inline after streaming
   const extractTextContent = (text: string): string => {
-    let cleaned = text
-      .replace(/\$\$([^$]+)\$\$/g, '') // Remove double dollar patterns
-      .replace(/\$([^$]+)\$/g, '');     // Remove single dollar patterns
+    let cleaned = text;
+    
+    // Step 1: Temporarily replace $IMG:url$ and $$IMG:url$$ with placeholders to protect them
+    const imgPatterns: string[] = [];
+    // Double dollar pattern
+    cleaned = cleaned.replace(/\$\$IMG:(https?:\/\/[^$\s]*?)\$\$/g, (match) => {
+      imgPatterns.push(match);
+      return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
+    });
+    // Single dollar pattern
+    cleaned = cleaned.replace(/\$IMG:(https?:\/\/[^$\s]*?)\$/g, (match) => {
+      imgPatterns.push(match);
+      return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
+    });
+    // Incomplete patterns (during streaming) - also protect these
+    cleaned = cleaned.replace(/\$\$?IMG:(?:https?:\/\/[^\s]*)?/g, (match) => {
+      imgPatterns.push(match);
+      return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
+    });
+    
+    // Step 2: Remove all button patterns ($$...$$)
+    cleaned = cleaned.replace(/\$\$[^$]+\$\$/g, '');
+    
+    // Step 3: Remove single dollar patterns
+    cleaned = cleaned.replace(/(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g, '');
+    
+    // Step 4: Restore $$IMG:url$$ patterns
+    imgPatterns.forEach((pattern, index) => {
+      cleaned = cleaned.replace(`__IMG_PLACEHOLDER_${index}__`, pattern);
+    });
 
     // Remove stray empty list bullets that often remain
     cleaned = cleaned

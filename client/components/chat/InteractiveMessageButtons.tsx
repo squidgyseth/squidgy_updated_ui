@@ -32,16 +32,30 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
     agentMappingService.loadAgentMappings();
   }, []);
 
-  // Parse image previews from $$IMG:url$$ format
+  // Parse image previews from markdown ![alt](url) format and legacy $$IMG:url$$ format
   const parseImagePreviews = (text: string): ImagePreview[] => {
     const images: ImagePreview[] = [];
-    const imgPattern = /\$\$IMG:(https?:\/\/[^$]+)\$\$/g;
-    let match;
     let index = 1;
-    while ((match = imgPattern.exec(text)) !== null) {
+
+    // Pattern 1: Markdown images ![Image X - Description](url) or ![alt](url)
+    const markdownImgPattern = /!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g;
+    let match;
+    while ((match = markdownImgPattern.exec(text)) !== null) {
+      // Extract image number from alt text if present (e.g., "Image 1 - Description")
+      const altText = match[1];
+      const numMatch = altText.match(/Image\s*(\d+)/i);
+      const imgIndex = numMatch ? parseInt(numMatch[1], 10) : index;
+      images.push({ url: match[2].trim(), index: imgIndex });
+      if (!numMatch) index++;
+    }
+
+    // Pattern 2: Legacy $$IMG:url$$ format (fallback)
+    const legacyImgPattern = /\$\$IMG:(https?:\/\/[^$]+)\$\$/g;
+    while ((match = legacyImgPattern.exec(text)) !== null) {
       images.push({ url: match[1].trim(), index });
       index++;
     }
+
     return images;
   };
 
@@ -117,24 +131,45 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
   };
 
   // Remove button patterns from content to show clean text
+  // KEEP $$IMG:url$$ patterns - they render as inline images at their exact position
   const cleanContent = (text: string): string => {
-    // Remove image patterns first: $$IMG:url$$
-    let cleaned = text.replace(/\$\$IMG:https?:\/\/[^$]+\$\$/g, '');
-
-    // Remove all button formats:
-    // 1. $$content$$ (double dollar - preferred)
-    // 2. $content$ (single dollar - legacy fallback)
-    cleaned = cleaned
-      .replace(/\$\$([^$]+)\$\$/g, '') // Double dollar: $$..$$
-      .replace(/(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g, ''); // Single dollar: $..$
+    let cleaned = text;
+    
+    // Step 1: Temporarily replace $IMG:url$ and $$IMG:url$$ with placeholders to protect them
+    const imgPatterns: string[] = [];
+    // Double dollar pattern
+    cleaned = cleaned.replace(/\$\$IMG:(https?:\/\/[^$\s]*?)\$\$/g, (match) => {
+      imgPatterns.push(match);
+      return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
+    });
+    // Single dollar pattern
+    cleaned = cleaned.replace(/\$IMG:(https?:\/\/[^$\s]*?)\$/g, (match) => {
+      imgPatterns.push(match);
+      return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
+    });
+    // Incomplete patterns (during streaming) - also protect these
+    cleaned = cleaned.replace(/\$\$?IMG:(?:https?:\/\/[^\s]*)?/g, (match) => {
+      imgPatterns.push(match);
+      return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
+    });
+    
+    // Step 2: Remove all button patterns ($$...$$)
+    cleaned = cleaned.replace(/\$\$[^$]+\$\$/g, '');
+    
+    // Step 3: Remove single dollar patterns
+    cleaned = cleaned.replace(/(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g, '');
+    
+    // Step 4: Restore $$IMG:url$$ patterns
+    imgPatterns.forEach((pattern, index) => {
+      cleaned = cleaned.replace(`__IMG_PLACEHOLDER_${index}__`, pattern);
+    });
 
     // Remove stray empty list bullets that often remain after stripping $$buttons$$
-    // e.g. lines that are only '-', '•', or '*' (optionally with whitespace)
     cleaned = cleaned
       .split('\n')
       .filter((line) => !/^\s*[-*•]\s*$/.test(line))
       .join('\n');
-
+    
     // Clean up extra whitespace and empty lines
     return cleaned
       .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace triple+ newlines with double
@@ -151,9 +186,10 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
   console.log('🔍 InteractiveMessageButtons: Button options count:', buttonOptions.length);
   console.log('🔍 InteractiveMessageButtons: Image previews count:', imagePreviews.length);
 
-  // Check if a button corresponds to an image (e.g., "Image 1", "Image 2")
+  // Check if a button corresponds to an image (e.g., "Image 1", "Select Image 1", "Image 2")
   const getImageForButton = (buttonText: string): string | undefined => {
-    const match = buttonText.match(/^Image\s+(\d+)$/i);
+    // Match patterns like "Image 1", "Select Image 1", "Choose Image 2"
+    const match = buttonText.match(/(?:Select\s+)?Image\s+(\d+)$/i);
     if (match) {
       const imageIndex = parseInt(match[1], 10);
       const preview = imagePreviews.find(img => img.index === imageIndex);

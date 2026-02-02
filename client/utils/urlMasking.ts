@@ -47,6 +47,45 @@ export const createProxyUrl = (originalUrl: string, resourceType: 'avatar' | 'im
 };
 
 /**
+ * Creates an image placeholder for loading state
+ */
+const createImagePlaceholder = (): string => {
+  // Gray placeholder with image icon
+  return `<div style="margin: 8px 0; width: 200px; height: 150px; background: #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
+};
+
+/**
+ * Converts $IMG:url$ or $$IMG:url$$ format to HTML images
+ * Handles both single and double dollar patterns
+ */
+const convertDollarImages = (text: string): string => {
+  if (!text) return text;
+  
+  let result = text;
+  
+  // Handle complete $$IMG:url$$ patterns (double dollar)
+  result = result.replace(/\$\$IMG:(https?:\/\/[^$\s]+)\$\$/g, (_, url) => {
+    return createImageHtml(url.trim(), 'Image preview');
+  });
+  
+  // Handle complete $IMG:url$ patterns (single dollar) 
+  result = result.replace(/\$IMG:(https?:\/\/[^$\s]+)\$/g, (_, url) => {
+    return createImageHtml(url.trim(), 'Image preview');
+  });
+  
+  // Handle incomplete patterns during streaming - show placeholder
+  // $$IMG: or $IMG: followed by partial/no URL
+  result = result.replace(/\$\$?IMG:(?:https?:\/\/[^\s]*)?(?!\$)/g, () => {
+    return createImagePlaceholder();
+  });
+  
+  // Clean up orphaned $$ or $
+  result = result.replace(/^\$\$?$/gm, '');
+  
+  return result;
+};
+
+/**
  * Converts markdown images ![alt](url) to HTML
  */
 const convertMarkdownImages = (text: string): string => {
@@ -133,14 +172,15 @@ const convertRawUrls = (text: string): string => {
 
 /**
  * Main function: processes text with markdown and URLs
- * Handles: **bold**, ![images](url), [links](url), and raw URLs
+ * Handles: $$IMG:url$$, **bold**, ![images](url), [links](url), and raw URLs
  */
 export const maskStorageUrlsInText = (text: string): string => {
   if (!text) return text;
   
   let result = text;
   
-  // Process in order: images first, then links, then bold, then raw URLs
+  // Process in order: $$IMG:url$$ first, then markdown images, links, bold, raw URLs
+  result = convertDollarImages(result);
   result = convertMarkdownImages(result);
   result = convertMarkdownLinks(result);
   result = convertMarkdownBold(result);
