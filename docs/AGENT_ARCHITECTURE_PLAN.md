@@ -304,7 +304,7 @@ Webhook → Load Instructions → Get Config → Check Cache → AI Agent → Re
   "timestamp": "2025-01-16T10:30:00Z",
 
   "response": {
-    "message": "I've drafted your newsletter! Here's a preview:\n\n**Subject:** AI Trends This Week\n\n[Preview content...]\n\n$$**Approve & Send**$$\n$$**Edit Subject**$$\n$$**Change Tone**$$",
+    "message": "I've drafted your newsletter! Here's a preview:\n\n**Subject:** AI Trends This Week\n\n[Preview content...]\n\n$**Approve & Send**$\n$**Edit Subject**$\n$**Change Tone**$",
     "type": "text",
     "preview": {
       "type": "newsletter",
