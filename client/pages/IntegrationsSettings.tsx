@@ -1748,13 +1748,13 @@ export default function IntegrationsSettings() {
                     <p className="text-sm text-gray-500 mt-1">
                       Connect Facebook pages for social media posting
                     </p>
-                    {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook').length > 0 && (
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook' && !a.deleted).length > 0 && (
                       <div className="mt-3 space-y-2">
                         <Badge variant="default" className="bg-green-500">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook').length} Page{connectedSocialMediaAccounts.filter(a => a.platform === 'facebook').length !== 1 ? 's' : ''} Connected
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook' && !a.deleted).length} Page{connectedSocialMediaAccounts.filter(a => a.platform === 'facebook' && !a.deleted).length !== 1 ? 's' : ''} Connected
                         </Badge>
                         <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook').map((account) => (
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook' && !a.deleted).map((account) => (
                             <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
                               <img 
                                 src={account.avatar} 
@@ -1804,13 +1804,13 @@ export default function IntegrationsSettings() {
                     <p className="text-sm text-gray-500 mt-1">
                       Connect Instagram accounts for social media posting
                     </p>
-                    {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram').length > 0 && (
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram' && !a.deleted).length > 0 && (
                       <div className="mt-3 space-y-2">
                         <Badge variant="default" className="bg-green-500">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram').length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'instagram').length !== 1 ? 's' : ''} Connected
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'instagram' && !a.deleted).length !== 1 ? 's' : ''} Connected
                         </Badge>
                         <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram').map((account) => (
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram' && !a.deleted).map((account) => (
                             <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
                               <img 
                                 src={account.avatar} 
