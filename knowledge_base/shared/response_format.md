@@ -3,7 +3,7 @@
 ## JSON STRUCTURE (Required for ALL agents)
 ```json
 {
-  "response": "User-facing message with $$**emoji Button**$$ options",
+  "response": "User-facing message with $**emoji Button**$ options",
   "actions_performed": [],
   "actions_todo": [],
   "routing": {
@@ -27,7 +27,7 @@
 ### Personal Assistant (Master Agent):
 ```json
 {
-  "response": "✅ Perfect! The Social Media Manager is now enabled!\n\n$$**💬 Start Chat**$$\n$$**➕ Add Another Assistant**$$",
+  "response": "✅ Perfect! The Social Media Manager is now enabled!\n\n$**💬 Start Chat**$\n$**➕ Add Another Assistant**$",
   "actions_performed": [],
   "actions_todo": [
     {

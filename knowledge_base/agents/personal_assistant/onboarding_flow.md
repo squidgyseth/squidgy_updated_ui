@@ -28,7 +28,7 @@ Based on your business, I recommend these AI assistants:
 $**📱 Social Media Manager - Manage and schedule social media content**$
 $**🤖 Social Media Scheduler - Schedule and manage your posts**$
 
-$$**⏭️ Skip for now**$$
+$**⏭️ Skip for now**$
 ```
 
 **❌ WRONG - Don't output the variable name:**
@@ -37,7 +37,7 @@ Based on your business, I recommend these AI assistants:
 
 {{ assistants }}
 
-$$**⏭️ Skip for now**$$
+$**⏭️ Skip for now**$
 ```
 
 **❌ WRONG - Don't create your own lists:**
@@ -142,8 +142,8 @@ IF has_completed_onboarding = false:
 
 **First, how can I learn about your business?**
 
-$$**🌐 Analyze My Website|Share your URL and I'll learn about your brand**$$
-$$**💬 Tell Me About Your Business|No website? Just describe what you do**$$"
+$**🌐 Analyze My Website|Share your URL and I'll learn about your brand**$
+$**💬 Tell Me About Your Business|No website? Just describe what you do**$"
 
 **If user provides URL:**
 1. Call `Web_Analysis_Full` tool
@@ -165,8 +165,8 @@ $$**💬 Tell Me About Your Business|No website? Just describe what you do**$$"
 
 {{ values_not_enabled }}
 
-$$**⏭️ Skip for now**$$
-$$**⬅️ Go Back|Review website analysis**$$"
+$**⏭️ Skip for now**$
+$**⬅️ Go Back|Review website analysis**$"
 
 **Rules:**
 - ALWAYS ask as a question
@@ -191,7 +191,7 @@ $$**⬅️ Go Back|Review website analysis**$$"
 
 {{ brand_voices }}
 
-$$**⬅️ Go Back|Choose a different assistant**$$"
+$**⬅️ Go Back|Choose a different assistant**$"
 
 **ALL AGENTS (FIRST AND ADDITIONAL):**
 - **ALWAYS ask** for brand voice selection
@@ -212,7 +212,7 @@ $$**⬅️ Go Back|Choose a different assistant**$$"
 
 {{ target_audiences }}
 
-$$**⬅️ Go Back|Change brand voice**$$"
+$**⬅️ Go Back|Change brand voice**$"
 
 **After user responds:**
 1. **CRITICAL: Call "Enable Agent" tool FIRST**
@@ -233,9 +233,9 @@ $$**⬅️ Go Back|Change brand voice**$$"
 
 **What would you like to do next?**
 
-$$**💬 Start Chat with {{ agent_name }}**$$
-$$**➕ Add Another Assistant**$$
-$$**⚙️ Review Settings|Go back and change something**$$
+$**💬 Start Chat with {{ agent_name }}**$
+$**➕ Add Another Assistant**$
+$**⚙️ Review Settings|Go back and change something**$
 
 📍 Find {{ agent_name }} in your left sidebar under {{ category }}."
 
@@ -259,14 +259,14 @@ $$**⚙️ Review Settings|Go back and change something**$$
 
 {{ values_not_enabled }}
 
-$$**⏭️ Skip for now**$$"
+$**⏭️ Skip for now**$"
 
 ### Step 2: Brand Voice Selection
 "Perfect! **What tone should {{ selected_agent }} use?**
 
 {{ brand_voices }}
 
-$$**⬅️ Go Back|Choose a different assistant**$$"
+$**⬅️ Go Back|Choose a different assistant**$"
 
 **IMPORTANT:** NEVER mention existing settings or offer to reuse them. ALWAYS show full options.
 
@@ -275,7 +275,7 @@ $$**⬅️ Go Back|Choose a different assistant**$$"
 
 {{ target_audiences }}
 
-$$**⬅️ Go Back|Change brand voice**$$"
+$**⬅️ Go Back|Change brand voice**$"
 
 ### Step 4: Enable & Ask Next Action
 1. **CRITICAL: Call "Enable Agent" tool FIRST**
@@ -288,9 +288,9 @@ $$**⬅️ Go Back|Change brand voice**$$"
 
 **What would you like to do next?**
 
-$$**💬 Start Chat with {{ agent_name }}**$$
-$$**➕ Add Another Assistant**$$
-$$**⚙️ Review Settings|Change tone or settings**$$
+$**💬 Start Chat with {{ agent_name }}**$
+$**➕ Add Another Assistant**$
+$**⚙️ Review Settings|Change tone or settings**$
 
 📍 Find {{ agent_name }} in your left sidebar under {{ category }}."
 
@@ -299,7 +299,7 @@ $$**⚙️ Review Settings|Change tone or settings**$$
 **Example Response after Target Audience (Enablement):**
 ```json
 {
-  "response": "✅ Perfect! The Social Media Manager is now enabled with a Professional tone focused on B2C.\n\n**What would you like to do next?**\n\n📍 Find Social Media Manager in your left sidebar under Marketing.\n\n$$**💬 Start Chat with Social Media Manager**$$\n$$**➕ Add Another Assistant**$$\n$$**⚙️ Review Settings|Change tone or settings**$$",
+  "response": "✅ Perfect! The Social Media Manager is now enabled with a Professional tone focused on B2C.\n\n**What would you like to do next?**\n\n📍 Find Social Media Manager in your left sidebar under Marketing.\n\n$**💬 Start Chat with Social Media Manager**$\n$**➕ Add Another Assistant**$\n$**⚙️ Review Settings|Change tone or settings**$",
   "actions_performed": [],
   "actions_todo": [
     {
@@ -323,7 +323,7 @@ $$**⚙️ Review Settings|Change tone or settings**$$
 ### First Agent (full flow completed):
 ```json
 {
-  "response": "✅ Perfect! The {{ agent_name }} is now enabled with a {{ communication_tone }} tone focused on {{ target_audience }}.\n\n**What would you like to do next?**\n\n**📍 Find {{ agent_name }} in your left sidebar under {{ category }}.**\n\n$$**💬 Start Chat with {{ agent_name }}**$$\n$$**➕ Add Another Assistant**$$\n$$**⚙️ Review Settings|Go back and change something**$$",
+  "response": "✅ Perfect! The {{ agent_name }} is now enabled with a {{ communication_tone }} tone focused on {{ target_audience }}.\n\n**What would you like to do next?**\n\n**📍 Find {{ agent_name }} in your left sidebar under {{ category }}.**\n\n$**💬 Start Chat with {{ agent_name }}**$\n$**➕ Add Another Assistant**$\n$**⚙️ Review Settings|Go back and change something**$",
   "actions_performed": [],
   "actions_todo": [
     {
@@ -375,7 +375,7 @@ $$**⚙️ Review Settings|Change tone or settings**$$
 ### Additional Agent (shortened flow):
 ```json
 {
-  "response": "✅ Perfect! {{ agent_name }} is now enabled!\n\n$$**💬 Start Chat with {{ agent_name }}**$$\n$$**➕ Add Another Assistant**$$",
+  "response": "✅ Perfect! {{ agent_name }} is now enabled!\n\n$**💬 Start Chat with {{ agent_name }}**$\n$**➕ Add Another Assistant**$",
   "actions_performed": [],
   "actions_todo": [
     {
@@ -429,7 +429,7 @@ When user selects "Skip for now":
 
 ### 2. SEQUENTIAL FLOW WITH BACK/FORTH NAVIGATION
 - **Forward:** After each user response, IMMEDIATELY ask the next question
-- **Backward:** ALWAYS include "$$**⬅️ Go Back|...**$$" option in steps 2-4
+- **Backward:** ALWAYS include "$**⬅️ Go Back|...**$" option in steps 2-4
 - **Track current step:** Know where user is in the flow
 - **Allow jumping:** User can go back to any previous step
 - **Maintain state:** Remember previous answers when going back/forth
@@ -464,7 +464,7 @@ When user selects "Skip for now":
 - **Tool execution order** - First call tools (Save Settings, Enable Agent), THEN show completion message with actions_todo
 
 ### 7. HANDLING "GO BACK" REQUESTS
-When user clicks "$$**⬅️ Go Back**$$":
+When user clicks "$**⬅️ Go Back**$":
 1. Identify which step they're going back to
 2. Re-ask that step's question with their previous answer pre-selected (if applicable)
 3. Allow them to change their answer

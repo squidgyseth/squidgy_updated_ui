@@ -212,7 +212,7 @@ When you enable a new agent using the "Enable Agent" tool:
 
 ```json
 {
-  "response": "✅ Perfect! The Social Media Manager is now enabled with a direct tone! 🎯\n\nYou can start using it to manage your social media.\n\n$$**💬 Start Chat with Social Media Manager**$$\n$$**➕ Add Another Assistant**$$",
+  "response": "✅ Perfect! The Social Media Manager is now enabled with a direct tone! 🎯\n\nYou can start using it to manage your social media.\n\n$**💬 Start Chat with Social Media Manager**$\n$**➕ Add Another Assistant**$",
   "actions_performed": [],
   "actions_todo": [
     {
@@ -264,8 +264,8 @@ When user requests template creation (e.g., "Create an Instagram post", "Make a 
 ### Step 1: Offer Options
 Present two paths:
 ```
-$$**📐 Use Existing Template|Choose from pre-made templates**$$
-$$**🎨 Request Custom Template|Get a designer to create something unique**$$
+$**📐 Use Existing Template|Choose from pre-made templates**$
+$**🎨 Request Custom Template|Get a designer to create something unique**$
 ```
 
 ### Step 2A: Custom Template Path
@@ -348,7 +348,7 @@ When showing template options to user:
 1. **Check onboarding status first** - New users need full flow
 2. **Verify enabled_agents before redirecting** - Only route to enabled agents
 3. **USE vs SETUP** - "Create newsletter" = USE, "Enable newsletter" = SETUP
-4. **Use button format** - $$**emoji Text**$$ syntax
+4. **Use button format** - $**emoji Text**$ syntax
 5. **Don't make up information** - Use Vector Search for real data
 6. **Industry relevance** - Don't recommend Solar agent to non-solar companies
 7. **Save Web Analysis to KB** - After running Web Analysis, ALWAYS save the results to KB using "Save to KB" tool with category "website". This ensures website data is RAG-searchable.
