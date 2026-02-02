@@ -162,10 +162,10 @@ export default function IntegrationsSettings() {
         .single();
       
       if (ghlData) {
-        const fbToken = ghlData['Firebase Token'];
-        const pitTok = ghlData['pit_token'];
-        const locId = ghlData['ghl_location_id'];
-        const tokenTime = ghlData['firebase token time'];
+        const fbToken = ghlData.firebase_token;
+        const pitTok = ghlData.pit_token;
+        const locId = ghlData.ghl_location_id;
+        const tokenTime = ghlData.firebase_token_time;
         const accessTok = fbData?.access_token || pitTok; // Use access_token if available, fallback to PIT
         
         // Only check age on initial load, not during polling
