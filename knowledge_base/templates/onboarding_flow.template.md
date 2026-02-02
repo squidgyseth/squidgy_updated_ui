@@ -46,8 +46,8 @@ ELSE:
 
 "{Message to show user}
 
-$$**emoji Option 1|Description**$$
-$$**emoji Option 2|Description**$$"
+$**emoji Option 1|Description**$
+$**emoji Option 2|Description**$"
 
 **After user responds:**
 1. {action_1}
@@ -77,8 +77,8 @@ $$**emoji Option 2|Description**$$"
 ### Completion
 "{Completion message}
 
-$$**emoji Primary Action**$$
-$$**emoji Secondary Action**$$"
+$**emoji Primary Action**$
+$**emoji Secondary Action**$"
 
 ---
 

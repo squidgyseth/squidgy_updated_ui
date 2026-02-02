@@ -683,34 +683,20 @@ export default function N8nChatInterface({
 
   // Helper function to detect if message contains interactive buttons
   const hasInteractiveButtons = (content: string): boolean => {
-    // Look for all button patterns:
-    // 1. $$**text**$$ (preferred double dollar bold)
-    // 2. $$content$$ (double dollar)
-    // 3. $**text**$ (legacy single dollar bold)
-    // 4. $content$ (legacy single dollar)
-    const doubleDollarPattern = /\$\$([^$]+)\$\$/g;
-    const singleDollarPattern = /(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g;
-
-    return doubleDollarPattern.test(content) || singleDollarPattern.test(content);
+    // Look for button pattern: $**text**$ or $content$
+    const singleDollarPattern = /\$([^$]+)\$/g;
+    return singleDollarPattern.test(content);
   };
 
   // Helper function to extract button texts from content
   const extractButtonTexts = (content: string): string[] => {
     const buttons: string[] = [];
-    const newFormatPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
-    const oldFormatPattern = /\$\*\*\*\*([^*]+)\*\*\*\*\$/g;
-    
+    const buttonPattern = /\$\*\*([^*]+)\*\*\$/g;
+
     let match;
-    while ((match = newFormatPattern.exec(content)) !== null) {
+    while ((match = buttonPattern.exec(content)) !== null) {
       if (!buttons.includes(match[1].trim())) {
         buttons.push(match[1].trim());
-      }
-    }
-    if (buttons.length === 0) {
-      while ((match = oldFormatPattern.exec(content)) !== null) {
-        if (!buttons.includes(match[1].trim())) {
-          buttons.push(match[1].trim());
-        }
       }
     }
     return buttons;
@@ -719,8 +705,7 @@ export default function N8nChatInterface({
   // Helper function to clean button patterns from content
   const cleanButtonPatterns = (content: string): string => {
     return content
-      .replace(/\$\$\*\*[^*]+\*\*\$\$/g, '')
-      .replace(/\$\*\*\*\*[^*]+\*\*\*\*\$/g, '')
+      .replace(/\$([^$]+)\$/g, '')
       .replace(/\n\s*\n\s*\n/g, '\n\n')
       .trim();
   };
@@ -814,20 +799,20 @@ export default function N8nChatInterface({
   const hasAgentRecommendations = (content: string): boolean => {
     const lowerContent = content.toLowerCase();
     // Check if message mentions selecting/configuring assistants
-    const hasSelectionPrompt = lowerContent.includes('select one') || 
+    const hasSelectionPrompt = lowerContent.includes('select one') ||
                                lowerContent.includes('choose one') ||
                                lowerContent.includes('configuring one of these');
-    // Check if message has $$**...**$$ button patterns (agent recommendations)
-    const hasButtonPattern = /\$\$\*\*[^*]+\*\*\$\$/.test(content);
+    // Check if message has $**...**$ button patterns (agent recommendations)
+    const hasButtonPattern = /\$\*\*[^*]+\*\*\$/.test(content);
     return hasSelectionPrompt || hasButtonPattern;
   };
 
   // Helper function to extract agent names from Personal Assistant recommendations
   const extractAgentRecommendations = (content: string): string[] => {
     const agents: string[] = [];
-    
-    // First, extract from $$**...**$$ button patterns
-    const buttonPattern = /\$\$\*\*([^*]+)\*\*\$\$/g;
+
+    // Extract from $**...**$ button patterns
+    const buttonPattern = /\$\*\*([^*]+)\*\*\$/g;
     let match;
     while ((match = buttonPattern.exec(content)) !== null) {
       // Extract agent name - remove emoji and description after dash
@@ -1268,7 +1253,7 @@ export default function N8nChatInterface({
                         if (agent.id === 'personal_assistant' && hasAgentRecommendations(message.content)) {
                           const agents = extractAgentRecommendations(message.content);
                           if (agents.length > 0) {
-                            // Clean the message content - remove $$**...**$$ patterns
+                            // Clean the message content - remove $**...**$ patterns
                             const cleanedContent = cleanButtonPatterns(message.content);
                             return (
                               <div className="bg-gray-100 rounded-lg px-4 py-3">
