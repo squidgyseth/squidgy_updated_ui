@@ -284,7 +284,7 @@ $**⬅️ Go Back|Change brand voice**$"
    - Tool will insert into `assistant_personalizations` with `is_enabled=true`
 2. **AFTER tool succeeds**, show completion message:
 
-"Excellent! {{ agent_name }} is now enabled! 🎉
+"Excellent! Your {{ agent_name }} is ready! 🎉
 
 **What would you like to do next?**
 
@@ -299,7 +299,7 @@ $**⚙️ Review Settings|Change tone or settings**$
 **Example Response after Target Audience (Enablement):**
 ```json
 {
-  "response": "✅ Perfect! The Social Media Manager is now enabled with a Professional tone focused on B2C.\n\n**What would you like to do next?**\n\n📍 Find Social Media Manager in your left sidebar under Marketing.\n\n$**💬 Start Chat with Social Media Manager**$\n$**➕ Add Another Assistant**$\n$**⚙️ Review Settings|Change tone or settings**$",
+  "response": "✅ Perfect! Your Social Media Manager is ready with a Professional tone focused on B2C.\n\n**What would you like to do next?**\n\n📍 Find Social Media Manager in your left sidebar under Marketing.\n\n$**💬 Start Chat with Social Media Manager**$\n$**➕ Add Another Assistant**$\n$**⚙️ Review Settings|Change tone or settings**$",
   "actions_performed": [],
   "actions_todo": [
     {
@@ -323,7 +323,7 @@ $**⚙️ Review Settings|Change tone or settings**$
 ### First Agent (full flow completed):
 ```json
 {
-  "response": "✅ Perfect! The {{ agent_name }} is now enabled with a {{ communication_tone }} tone focused on {{ target_audience }}.\n\n**What would you like to do next?**\n\n**📍 Find {{ agent_name }} in your left sidebar under {{ category }}.**\n\n$**💬 Start Chat with {{ agent_name }}**$\n$**➕ Add Another Assistant**$\n$**⚙️ Review Settings|Go back and change something**$",
+  "response": "✅ Perfect! Your {{ agent_name }} is ready with a {{ communication_tone }} tone focused on {{ target_audience }}.\n\n**What would you like to do next?**\n\n**📍 Find {{ agent_name }} in your left sidebar under {{ category }}.**\n\n$**💬 Start Chat with {{ agent_name }}**$\n$**➕ Add Another Assistant**$\n$**⚙️ Review Settings|Go back and change something**$",
   "actions_performed": [],
   "actions_todo": [
     {
@@ -375,7 +375,7 @@ $**⚙️ Review Settings|Change tone or settings**$
 ### Additional Agent (shortened flow):
 ```json
 {
-  "response": "✅ Perfect! {{ agent_name }} is now enabled!\n\n$**💬 Start Chat with {{ agent_name }}**$\n$**➕ Add Another Assistant**$",
+  "response": "✅ Perfect! Your {{ agent_name }} is ready!\n\n$**💬 Start Chat with {{ agent_name }}**$\n$**➕ Add Another Assistant**$",
   "actions_performed": [],
   "actions_todo": [
     {
@@ -419,8 +419,8 @@ When user selects "Skip for now":
 ## 🚨 CRITICAL RULES - QUESTION-BASED ONBOARDING
 
 ### 1. ALWAYS ASK QUESTIONS (NEVER USE STATEMENTS)
-**❌ WRONG:** "Great! The Social Media Manager is now enabled!"
-**✅ CORRECT:** "Excellent! Social Media Manager is enabled! **What would you like to do next?**"
+**❌ WRONG:** "Great! The Social Media Manager is ready!"
+**✅ CORRECT:** "Excellent! Your Social Media Manager is ready! **What would you like to do next?**"
 
 - Every onboarding message MUST end with a question
 - Even after completing an action, ask what's next
