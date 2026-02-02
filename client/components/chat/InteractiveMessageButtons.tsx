@@ -64,17 +64,9 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
     console.log('🔍 InteractiveMessageButtons: Parsing content:', text);
     const options: ButtonOption[] = [];
 
-    // Handle multiple formats:
-    // 1. $**emoji Text - Description**$ (preferred, standard format)
-    // 2. $emoji Text - Description$ (single dollar, no bold)
-    // 3. $$**emoji Text - Description**$$ (legacy double dollar bold)
-    // 4. $$emoji Text - Description$$ (legacy double dollar, no bold)
-
-    // Pattern 1: $content$ - single dollar markers (preferred)
-    // Uses negative lookbehind/lookahead to avoid matching $$...$$ again
-    const singleDollarPattern = /(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g;
-    // Pattern 2: $$content$$ - double dollar markers (legacy fallback)
-    const doubleDollarPattern = /\$\$([^$]+)\$\$/g;
+    // Button format: $**emoji Text - Description**$ (standard format)
+    // Also supports: $emoji Text - Description$ (single dollar, no bold)
+    const singleDollarPattern = /\$([^$]+)\$/g;
 
     const processMatch = (fullMatch: string, innerContent: string) => {
       // Skip IMG: patterns - these are image previews, not buttons
@@ -115,14 +107,9 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
       }
     };
 
-    // First pass: single dollar patterns (preferred)
+    // Parse single dollar patterns: $**text**$
     let match;
     while ((match = singleDollarPattern.exec(text)) !== null) {
-      processMatch(match[0], match[1]);
-    }
-
-    // Second pass: double dollar patterns (legacy fallback for $$**...**$$ and $$...$$)
-    while ((match = doubleDollarPattern.exec(text)) !== null) {
       processMatch(match[0], match[1]);
     }
 
@@ -162,6 +149,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
     });
 
     // Remove stray empty list bullets that often remain after stripping $buttons$
+    // e.g. lines that are only '-', '•', or '*' (optionally with whitespace)
     cleaned = cleaned
       .split('\n')
       .filter((line) => !/^\s*[-*•]\s*$/.test(line))
