@@ -27,6 +27,7 @@ export default function IntegrationsSettings() {
   const [error, setError] = useState<string | null>(null);
   const [locationId, setLocationId] = useState<string | null>(null);
   const [ghlUserId, setGhlUserId] = useState<string | null>(null);
+  const [firebaseUserId, setFirebaseUserId] = useState<string | null>(null);
   const [pitToken, setPitToken] = useState<string | null>(null);
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState<boolean>(false);
   const [googleCalendarEmail, setGoogleCalendarEmail] = useState<string | null>(null);
@@ -61,6 +62,20 @@ export default function IntegrationsSettings() {
   const [connectedSocialMediaAccounts, setConnectedSocialMediaAccounts] = useState<any[]>([]);
   const [socialMediaPlatform, setSocialMediaPlatform] = useState<'facebook' | 'instagram'>('facebook');
 
+  // Helper function to decode Firebase token and extract user_id
+  const decodeFirebaseToken = (token: string): string | null => {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      
+      const payload = JSON.parse(atob(parts[1]));
+      return payload.user_id || null;
+    } catch (error) {
+      console.error('Error decoding Firebase token:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     getUserFirmId();
   }, [user]);
@@ -71,6 +86,17 @@ export default function IntegrationsSettings() {
       fetchGHLIntegrations();
     }
   }, [firmUserId]);
+
+  // Extract user_id from Firebase token when it changes
+  useEffect(() => {
+    if (firebaseToken) {
+      const userId = decodeFirebaseToken(firebaseToken);
+      if (userId) {
+        console.log('🔑 Extracted user_id from Firebase token:', userId);
+        setFirebaseUserId(userId);
+      }
+    }
+  }, [firebaseToken]);
 
   useEffect(() => {
     // Facebook Ads integration auto-fetch disabled (causes 404 if not set up)
@@ -259,15 +285,19 @@ export default function IntegrationsSettings() {
   };
 
   const checkGoogleCalendarConnection = async () => {
-    if (!ghlUserId || !locationId || !firebaseToken || !accessToken) {
+    // Use firebaseUserId (from token) if available, fallback to ghlUserId (from database)
+    const userIdToUse = firebaseUserId || ghlUserId;
+    
+    if (!userIdToUse || !locationId || !firebaseToken || !accessToken) {
       return;
     }
     
     setCheckingCalendar(true);
     try {
       console.log('📅 Checking Google Calendar connection...');
+      console.log('🔑 Using userId:', userIdToUse, '(from', firebaseUserId ? 'Firebase token' : 'database', ')');
       
-      const calendarUrl = `https://services.leadconnectorhq.com/calendars/connections/calendars?locationId=${locationId}&userId=${ghlUserId}`;
+      const calendarUrl = `https://services.leadconnectorhq.com/calendars/connections/calendars?locationId=${locationId}&userId=${userIdToUse}`;
       
       const response = await fetch(calendarUrl, {
         method: 'GET',
@@ -565,12 +595,15 @@ export default function IntegrationsSettings() {
 
 
   const handleGoogleAccountConnect = () => {
-    if (!locationId || !ghlUserId) {
+    const userIdToUse = firebaseUserId || ghlUserId;
+    
+    if (!locationId || !userIdToUse) {
       alert('Unable to connect: Location ID or User ID not found. Please ensure you have a GHL subaccount set up.');
       return;
     }
     
-    const oauthUrl = `https://api.leadconnectorhq.com/gmail/start_oauth?locationId=${locationId}&userId=${ghlUserId}`;
+    console.log('🔑 Using userId for Google OAuth:', userIdToUse, '(from', firebaseUserId ? 'Firebase token' : 'database', ')');
+    const oauthUrl = `https://api.leadconnectorhq.com/gmail/start_oauth?locationId=${locationId}&userId=${userIdToUse}`;
     
     // Open in a centered popup window
     const width = 600;
@@ -882,12 +915,15 @@ export default function IntegrationsSettings() {
   };
 
   const handleOutlookCalendarConnect = () => {
-    if (!locationId || !ghlUserId) {
+    const userIdToUse = firebaseUserId || ghlUserId;
+    
+    if (!locationId || !userIdToUse) {
       alert('Unable to connect: Location ID or User ID not found. Please ensure you have a GHL subaccount set up.');
       return;
     }
     
-    const oauthUrl = `https://api.leadconnectorhq.com/api/outlook/start_oauth?location_id=${locationId}&user_id=${ghlUserId}&requestedBy=${ghlUserId}`;
+    console.log('🔑 Using userId for Outlook OAuth:', userIdToUse, '(from', firebaseUserId ? 'Firebase token' : 'database', ')');
+    const oauthUrl = `https://api.leadconnectorhq.com/api/outlook/start_oauth?location_id=${locationId}&user_id=${userIdToUse}&requestedBy=${userIdToUse}`;
     
     // Open in a centered popup window
     const width = 600;
