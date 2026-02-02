@@ -76,6 +76,33 @@ export default function IntegrationsSettings() {
     }
   };
 
+  // Helper function to check if Firebase token is expired
+  const isFirebaseTokenExpired = (token: string): boolean => {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return true;
+      
+      const payload = JSON.parse(atob(parts[1]));
+      const exp = payload.exp;
+      
+      if (!exp) return true;
+      
+      const now = Math.floor(Date.now() / 1000);
+      const isExpired = now >= exp;
+      
+      if (isExpired) {
+        console.log('⚠️ Firebase token is expired!');
+        console.log(`  Token expired at: ${new Date(exp * 1000).toISOString()}`);
+        console.log(`  Current time: ${new Date(now * 1000).toISOString()}`);
+      }
+      
+      return isExpired;
+    } catch (error) {
+      console.error('Error checking token expiration:', error);
+      return true;
+    }
+  };
+
   useEffect(() => {
     getUserFirmId();
   }, [user]);
@@ -289,6 +316,15 @@ export default function IntegrationsSettings() {
     const userIdToUse = firebaseUserId || ghlUserId;
     
     if (!userIdToUse || !locationId || !firebaseToken || !accessToken) {
+      return;
+    }
+    
+    // Check if token is expired before making API call
+    if (isFirebaseTokenExpired(firebaseToken)) {
+      console.log('🔄 Token expired, triggering refresh before calendar check...');
+      setCheckingCalendar(false);
+      await refreshFirebaseToken();
+      startTokenPolling();
       return;
     }
     
@@ -1117,22 +1153,35 @@ export default function IntegrationsSettings() {
 
       if (fbResponse.ok) {
         const fbData = await fbResponse.json();
+        console.log('📊 Raw Facebook response:', fbData);
         if (fbData.success && fbData.accounts) {
-          allAccounts.push(...fbData.accounts);
-          console.log('✅ Connected Facebook accounts:', fbData.accounts);
+          // Ensure each account has platform field
+          const fbAccounts = fbData.accounts.map((acc: any) => ({
+            ...acc,
+            platform: acc.platform || 'facebook'
+          }));
+          allAccounts.push(...fbAccounts);
+          console.log('✅ Connected Facebook accounts:', fbAccounts);
         }
       }
 
       if (igResponse.ok) {
         const igData = await igResponse.json();
+        console.log('📊 Raw Instagram response:', igData);
         if (igData.success && igData.accounts) {
-          allAccounts.push(...igData.accounts);
-          console.log('✅ Connected Instagram accounts:', igData.accounts);
+          // Ensure each account has platform field
+          const igAccounts = igData.accounts.map((acc: any) => ({
+            ...acc,
+            platform: acc.platform || 'instagram'
+          }));
+          allAccounts.push(...igAccounts);
+          console.log('✅ Connected Instagram accounts:', igAccounts);
         }
       }
 
       setConnectedSocialMediaAccounts(allAccounts);
       console.log('✅ Total connected social media accounts:', allAccounts.length);
+      console.log('📋 All accounts structure:', allAccounts);
 
     } catch (error: any) {
       console.error('❌ Error fetching connected social media accounts:', error);
