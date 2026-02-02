@@ -65,16 +65,16 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
     const options: ButtonOption[] = [];
 
     // Handle multiple formats:
-    // 1. $$**emoji Text - Description**$$ (preferred, from updated DB view)
-    // 2. $$emoji Text - Description$$ (double dollar, no bold)
-    // 3. $**emoji Text - Description**$ (legacy single dollar bold)
-    // 4. $emoji Text - Description$ (legacy single dollar, no bold)
+    // 1. $**emoji Text - Description**$ (preferred, standard format)
+    // 2. $emoji Text - Description$ (single dollar, no bold)
+    // 3. $$**emoji Text - Description**$$ (legacy double dollar bold)
+    // 4. $$emoji Text - Description$$ (legacy double dollar, no bold)
 
-    // Pattern 1: $$content$$ - double dollar markers (preferred)
-    const doubleDollarPattern = /\$\$([^$]+)\$\$/g;
-    // Pattern 2: $content$ - single dollar markers (fallback/legacy)
+    // Pattern 1: $content$ - single dollar markers (preferred)
     // Uses negative lookbehind/lookahead to avoid matching $$...$$ again
     const singleDollarPattern = /(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g;
+    // Pattern 2: $$content$$ - double dollar markers (legacy fallback)
+    const doubleDollarPattern = /\$\$([^$]+)\$\$/g;
 
     const processMatch = (fullMatch: string, innerContent: string) => {
       // Skip IMG: patterns - these are image previews, not buttons
@@ -115,14 +115,14 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
       }
     };
 
-    // First pass: double dollar patterns (preferred)
+    // First pass: single dollar patterns (preferred)
     let match;
-    while ((match = doubleDollarPattern.exec(text)) !== null) {
+    while ((match = singleDollarPattern.exec(text)) !== null) {
       processMatch(match[0], match[1]);
     }
 
-    // Second pass: single dollar patterns (fallback for legacy $**...**$ and $...$)
-    while ((match = singleDollarPattern.exec(text)) !== null) {
+    // Second pass: double dollar patterns (legacy fallback for $$**...**$$ and $$...$$)
+    while ((match = doubleDollarPattern.exec(text)) !== null) {
       processMatch(match[0], match[1]);
     }
 
@@ -134,7 +134,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
   // KEEP $$IMG:url$$ patterns - they render as inline images at their exact position
   const cleanContent = (text: string): string => {
     let cleaned = text;
-    
+
     // Step 1: Temporarily replace $IMG:url$ and $$IMG:url$$ with placeholders to protect them
     const imgPatterns: string[] = [];
     // Double dollar pattern
@@ -152,19 +152,16 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
       imgPatterns.push(match);
       return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
     });
-    
-    // Step 2: Remove all button patterns ($$...$$)
-    cleaned = cleaned.replace(/\$\$[^$]+\$\$/g, '');
-    
-    // Step 3: Remove single dollar patterns
-    cleaned = cleaned.replace(/(?<!\$)\$(?!\$)([^$]+)\$(?!\$)/g, '');
-    
-    // Step 4: Restore $$IMG:url$$ patterns
+
+    // Step 2: Remove button format: $content$
+    cleaned = cleaned.replace(/\$([^$]+)\$/g, '');
+
+    // Step 3: Restore $$IMG:url$$ patterns
     imgPatterns.forEach((pattern, index) => {
       cleaned = cleaned.replace(`__IMG_PLACEHOLDER_${index}__`, pattern);
     });
 
-    // Remove stray empty list bullets that often remain after stripping $$buttons$$
+    // Remove stray empty list bullets that often remain after stripping $buttons$
     cleaned = cleaned
       .split('\n')
       .filter((line) => !/^\s*[-*•]\s*$/.test(line))
