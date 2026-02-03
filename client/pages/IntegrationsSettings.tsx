@@ -1471,7 +1471,11 @@ export default function IntegrationsSettings() {
           platform
         });
         
-        const items = data.results.pages || data.results.accounts || data.results.profile || [];
+        // Check for non-empty arrays - empty arrays are truthy but we need items
+        const items = (data.results.pages && data.results.pages.length > 0) ? data.results.pages
+          : (data.results.accounts && data.results.accounts.length > 0) ? data.results.accounts
+          : (data.results.profile && data.results.profile.length > 0) ? data.results.profile
+          : [];
         console.log('📋 Extracted items:', items);
         
         if (items.length > 0) {
