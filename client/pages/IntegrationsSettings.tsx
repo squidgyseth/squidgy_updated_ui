@@ -60,7 +60,7 @@ export default function IntegrationsSettings() {
   const [socialMediaLoading, setSocialMediaLoading] = useState(false);
   const [manualOAuthId, setManualOAuthId] = useState<string>('');
   const [connectedSocialMediaAccounts, setConnectedSocialMediaAccounts] = useState<any[]>([]);
-  const [socialMediaPlatform, setSocialMediaPlatform] = useState<'facebook' | 'instagram'>('facebook');
+  const [socialMediaPlatform, setSocialMediaPlatform] = useState<'facebook' | 'instagram' | 'linkedin'>('facebook');
   const [socialMediaPolling, setSocialMediaPolling] = useState(false);
   const [oauthWindowOpen, setOauthWindowOpen] = useState(false);
 
@@ -1196,6 +1196,94 @@ export default function IntegrationsSettings() {
     }
   };
 
+  const handleSocialMediaLinkedInConnect = async () => {
+    setSocialMediaPlatform('linkedin');
+    if (!firmUserId) {
+      alert('Unable to connect: User ID not found. Please ensure you are logged in.');
+      return;
+    }
+
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      // Call backend to get OAuth URL
+      const response = await fetch(`${backendUrl}/api/social/linkedin/start-oauth`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          agent_id: 'SOL'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to generate OAuth URL');
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.oauth_url) {
+        throw new Error('Invalid response from server');
+      }
+
+      // Open OAuth URL in a centered popup window
+      const width = 600;
+      const height = 700;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+
+      const popup = window.open(
+        data.oauth_url,
+        'LinkedInSocialMediaOAuth',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+
+      if (popup) {
+        // Start real-time polling for account updates
+        setSocialMediaPolling(true);
+        setOauthWindowOpen(true);
+        console.log('🔄 Started real-time polling for LinkedIn account updates');
+      }
+
+      // Declare checkPopup variable first so it can be referenced in messageHandler
+      let checkPopup: NodeJS.Timeout;
+
+      // Listen for messages from the popup (OAuth callback sends accountId via postMessage)
+      const messageHandler = (event: MessageEvent) => {
+        // GHL's OAuth callback sends: { actionType: "close", platform: "linkedin", accountId: "...", ... }
+        if (event.data && event.data.accountId && event.data.platform === 'linkedin') {
+          console.log('✅ Received accountId (OAuth ID) from popup:', event.data.accountId);
+          window.removeEventListener('message', messageHandler);
+          clearInterval(checkPopup);
+          fetchSocialMediaAccountsWithOAuthId(event.data.accountId, 'linkedin');
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
+        }
+      };
+      window.addEventListener('message', messageHandler);
+
+      // Also check for popup closure as fallback
+      checkPopup = setInterval(() => {
+        if (popup && popup.closed) {
+          clearInterval(checkPopup);
+          window.removeEventListener('message', messageHandler);
+          console.log('✅ OAuth window closed, stopping polling');
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
+          // After OAuth, try to fetch OAuth connections and then accounts
+          fetchSocialMediaAccounts('linkedin');
+        }
+      }, 1000);
+
+    } catch (error: any) {
+      console.error('❌ Error starting LinkedIn OAuth:', error);
+      toast.error(error.message || 'Failed to start LinkedIn OAuth');
+    }
+  };
+
   const fetchConnectedSocialMediaAccounts = async () => {
     if (!firmUserId) {
       return;
@@ -1267,7 +1355,7 @@ export default function IntegrationsSettings() {
     }
   };
 
-  const fetchSocialMediaAccounts = async (platform: 'facebook' | 'instagram' = 'facebook') => {
+  const fetchSocialMediaAccounts = async (platform: 'facebook' | 'instagram' | 'linkedin' = 'facebook') => {
     if (!locationId || !firebaseToken || !accessToken) {
       toast.error('Missing authentication tokens. Please ensure you are logged in.');
       return;
@@ -1356,7 +1444,7 @@ export default function IntegrationsSettings() {
     pollForAccounts();
   };
 
-  const fetchSocialMediaAccountsWithOAuthId = async (oAuthId: string, platform: 'facebook' | 'instagram' = 'facebook') => {
+  const fetchSocialMediaAccountsWithOAuthId = async (oAuthId: string, platform: 'facebook' | 'instagram' | 'linkedin' = 'facebook') => {
     if (!locationId || !firebaseToken || !accessToken) {
       console.error('Missing required tokens for GHL API call');
       return;
@@ -1369,9 +1457,7 @@ export default function IntegrationsSettings() {
       console.log(`🔑 Using locationId: ${locationId}, oAuthId: ${oAuthId}`);
 
       // Call GHL's backend API directly - matching exact pattern from HAR file
-      const endpoint = platform === 'facebook'
-        ? `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook/accounts/${oAuthId}`
-        : `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/instagram/accounts/${oAuthId}`;
+      const endpoint = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`;
 
       const response = await fetch(endpoint, {
         method: 'GET',
@@ -1395,15 +1481,17 @@ export default function IntegrationsSettings() {
       console.log(`✅ GHL ${platform} response:`, data);
 
       if (data.success && data.results) {
-        // GHL returns pages in results.pages for Facebook, accounts in results.accounts for Instagram
-        const items = data.results.pages || data.results.accounts || [];
+        // GHL returns pages in results.pages for Facebook, accounts in results.accounts for Instagram, profile in results.profile for LinkedIn
+        const items = data.results.pages || data.results.accounts || data.results.profile || [];
         if (items.length > 0) {
           setSocialMediaPages(items);
           setSocialMediaOAuthId(oAuthId);
           setShowSocialMediaPages(true);
-          toast.success(`Found ${items.length} available ${platform === 'facebook' ? 'page' : 'account'}${items.length !== 1 ? 's' : ''}`);
+          const itemType = platform === 'facebook' ? 'page' : platform === 'linkedin' ? 'profile' : 'account';
+          toast.success(`Found ${items.length} available ${itemType}${items.length !== 1 ? 's' : ''}`);
         } else {
-          toast.info(`No ${platform === 'facebook' ? 'pages' : 'accounts'} found for this OAuth connection`);
+          const itemType = platform === 'facebook' ? 'pages' : platform === 'linkedin' ? 'profiles' : 'accounts';
+          toast.info(`No ${itemType} found for this OAuth connection`);
         }
       } else {
         throw new Error('Invalid response from GHL API');
@@ -1933,6 +2021,62 @@ export default function IntegrationsSettings() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* LinkedIn Social Media Posting */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" 
+                      alt="LinkedIn"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">LinkedIn Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect LinkedIn accounts for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'linkedin' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'linkedin' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'linkedin' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'linkedin' && !a.deleted).map((account) => (
+                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img 
+                                src={account.avatar} 
+                                alt={account.name}
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
+                                <p className="text-xs text-gray-500">LinkedIn Account</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white"
+                    onClick={handleSocialMediaLinkedInConnect}
+                    disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                  >
+                    {socialMediaLoading ? 'Loading...' : 'Connect LinkedIn'}
+                  </Button>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
@@ -1943,11 +2087,17 @@ export default function IntegrationsSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>
-                    {socialMediaPlatform === 'instagram' ? 'Instagram Social Media Accounts' : 'Facebook Social Media Pages'}
+                    {socialMediaPlatform === 'instagram' 
+                      ? 'Instagram Social Media Accounts' 
+                      : socialMediaPlatform === 'linkedin'
+                      ? 'LinkedIn Social Media Profiles'
+                      : 'Facebook Social Media Pages'}
                   </CardTitle>
                   <CardDescription>
                     {socialMediaPlatform === 'instagram' 
                       ? 'Select Instagram accounts to connect for social media posting'
+                      : socialMediaPlatform === 'linkedin'
+                      ? 'Select LinkedIn profiles to connect for social media posting'
                       : 'Select pages to connect for social media posting'
                     }
                   </CardDescription>
@@ -1964,13 +2114,13 @@ export default function IntegrationsSettings() {
             <CardContent>
               {socialMediaLoading ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">Loading {socialMediaPlatform === 'instagram' ? 'accounts' : 'pages'}...</p>
+                  <p className="text-gray-500">Loading {socialMediaPlatform === 'instagram' ? 'accounts' : socialMediaPlatform === 'linkedin' ? 'profiles' : 'pages'}...</p>
                 </div>
               ) : socialMediaPages.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No {socialMediaPlatform === 'instagram' ? 'accounts' : 'pages'} available. Please complete OAuth first.</p>
+                  <p className="text-gray-500">No {socialMediaPlatform === 'instagram' ? 'accounts' : socialMediaPlatform === 'linkedin' ? 'profiles' : 'pages'} available. Please complete OAuth first.</p>
                   <p className="text-sm text-gray-400 mt-2">
-                    After OAuth, you'll need to provide the OAuth ID to fetch {socialMediaPlatform === 'instagram' ? 'accounts' : 'pages'}.
+                    After OAuth, you'll need to provide the OAuth ID to fetch {socialMediaPlatform === 'instagram' ? 'accounts' : socialMediaPlatform === 'linkedin' ? 'profiles' : 'pages'}.
                   </p>
                 </div>
               ) : (
