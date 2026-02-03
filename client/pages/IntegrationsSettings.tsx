@@ -1502,6 +1502,75 @@ export default function IntegrationsSettings() {
   };
 
   const connectSocialMediaPage = async (page: any) => {
+    if (!socialMediaOAuthId) {
+      toast.error('Missing OAuth ID');
+      return;
+    }
+
+    // For LinkedIn, call GHL API directly (no backend needed)
+    if (socialMediaPlatform === 'linkedin') {
+      if (!locationId || !firebaseToken || !accessToken) {
+        toast.error('Missing authentication tokens');
+        return;
+      }
+
+      setSocialMediaLoading(true);
+      try {
+        console.log('🔗 Connecting LinkedIn profile:', page);
+
+        // Call GHL's API directly to connect LinkedIn profile
+        const endpoint = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/linkedin/accounts/${socialMediaOAuthId}`;
+
+        // Match GHL's exact POST body format
+        const requestBody = {
+          originId: page.id,
+          type: 'profile',
+          name: page.name,
+          avatar: page.avatar,
+          urn: page.urn
+        };
+
+        console.log('📤 POST request to GHL:', endpoint);
+        console.log('📤 Request body:', requestBody);
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json, text/plain, */*',
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'token-id': firebaseToken,
+            'version': '2021-07-28',
+            'channel': 'APP',
+            'source': 'WEB_USER'
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ GHL API error:', errorText);
+          throw new Error(`Failed to connect profile: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ LinkedIn profile connected:', data);
+
+        toast.success(`Connected ${page.name} successfully!`);
+        
+        // Refresh the profiles list
+        fetchSocialMediaAccountsWithOAuthId(socialMediaOAuthId, 'linkedin');
+        
+        return;
+      } catch (error: any) {
+        console.error('❌ Error connecting LinkedIn profile:', error);
+        toast.error(error.message || 'Failed to connect LinkedIn profile');
+        setSocialMediaLoading(false);
+        return;
+      }
+    }
+
+    // For Facebook and Instagram, use backend endpoints
     if (!firmUserId || !socialMediaOAuthId) {
       toast.error('Missing required information');
       return;
@@ -1509,7 +1578,7 @@ export default function IntegrationsSettings() {
 
     setSocialMediaLoading(true);
     try {
-      console.log(`🔗 Connecting ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : socialMediaPlatform === 'linkedin' ? 'profile' : 'account'}:`, page);
+      console.log(`🔗 Connecting ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}:`, page);
 
       // Extract originId - ensure it's a string
       const originId = String(page.originId || page.id || '').trim();
@@ -1525,8 +1594,6 @@ export default function IntegrationsSettings() {
       // Use backend endpoint
       const endpoint = socialMediaPlatform === 'facebook'
         ? `${backendUrl}/api/social/facebook/connect-page`
-        : socialMediaPlatform === 'linkedin'
-        ? `${backendUrl}/api/social/linkedin/connect-profile`
         : `${backendUrl}/api/social/instagram/connect-account`;
 
       const requestBody = {
@@ -1556,7 +1623,7 @@ export default function IntegrationsSettings() {
       }
 
       const data = await response.json();
-      console.log(`✅ Connected ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : socialMediaPlatform === 'linkedin' ? 'profile' : 'account'}:`, data);
+      console.log(`✅ Connected ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}:`, data);
 
       if (data.success) {
         toast.success(data.message || `Connected ${page.name} successfully!`);
@@ -1566,8 +1633,8 @@ export default function IntegrationsSettings() {
         fetchConnectedSocialMediaAccounts();
       }
     } catch (error: any) {
-      console.error(`❌ Error connecting ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : socialMediaPlatform === 'linkedin' ? 'profile' : 'account'}:`, error);
-      toast.error(error.message || `Failed to connect ${socialMediaPlatform === 'facebook' ? 'page' : socialMediaPlatform === 'linkedin' ? 'profile' : 'account'}`);
+      console.error(`❌ Error connecting ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}:`, error);
+      toast.error(error.message || `Failed to connect ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}`);
     } finally {
       setSocialMediaLoading(false);
     }
