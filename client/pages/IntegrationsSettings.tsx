@@ -1258,8 +1258,8 @@ export default function IntegrationsSettings() {
   };
 
   const fetchSocialMediaAccounts = async (platform: 'facebook' | 'instagram' = 'facebook') => {
-    if (!firmUserId) {
-      toast.error('Missing user ID. Please ensure you are logged in.');
+    if (!locationId || !firebaseToken || !accessToken) {
+      toast.error('Missing authentication tokens. Please ensure you are logged in.');
       return;
     }
 
@@ -1275,45 +1275,49 @@ export default function IntegrationsSettings() {
         attempts++;
         console.log(`📱 Polling for ${platform} OAuth connections (attempt ${attempts}/${maxAttempts})...`);
 
-        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+        // Call GHL's accounts endpoint directly to get OAuth IDs
+        const accountsEndpoint = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
 
-        // Use backend endpoint to fetch connected accounts
-        const endpoint = platform === 'facebook'
-          ? `${backendUrl}/api/social/facebook/connected-accounts`
-          : `${backendUrl}/api/social/instagram/connected-accounts`;
-
-        const response = await fetch(endpoint, {
-          method: 'POST',
+        const response = await fetch(accountsEndpoint, {
+          method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firm_user_id: firmUserId,
-            agent_id: 'SOL'
-          })
+            'Accept': 'application/json, text/plain, */*',
+            'Authorization': `Bearer ${accessToken}`,
+            'token-id': firebaseToken,
+            'version': '2021-07-28',
+            'channel': 'APP',
+            'source': 'WEB_USER'
+          }
         });
 
         if (response.ok) {
           const data = await response.json();
-          console.log(`✅ ${platform} connected accounts response:`, data);
+          console.log(`✅ GHL accounts response:`, data);
 
-          // Check if we have accounts with oauthId
-          if (data.success && data.accounts && data.accounts.length > 0) {
-            const account = data.accounts[0];
-            const oAuthId = account.oauthId;
+          // Filter accounts by platform and get OAuth ID
+          if (data.success && data.results && data.results.accounts) {
+            const platformAccounts = data.results.accounts.filter((acc: any) => 
+              acc.platform === platform && !acc.deleted
+            );
 
-            console.log(`✅ Found ${platform} account with OAuth ID:`, oAuthId);
+            console.log(`✅ Found ${platformAccounts.length} ${platform} OAuth connections`);
 
-            if (oAuthId) {
-              await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
-              setSocialMediaLoading(false);
-              return; // Stop polling
+            if (platformAccounts.length > 0) {
+              // Get the first OAuth ID for this platform
+              const oAuthId = platformAccounts[0].oauthId;
+              
+              if (oAuthId) {
+                console.log(`✅ Using OAuth ID: ${oAuthId}`);
+                await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
+                setSocialMediaLoading(false);
+                return; // Stop polling
+              }
             } else {
-              console.warn(`⚠️ ${platform} account found but no oauthId, will retry...`);
+              console.log(`⏳ No ${platform} OAuth connections found yet, waiting for OAuth completion...`);
             }
-          } else {
-            console.log(`⏳ No ${platform} accounts found yet, waiting for OAuth completion...`);
           }
+        } else {
+          console.error(`❌ GHL API error (${response.status})`);
         }
 
         // If we haven't found OAuth connection yet and haven't exceeded max attempts, poll again
