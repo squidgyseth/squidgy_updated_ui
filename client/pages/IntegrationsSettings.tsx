@@ -1379,7 +1379,7 @@ export default function IntegrationsSettings() {
       console.log(`✅ GHL ${platform} response:`, data);
 
       if (data.success && data.results) {
-        // GHL returns pages in results.pages for Facebook
+        // GHL returns pages in results.pages for Facebook, accounts in results.accounts for Instagram
         const items = data.results.pages || data.results.accounts || [];
         if (items.length > 0) {
           setSocialMediaPages(items);
