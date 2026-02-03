@@ -61,6 +61,8 @@ export default function IntegrationsSettings() {
   const [manualOAuthId, setManualOAuthId] = useState<string>('');
   const [connectedSocialMediaAccounts, setConnectedSocialMediaAccounts] = useState<any[]>([]);
   const [socialMediaPlatform, setSocialMediaPlatform] = useState<'facebook' | 'instagram'>('facebook');
+  const [socialMediaPolling, setSocialMediaPolling] = useState(false);
+  const [oauthWindowOpen, setOauthWindowOpen] = useState(false);
 
   // Helper function to decode Firebase token and extract user_id
   const decodeFirebaseToken = (token: string): string | null => {
@@ -148,6 +150,49 @@ export default function IntegrationsSettings() {
       fetchConnectedSocialMediaAccounts();
     }
   }, [locationId, firebaseToken, accessToken]);
+
+  // Real-time polling for social media account updates
+  useEffect(() => {
+    if (!socialMediaPolling || !firmUserId) return;
+
+    console.log('🔄 Starting real-time polling for social media account updates...');
+    const pollInterval = setInterval(() => {
+      fetchConnectedSocialMediaAccounts();
+    }, 5000); // Poll every 5 seconds
+
+    // Stop polling after 2 minutes
+    const timeout = setTimeout(() => {
+      setSocialMediaPolling(false);
+      console.log('⏱️ Social media polling timeout reached');
+    }, 120000);
+
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(timeout);
+    };
+  }, [socialMediaPolling, firmUserId]);
+
+  // Monitor OAuth window and trigger refresh when closed
+  useEffect(() => {
+    if (!oauthWindowOpen) return;
+
+    const checkWindowClosed = setInterval(() => {
+      // OAuth window was closed, trigger refresh
+      console.log('🔄 OAuth window activity detected, refreshing accounts...');
+      fetchConnectedSocialMediaAccounts();
+    }, 3000); // Check every 3 seconds
+
+    // Stop checking after 5 minutes
+    const timeout = setTimeout(() => {
+      setOauthWindowOpen(false);
+      console.log('⏱️ OAuth window monitoring timeout');
+    }, 300000);
+
+    return () => {
+      clearInterval(checkWindowClosed);
+      clearTimeout(timeout);
+    };
+  }, [oauthWindowOpen]);
 
   useEffect(() => {
     // Auto-check Google Calendar connection when tokens and ghlUserId are available
@@ -1020,12 +1065,21 @@ export default function IntegrationsSettings() {
         `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
       );
 
+      if (popup) {
+        // Start real-time polling for account updates
+        setSocialMediaPolling(true);
+        setOauthWindowOpen(true);
+        console.log('🔄 Started real-time polling for Facebook account updates');
+      }
+
       // Listen for messages from the popup (OAuth callback may send OAuth ID)
       const messageHandler = (event: MessageEvent) => {
         if (event.data && event.data.oAuthId) {
           console.log('✅ Received OAuth ID from popup:', event.data.oAuthId);
           window.removeEventListener('message', messageHandler);
           fetchSocialMediaAccountsWithOAuthId(event.data.oAuthId, 'facebook');
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
         }
       };
       window.addEventListener('message', messageHandler);
@@ -1035,6 +1089,9 @@ export default function IntegrationsSettings() {
         if (popup && popup.closed) {
           clearInterval(checkPopup);
           window.removeEventListener('message', messageHandler);
+          console.log('✅ OAuth window closed, stopping polling');
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
           // After OAuth, try to fetch OAuth connections and then accounts
           fetchSocialMediaAccounts('facebook');
         }
@@ -1091,12 +1148,21 @@ export default function IntegrationsSettings() {
         `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
       );
 
+      if (popup) {
+        // Start real-time polling for account updates
+        setSocialMediaPolling(true);
+        setOauthWindowOpen(true);
+        console.log('🔄 Started real-time polling for Instagram account updates');
+      }
+
       // Listen for messages from the popup (OAuth callback may send OAuth ID)
       const messageHandler = (event: MessageEvent) => {
         if (event.data && event.data.oAuthId) {
           console.log('✅ Received Instagram OAuth ID from popup:', event.data.oAuthId);
           window.removeEventListener('message', messageHandler);
           fetchSocialMediaAccountsWithOAuthId(event.data.oAuthId, 'instagram');
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
         }
       };
       window.addEventListener('message', messageHandler);
@@ -1106,6 +1172,9 @@ export default function IntegrationsSettings() {
         if (popup && popup.closed) {
           clearInterval(checkPopup);
           window.removeEventListener('message', messageHandler);
+          console.log('✅ OAuth window closed, stopping polling');
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
           // After OAuth, try to fetch OAuth connections and then accounts
           fetchSocialMediaAccounts('instagram');
         }
