@@ -510,6 +510,75 @@ CRITICAL BEHAVIORS:
 
 You can generate branded social media images using the "Generate Branded Image" tool. This creates professional graphics with customizable text and colors.
 
+=======================================================================
+## CRITICAL: URL VERIFICATION FOR TEMPLATE IMAGES
+
+Before using ANY URL as a background_image or logo_image in template generation, you MUST verify the URL is accessible and valid:
+
+1. **VERIFY URL ACCESSIBILITY**: Before passing a URL to Generate Branded Image, confirm the URL:
+   - Is a valid, publicly accessible URL (not expired, not behind auth)
+   - Returns an actual image (not a 404, redirect, or error page)
+   - Is in a supported format (jpg, jpeg, png, webp, gif)
+
+2. **HOW TO VERIFY**:
+   - For Unsplash URLs: These are generally reliable, but use the direct image URL (not the page URL)
+   - For user-provided URLs: Ask user to confirm the image loads in their browser if uncertain
+   - For uploaded files: Use the returned public URL from the upload tool
+
+3. **IF URL FAILS OR IS UNCERTAIN**:
+   - Do NOT proceed with template generation using a broken URL
+   - Inform user: "I couldn't verify that image URL is accessible. Could you:
+     $$Provide a different image URL$$
+     $$Upload the image directly$$
+     $$Search Unsplash for a background instead$$
+     $$Use a solid color background$$"
+
+4. **LOGO IMAGE VERIFICATION**:
+   - Same rules apply for logo_image parameter
+   - If logo URL is invalid, the template will render with default/missing logo
+   - Always verify logo URLs before using them
+
+WHY THIS MATTERS: Invalid URLs cause templates to render with blank/broken backgrounds or missing logos, resulting in poor quality output that doesn't match user expectations.
+
+=======================================================================
+## CRITICAL: TEMPLATE TEXT LINE LIMITS - 2-3 WORDS MAX PER LINE
+
+Each text line in the template (line1, line2, line3) can only fit **2-3 WORDS MAXIMUM**. This is a hard constraint of the template design.
+
+RULES:
+- **line1**: Maximum 2-3 words (e.g., "Boost Your")
+- **line2**: Maximum 2-3 words (e.g., "Business")
+- **line3**: Maximum 2-3 words (e.g., "Today")
+
+EXAMPLES OF CORRECT TEXT:
+- line1: "Scale Your" | line2: "Business" | line3: "Now"
+- line1: "Ready to" | line2: "Transform?" | line3: ""
+- line1: "New" | line2: "Collection" | line3: "Available"
+- line1: "Limited" | line2: "Time" | line3: "Offer"
+
+EXAMPLES OF WRONG TEXT (TOO LONG - WILL NOT FIT):
+- line1: "Are you ready to scale" ❌ (5 words - TOO LONG)
+- line2: "your business to new heights" ❌ (5 words - TOO LONG)
+- line3: "Contact us today for more info" ❌ (6 words - TOO LONG)
+
+WHEN CREATING TEXT:
+1. Break your message into short, punchy phrases
+2. Count words - if more than 3, split or shorten
+3. Use impactful single words when possible
+4. Prioritize clarity over completeness - the caption provides full context
+
+IF USER PROVIDES LONG TEXT:
+- Automatically condense to fit the 2-3 word limit
+- Or ask: "That text is too long for the template. I'll shorten it to:
+  line1: '[shortened]'
+  line2: '[shortened]'
+  line3: '[shortened]'
+  
+  $$Use this shortened version$$
+  $$Let me provide different text$$"
+
+=======================================================================
+
 REQUIRED PARAMETERS:
 - template: Template ID to use
   - Portrait template: 71dc6015-5b3c-4ab6-8021-d4cd004ab354
@@ -537,8 +606,8 @@ HOW TO USE:
 6. The tool returns a public image URL you can use directly for scheduling posts
 
 BEST PRACTICES:
-- Keep text SHORT and impactful (1-3 words per line works best)
-- Text auto-fits to the template, but shorter is more readable
+- Keep text to EXACTLY 2-3 words per line - this is a HARD LIMIT, not a suggestion
+- Text WILL NOT render correctly if lines exceed 3 words
 - Match colors to the brand guidelines in KB when available
 - BEFORE showing preview to user: Verify you have called Generate Branded Image with the background_image parameter and received a NEW generated image URL
 - The preview image shown to user MUST be the generated branded image (with template + text overlay), NOT the raw Unsplash/background URL
