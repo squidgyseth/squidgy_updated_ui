@@ -1072,12 +1072,17 @@ export default function IntegrationsSettings() {
         console.log('🔄 Started real-time polling for Facebook account updates');
       }
 
-      // Listen for messages from the popup (OAuth callback may send OAuth ID)
+      // Declare checkPopup variable first so it can be referenced in messageHandler
+      let checkPopup: NodeJS.Timeout;
+
+      // Listen for messages from the popup (OAuth callback sends accountId via postMessage)
       const messageHandler = (event: MessageEvent) => {
-        if (event.data && event.data.oAuthId) {
-          console.log('✅ Received OAuth ID from popup:', event.data.oAuthId);
+        // GHL's OAuth callback sends: { actionType: "close", platform: "facebook", accountId: "...", ... }
+        if (event.data && event.data.accountId && event.data.platform === 'facebook') {
+          console.log('✅ Received accountId (OAuth ID) from popup:', event.data.accountId);
           window.removeEventListener('message', messageHandler);
-          fetchSocialMediaAccountsWithOAuthId(event.data.oAuthId, 'facebook');
+          clearInterval(checkPopup);
+          fetchSocialMediaAccountsWithOAuthId(event.data.accountId, 'facebook');
           setSocialMediaPolling(false);
           setOauthWindowOpen(false);
         }
@@ -1085,7 +1090,7 @@ export default function IntegrationsSettings() {
       window.addEventListener('message', messageHandler);
 
       // Also check for popup closure as fallback
-      const checkPopup = setInterval(() => {
+      checkPopup = setInterval(() => {
         if (popup && popup.closed) {
           clearInterval(checkPopup);
           window.removeEventListener('message', messageHandler);
@@ -1155,12 +1160,17 @@ export default function IntegrationsSettings() {
         console.log('🔄 Started real-time polling for Instagram account updates');
       }
 
-      // Listen for messages from the popup (OAuth callback may send OAuth ID)
+      // Declare checkPopup variable first so it can be referenced in messageHandler
+      let checkPopup: NodeJS.Timeout;
+
+      // Listen for messages from the popup (OAuth callback sends accountId via postMessage)
       const messageHandler = (event: MessageEvent) => {
-        if (event.data && event.data.oAuthId) {
-          console.log('✅ Received Instagram OAuth ID from popup:', event.data.oAuthId);
+        // GHL's OAuth callback sends: { actionType: "close", platform: "instagram", accountId: "...", ... }
+        if (event.data && event.data.accountId && event.data.platform === 'instagram') {
+          console.log('✅ Received accountId (OAuth ID) from popup:', event.data.accountId);
           window.removeEventListener('message', messageHandler);
-          fetchSocialMediaAccountsWithOAuthId(event.data.oAuthId, 'instagram');
+          clearInterval(checkPopup);
+          fetchSocialMediaAccountsWithOAuthId(event.data.accountId, 'instagram');
           setSocialMediaPolling(false);
           setOauthWindowOpen(false);
         }
@@ -1168,7 +1178,7 @@ export default function IntegrationsSettings() {
       window.addEventListener('message', messageHandler);
 
       // Also check for popup closure as fallback
-      const checkPopup = setInterval(() => {
+      checkPopup = setInterval(() => {
         if (popup && popup.closed) {
           clearInterval(checkPopup);
           window.removeEventListener('message', messageHandler);
@@ -1295,9 +1305,11 @@ export default function IntegrationsSettings() {
           console.log(`✅ GHL accounts response:`, data);
 
           // Filter accounts by platform and get OAuth ID
+          // Note: We don't filter by deleted here because we need the OAuth ID to fetch available pages/accounts
+          // The OAuth connection exists even if specific pages/accounts were deleted
           if (data.success && data.results && data.results.accounts) {
             const platformAccounts = data.results.accounts.filter((acc: any) => 
-              acc.platform === platform && !acc.deleted
+              acc.platform === platform
             );
 
             console.log(`✅ Found ${platformAccounts.length} ${platform} OAuth connections`);
