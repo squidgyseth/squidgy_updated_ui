@@ -63,6 +63,8 @@ export default function IntegrationsSettings() {
   const [socialMediaPlatform, setSocialMediaPlatform] = useState<'facebook' | 'instagram' | 'linkedin'>('facebook');
   const [socialMediaPolling, setSocialMediaPolling] = useState(false);
   const [oauthWindowOpen, setOauthWindowOpen] = useState(false);
+  const [showManageModal, setShowManageModal] = useState(false);
+  const [managePlatform, setManagePlatform] = useState<'facebook' | 'instagram' | 'linkedin'>('facebook');
 
   // Helper function to decode Firebase token and extract user_id
   const decodeFirebaseToken = (token: string): string | null => {
@@ -2001,13 +2003,27 @@ export default function IntegrationsSettings() {
                       </div>
                     )}
                   </div>
-                  <Button 
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-                    onClick={handleSocialMediaFacebookConnect}
-                    disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
-                  >
-                    {socialMediaLoading ? 'Loading...' : 'Connect Facebook'}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                      onClick={handleSocialMediaFacebookConnect}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('facebook');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
                   {!loading && (!locationId || !ghlUserId) && (
                     <p className="text-xs text-red-500">
                       Please set up a GHL subaccount first
@@ -2057,13 +2073,27 @@ export default function IntegrationsSettings() {
                       </div>
                     )}
                   </div>
-                  <Button 
-                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
-                    onClick={handleSocialMediaInstagramConnect}
-                    disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
-                  >
-                    {socialMediaLoading ? 'Loading...' : 'Connect Instagram'}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
+                      onClick={handleSocialMediaInstagramConnect}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('instagram');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
                   {!loading && (!locationId || !ghlUserId) && (
                     <p className="text-xs text-red-500">
                       Please set up a GHL subaccount first
@@ -2113,13 +2143,27 @@ export default function IntegrationsSettings() {
                       </div>
                     )}
                   </div>
-                  <Button 
-                    className="w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white"
-                    onClick={handleSocialMediaLinkedInConnect}
-                    disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
-                  >
-                    {socialMediaLoading ? 'Loading...' : 'Connect LinkedIn'}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white"
+                      onClick={handleSocialMediaLinkedInConnect}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'linkedin' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('linkedin');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
                   {!loading && (!locationId || !ghlUserId) && (
                     <p className="text-xs text-red-500">
                       Please set up a GHL subaccount first
@@ -2214,6 +2258,109 @@ export default function IntegrationsSettings() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Manage Integrations Modal */}
+        {showManageModal && (
+          <Card className="mt-6">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>
+                    Manage {managePlatform === 'facebook' ? 'Facebook' : managePlatform === 'instagram' ? 'Instagram' : 'LinkedIn'} Integrations
+                  </CardTitle>
+                  <CardDescription>
+                    View and manage all connected {managePlatform === 'facebook' ? 'pages' : managePlatform === 'instagram' ? 'accounts' : 'profiles'}
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowManageModal(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {connectedSocialMediaAccounts
+                  .filter(a => a.platform === managePlatform && !a.deleted)
+                  .map((account) => {
+                    const isExpired = account.isExpired || false;
+                    const expireDate = account.expire ? new Date(account.expire) : null;
+                    const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                    
+                    return (
+                      <div
+                        key={account.id}
+                        className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-start gap-3 flex-1">
+                          {account.avatar && (
+                            <img
+                              src={account.avatar}
+                              alt={account.name}
+                              className="w-12 h-12 rounded-full"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-gray-900">{account.name}</p>
+                              {isExpired ? (
+                                <Badge variant="destructive" className="text-xs">
+                                  Expired
+                                </Badge>
+                              ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
+                                <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                  Expires in {daysUntilExpire} days
+                                </Badge>
+                              ) : (
+                                <Badge variant="default" className="bg-green-500 text-xs">
+                                  Active
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                            {expireDate && (
+                              <p className="text-xs text-gray-500">
+                                {isExpired ? 'Expired on' : 'Expires on'}: {expireDate.toLocaleDateString('en-US', { 
+                                  year: 'numeric', 
+                                  month: 'long', 
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            )}
+                            {account.oauthId && (
+                              <p className="text-xs text-gray-400 mt-1">OAuth ID: {account.oauthId}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isExpired && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setShowManageModal(false);
+                                if (managePlatform === 'facebook') handleSocialMediaFacebookConnect();
+                                else if (managePlatform === 'instagram') handleSocialMediaInstagramConnect();
+                                else if (managePlatform === 'linkedin') handleSocialMediaLinkedInConnect();
+                              }}
+                            >
+                              Reconnect
+                            </Button>
+                          )}
+                          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
             </CardContent>
           </Card>
         )}
