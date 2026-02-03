@@ -1263,74 +1263,59 @@ export default function IntegrationsSettings() {
   };
 
   const fetchConnectedSocialMediaAccounts = async () => {
-    if (!firmUserId) {
+    if (!locationId || !firebaseToken || !accessToken) {
       return;
     }
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      console.log('📱 Fetching connected social media accounts from GHL...');
 
-      // Fetch Facebook and Instagram connected accounts from backend
-      // Note: LinkedIn backend endpoints not implemented yet
-      const [fbResponse, igResponse] = await Promise.all([
-        fetch(`${backendUrl}/api/social/facebook/connected-accounts`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firm_user_id: firmUserId,
-            agent_id: 'SOL'
-          })
-        }),
-        fetch(`${backendUrl}/api/social/instagram/connected-accounts`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firm_user_id: firmUserId,
-            agent_id: 'SOL'
-          })
-        })
-      ]);
+      // Call GHL's accounts endpoint directly to get all connected accounts
+      const accountsEndpoint = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
 
-      const allAccounts: any[] = [];
-
-      if (fbResponse.ok) {
-        const fbData = await fbResponse.json();
-        console.log('📊 Raw Facebook response:', fbData);
-        if (fbData.success && fbData.accounts) {
-          // Ensure each account has platform field
-          const fbAccounts = fbData.accounts.map((acc: any) => ({
-            ...acc,
-            platform: acc.platform || 'facebook'
-          }));
-          allAccounts.push(...fbAccounts);
-          console.log('✅ Connected Facebook accounts:', fbAccounts);
+      const response = await fetch(accountsEndpoint, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER'
         }
+      });
+
+      if (!response.ok) {
+        console.error('❌ GHL API error:', response.status);
+        return;
       }
 
-      if (igResponse.ok) {
-        const igData = await igResponse.json();
-        console.log('📊 Raw Instagram response:', igData);
-        if (igData.success && igData.accounts) {
-          // Ensure each account has platform field
-          const igAccounts = igData.accounts.map((acc: any) => ({
-            ...acc,
-            platform: acc.platform || 'instagram'
-          }));
-          allAccounts.push(...igAccounts);
-          console.log('✅ Connected Instagram accounts:', igAccounts);
-        }
-      }
+      const data = await response.json();
+      console.log('📊 GHL accounts response:', data);
 
-      setConnectedSocialMediaAccounts(allAccounts);
-      console.log('✅ Total connected social media accounts:', allAccounts.length);
-      console.log('📋 All accounts structure:', allAccounts);
+      if (data.success && data.results && data.results.accounts) {
+        // Filter out deleted accounts and ensure each has platform field
+        const allAccounts = data.results.accounts
+          .filter((acc: any) => !acc.deleted)
+          .map((acc: any) => ({
+            ...acc,
+            platform: acc.platform || 'unknown'
+          }));
+
+        setConnectedSocialMediaAccounts(allAccounts);
+        console.log('✅ Total connected social media accounts:', allAccounts.length);
+        console.log('� Accounts by platform:', {
+          facebook: allAccounts.filter((a: any) => a.platform === 'facebook').length,
+          instagram: allAccounts.filter((a: any) => a.platform === 'instagram').length,
+          linkedin: allAccounts.filter((a: any) => a.platform === 'linkedin').length
+        });
+      } else {
+        console.log('⚠️ No accounts found in GHL response');
+        setConnectedSocialMediaAccounts([]);
+      }
 
     } catch (error: any) {
-      console.error('❌ Error fetching connected social media accounts:', error);
+      console.error('❌ Error fetching connected social media accounts from GHL:', error);
     }
   };
 
