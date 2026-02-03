@@ -1461,14 +1461,28 @@ export default function IntegrationsSettings() {
 
       if (data.success && data.results) {
         // GHL returns pages in results.pages for Facebook, accounts in results.accounts for Instagram, profile in results.profile for LinkedIn
+        console.log('🔍 Checking results structure:', {
+          hasPages: !!data.results.pages,
+          pagesLength: data.results.pages?.length,
+          hasAccounts: !!data.results.accounts,
+          accountsLength: data.results.accounts?.length,
+          hasProfile: !!data.results.profile,
+          profileLength: data.results.profile?.length,
+          platform
+        });
+        
         const items = data.results.pages || data.results.accounts || data.results.profile || [];
+        console.log('📋 Extracted items:', items);
+        
         if (items.length > 0) {
+          console.log('✅ Setting socialMediaPages with', items.length, 'items');
           setSocialMediaPages(items);
           setSocialMediaOAuthId(oAuthId);
           setShowSocialMediaPages(true);
           const itemType = platform === 'facebook' ? 'page' : platform === 'linkedin' ? 'profile' : 'account';
           toast.success(`Found ${items.length} available ${itemType}${items.length !== 1 ? 's' : ''}`);
         } else {
+          console.log('⚠️ No items found in response');
           const itemType = platform === 'facebook' ? 'pages' : platform === 'linkedin' ? 'profiles' : 'accounts';
           toast.info(`No ${itemType} found for this OAuth connection`);
         }
