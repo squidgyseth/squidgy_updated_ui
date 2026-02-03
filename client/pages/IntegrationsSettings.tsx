@@ -3,7 +3,7 @@ import { SettingsLayout } from '../components/layout/SettingsLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Zap, CheckCircle, XCircle, RefreshCw, ExternalLink, Facebook, X } from 'lucide-react';
+import { Zap, CheckCircle, XCircle, RefreshCw, ExternalLink, Facebook, X, Trash2 } from 'lucide-react';
 import { useUser } from '../hooks/useUser';
 import { supabase } from '../lib/supabase';
 import { profilesApi } from '../lib/supabase-api';
@@ -1627,6 +1627,58 @@ export default function IntegrationsSettings() {
     }
   };
 
+  const deleteSocialMediaAccount = async (account: any) => {
+    if (!locationId || !firebaseToken || !accessToken || !ghlUserId) {
+      toast.error('Missing authentication tokens');
+      return;
+    }
+
+    // Confirm deletion
+    if (!window.confirm(`Are you sure you want to delete "${account.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting social media account:', account);
+
+      // Call GHL's DELETE endpoint
+      // Format: /social-media-posting/{locationId}/accounts/{accountId}?userId={userId}
+      const endpoint = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts/${account.id}?userId=${ghlUserId}`;
+
+      console.log('📤 DELETE request to:', endpoint);
+
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ GHL API error:', errorText);
+        throw new Error(`Failed to delete account: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Account deleted:', data);
+
+      toast.success(`Successfully deleted ${account.name}`);
+
+      // Refresh the connected accounts list
+      fetchConnectedSocialMediaAccounts();
+
+    } catch (error: any) {
+      console.error('❌ Error deleting account:', error);
+      toast.error(error.message || 'Failed to delete account');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
       'created': { label: 'Active', variant: 'default' },
@@ -2355,6 +2407,14 @@ export default function IntegrationsSettings() {
                               Reconnect
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => deleteSocialMediaAccount(account)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                           <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
                         </div>
                       </div>
