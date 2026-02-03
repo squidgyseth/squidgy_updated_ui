@@ -1341,7 +1341,8 @@ export default function IntegrationsSettings() {
   };
 
   const fetchSocialMediaAccountsWithOAuthId = async (oAuthId: string, platform: 'facebook' | 'instagram' = 'facebook') => {
-    if (!firmUserId) {
+    if (!locationId || !firebaseToken || !accessToken) {
+      console.error('Missing required tokens for GHL API call');
       return;
     }
 
@@ -1349,46 +1350,50 @@ export default function IntegrationsSettings() {
     setSocialMediaPlatform(platform);
     try {
       console.log(`📱 Fetching ${platform} ${platform === 'facebook' ? 'pages' : 'accounts'} with OAuth ID:`, oAuthId);
+      console.log(`🔑 Using locationId: ${locationId}, oAuthId: ${oAuthId}`);
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-      // Use backend endpoint
+      // Call GHL's backend API directly - matching exact pattern from HAR file
       const endpoint = platform === 'facebook'
-        ? `${backendUrl}/api/social/facebook/available-pages`
-        : `${backendUrl}/api/social/instagram/available-accounts`;
+        ? `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/facebook/accounts/${oAuthId}`
+        : `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/instagram/accounts/${oAuthId}`;
 
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firm_user_id: firmUserId,
-          agent_id: 'SOL',
-          oauth_id: oAuthId
-        })
+          'Accept': 'application/json, text/plain, */*',
+          'Authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER'
+        }
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || `API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`❌ GHL API error (${response.status}):`, errorText);
+        throw new Error(`GHL API error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log(`✅ ${platform} ${platform === 'facebook' ? 'pages' : 'accounts'} response:`, data);
+      console.log(`✅ GHL ${platform} response:`, data);
 
-      if (data.success) {
-        // Facebook returns 'pages', Instagram returns 'accounts'
-        const items = platform === 'facebook' ? data.pages : data.accounts;
-        if (items) {
+      if (data.success && data.results) {
+        // GHL returns pages in results.pages for Facebook
+        const items = data.results.pages || data.results.accounts || [];
+        if (items.length > 0) {
           setSocialMediaPages(items);
           setSocialMediaOAuthId(oAuthId);
           setShowSocialMediaPages(true);
-          toast.success(`Found ${items.length} available ${platform === 'facebook' ? 'pages' : 'accounts'}`);
+          toast.success(`Found ${items.length} available ${platform === 'facebook' ? 'page' : 'account'}${items.length !== 1 ? 's' : ''}`);
+        } else {
+          toast.info(`No ${platform === 'facebook' ? 'pages' : 'accounts'} found for this OAuth connection`);
         }
+      } else {
+        throw new Error('Invalid response from GHL API');
       }
     } catch (error: any) {
-      console.error(`❌ Error fetching ${platform} accounts:`, error);
+      console.error(`❌ Error fetching ${platform} accounts from GHL:`, error);
       toast.error(error.message || `Failed to fetch ${platform} accounts`);
     } finally {
       setSocialMediaLoading(false);
