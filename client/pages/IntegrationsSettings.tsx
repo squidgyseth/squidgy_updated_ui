@@ -1270,8 +1270,8 @@ export default function IntegrationsSettings() {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-      // Fetch both Facebook and Instagram connected accounts from backend
-      const [fbResponse, igResponse] = await Promise.all([
+      // Fetch Facebook, Instagram, and LinkedIn connected accounts from backend
+      const [fbResponse, igResponse, liResponse] = await Promise.all([
         fetch(`${backendUrl}/api/social/facebook/connected-accounts`, {
           method: 'POST',
           headers: {
@@ -1283,6 +1283,16 @@ export default function IntegrationsSettings() {
           })
         }),
         fetch(`${backendUrl}/api/social/instagram/connected-accounts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            firm_user_id: firmUserId,
+            agent_id: 'SOL'
+          })
+        }),
+        fetch(`${backendUrl}/api/social/linkedin/connected-accounts`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1321,6 +1331,20 @@ export default function IntegrationsSettings() {
           }));
           allAccounts.push(...igAccounts);
           console.log('✅ Connected Instagram accounts:', igAccounts);
+        }
+      }
+
+      if (liResponse.ok) {
+        const liData = await liResponse.json();
+        console.log('📊 Raw LinkedIn response:', liData);
+        if (liData.success && liData.accounts) {
+          // Ensure each account has platform field
+          const liAccounts = liData.accounts.map((acc: any) => ({
+            ...acc,
+            platform: acc.platform || 'linkedin'
+          }));
+          allAccounts.push(...liAccounts);
+          console.log('✅ Connected LinkedIn accounts:', liAccounts);
         }
       }
 
@@ -1490,7 +1514,7 @@ export default function IntegrationsSettings() {
 
     setSocialMediaLoading(true);
     try {
-      console.log(`🔗 Connecting ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}:`, page);
+      console.log(`🔗 Connecting ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : socialMediaPlatform === 'linkedin' ? 'profile' : 'account'}:`, page);
 
       // Extract originId - ensure it's a string
       const originId = String(page.originId || page.id || '').trim();
@@ -1506,6 +1530,8 @@ export default function IntegrationsSettings() {
       // Use backend endpoint
       const endpoint = socialMediaPlatform === 'facebook'
         ? `${backendUrl}/api/social/facebook/connect-page`
+        : socialMediaPlatform === 'linkedin'
+        ? `${backendUrl}/api/social/linkedin/connect-profile`
         : `${backendUrl}/api/social/instagram/connect-account`;
 
       const requestBody = {
@@ -1535,7 +1561,7 @@ export default function IntegrationsSettings() {
       }
 
       const data = await response.json();
-      console.log(`✅ Connected ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}:`, data);
+      console.log(`✅ Connected ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : socialMediaPlatform === 'linkedin' ? 'profile' : 'account'}:`, data);
 
       if (data.success) {
         toast.success(data.message || `Connected ${page.name} successfully!`);
@@ -1545,8 +1571,8 @@ export default function IntegrationsSettings() {
         fetchConnectedSocialMediaAccounts();
       }
     } catch (error: any) {
-      console.error(`❌ Error connecting ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}:`, error);
-      toast.error(error.message || `Failed to connect ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}`);
+      console.error(`❌ Error connecting ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : socialMediaPlatform === 'linkedin' ? 'profile' : 'account'}:`, error);
+      toast.error(error.message || `Failed to connect ${socialMediaPlatform === 'facebook' ? 'page' : socialMediaPlatform === 'linkedin' ? 'profile' : 'account'}`);
     } finally {
       setSocialMediaLoading(false);
     }
