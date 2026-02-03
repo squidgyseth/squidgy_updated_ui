@@ -1270,8 +1270,9 @@ export default function IntegrationsSettings() {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-      // Fetch Facebook, Instagram, and LinkedIn connected accounts from backend
-      const [fbResponse, igResponse, liResponse] = await Promise.all([
+      // Fetch Facebook and Instagram connected accounts from backend
+      // Note: LinkedIn backend endpoints not implemented yet
+      const [fbResponse, igResponse] = await Promise.all([
         fetch(`${backendUrl}/api/social/facebook/connected-accounts`, {
           method: 'POST',
           headers: {
@@ -1283,16 +1284,6 @@ export default function IntegrationsSettings() {
           })
         }),
         fetch(`${backendUrl}/api/social/instagram/connected-accounts`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firm_user_id: firmUserId,
-            agent_id: 'SOL'
-          })
-        }),
-        fetch(`${backendUrl}/api/social/linkedin/connected-accounts`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1331,20 +1322,6 @@ export default function IntegrationsSettings() {
           }));
           allAccounts.push(...igAccounts);
           console.log('✅ Connected Instagram accounts:', igAccounts);
-        }
-      }
-
-      if (liResponse.ok) {
-        const liData = await liResponse.json();
-        console.log('📊 Raw LinkedIn response:', liData);
-        if (liData.success && liData.accounts) {
-          // Ensure each account has platform field
-          const liAccounts = liData.accounts.map((acc: any) => ({
-            ...acc,
-            platform: acc.platform || 'linkedin'
-          }));
-          allAccounts.push(...liAccounts);
-          console.log('✅ Connected LinkedIn accounts:', liAccounts);
         }
       }
 
