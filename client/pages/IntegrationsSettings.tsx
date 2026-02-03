@@ -1198,36 +1198,14 @@ export default function IntegrationsSettings() {
 
   const handleSocialMediaLinkedInConnect = async () => {
     setSocialMediaPlatform('linkedin');
-    if (!firmUserId) {
-      alert('Unable to connect: User ID not found. Please ensure you are logged in.');
+    if (!locationId || !ghlUserId) {
+      toast.error('Missing location ID or user ID. Please ensure GHL integration is set up.');
       return;
     }
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-      // Call backend to get OAuth URL
-      const response = await fetch(`${backendUrl}/api/social/linkedin/start-oauth`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firm_user_id: firmUserId,
-          agent_id: 'SOL'
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to generate OAuth URL');
-      }
-
-      const data = await response.json();
-
-      if (!data.success || !data.oauth_url) {
-        throw new Error('Invalid response from server');
-      }
+      // Construct GHL's LinkedIn OAuth URL directly
+      const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/linkedin/start?locationId=${locationId}&userId=${ghlUserId}`;
 
       // Open OAuth URL in a centered popup window
       const width = 600;
@@ -1236,7 +1214,7 @@ export default function IntegrationsSettings() {
       const top = (window.screen.height - height) / 2;
 
       const popup = window.open(
-        data.oauth_url,
+        oauthUrl,
         'LinkedInSocialMediaOAuth',
         `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
       );
