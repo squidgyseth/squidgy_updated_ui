@@ -341,6 +341,10 @@ export default function IntegrationsSettings() {
               setTokenRefreshRequested(false);
               // Fetch all tokens now
               await fetchTokensFromDatabase(false);
+              // Refresh connected accounts with new token
+              setTimeout(() => {
+                fetchConnectedSocialMediaAccounts();
+              }, 1000);
             }
           }
         }
@@ -2017,11 +2021,12 @@ export default function IntegrationsSettings() {
         {/* Social Media Integrations Section */}
         <div className="mt-8 relative">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Social Media Integrations</h2>
-          {refreshingToken && (
+          {(refreshingToken || pollingForToken) && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
               <div className="text-center">
                 <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
                 <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
+                <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
               </div>
             </div>
           )}
