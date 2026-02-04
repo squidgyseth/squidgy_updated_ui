@@ -2513,6 +2513,86 @@ export default function IntegrationsSettings() {
               </CardContent>
             </Card>
 
+            {/* GBP inline modals */}
+            {showSocialMediaPages && socialMediaPlatform === 'gbp' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Google Business Profile Accounts</CardTitle>
+                      <CardDescription>Select Google Business Profile locations to connect for social media posting</CardDescription>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setShowSocialMediaPages(false)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {socialMediaLoading ? (
+                    <div className="text-center py-8"><p className="text-gray-500">Loading accounts...</p></div>
+                  ) : socialMediaPages.length === 0 ? (
+                    <div className="text-center py-8"><p className="text-gray-500">No accounts available.</p></div>
+                  ) : (
+                    <div className="space-y-3">
+                      {socialMediaPages.map((page) => (
+                        <div key={page.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                          <div className="flex items-center gap-3">
+                            {page.avatar && <img src={page.avatar} alt={page.name} className="w-10 h-10 rounded-full" />}
+                            <div><p className="font-medium">{page.name}</p><p className="text-xs text-gray-500">ID: {page.id}</p></div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {page.isConnected ? (
+                              <Badge variant="default" className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Connected</Badge>
+                            ) : (
+                              <Button size="sm" onClick={() => connectSocialMediaPage(page)} disabled={socialMediaLoading}>Connect</Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            {showManageModal && managePlatform === 'gbp' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div><CardTitle>Manage Google Business Profile Integrations</CardTitle><CardDescription>View and manage all connected locations</CardDescription></div>
+                    <Button variant="ghost" size="sm" onClick={() => setShowManageModal(false)}><X className="w-4 h-4" /></Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'gbp' && !a.deleted).map((account) => {
+                      const isExpired = account.isExpired || false;
+                      const expireDate = account.expire ? new Date(account.expire) : null;
+                      const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                      return (
+                        <div key={account.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50">
+                          <div className="flex items-start gap-3 flex-1">
+                            {account.avatar && <img src={account.avatar} alt={account.name} className="w-12 h-12 rounded-full" />}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-medium text-gray-900">{account.name}</p>
+                                {isExpired ? <Badge variant="destructive" className="text-xs">Expired</Badge> : daysUntilExpire !== null && daysUntilExpire < 30 ? <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">Expires in {daysUntilExpire} days</Badge> : <Badge variant="default" className="bg-green-500 text-xs">Active</Badge>}
+                              </div>
+                              <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                              {expireDate && <p className="text-xs text-gray-400">Expires: {expireDate.toLocaleDateString()}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => deleteSocialMediaAccount(account)} className="text-red-600 hover:text-red-700 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
+                            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* TikTok Social Media */}
             <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="pt-6">
