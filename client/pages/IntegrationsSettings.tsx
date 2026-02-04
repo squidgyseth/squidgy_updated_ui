@@ -3,7 +3,7 @@ import { SettingsLayout } from '../components/layout/SettingsLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Zap, CheckCircle, XCircle, RefreshCw, ExternalLink, Facebook, X } from 'lucide-react';
+import { Zap, CheckCircle, XCircle, RefreshCw, ExternalLink, Facebook, X, Trash2 } from 'lucide-react';
 import { useUser } from '../hooks/useUser';
 import { supabase } from '../lib/supabase';
 import { profilesApi } from '../lib/supabase-api';
@@ -27,6 +27,7 @@ export default function IntegrationsSettings() {
   const [error, setError] = useState<string | null>(null);
   const [locationId, setLocationId] = useState<string | null>(null);
   const [ghlUserId, setGhlUserId] = useState<string | null>(null);
+  const [firebaseUserId, setFirebaseUserId] = useState<string | null>(null);
   const [pitToken, setPitToken] = useState<string | null>(null);
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState<boolean>(false);
   const [googleCalendarEmail, setGoogleCalendarEmail] = useState<string | null>(null);
@@ -59,7 +60,52 @@ export default function IntegrationsSettings() {
   const [socialMediaLoading, setSocialMediaLoading] = useState(false);
   const [manualOAuthId, setManualOAuthId] = useState<string>('');
   const [connectedSocialMediaAccounts, setConnectedSocialMediaAccounts] = useState<any[]>([]);
-  const [socialMediaPlatform, setSocialMediaPlatform] = useState<'facebook' | 'instagram'>('facebook');
+  const [socialMediaPlatform, setSocialMediaPlatform] = useState<'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky'>('facebook');
+  const [socialMediaPolling, setSocialMediaPolling] = useState(false);
+  const [oauthWindowOpen, setOauthWindowOpen] = useState(false);
+  const [showManageModal, setShowManageModal] = useState(false);
+  const [managePlatform, setManagePlatform] = useState<'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky'>('facebook');
+
+  // Helper function to decode Firebase token and extract user_id
+  const decodeFirebaseToken = (token: string): string | null => {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      
+      const payload = JSON.parse(atob(parts[1]));
+      return payload.user_id || null;
+    } catch (error) {
+      console.error('Error decoding Firebase token:', error);
+      return null;
+    }
+  };
+
+  // Helper function to check if Firebase token is expired
+  const isFirebaseTokenExpired = (token: string): boolean => {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return true;
+      
+      const payload = JSON.parse(atob(parts[1]));
+      const exp = payload.exp;
+      
+      if (!exp) return true;
+      
+      const now = Math.floor(Date.now() / 1000);
+      const isExpired = now >= exp;
+      
+      if (isExpired) {
+        console.log('⚠️ Firebase token is expired!');
+        console.log(`  Token expired at: ${new Date(exp * 1000).toISOString()}`);
+        console.log(`  Current time: ${new Date(now * 1000).toISOString()}`);
+      }
+      
+      return isExpired;
+    } catch (error) {
+      console.error('Error checking token expiration:', error);
+      return true;
+    }
+  };
 
   useEffect(() => {
     getUserFirmId();
@@ -72,11 +118,20 @@ export default function IntegrationsSettings() {
     }
   }, [firmUserId]);
 
+  // Extract user_id from Firebase token when it changes
   useEffect(() => {
-    // Facebook Ads integration auto-fetch disabled (causes 404 if not set up)
-    // Uncomment below if you need Facebook Ads integration (not Social Media Posting)
-    /*
-    if (locationId && firebaseToken && accessToken && !showFacebookPages && !refreshingToken) {
+    if (firebaseToken) {
+      const userId = decodeFirebaseToken(firebaseToken);
+      if (userId) {
+        console.log('🔑 Extracted user_id from Firebase token:', userId);
+        setFirebaseUserId(userId);
+      }
+    }
+  }, [firebaseToken]);
+
+  useEffect(() => {
+    // Auto-fetch Facebook pages and ad accounts when tokens are available
+    if (locationId && firebaseToken && accessToken && !refreshingToken) {
       Promise.all([
         fetchFacebookPagesFromGHL().catch(err => {
           console.log('⚠️ Skipping Facebook pages auto-fetch:', err.message);
@@ -86,7 +141,6 @@ export default function IntegrationsSettings() {
         })
       ]);
     }
-    */
   }, [locationId, firebaseToken, accessToken, refreshingToken]);
 
   useEffect(() => {
@@ -95,6 +149,49 @@ export default function IntegrationsSettings() {
       fetchConnectedSocialMediaAccounts();
     }
   }, [locationId, firebaseToken, accessToken]);
+
+  // Real-time polling for social media account updates
+  useEffect(() => {
+    if (!socialMediaPolling || !firmUserId) return;
+
+    console.log('🔄 Starting real-time polling for social media account updates...');
+    const pollInterval = setInterval(() => {
+      fetchConnectedSocialMediaAccounts();
+    }, 5000); // Poll every 5 seconds
+
+    // Stop polling after 2 minutes
+    const timeout = setTimeout(() => {
+      setSocialMediaPolling(false);
+      console.log('⏱️ Social media polling timeout reached');
+    }, 120000);
+
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(timeout);
+    };
+  }, [socialMediaPolling, firmUserId]);
+
+  // Monitor OAuth window and trigger refresh when closed
+  useEffect(() => {
+    if (!oauthWindowOpen) return;
+
+    const checkWindowClosed = setInterval(() => {
+      // OAuth window was closed, trigger refresh
+      console.log('🔄 OAuth window activity detected, refreshing accounts...');
+      fetchConnectedSocialMediaAccounts();
+    }, 3000); // Check every 3 seconds
+
+    // Stop checking after 5 minutes
+    const timeout = setTimeout(() => {
+      setOauthWindowOpen(false);
+      console.log('⏱️ OAuth window monitoring timeout');
+    }, 300000);
+
+    return () => {
+      clearInterval(checkWindowClosed);
+      clearTimeout(timeout);
+    };
+  }, [oauthWindowOpen]);
 
   useEffect(() => {
     // Auto-check Google Calendar connection when tokens and ghlUserId are available
@@ -162,10 +259,10 @@ export default function IntegrationsSettings() {
         .single();
       
       if (ghlData) {
-        const fbToken = ghlData['Firebase Token'];
-        const pitTok = ghlData['pit_token'];
-        const locId = ghlData['ghl_location_id'];
-        const tokenTime = ghlData['firebase token time'];
+        const fbToken = ghlData.firebase_token;
+        const pitTok = ghlData.pit_token;
+        const locId = ghlData.ghl_location_id;
+        const tokenTime = ghlData.firebase_token_time;
         const accessTok = fbData?.access_token || pitTok; // Use access_token if available, fallback to PIT
         
         // Only check age on initial load, not during polling
@@ -241,6 +338,10 @@ export default function IntegrationsSettings() {
               setTokenRefreshRequested(false);
               // Fetch all tokens now
               await fetchTokensFromDatabase(false);
+              // Refresh connected accounts with new token
+              setTimeout(() => {
+                fetchConnectedSocialMediaAccounts();
+              }, 1000);
             }
           }
         }
@@ -259,15 +360,28 @@ export default function IntegrationsSettings() {
   };
 
   const checkGoogleCalendarConnection = async () => {
-    if (!ghlUserId || !locationId || !firebaseToken || !accessToken) {
+    // Use firebaseUserId (from token) if available, fallback to ghlUserId (from database)
+    const userIdToUse = firebaseUserId || ghlUserId;
+    
+    if (!userIdToUse || !locationId || !firebaseToken || !accessToken) {
+      return;
+    }
+    
+    // Check if token is expired before making API call
+    if (isFirebaseTokenExpired(firebaseToken)) {
+      console.log('🔄 Token expired, triggering refresh before calendar check...');
+      setCheckingCalendar(false);
+      await refreshFirebaseToken();
+      startTokenPolling();
       return;
     }
     
     setCheckingCalendar(true);
     try {
       console.log('📅 Checking Google Calendar connection...');
+      console.log('🔑 Using userId:', userIdToUse, '(from', firebaseUserId ? 'Firebase token' : 'database', ')');
       
-      const calendarUrl = `https://services.leadconnectorhq.com/calendars/connections/calendars?locationId=${locationId}&userId=${ghlUserId}`;
+      const calendarUrl = `https://services.leadconnectorhq.com/calendars/connections/calendars?locationId=${locationId}&userId=${userIdToUse}`;
       
       const response = await fetch(calendarUrl, {
         method: 'GET',
@@ -342,11 +456,10 @@ export default function IntegrationsSettings() {
     }
     
     try {
-      console.log('📊 Fetching connected Facebook Ad Account from GHL backend API...');
+      console.log('📊 Fetching all Facebook Ad Accounts from GHL backend API...');
       
-      const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/adAccount`;
+      const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/allAdAccounts?limit=100`;
 
-      // NOTE: Using token-id ONLY (no authorization header needed - verified via testing)
       const response = await fetch(ghlBackendUrl, {
         method: 'GET',
         headers: {
@@ -359,29 +472,19 @@ export default function IntegrationsSettings() {
       });
       
       if (!response.ok) {
-        // No ad account connected, that's okay
-        console.log('ℹ️ No ad account connected');
+        console.log('ℹ️ No ad accounts found');
         setFacebookAdAccounts([]);
         return;
       }
       
       const data = await response.json();
-      console.log('✅ Facebook Ad Account response:', data);
+      console.log('✅ Facebook Ad Accounts response:', data);
       
-      // Check if we have a connected ad account
-      if (data.adAccountId && data.adAccountName) {
-        const account = {
-          id: data.adAccountId,
-          name: data.adAccountName,
-          ...data
-        };
-        setFacebookAdAccounts([account]);
-        console.log(`✅ Connected ad account: ${data.adAccountName}`);
-      } else {
-        setFacebookAdAccounts([]);
-      }
+      const adAccounts = data.adAccounts || [];
+      setFacebookAdAccounts(adAccounts);
+      console.log(`✅ Found ${adAccounts.length} ad accounts`);
     } catch (error: any) {
-      console.error('❌ Error fetching Facebook ad account:', error);
+      console.error('❌ Error fetching Facebook ad accounts:', error);
       setFacebookAdAccounts([]);
     }
   };
@@ -398,10 +501,9 @@ export default function IntegrationsSettings() {
     try {
       console.log('📄 Fetching Facebook pages from GHL backend API...');
       
-      // First, get connected pages
-      // NOTE: Using token-id ONLY (no authorization header needed - verified via testing)
-      const connectedPagesUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/pages`;
-      const connectedResponse = await fetch(`${connectedPagesUrl}?getAll=true`, {
+      // First, fetch connected pages
+      const connectedPagesUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/pages?getAll=true`;
+      const connectedResponse = await fetch(connectedPagesUrl, {
         method: 'GET',
         headers: {
           'token-id': firebaseToken,
@@ -412,17 +514,17 @@ export default function IntegrationsSettings() {
         }
       });
       
-      let connectedPages = [];
+      let connectedPageIds = new Set();
       if (connectedResponse.ok) {
         const connectedData = await connectedResponse.json();
         console.log('✅ Connected pages response:', connectedData);
-        connectedPages = connectedData.pages || [];
+        const connectedPages = connectedData.pages || [];
+        connectedPageIds = new Set(connectedPages.map((p: any) => p.facebookPageId));
       }
       
-      // Then, get all available pages
-      // NOTE: Using token-id ONLY (no authorization header needed - verified via testing)
-      const allPagesUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/allPages`;
-      const allPagesResponse = await fetch(`${allPagesUrl}?limit=100`, {
+      // Then, fetch all available pages
+      const allPagesUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/allPages?limit=20`;
+      const allPagesResponse = await fetch(allPagesUrl, {
         method: 'GET',
         headers: {
           'token-id': firebaseToken,
@@ -434,28 +536,23 @@ export default function IntegrationsSettings() {
       });
       
       if (!allPagesResponse.ok) {
-        throw new Error(`GHL API error: ${allPagesResponse.status}`);
+        console.log('ℹ️ No pages found');
+        setFacebookPages([]);
+        return;
       }
       
       const allPagesData = await allPagesResponse.json();
       console.log('✅ All available pages response:', allPagesData);
       
-      const rawPages = allPagesData.pages || [];
-      const connectedPageIds = new Set(connectedPages.map((p: any) => p.facebookPageId));
-      
-      // Map GHL response format to our UI format and mark connected pages
-      const pages = rawPages.map((page: any) => ({
-        id: page.facebookPageId,
-        name: page.facebookPageName,
-        isConnected: connectedPageIds.has(page.facebookPageId),
-        ...page
+      const pages = (allPagesData.pages || []).map((page: any) => ({
+        ...page,
+        isConnected: connectedPageIds.has(page.facebookPageId || page.id)
       }));
       
       setFacebookPages(pages);
-      console.log(`✅ Found ${pages.length} total pages (${connectedPages.length} connected)`);
+      console.log(`✅ Found ${pages.length} pages (${connectedPageIds.size} connected)`);
     } catch (error: any) {
       console.error('❌ Error fetching Facebook pages:', error);
-      // Only show error toast if not refreshing token
       if (!refreshingToken) {
         toast.error(error.message || 'Failed to fetch Facebook pages');
       }
@@ -565,12 +662,15 @@ export default function IntegrationsSettings() {
 
 
   const handleGoogleAccountConnect = () => {
-    if (!locationId || !ghlUserId) {
+    const userIdToUse = firebaseUserId || ghlUserId;
+    
+    if (!locationId || !userIdToUse) {
       alert('Unable to connect: Location ID or User ID not found. Please ensure you have a GHL subaccount set up.');
       return;
     }
     
-    const oauthUrl = `https://api.leadconnectorhq.com/gmail/start_oauth?locationId=${locationId}&userId=${ghlUserId}`;
+    console.log('🔑 Using userId for Google OAuth:', userIdToUse, '(from', firebaseUserId ? 'Firebase token' : 'database', ')');
+    const oauthUrl = `https://api.leadconnectorhq.com/gmail/start_oauth?locationId=${locationId}&userId=${userIdToUse}`;
     
     // Open in a centered popup window
     const width = 600;
@@ -819,6 +919,76 @@ export default function IntegrationsSettings() {
     });
   };
 
+  const handleFacebookPageDisconnect = async (pageToRemove: any) => {
+    if (!locationId || !firebaseToken || !accessToken) {
+      toast.error('Missing required tokens');
+      return;
+    }
+
+    // Confirm deletion
+    const pageId = pageToRemove.facebookPageId || pageToRemove.id;
+    const pageName = pageToRemove.facebookPageName || pageToRemove.name;
+    if (!window.confirm(`Are you sure you want to disconnect "${pageName}"?`)) {
+      return;
+    }
+
+    setFacebookLoading(true);
+    try {
+      console.log('🗑️ Disconnecting Facebook page:', pageName);
+      
+      // Get all currently connected pages except the one to remove
+      const remainingPages = facebookPages
+        .filter(page => {
+          const currentPageId = page.facebookPageId || page.id;
+          return page.isConnected && currentPageId !== pageId;
+        })
+        .map(page => ({
+          facebookPageId: page.facebookPageId || page.id,
+          facebookPageName: page.facebookPageName || page.name,
+          facebookIgnoreMessages: false
+        }));
+      
+      console.log('📤 Sending updated page list (without removed page):', { pages: remainingPages });
+      
+      // POST updated list to GHL backend API
+      const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/pages`;
+
+      const response = await fetch(ghlBackendUrl, {
+        method: 'POST',
+        headers: {
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER',
+          'content-type': 'application/json',
+          'accept': 'application/json'
+        },
+        body: JSON.stringify({
+          pages: remainingPages
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to disconnect page: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Page disconnected successfully:', result);
+      
+      toast.success(`Successfully disconnected ${pageName}`);
+      
+      // Refresh the pages list to show updated connection status
+      await fetchFacebookPagesFromGHL();
+      
+    } catch (error: any) {
+      console.error('❌ Error disconnecting page:', error);
+      toast.error(error.message || 'Failed to disconnect page');
+    } finally {
+      setFacebookLoading(false);
+    }
+  };
+
   const handleFacebookConnectFinish = async () => {
     if (selectedFacebookPages.length === 0) {
       toast.error('Please select at least one page');
@@ -834,13 +1004,21 @@ export default function IntegrationsSettings() {
     try {
       console.log('🔗 Connecting selected pages to GHL...');
       
-      // Get full page data for selected pages
-      const selectedPagesData = facebookPages.filter(page => 
-        selectedFacebookPages.includes(page.id)
-      );
+      // Get full page data for selected pages and format payload
+      const selectedPagesData = facebookPages
+        .filter(page => {
+          const pageId = page.facebookPageId || page.id;
+          return selectedFacebookPages.includes(pageId);
+        })
+        .map(page => ({
+          facebookPageId: page.facebookPageId || page.id,
+          facebookPageName: page.facebookPageName || page.name,
+          facebookIgnoreMessages: false
+        }));
+      
+      console.log('📤 Payload:', { pages: selectedPagesData });
       
       // POST to GHL backend API to connect pages
-      // NOTE: Using token-id ONLY (no authorization header needed - verified via testing)
       const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/pages`;
 
       const response = await fetch(ghlBackendUrl, {
@@ -868,11 +1046,12 @@ export default function IntegrationsSettings() {
       
       toast.success(`Successfully connected ${selectedFacebookPages.length} Facebook page${selectedFacebookPages.length !== 1 ? 's' : ''}!`);
       
-      // Reset state
-      setShowFacebookPages(false);
-      setFacebookDidLogin(null);
+      // Refresh the pages list to show updated connection status
+      await fetchFacebookPagesFromGHL();
+      
+      // Reset selection
       setSelectedFacebookPages([]);
-      setFacebookPages([]);
+      setShowFacebookPages(false);
     } catch (error: any) {
       console.error('❌ Error connecting pages:', error);
       toast.error(error.message || 'Failed to connect pages');
@@ -882,12 +1061,15 @@ export default function IntegrationsSettings() {
   };
 
   const handleOutlookCalendarConnect = () => {
-    if (!locationId || !ghlUserId) {
+    const userIdToUse = firebaseUserId || ghlUserId;
+    
+    if (!locationId || !userIdToUse) {
       alert('Unable to connect: Location ID or User ID not found. Please ensure you have a GHL subaccount set up.');
       return;
     }
     
-    const oauthUrl = `https://api.leadconnectorhq.com/api/outlook/start_oauth?location_id=${locationId}&user_id=${ghlUserId}&requestedBy=${ghlUserId}`;
+    console.log('🔑 Using userId for Outlook OAuth:', userIdToUse, '(from', firebaseUserId ? 'Firebase token' : 'database', ')');
+    const oauthUrl = `https://api.leadconnectorhq.com/api/outlook/start_oauth?location_id=${locationId}&user_id=${userIdToUse}&requestedBy=${userIdToUse}`;
     
     // Open in a centered popup window
     const width = 600;
@@ -948,21 +1130,38 @@ export default function IntegrationsSettings() {
         `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
       );
 
-      // Listen for messages from the popup (OAuth callback may send OAuth ID)
+      if (popup) {
+        // Start real-time polling for account updates
+        setSocialMediaPolling(true);
+        setOauthWindowOpen(true);
+        console.log('🔄 Started real-time polling for Facebook account updates');
+      }
+
+      // Declare checkPopup variable first so it can be referenced in messageHandler
+      let checkPopup: NodeJS.Timeout;
+
+      // Listen for messages from the popup (OAuth callback sends accountId via postMessage)
       const messageHandler = (event: MessageEvent) => {
-        if (event.data && event.data.oAuthId) {
-          console.log('✅ Received OAuth ID from popup:', event.data.oAuthId);
+        // GHL's OAuth callback sends: { actionType: "close", platform: "facebook", accountId: "...", ... }
+        if (event.data && event.data.accountId && event.data.platform === 'facebook') {
+          console.log('✅ Received accountId (OAuth ID) from popup:', event.data.accountId);
           window.removeEventListener('message', messageHandler);
-          fetchSocialMediaAccountsWithOAuthId(event.data.oAuthId, 'facebook');
+          clearInterval(checkPopup);
+          fetchSocialMediaAccountsWithOAuthId(event.data.accountId, 'facebook');
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
         }
       };
       window.addEventListener('message', messageHandler);
 
       // Also check for popup closure as fallback
-      const checkPopup = setInterval(() => {
+      checkPopup = setInterval(() => {
         if (popup && popup.closed) {
           clearInterval(checkPopup);
           window.removeEventListener('message', messageHandler);
+          console.log('✅ OAuth window closed, stopping polling');
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
           // After OAuth, try to fetch OAuth connections and then accounts
           fetchSocialMediaAccounts('facebook');
         }
@@ -1019,21 +1218,38 @@ export default function IntegrationsSettings() {
         `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
       );
 
-      // Listen for messages from the popup (OAuth callback may send OAuth ID)
+      if (popup) {
+        // Start real-time polling for account updates
+        setSocialMediaPolling(true);
+        setOauthWindowOpen(true);
+        console.log('🔄 Started real-time polling for Instagram account updates');
+      }
+
+      // Declare checkPopup variable first so it can be referenced in messageHandler
+      let checkPopup: NodeJS.Timeout;
+
+      // Listen for messages from the popup (OAuth callback sends accountId via postMessage)
       const messageHandler = (event: MessageEvent) => {
-        if (event.data && event.data.oAuthId) {
-          console.log('✅ Received Instagram OAuth ID from popup:', event.data.oAuthId);
+        // GHL's OAuth callback sends: { actionType: "close", platform: "instagram", accountId: "...", ... }
+        if (event.data && event.data.accountId && event.data.platform === 'instagram') {
+          console.log('✅ Received accountId (OAuth ID) from popup:', event.data.accountId);
           window.removeEventListener('message', messageHandler);
-          fetchSocialMediaAccountsWithOAuthId(event.data.oAuthId, 'instagram');
+          clearInterval(checkPopup);
+          fetchSocialMediaAccountsWithOAuthId(event.data.accountId, 'instagram');
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
         }
       };
       window.addEventListener('message', messageHandler);
 
       // Also check for popup closure as fallback
-      const checkPopup = setInterval(() => {
+      checkPopup = setInterval(() => {
         if (popup && popup.closed) {
           clearInterval(checkPopup);
           window.removeEventListener('message', messageHandler);
+          console.log('✅ OAuth window closed, stopping polling');
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
           // After OAuth, try to fetch OAuth connections and then accounts
           fetchSocialMediaAccounts('instagram');
         }
@@ -1045,67 +1261,195 @@ export default function IntegrationsSettings() {
     }
   };
 
-  const fetchConnectedSocialMediaAccounts = async () => {
-    if (!firmUserId) {
+  const handleSocialMediaLinkedInConnect = async () => {
+    setSocialMediaPlatform('linkedin');
+    if (!locationId || !ghlUserId) {
+      toast.error('Missing location ID or user ID. Please ensure GHL integration is set up.');
       return;
     }
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      // Construct GHL's LinkedIn OAuth URL directly
+      const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/linkedin/start?locationId=${locationId}&userId=${ghlUserId}`;
 
-      // Fetch both Facebook and Instagram connected accounts from backend
-      const [fbResponse, igResponse] = await Promise.all([
-        fetch(`${backendUrl}/api/social/facebook/connected-accounts`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firm_user_id: firmUserId,
-            agent_id: 'SOL'
-          })
-        }),
-        fetch(`${backendUrl}/api/social/instagram/connected-accounts`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firm_user_id: firmUserId,
-            agent_id: 'SOL'
-          })
-        })
-      ]);
+      // Open OAuth URL in a centered popup window
+      const width = 600;
+      const height = 700;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
 
-      const allAccounts: any[] = [];
+      const popup = window.open(
+        oauthUrl,
+        'LinkedInSocialMediaOAuth',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
 
-      if (fbResponse.ok) {
-        const fbData = await fbResponse.json();
-        if (fbData.success && fbData.accounts) {
-          allAccounts.push(...fbData.accounts);
-          console.log('✅ Connected Facebook accounts:', fbData.accounts);
-        }
+      if (popup) {
+        // Start real-time polling for account updates
+        setSocialMediaPolling(true);
+        setOauthWindowOpen(true);
+        console.log('🔄 Started real-time polling for LinkedIn account updates');
       }
 
-      if (igResponse.ok) {
-        const igData = await igResponse.json();
-        if (igData.success && igData.accounts) {
-          allAccounts.push(...igData.accounts);
-          console.log('✅ Connected Instagram accounts:', igData.accounts);
-        }
-      }
+      // Declare checkPopup variable first so it can be referenced in messageHandler
+      let checkPopup: NodeJS.Timeout;
 
-      setConnectedSocialMediaAccounts(allAccounts);
-      console.log('✅ Total connected social media accounts:', allAccounts.length);
+      // Listen for messages from the popup (OAuth callback sends accountId via postMessage)
+      const messageHandler = (event: MessageEvent) => {
+        // GHL's OAuth callback sends: { actionType: "close", platform: "linkedin", accountId: "...", ... }
+        if (event.data && event.data.accountId && event.data.platform === 'linkedin') {
+          console.log('✅ Received accountId (OAuth ID) from popup:', event.data.accountId);
+          window.removeEventListener('message', messageHandler);
+          clearInterval(checkPopup);
+          fetchSocialMediaAccountsWithOAuthId(event.data.accountId, 'linkedin');
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
+        }
+      };
+      window.addEventListener('message', messageHandler);
+
+      // Also check for popup closure as fallback
+      checkPopup = setInterval(() => {
+        if (popup && popup.closed) {
+          clearInterval(checkPopup);
+          window.removeEventListener('message', messageHandler);
+          console.log('✅ OAuth window closed, stopping polling');
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
+          // After OAuth, try to fetch OAuth connections and then accounts
+          fetchSocialMediaAccounts('linkedin');
+        }
+      }, 1000);
 
     } catch (error: any) {
-      console.error('❌ Error fetching connected social media accounts:', error);
+      console.error('❌ Error starting LinkedIn OAuth:', error);
+      toast.error(error.message || 'Failed to start LinkedIn OAuth');
     }
   };
 
-  const fetchSocialMediaAccounts = async (platform: 'facebook' | 'instagram' = 'facebook') => {
-    if (!firmUserId) {
-      toast.error('Missing user ID. Please ensure you are logged in.');
+  // Generic handler for new social media platforms using direct GHL OAuth
+  const handleSocialMediaConnect = async (platform: 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky') => {
+    setSocialMediaPlatform(platform);
+    if (!locationId || !ghlUserId) {
+      toast.error('Missing location ID or user ID. Please ensure GHL integration is set up.');
+      return;
+    }
+
+    try {
+      // Construct GHL's OAuth URL directly
+      const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${platform}/start?locationId=${locationId}&userId=${ghlUserId}`;
+
+      // Open OAuth URL in a centered popup window
+      const width = 600;
+      const height = 700;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+
+      const popup = window.open(
+        oauthUrl,
+        `${platform.charAt(0).toUpperCase() + platform.slice(1)}SocialMediaOAuth`,
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+
+      if (popup) {
+        setSocialMediaPolling(true);
+        setOauthWindowOpen(true);
+        console.log(`🔄 Started real-time polling for ${platform} account updates`);
+      }
+
+      let checkPopup: NodeJS.Timeout;
+
+      // Listen for messages from the popup
+      const messageHandler = (event: MessageEvent) => {
+        if (event.data && event.data.accountId && event.data.platform === platform) {
+          console.log(`✅ Received accountId (OAuth ID) from ${platform} popup:`, event.data.accountId);
+          window.removeEventListener('message', messageHandler);
+          clearInterval(checkPopup);
+          fetchSocialMediaAccountsWithOAuthId(event.data.accountId, platform);
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
+        }
+      };
+      window.addEventListener('message', messageHandler);
+
+      // Also check for popup closure as fallback
+      checkPopup = setInterval(() => {
+        if (popup && popup.closed) {
+          clearInterval(checkPopup);
+          window.removeEventListener('message', messageHandler);
+          console.log(`✅ ${platform} OAuth window closed, stopping polling`);
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
+          fetchSocialMediaAccounts(platform);
+        }
+      }, 1000);
+
+    } catch (error: any) {
+      console.error(`❌ Error starting ${platform} OAuth:`, error);
+      toast.error(error.message || `Failed to start ${platform} OAuth`);
+    }
+  };
+
+  const fetchConnectedSocialMediaAccounts = async () => {
+    if (!locationId || !firebaseToken || !accessToken) {
+      return;
+    }
+
+    try {
+      console.log('📱 Fetching connected social media accounts from GHL...');
+
+      // Call GHL's accounts endpoint directly to get all connected accounts
+      const accountsEndpoint = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
+
+      const response = await fetch(accountsEndpoint, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER'
+        }
+      });
+
+      if (!response.ok) {
+        console.error('❌ GHL API error:', response.status);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('📊 GHL accounts response:', data);
+
+      if (data.success && data.results && data.results.accounts) {
+        // Filter out deleted accounts and ensure each has platform field
+        const allAccounts = data.results.accounts
+          .filter((acc: any) => !acc.deleted)
+          .map((acc: any) => ({
+            ...acc,
+            platform: acc.platform || 'unknown'
+          }));
+
+        setConnectedSocialMediaAccounts(allAccounts);
+        console.log('✅ Total connected social media accounts:', allAccounts.length);
+        console.log('� Accounts by platform:', {
+          facebook: allAccounts.filter((a: any) => a.platform === 'facebook').length,
+          instagram: allAccounts.filter((a: any) => a.platform === 'instagram').length,
+          linkedin: allAccounts.filter((a: any) => a.platform === 'linkedin').length
+        });
+      } else {
+        console.log('⚠️ No accounts found in GHL response');
+        setConnectedSocialMediaAccounts([]);
+      }
+
+    } catch (error: any) {
+      console.error('❌ Error fetching connected social media accounts from GHL:', error);
+    }
+  };
+
+  const fetchSocialMediaAccounts = async (platform: 'facebook' | 'instagram' | 'linkedin' = 'facebook') => {
+    if (!locationId || !firebaseToken || !accessToken) {
+      toast.error('Missing authentication tokens. Please ensure you are logged in.');
       return;
     }
 
@@ -1121,45 +1465,51 @@ export default function IntegrationsSettings() {
         attempts++;
         console.log(`📱 Polling for ${platform} OAuth connections (attempt ${attempts}/${maxAttempts})...`);
 
-        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+        // Call GHL's accounts endpoint directly to get OAuth IDs
+        const accountsEndpoint = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
 
-        // Use backend endpoint to fetch connected accounts
-        const endpoint = platform === 'facebook'
-          ? `${backendUrl}/api/social/facebook/connected-accounts`
-          : `${backendUrl}/api/social/instagram/connected-accounts`;
-
-        const response = await fetch(endpoint, {
-          method: 'POST',
+        const response = await fetch(accountsEndpoint, {
+          method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firm_user_id: firmUserId,
-            agent_id: 'SOL'
-          })
+            'Accept': 'application/json, text/plain, */*',
+            'Authorization': `Bearer ${accessToken}`,
+            'token-id': firebaseToken,
+            'version': '2021-07-28',
+            'channel': 'APP',
+            'source': 'WEB_USER'
+          }
         });
 
         if (response.ok) {
           const data = await response.json();
-          console.log(`✅ ${platform} connected accounts response:`, data);
+          console.log(`✅ GHL accounts response:`, data);
 
-          // Check if we have accounts with oauthId
-          if (data.success && data.accounts && data.accounts.length > 0) {
-            const account = data.accounts[0];
-            const oAuthId = account.oauthId;
+          // Filter accounts by platform and get OAuth ID
+          // Note: We don't filter by deleted here because we need the OAuth ID to fetch available pages/accounts
+          // The OAuth connection exists even if specific pages/accounts were deleted
+          if (data.success && data.results && data.results.accounts) {
+            const platformAccounts = data.results.accounts.filter((acc: any) => 
+              acc.platform === platform
+            );
 
-            console.log(`✅ Found ${platform} account with OAuth ID:`, oAuthId);
+            console.log(`✅ Found ${platformAccounts.length} ${platform} OAuth connections`);
 
-            if (oAuthId) {
-              await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
-              setSocialMediaLoading(false);
-              return; // Stop polling
+            if (platformAccounts.length > 0) {
+              // Get the first OAuth ID for this platform
+              const oAuthId = platformAccounts[0].oauthId;
+              
+              if (oAuthId) {
+                console.log(`✅ Using OAuth ID: ${oAuthId}`);
+                await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
+                setSocialMediaLoading(false);
+                return; // Stop polling
+              }
             } else {
-              console.warn(`⚠️ ${platform} account found but no oauthId, will retry...`);
+              console.log(`⏳ No ${platform} OAuth connections found yet, waiting for OAuth completion...`);
             }
-          } else {
-            console.log(`⏳ No ${platform} accounts found yet, waiting for OAuth completion...`);
           }
+        } else {
+          console.error(`❌ GHL API error (${response.status})`);
         }
 
         // If we haven't found OAuth connection yet and haven't exceeded max attempts, poll again
@@ -1186,8 +1536,9 @@ export default function IntegrationsSettings() {
     pollForAccounts();
   };
 
-  const fetchSocialMediaAccountsWithOAuthId = async (oAuthId: string, platform: 'facebook' | 'instagram' = 'facebook') => {
-    if (!firmUserId) {
+  const fetchSocialMediaAccountsWithOAuthId = async (oAuthId: string, platform: 'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky' = 'facebook') => {
+    if (!locationId || !firebaseToken || !accessToken) {
+      console.error('Missing required tokens for GHL API call');
       return;
     }
 
@@ -1195,46 +1546,68 @@ export default function IntegrationsSettings() {
     setSocialMediaPlatform(platform);
     try {
       console.log(`📱 Fetching ${platform} ${platform === 'facebook' ? 'pages' : 'accounts'} with OAuth ID:`, oAuthId);
+      console.log(`🔑 Using locationId: ${locationId}, oAuthId: ${oAuthId}`);
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-      // Use backend endpoint
-      const endpoint = platform === 'facebook'
-        ? `${backendUrl}/api/social/facebook/available-pages`
-        : `${backendUrl}/api/social/instagram/available-accounts`;
+      // Call GHL's backend API directly - matching exact pattern from HAR file
+      const endpoint = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`;
 
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firm_user_id: firmUserId,
-          agent_id: 'SOL',
-          oauth_id: oAuthId
-        })
+          'Accept': 'application/json, text/plain, */*',
+          'Authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER'
+        }
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || `API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`❌ GHL API error (${response.status}):`, errorText);
+        throw new Error(`GHL API error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log(`✅ ${platform} ${platform === 'facebook' ? 'pages' : 'accounts'} response:`, data);
+      console.log(`✅ GHL ${platform} response:`, data);
 
-      if (data.success) {
-        // Facebook returns 'pages', Instagram returns 'accounts'
-        const items = platform === 'facebook' ? data.pages : data.accounts;
-        if (items) {
+      if (data.success && data.results) {
+        // GHL returns pages in results.pages for Facebook, accounts in results.accounts for Instagram, profile in results.profile for LinkedIn
+        console.log('🔍 Checking results structure:', {
+          hasPages: !!data.results.pages,
+          pagesLength: data.results.pages?.length,
+          hasAccounts: !!data.results.accounts,
+          accountsLength: data.results.accounts?.length,
+          hasProfile: !!data.results.profile,
+          profileLength: data.results.profile?.length,
+          platform
+        });
+        
+        // Check for non-empty arrays - empty arrays are truthy but we need items
+        const items = (data.results.pages && data.results.pages.length > 0) ? data.results.pages
+          : (data.results.accounts && data.results.accounts.length > 0) ? data.results.accounts
+          : (data.results.profile && data.results.profile.length > 0) ? data.results.profile
+          : [];
+        console.log('📋 Extracted items:', items);
+        
+        if (items.length > 0) {
+          console.log('✅ Setting socialMediaPages with', items.length, 'items');
           setSocialMediaPages(items);
           setSocialMediaOAuthId(oAuthId);
           setShowSocialMediaPages(true);
-          toast.success(`Found ${items.length} available ${platform === 'facebook' ? 'pages' : 'accounts'}`);
+          const itemType = platform === 'facebook' ? 'page' : platform === 'linkedin' ? 'profile' : 'account';
+          toast.success(`Found ${items.length} available ${itemType}${items.length !== 1 ? 's' : ''}`);
+        } else {
+          console.log('⚠️ No items found in response');
+          const itemType = platform === 'facebook' ? 'pages' : platform === 'linkedin' ? 'profiles' : 'accounts';
+          toast.info(`No ${itemType} found for this OAuth connection`);
         }
+      } else {
+        throw new Error('Invalid response from GHL API');
       }
     } catch (error: any) {
-      console.error(`❌ Error fetching ${platform} accounts:`, error);
+      console.error(`❌ Error fetching ${platform} accounts from GHL:`, error);
       toast.error(error.message || `Failed to fetch ${platform} accounts`);
     } finally {
       setSocialMediaLoading(false);
@@ -1242,6 +1615,87 @@ export default function IntegrationsSettings() {
   };
 
   const connectSocialMediaPage = async (page: any) => {
+    if (!socialMediaOAuthId) {
+      toast.error('Missing OAuth ID');
+      return;
+    }
+
+    // For LinkedIn and all new platforms, call GHL API directly (no backend needed)
+    const directGHLPlatforms = ['linkedin', 'threads', 'gbp', 'tiktok', 'youtube', 'pinterest', 'community', 'bluesky'];
+    if (directGHLPlatforms.includes(socialMediaPlatform)) {
+      if (!locationId || !firebaseToken || !accessToken) {
+        toast.error('Missing authentication tokens');
+        return;
+      }
+
+      setSocialMediaLoading(true);
+      try {
+        console.log(`🔗 Connecting ${socialMediaPlatform} account:`, page);
+
+        // Call GHL's API directly to connect account
+        const endpoint = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${socialMediaPlatform}/accounts/${socialMediaOAuthId}`;
+
+        // Match GHL's exact POST body format
+        // Map platform-specific types to GHL expected values
+        let accountType = page.type || (socialMediaPlatform === 'linkedin' ? 'profile' : 'account');
+        
+        // Pinterest returns "PINNER" but GHL expects "profile"
+        if (accountType === 'PINNER') {
+          accountType = 'profile';
+        }
+        
+        const requestBody = {
+          originId: page.id,
+          type: accountType,
+          name: page.name,
+          avatar: page.avatar,
+          ...(page.urn && { urn: page.urn })
+        };
+
+        console.log('📤 POST request to GHL:', endpoint);
+        console.log('📤 Request body:', requestBody);
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json, text/plain, */*',
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'token-id': firebaseToken,
+            'version': '2021-07-28',
+            'channel': 'APP',
+            'source': 'WEB_USER'
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ GHL API error:', errorText);
+          throw new Error(`Failed to connect account: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(`✅ ${socialMediaPlatform} account connected:`, data);
+
+        toast.success(`Connected ${page.name} successfully!`);
+        
+        // Refresh the accounts list
+        fetchSocialMediaAccountsWithOAuthId(socialMediaOAuthId, socialMediaPlatform);
+        
+        // Refresh connected accounts to update the UI
+        fetchConnectedSocialMediaAccounts();
+        
+        return;
+      } catch (error: any) {
+        console.error(`❌ Error connecting ${socialMediaPlatform} account:`, error);
+        toast.error(error.message || `Failed to connect ${socialMediaPlatform} account`);
+        setSocialMediaLoading(false);
+        return;
+      }
+    }
+
+    // For Facebook and Instagram, use backend endpoints
     if (!firmUserId || !socialMediaOAuthId) {
       toast.error('Missing required information');
       return;
@@ -1311,6 +1765,58 @@ export default function IntegrationsSettings() {
     }
   };
 
+  const deleteSocialMediaAccount = async (account: any) => {
+    if (!locationId || !firebaseToken || !accessToken || !ghlUserId) {
+      toast.error('Missing authentication tokens');
+      return;
+    }
+
+    // Confirm deletion
+    if (!window.confirm(`Are you sure you want to delete "${account.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting social media account:', account);
+
+      // Call GHL's DELETE endpoint
+      // Format: /social-media-posting/{locationId}/accounts/{accountId}?userId={userId}
+      const endpoint = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts/${account.id}?userId=${ghlUserId}`;
+
+      console.log('📤 DELETE request to:', endpoint);
+
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'version': '2021-07-28',
+          'channel': 'APP',
+          'source': 'WEB_USER'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ GHL API error:', errorText);
+        throw new Error(`Failed to delete account: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Account deleted:', data);
+
+      toast.success(`Successfully deleted ${account.name}`);
+
+      // Refresh the connected accounts list
+      fetchConnectedSocialMediaAccounts();
+
+    } catch (error: any) {
+      console.error('❌ Error deleting account:', error);
+      toast.error(error.message || 'Failed to delete account');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
       'created': { label: 'Active', variant: 'default' },
@@ -1336,7 +1842,17 @@ export default function IntegrationsSettings() {
         </div>
 
         {/* Integration Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="relative">
+          {(refreshingToken || pollingForToken) && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
+              <div className="text-center">
+                <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
+                <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
+                <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Google Account Integration */}
           <Card className="hover:shadow-lg transition-shadow">
             <CardContent className="pt-6">
@@ -1455,43 +1971,92 @@ export default function IntegrationsSettings() {
                   )}
                 </div>
                 <div>
-                  <div className="flex items-center justify-center gap-2">
-                    <h3 className="font-semibold text-lg text-gray-900">Facebook/Instagram Ads</h3>
-                    {(facebookPages.length > 0 || facebookAdAccounts.length > 0) && (
-                      <Badge variant="default" className="bg-green-500">Connected</Badge>
-                    )}
-                  </div>
+                  <h3 className="font-semibold text-lg text-gray-900">Facebook/Instagram Ads</h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    {(facebookPages.length > 0 || facebookAdAccounts.length > 0)
-                      ? `${facebookPages.length} page${facebookPages.length !== 1 ? 's' : ''}, ${facebookAdAccounts.length} ad account${facebookAdAccounts.length !== 1 ? 's' : ''}`
-                      : 'Connect your Facebook account and Instagram for ads management'
-                    }
+                    Connect your Facebook account and Instagram for ads management
                   </p>
-                  {facebookPages.length > 0 && (
-                    <div className="mt-2 text-xs text-gray-600">
-                      <p className="font-medium">Pages:</p>
-                      {facebookPages.filter(p => p.isConnected).map(p => (
-                        <div key={p.id} className="flex items-center gap-1 text-green-600">
-                          <CheckCircle className="w-3 h-3" />
-                          <span>{p.name}</span>
+                  {(facebookPages.length > 0 || facebookAdAccounts.length > 0) && (
+                    <div className="mt-3 space-y-2">
+                      <Badge variant="default" className="bg-green-500">
+                        {facebookPages.length + facebookAdAccounts.length} Connected
+                      </Badge>
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-gray-700">Ad Accounts:</p>
+                        <div className="space-y-2">
+                          {facebookAdAccounts.map((account) => (
+                            <div key={account.id || account.adAccountId} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img 
+                                src="https://techstory.in/wp-content/uploads/2023/09/Facebook_Logo_2019-1024x1024.png" 
+                                alt="Facebook"
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{account.name || account.adAccountName}</p>
+                                <p className="text-xs text-gray-500">Ad Account</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                  {facebookAdAccounts.length > 0 && (
-                    <div className="mt-2 text-xs text-gray-600">
-                      <p className="font-medium">Ad Accounts:</p>
-                      <p>{facebookAdAccounts.map(a => a.name).join(', ')}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-gray-700">Pages:</p>
+                        <div className="space-y-2">
+                          {facebookPages.filter(page => page.isConnected).map((page) => {
+                            const pageId = page.facebookPageId || page.id;
+                            const pageName = page.facebookPageName || page.name;
+                            return (
+                              <div key={pageId} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                                <img 
+                                  src="https://techstory.in/wp-content/uploads/2023/09/Facebook_Logo_2019-1024x1024.png" 
+                                  alt="Facebook"
+                                  className="w-8 h-8 rounded-full"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-gray-900 truncate">{pageName}</p>
+                                  <p className="text-xs text-gray-500">Facebook Page</p>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0"
+                                  onClick={() => handleFacebookPageDisconnect(page)}
+                                  disabled={facebookLoading}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
-                <Button 
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-                  onClick={() => setShowFacebookPages(true)}
-                  disabled={loading || !locationId}
-                >
-                  {(facebookPages.length > 0 || facebookAdAccounts.length > 0) ? 'Manage Integration' : 'Connect Facebook'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                    onClick={() => {
+                      if (locationId && ghlUserId) {
+                        const oauthUrl = `https://backend.leadconnectorhq.com/integrations/oauth/start?locationId=${locationId}&userId=${ghlUserId}&type=facebook`;
+                        window.open(oauthUrl, 'facebook-oauth', 'width=600,height=700');
+                      }
+                    }}
+                    disabled={loading || !locationId || !ghlUserId || facebookLoading}
+                  >
+                    {facebookLoading ? 'Loading...' : 'Add New Account'}
+                  </Button>
+                  {(facebookPages.length > 0 || facebookAdAccounts.length > 0) && (
+                    <Button 
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setShowFacebookPages(true)}
+                    >
+                      Manage
+                    </Button>
+                  )}
+                </div>
                 {!loading && !locationId && (
                   <p className="text-xs text-red-500">
                     Please set up a GHL subaccount first
@@ -1508,73 +2073,65 @@ export default function IntegrationsSettings() {
             <CardContent className="pt-6">
               {!facebookDidLogin ? (
                 <div className="max-w-4xl mx-auto space-y-6">
-                  <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="w-6 h-6 text-green-600" />
-                      <div>
-                        <p className="font-semibold text-green-800">Facebook Connected</p>
-                        <p className="text-sm text-green-600">Found {facebookPages.length} pages</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          if (facebookOAuthUrl) {
-                            window.open(facebookOAuthUrl, '_blank', 'width=600,height=700');
-                          } else {
-                            toast.error('OAuth URL not available. Please refresh the page.');
-                          }
-                        }}
-                      >
-                        Reconnect
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setShowFacebookPages(false);
-                          setFacebookDidLogin(null);
-                          setFacebookPages([]);
-                          setSelectedFacebookPages([]);
-                        }}
-                      >
-                        Start Over
-                      </Button>
-                    </div>
-                  </div>
-
                   <div>
                     <p className="font-semibold text-gray-800 mb-4">Select the Facebook pages you want to connect</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
-                      {facebookPages.map((page) => (
-                        <label 
-                          key={page.id} 
-                          className={`flex items-center gap-3 cursor-pointer p-4 border-2 rounded-lg hover:bg-gray-50 transition-colors ${page.isConnected ? 'bg-green-50' : ''}`}
-                          style={{ borderColor: page.isConnected ? '#10b981' : (selectedFacebookPages.includes(page.id) ? '#8b5cf6' : '#e5e7eb') }}
-                        >
-                          {page.isConnected ? (
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                          ) : (
-                            <input
-                              type="checkbox"
-                              checked={selectedFacebookPages.includes(page.id)}
-                              onChange={() => handleFacebookPageToggle(page.id)}
-                              className="w-4 h-4 text-purple-500"
-                            />
-                          )}
-                          <div className="flex-1">
+                    <div className="space-y-3">
+                      {facebookPages.map((page) => {
+                        const pageId = page.facebookPageId || page.id;
+                        const pageName = page.facebookPageName || page.name;
+                        return (
+                          <div 
+                            key={pageId} 
+                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                          >
+                            <div className="flex items-start gap-3 flex-1">
+                              <img 
+                                src="https://techstory.in/wp-content/uploads/2023/09/Facebook_Logo_2019-1024x1024.png" 
+                                alt="Facebook"
+                                className="w-12 h-12 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-medium text-gray-900">{pageName}</p>
+                                  {page.isConnected ? (
+                                    <Badge variant="default" className="bg-green-500 text-xs">
+                                      Active
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Not Connected
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 mb-2">ID: {pageId}</p>
+                              </div>
+                            </div>
                             <div className="flex items-center gap-2">
-                              <p className="font-medium text-gray-800">{page.name}</p>
-                              {page.isConnected && (
-                                <Badge variant="default" className="bg-green-500 text-xs">Connected</Badge>
+                              {page.isConnected ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => handleFacebookPageDisconnect(page)}
+                                    disabled={facebookLoading}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                                </>
+                              ) : (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedFacebookPages.includes(pageId)}
+                                  onChange={() => handleFacebookPageToggle(pageId)}
+                                  className="w-4 h-4 text-purple-500 cursor-pointer"
+                                />
                               )}
                             </div>
-                            <p className="text-xs text-gray-500">ID: {page.id}</p>
                           </div>
-                        </label>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -1641,12 +2198,23 @@ export default function IntegrationsSettings() {
               </div>
             </CardContent>
           </Card>
+          </div>
         </div>
 
         {/* Social Media Integrations Section */}
         <div className="mt-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Social Media Integrations</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="relative">
+            {(refreshingToken || pollingForToken) && (
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
+                <div className="text-center">
+                  <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
+                  <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
+                  <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Facebook Social Media Posting */}
             <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="pt-6">
@@ -1663,13 +2231,13 @@ export default function IntegrationsSettings() {
                     <p className="text-sm text-gray-500 mt-1">
                       Connect Facebook pages for social media posting
                     </p>
-                    {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook').length > 0 && (
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook' && !a.deleted).length > 0 && (
                       <div className="mt-3 space-y-2">
                         <Badge variant="default" className="bg-green-500">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook').length} Page{connectedSocialMediaAccounts.filter(a => a.platform === 'facebook').length !== 1 ? 's' : ''} Connected
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook' && !a.deleted).length} Page{connectedSocialMediaAccounts.filter(a => a.platform === 'facebook' && !a.deleted).length !== 1 ? 's' : ''} Connected
                         </Badge>
                         <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook').map((account) => (
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook' && !a.deleted).map((account) => (
                             <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
                               <img 
                                 src={account.avatar} 
@@ -1687,13 +2255,27 @@ export default function IntegrationsSettings() {
                       </div>
                     )}
                   </div>
-                  <Button 
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-                    onClick={handleSocialMediaFacebookConnect}
-                    disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
-                  >
-                    {socialMediaLoading ? 'Loading...' : 'Connect Facebook'}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                      onClick={handleSocialMediaFacebookConnect}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('facebook');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
                   {!loading && (!locationId || !ghlUserId) && (
                     <p className="text-xs text-red-500">
                       Please set up a GHL subaccount first
@@ -1719,13 +2301,13 @@ export default function IntegrationsSettings() {
                     <p className="text-sm text-gray-500 mt-1">
                       Connect Instagram accounts for social media posting
                     </p>
-                    {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram').length > 0 && (
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram' && !a.deleted).length > 0 && (
                       <div className="mt-3 space-y-2">
                         <Badge variant="default" className="bg-green-500">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram').length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'instagram').length !== 1 ? 's' : ''} Connected
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'instagram' && !a.deleted).length !== 1 ? 's' : ''} Connected
                         </Badge>
                         <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram').map((account) => (
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram' && !a.deleted).map((account) => (
                             <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
                               <img 
                                 src={account.avatar} 
@@ -1743,13 +2325,27 @@ export default function IntegrationsSettings() {
                       </div>
                     )}
                   </div>
-                  <Button 
-                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
-                    onClick={handleSocialMediaInstagramConnect}
-                    disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
-                  >
-                    {socialMediaLoading ? 'Loading...' : 'Connect Instagram'}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
+                      onClick={handleSocialMediaInstagramConnect}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('instagram');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
                   {!loading && (!locationId || !ghlUserId) && (
                     <p className="text-xs text-red-500">
                       Please set up a GHL subaccount first
@@ -1758,24 +2354,155 @@ export default function IntegrationsSettings() {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
 
-        {/* Social Media Pages Modal */}
-        {showSocialMediaPages && (
-          <Card className="mt-6">
+            {/* LinkedIn Social Media Posting */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" 
+                      alt="LinkedIn"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">LinkedIn Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect LinkedIn profiles for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'linkedin' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'linkedin' && !a.deleted).length} Profile{connectedSocialMediaAccounts.filter(a => a.platform === 'linkedin' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'linkedin' && !a.deleted).map((account) => (
+                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img 
+                                src={account.avatar} 
+                                alt={account.name}
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
+                                <p className="text-xs text-gray-500">LinkedIn Profile</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white"
+                      onClick={handleSocialMediaLinkedInConnect}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'linkedin' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('linkedin');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Threads Social Media */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://img.freepik.com/premium-vector/threads-logo-vector-eps-svg-ai-free-download-threads-app-logotype-logo-threads-instagram-meta_691560-10895.jpg?w=1480" 
+                      alt="Threads"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">Threads Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect Threads accounts for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'threads' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'threads' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'threads' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'threads' && !a.deleted).map((account) => (
+                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img 
+                                src={account.avatar} 
+                                alt={account.name}
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
+                                <p className="text-xs text-gray-500">Threads Account</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-black to-gray-800 hover:from-gray-900 hover:to-gray-700 text-white"
+                      onClick={() => handleSocialMediaConnect('threads')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'threads' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('threads');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Show modal directly after Threads card if Threads is selected */}
+            {showSocialMediaPages && socialMediaPlatform === 'threads' && (
+              <Card className="col-span-full">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>
-                    {socialMediaPlatform === 'instagram' ? 'Instagram Social Media Accounts' : 'Facebook Social Media Pages'}
-                  </CardTitle>
-                  <CardDescription>
-                    {socialMediaPlatform === 'instagram' 
-                      ? 'Select Instagram accounts to connect for social media posting'
-                      : 'Select pages to connect for social media posting'
-                    }
-                  </CardDescription>
+                  <CardTitle>Threads Social Media Accounts</CardTitle>
+                  <CardDescription>Select Threads accounts to connect for social media posting</CardDescription>
                 </div>
                 <Button
                   variant="ghost"
@@ -1789,14 +2516,11 @@ export default function IntegrationsSettings() {
             <CardContent>
               {socialMediaLoading ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">Loading {socialMediaPlatform === 'instagram' ? 'accounts' : 'pages'}...</p>
+                  <p className="text-gray-500">Loading accounts...</p>
                 </div>
               ) : socialMediaPages.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No {socialMediaPlatform === 'instagram' ? 'accounts' : 'pages'} available. Please complete OAuth first.</p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    After OAuth, you'll need to provide the OAuth ID to fetch {socialMediaPlatform === 'instagram' ? 'accounts' : 'pages'}.
-                  </p>
+                  <p className="text-gray-500">No accounts available. Please complete OAuth first.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1839,8 +2563,696 @@ export default function IntegrationsSettings() {
                 </div>
               )}
             </CardContent>
-          </Card>
-        )}
+              </Card>
+            )}
+
+            {/* Show manage modal directly after Threads card if Threads is being managed */}
+            {showManageModal && managePlatform === 'threads' && (
+              <Card className="col-span-full">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Manage Threads Integrations</CardTitle>
+                  <CardDescription>View and manage all connected accounts</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowManageModal(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {connectedSocialMediaAccounts
+                  .filter(a => a.platform === 'threads' && !a.deleted)
+                  .map((account) => {
+                    const isExpired = account.isExpired || false;
+                    const expireDate = account.expire ? new Date(account.expire) : null;
+                    const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                    
+                    return (
+                      <div
+                        key={account.id}
+                        className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-start gap-3 flex-1">
+                          {account.avatar && (
+                            <img
+                              src={account.avatar}
+                              alt={account.name}
+                              className="w-12 h-12 rounded-full"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-gray-900">{account.name}</p>
+                              {isExpired ? (
+                                <Badge variant="destructive" className="text-xs">
+                                  Expired
+                                </Badge>
+                              ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
+                                <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                  Expires in {daysUntilExpire} days
+                                </Badge>
+                              ) : (
+                                <Badge variant="default" className="bg-green-500 text-xs">
+                                  Active
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                            {expireDate && (
+                              <p className="text-xs text-gray-400">
+                                Expires: {expireDate.toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => deleteSocialMediaAccount(account)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </CardContent>
+              </Card>
+            )}
+
+            {/* TikTok Social Media */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://static.vecteezy.com/system/resources/previews/016/716/450/original/tiktok-icon-free-png.png" 
+                      alt="TikTok"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">TikTok Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect TikTok accounts for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'tiktok' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'tiktok' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'tiktok' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'tiktok' && !a.deleted).map((account) => (
+                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img 
+                                src={account.avatar} 
+                                alt={account.name}
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
+                                <p className="text-xs text-gray-500">TikTok Account</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-black to-pink-600 hover:from-gray-900 hover:to-pink-700 text-white"
+                      onClick={() => handleSocialMediaConnect('tiktok')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'tiktok' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('tiktok');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Show modal directly after TikTok card if TikTok is selected */}
+            {showSocialMediaPages && socialMediaPlatform === 'tiktok' && (
+              <Card className="col-span-full">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>TikTok Social Media Accounts</CardTitle>
+                  <CardDescription>Select TikTok accounts to connect for social media posting</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSocialMediaPages(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {socialMediaLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading accounts...</p>
+                </div>
+              ) : socialMediaPages.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No accounts available. Please complete OAuth first.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {socialMediaPages.map((page) => (
+                    <div
+                      key={page.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        {page.avatar && (
+                          <img
+                            src={page.avatar}
+                            alt={page.name}
+                            className="w-10 h-10 rounded-full"
+                          />
+                        )}
+                        <div>
+                          <p className="font-medium">{page.name}</p>
+                          <p className="text-xs text-gray-500">ID: {page.id}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {page.isConnected ? (
+                          <Badge variant="default" className="bg-green-500">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Connected
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => connectSocialMediaPage(page)}
+                            disabled={socialMediaLoading}
+                          >
+                            Connect
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+              </Card>
+            )}
+
+            {/* Show manage modal directly after TikTok card if TikTok is being managed */}
+            {showManageModal && managePlatform === 'tiktok' && (
+              <Card className="col-span-full">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Manage TikTok Integrations</CardTitle>
+                  <CardDescription>View and manage all connected accounts</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowManageModal(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {connectedSocialMediaAccounts
+                  .filter(a => a.platform === 'tiktok' && !a.deleted)
+                  .map((account) => {
+                    const isExpired = account.isExpired || false;
+                    const expireDate = account.expire ? new Date(account.expire) : null;
+                    const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                    
+                    return (
+                      <div
+                        key={account.id}
+                        className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-start gap-3 flex-1">
+                          {account.avatar && (
+                            <img
+                              src={account.avatar}
+                              alt={account.name}
+                              className="w-12 h-12 rounded-full"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-gray-900">{account.name}</p>
+                              {isExpired ? (
+                                <Badge variant="destructive" className="text-xs">
+                                  Expired
+                                </Badge>
+                              ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
+                                <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                  Expires in {daysUntilExpire} days
+                                </Badge>
+                              ) : (
+                                <Badge variant="default" className="bg-green-500 text-xs">
+                                  Active
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                            {expireDate && (
+                              <p className="text-xs text-gray-400">
+                                Expires: {expireDate.toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteSocialMediaAccount(account)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </CardContent>
+              </Card>
+            )}
+
+            {/* YouTube Social Media */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg" 
+                      alt="YouTube"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">YouTube Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect YouTube channels for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'youtube' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'youtube' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'youtube' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'youtube' && !a.deleted).map((account) => (
+                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img 
+                                src={account.avatar} 
+                                alt={account.name}
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
+                                <p className="text-xs text-gray-500">YouTube Channel</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
+                      onClick={() => handleSocialMediaConnect('youtube')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'youtube' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('youtube');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* YouTube inline modals */}
+            {showSocialMediaPages && socialMediaPlatform === 'youtube' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>YouTube Social Media Channels</CardTitle>
+                      <CardDescription>Select YouTube channels to connect for social media posting</CardDescription>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setShowSocialMediaPages(false)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {socialMediaLoading ? (
+                    <div className="text-center py-8"><p className="text-gray-500">Loading channels...</p></div>
+                  ) : socialMediaPages.length === 0 ? (
+                    <div className="text-center py-8"><p className="text-gray-500">No channels available.</p></div>
+                  ) : (
+                    <div className="space-y-3">
+                      {socialMediaPages.map((page) => (
+                        <div key={page.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                          <div className="flex items-center gap-3">
+                            {page.avatar && <img src={page.avatar} alt={page.name} className="w-10 h-10 rounded-full" />}
+                            <div><p className="font-medium">{page.name}</p><p className="text-xs text-gray-500">ID: {page.id}</p></div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {page.isConnected ? (
+                              <Badge variant="default" className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Connected</Badge>
+                            ) : (
+                              <Button size="sm" onClick={() => connectSocialMediaPage(page)} disabled={socialMediaLoading}>Connect</Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            {showManageModal && managePlatform === 'youtube' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div><CardTitle>Manage YouTube Integrations</CardTitle><CardDescription>View and manage all connected channels</CardDescription></div>
+                    <Button variant="ghost" size="sm" onClick={() => setShowManageModal(false)}><X className="w-4 h-4" /></Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'youtube' && !a.deleted).map((account) => {
+                      const isExpired = account.isExpired || false;
+                      const expireDate = account.expire ? new Date(account.expire) : null;
+                      const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                      return (
+                        <div key={account.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50">
+                          <div className="flex items-start gap-3 flex-1">
+                            {account.avatar && <img src={account.avatar} alt={account.name} className="w-12 h-12 rounded-full" />}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-medium text-gray-900">{account.name}</p>
+                                {isExpired ? <Badge variant="destructive" className="text-xs">Expired</Badge> : daysUntilExpire !== null && daysUntilExpire < 30 ? <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">Expires in {daysUntilExpire} days</Badge> : <Badge variant="default" className="bg-green-500 text-xs">Active</Badge>}
+                              </div>
+                              <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                              {expireDate && <p className="text-xs text-gray-400">Expires: {expireDate.toLocaleDateString()}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => deleteSocialMediaAccount(account)} className="text-red-600 hover:text-red-700 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
+                            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pinterest Social Media */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://upload.wikimedia.org/wikipedia/commons/0/08/Pinterest-logo.png" 
+                      alt="Pinterest"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">Pinterest Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect Pinterest accounts for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'pinterest' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'pinterest' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'pinterest' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'pinterest' && !a.deleted).map((account) => (
+                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img 
+                                src={account.avatar} 
+                                alt={account.name}
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
+                                <p className="text-xs text-gray-500">Pinterest Account</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white"
+                      onClick={() => handleSocialMediaConnect('pinterest')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'pinterest' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('pinterest');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Show modal directly after Pinterest card if Pinterest is selected */}
+            {showSocialMediaPages && socialMediaPlatform === 'pinterest' && (
+              <Card className="col-span-full">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Pinterest Social Media Accounts</CardTitle>
+                  <CardDescription>Select Pinterest accounts to connect for social media posting</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSocialMediaPages(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {socialMediaLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading accounts...</p>
+                </div>
+              ) : socialMediaPages.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No accounts available. Please complete OAuth first.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {socialMediaPages.map((page) => (
+                    <div
+                      key={page.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        {page.avatar && (
+                          <img
+                            src={page.avatar}
+                            alt={page.name}
+                            className="w-10 h-10 rounded-full"
+                          />
+                        )}
+                        <div>
+                          <p className="font-medium">{page.name}</p>
+                          <p className="text-xs text-gray-500">ID: {page.id}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {page.isConnected ? (
+                          <Badge variant="default" className="bg-green-500">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Connected
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => connectSocialMediaPage(page)}
+                            disabled={socialMediaLoading}
+                          >
+                            Connect
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+              </Card>
+            )}
+
+            {/* Show manage modal directly after Pinterest card if Pinterest is being managed */}
+            {showManageModal && managePlatform === 'pinterest' && (
+              <Card className="col-span-full">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Manage Pinterest Integrations</CardTitle>
+                  <CardDescription>View and manage all connected accounts</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowManageModal(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {connectedSocialMediaAccounts
+                  .filter(a => a.platform === 'pinterest' && !a.deleted)
+                  .map((account) => {
+                    const isExpired = account.isExpired || false;
+                    const expireDate = account.expire ? new Date(account.expire) : null;
+                    const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                    
+                    return (
+                      <div
+                        key={account.id}
+                        className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-start gap-3 flex-1">
+                          {account.avatar && (
+                            <img
+                              src={account.avatar}
+                              alt={account.name}
+                              className="w-12 h-12 rounded-full"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-gray-900">{account.name}</p>
+                              {isExpired ? (
+                                <Badge variant="destructive" className="text-xs">
+                                  Expired
+                                </Badge>
+                              ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
+                                <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                  Expires in {daysUntilExpire} days
+                                </Badge>
+                              ) : (
+                                <Badge variant="default" className="bg-green-500 text-xs">
+                                  Active
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                            {expireDate && (
+                              <p className="text-xs text-gray-400">
+                                Expires: {expireDate.toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => deleteSocialMediaAccount(account)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </CardContent>
+              </Card>
+            )}
+
+            </div>
+          </div>
+        </div>
 
         {/* Coming Soon Section */}
         <Card className="border-dashed mt-8">
