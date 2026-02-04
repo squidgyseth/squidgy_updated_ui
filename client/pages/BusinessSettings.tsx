@@ -168,8 +168,11 @@ export default function BusinessSettings() {
       if (logoFile) {
         try {
           const uploadedUrl = await uploadCompanyLogo(logoFile);
+          console.log('Logo uploaded, URL:', uploadedUrl);
           if (uploadedUrl) {
             newLogoUrl = uploadedUrl;
+            // Update settings state with the actual URL (not base64)
+            setSettings(prev => ({ ...prev, companyLogo: uploadedUrl }));
           }
         } catch (error: any) {
           throw new Error(`Logo upload failed: ${error.message}`);
@@ -202,23 +205,7 @@ export default function BusinessSettings() {
       // Use upsert since we have unique constraint on user_id
       const { error } = await supabase
         .from('business_settings')
-        .upsert({
-          user_id: profile.user_id,
-          company_name: settings.companyName.trim(),
-          industry: settings.industry,
-          team_size: settings.teamSize,
-          business_email: settings.businessEmail.trim(),
-          phone_number: settings.phoneNumber.trim(),
-          emergency_numbers: emergencyNumbers.filter(num => num.trim() !== ''),
-          country: settings.country,
-          address_method: settings.addressMethod,
-          address: settings.address.trim(),
-          city: settings.city.trim(),
-          state: settings.state.trim(),
-          postal_code: settings.postalCode.trim(),
-          company_logo_url: settings.companyLogo || null,
-          updated_at: new Date().toISOString()
-        }, {
+        .upsert(businessData, {
           onConflict: 'user_id',
           ignoreDuplicates: false
         });
@@ -296,31 +283,17 @@ export default function BusinessSettings() {
     setIsUploadingLogo(true);
 
     try {
-      // Check if Supabase is configured
-      const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' ||
-        !import.meta.env.VITE_SUPABASE_URL ||
-        import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
-
-      if (isDevelopment) {
-        // Simulate upload delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Return the current preview URL (base64) for development
-        return settings.companyLogo || null;
-      }
-
-      // Production mode - use Supabase storage with profiles bucket (company logos folder)
       const { supabase } = await import('../lib/supabase');
 
-      // Generate a unique filename
+      // Generate a unique filename with business_logos subfolder and userId
       const fileExt = file.name.split('.').pop();
-      const fileName = `${profile.user_id}-${Date.now()}.${fileExt}`;
-      const filePath = `company-logos/${fileName}`;
+      const fileName = `logo-${Date.now()}.${fileExt}`;
+      const filePath = `business_logos/${profile.user_id}/${fileName}`;
 
-      // Upload to profiles bucket (company-logos folder)
+      // Upload to static bucket (business_logos subfolder)
       const { error } = await supabase
         .storage
-        .from('profiles')
+        .from('static')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true
@@ -331,7 +304,7 @@ export default function BusinessSettings() {
       // Get public URL
       const { data: urlData } = supabase
         .storage
-        .from('profiles')
+        .from('static')
         .getPublicUrl(filePath);
 
       if (!urlData || !urlData.publicUrl) {
