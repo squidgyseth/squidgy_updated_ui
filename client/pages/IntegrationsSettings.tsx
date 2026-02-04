@@ -2285,6 +2285,90 @@ export default function IntegrationsSettings() {
               </CardContent>
             </Card>
 
+            {/* Show manage modal for Facebook social media */}
+            {showManageModal && managePlatform === 'facebook' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Manage Facebook Integrations</CardTitle>
+                      <CardDescription>View and manage all connected accounts</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowManageModal(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {connectedSocialMediaAccounts
+                      .filter(a => a.platform === 'facebook' && !a.deleted)
+                      .map((account) => {
+                        const isExpired = account.isExpired || false;
+                        const expireDate = account.expire ? new Date(account.expire) : null;
+                        const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                        
+                        return (
+                          <div
+                            key={account.id}
+                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                          >
+                            <div className="flex items-start gap-3 flex-1">
+                              {account.avatar && (
+                                <img
+                                  src={account.avatar}
+                                  alt={account.name}
+                                  className="w-12 h-12 rounded-full"
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-medium text-gray-900">{account.name}</p>
+                                  {isExpired ? (
+                                    <Badge variant="destructive" className="text-xs">
+                                      Expired
+                                    </Badge>
+                                  ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
+                                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                      Expires in {daysUntilExpire} days
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="default" className="bg-green-500 text-xs">
+                                      Active
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                                {expireDate && (
+                                  <p className="text-xs text-gray-400">
+                                    Expires: {expireDate.toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteSocialMediaAccount(account)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Instagram Social Media Posting */}
             <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="pt-6">
@@ -2355,6 +2439,90 @@ export default function IntegrationsSettings() {
               </CardContent>
             </Card>
 
+            {/* Show manage modal for Instagram social media */}
+            {showManageModal && managePlatform === 'instagram' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Manage Instagram Integrations</CardTitle>
+                      <CardDescription>View and manage all connected accounts</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowManageModal(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {connectedSocialMediaAccounts
+                      .filter(a => a.platform === 'instagram' && !a.deleted)
+                      .map((account) => {
+                        const isExpired = account.isExpired || false;
+                        const expireDate = account.expire ? new Date(account.expire) : null;
+                        const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                        
+                        return (
+                          <div
+                            key={account.id}
+                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                          >
+                            <div className="flex items-start gap-3 flex-1">
+                              {account.avatar && (
+                                <img
+                                  src={account.avatar}
+                                  alt={account.name}
+                                  className="w-12 h-12 rounded-full"
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-medium text-gray-900">{account.name}</p>
+                                  {isExpired ? (
+                                    <Badge variant="destructive" className="text-xs">
+                                      Expired
+                                    </Badge>
+                                  ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
+                                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                      Expires in {daysUntilExpire} days
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="default" className="bg-green-500 text-xs">
+                                      Active
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                                {expireDate && (
+                                  <p className="text-xs text-gray-400">
+                                    Expires: {expireDate.toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteSocialMediaAccount(account)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* LinkedIn Social Media Posting */}
             <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="pt-6">
@@ -2424,6 +2592,90 @@ export default function IntegrationsSettings() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Show manage modal for LinkedIn social media */}
+            {showManageModal && managePlatform === 'linkedin' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Manage LinkedIn Integrations</CardTitle>
+                      <CardDescription>View and manage all connected accounts</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowManageModal(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {connectedSocialMediaAccounts
+                      .filter(a => a.platform === 'linkedin' && !a.deleted)
+                      .map((account) => {
+                        const isExpired = account.isExpired || false;
+                        const expireDate = account.expire ? new Date(account.expire) : null;
+                        const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                        
+                        return (
+                          <div
+                            key={account.id}
+                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                          >
+                            <div className="flex items-start gap-3 flex-1">
+                              {account.avatar && (
+                                <img
+                                  src={account.avatar}
+                                  alt={account.name}
+                                  className="w-12 h-12 rounded-full"
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-medium text-gray-900">{account.name}</p>
+                                  {isExpired ? (
+                                    <Badge variant="destructive" className="text-xs">
+                                      Expired
+                                    </Badge>
+                                  ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
+                                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                      Expires in {daysUntilExpire} days
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="default" className="bg-green-500 text-xs">
+                                      Active
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                                {expireDate && (
+                                  <p className="text-xs text-gray-400">
+                                    Expires: {expireDate.toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteSocialMediaAccount(account)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Threads Social Media */}
             <Card className="hover:shadow-lg transition-shadow">
