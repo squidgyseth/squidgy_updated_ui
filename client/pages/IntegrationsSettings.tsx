@@ -1577,9 +1577,17 @@ export default function IntegrationsSettings() {
         const endpoint = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${socialMediaPlatform}/accounts/${socialMediaOAuthId}`;
 
         // Match GHL's exact POST body format
+        // Map platform-specific types to GHL expected values
+        let accountType = page.type || (socialMediaPlatform === 'linkedin' ? 'profile' : 'account');
+        
+        // Pinterest returns "PINNER" but GHL expects "profile"
+        if (accountType === 'PINNER') {
+          accountType = 'profile';
+        }
+        
         const requestBody = {
           originId: page.id,
-          type: page.type || (socialMediaPlatform === 'linkedin' ? 'profile' : 'account'),
+          type: accountType,
           name: page.name,
           avatar: page.avatar,
           ...(page.urn && { urn: page.urn })
@@ -2371,6 +2379,86 @@ export default function IntegrationsSettings() {
               </CardContent>
             </Card>
 
+            {/* Threads inline modals */}
+            {showSocialMediaPages && socialMediaPlatform === 'threads' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Threads Social Media Accounts</CardTitle>
+                      <CardDescription>Select Threads accounts to connect for social media posting</CardDescription>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setShowSocialMediaPages(false)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {socialMediaLoading ? (
+                    <div className="text-center py-8"><p className="text-gray-500">Loading accounts...</p></div>
+                  ) : socialMediaPages.length === 0 ? (
+                    <div className="text-center py-8"><p className="text-gray-500">No accounts available.</p></div>
+                  ) : (
+                    <div className="space-y-3">
+                      {socialMediaPages.map((page) => (
+                        <div key={page.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                          <div className="flex items-center gap-3">
+                            {page.avatar && <img src={page.avatar} alt={page.name} className="w-10 h-10 rounded-full" />}
+                            <div><p className="font-medium">{page.name}</p><p className="text-xs text-gray-500">ID: {page.id}</p></div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {page.isConnected ? (
+                              <Badge variant="default" className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Connected</Badge>
+                            ) : (
+                              <Button size="sm" onClick={() => connectSocialMediaPage(page)} disabled={socialMediaLoading}>Connect</Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            {showManageModal && managePlatform === 'threads' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div><CardTitle>Manage Threads Integrations</CardTitle><CardDescription>View and manage all connected accounts</CardDescription></div>
+                    <Button variant="ghost" size="sm" onClick={() => setShowManageModal(false)}><X className="w-4 h-4" /></Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'threads' && !a.deleted).map((account) => {
+                      const isExpired = account.isExpired || false;
+                      const expireDate = account.expire ? new Date(account.expire) : null;
+                      const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                      return (
+                        <div key={account.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50">
+                          <div className="flex items-start gap-3 flex-1">
+                            {account.avatar && <img src={account.avatar} alt={account.name} className="w-12 h-12 rounded-full" />}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-medium text-gray-900">{account.name}</p>
+                                {isExpired ? <Badge variant="destructive" className="text-xs">Expired</Badge> : daysUntilExpire !== null && daysUntilExpire < 30 ? <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">Expires in {daysUntilExpire} days</Badge> : <Badge variant="default" className="bg-green-500 text-xs">Active</Badge>}
+                              </div>
+                              <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                              {expireDate && <p className="text-xs text-gray-400">Expires: {expireDate.toLocaleDateString()}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => deleteSocialMediaAccount(account)} className="text-red-600 hover:text-red-700 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
+                            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Google Business Profile */}
             <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="pt-6">
@@ -2478,6 +2566,161 @@ export default function IntegrationsSettings() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Show modal directly after TikTok card if TikTok is selected */}
+            {showSocialMediaPages && socialMediaPlatform === 'tiktok' && (
+              <Card className="col-span-full">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>TikTok Social Media Accounts</CardTitle>
+                  <CardDescription>Select TikTok accounts to connect for social media posting</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSocialMediaPages(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {socialMediaLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading accounts...</p>
+                </div>
+              ) : socialMediaPages.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No accounts available. Please complete OAuth first.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {socialMediaPages.map((page) => (
+                    <div
+                      key={page.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        {page.avatar && (
+                          <img
+                            src={page.avatar}
+                            alt={page.name}
+                            className="w-10 h-10 rounded-full"
+                          />
+                        )}
+                        <div>
+                          <p className="font-medium">{page.name}</p>
+                          <p className="text-xs text-gray-500">ID: {page.id}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {page.isConnected ? (
+                          <Badge variant="default" className="bg-green-500">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Connected
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => connectSocialMediaPage(page)}
+                            disabled={socialMediaLoading}
+                          >
+                            Connect
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+              </Card>
+            )}
+
+            {/* Show manage modal directly after TikTok card if TikTok is being managed */}
+            {showManageModal && managePlatform === 'tiktok' && (
+              <Card className="col-span-full">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Manage TikTok Integrations</CardTitle>
+                  <CardDescription>View and manage all connected accounts</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowManageModal(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {connectedSocialMediaAccounts
+                  .filter(a => a.platform === 'tiktok' && !a.deleted)
+                  .map((account) => {
+                    const isExpired = account.isExpired || false;
+                    const expireDate = account.expire ? new Date(account.expire) : null;
+                    const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                    
+                    return (
+                      <div
+                        key={account.id}
+                        className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-start gap-3 flex-1">
+                          {account.avatar && (
+                            <img
+                              src={account.avatar}
+                              alt={account.name}
+                              className="w-12 h-12 rounded-full"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-gray-900">{account.name}</p>
+                              {isExpired ? (
+                                <Badge variant="destructive" className="text-xs">
+                                  Expired
+                                </Badge>
+                              ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
+                                <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                  Expires in {daysUntilExpire} days
+                                </Badge>
+                              ) : (
+                                <Badge variant="default" className="bg-green-500 text-xs">
+                                  Active
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                            {expireDate && (
+                              <p className="text-xs text-gray-400">
+                                Expires: {expireDate.toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteSocialMediaAccount(account)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </CardContent>
+              </Card>
+            )}
 
             {/* YouTube Social Media */}
             <Card className="hover:shadow-lg transition-shadow">
@@ -2695,8 +2938,8 @@ export default function IntegrationsSettings() {
               </CardContent>
             </Card>
 
-            {/* Social Media Pages Modal */}
-            {showSocialMediaPages && (
+            {/* Social Media Pages Modal (for Facebook, Instagram, LinkedIn only) */}
+            {showSocialMediaPages && !['threads', 'gbp', 'tiktok', 'youtube', 'pinterest', 'community', 'bluesky'].includes(socialMediaPlatform) && (
               <Card className="col-span-full">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -2706,14 +2949,46 @@ export default function IntegrationsSettings() {
                       ? 'Instagram Social Media Accounts' 
                       : socialMediaPlatform === 'linkedin'
                       ? 'LinkedIn Social Media Profiles'
-                      : 'Facebook Social Media Pages'}
+                      : socialMediaPlatform === 'facebook'
+                      ? 'Facebook Social Media Pages'
+                      : socialMediaPlatform === 'tiktok'
+                      ? 'TikTok Social Media Accounts'
+                      : socialMediaPlatform === 'threads'
+                      ? 'Threads Social Media Accounts'
+                      : socialMediaPlatform === 'gbp'
+                      ? 'Google Business Profile Accounts'
+                      : socialMediaPlatform === 'youtube'
+                      ? 'YouTube Social Media Channels'
+                      : socialMediaPlatform === 'pinterest'
+                      ? 'Pinterest Social Media Accounts'
+                      : socialMediaPlatform === 'community'
+                      ? 'Community Social Media Accounts'
+                      : socialMediaPlatform === 'bluesky'
+                      ? 'Bluesky Social Media Accounts'
+                      : 'Social Media Accounts'}
                   </CardTitle>
                   <CardDescription>
                     {socialMediaPlatform === 'instagram' 
                       ? 'Select Instagram accounts to connect for social media posting'
                       : socialMediaPlatform === 'linkedin'
                       ? 'Select LinkedIn profiles to connect for social media posting'
-                      : 'Select pages to connect for social media posting'
+                      : socialMediaPlatform === 'facebook'
+                      ? 'Select Facebook pages to connect for social media posting'
+                      : socialMediaPlatform === 'tiktok'
+                      ? 'Select TikTok accounts to connect for social media posting'
+                      : socialMediaPlatform === 'threads'
+                      ? 'Select Threads accounts to connect for social media posting'
+                      : socialMediaPlatform === 'gbp'
+                      ? 'Select Google Business Profile locations to connect for social media posting'
+                      : socialMediaPlatform === 'youtube'
+                      ? 'Select YouTube channels to connect for social media posting'
+                      : socialMediaPlatform === 'pinterest'
+                      ? 'Select Pinterest accounts to connect for social media posting'
+                      : socialMediaPlatform === 'community'
+                      ? 'Select Community accounts to connect for social media posting'
+                      : socialMediaPlatform === 'bluesky'
+                      ? 'Select Bluesky accounts to connect for social media posting'
+                      : 'Select accounts to connect for social media posting'
                     }
                   </CardDescription>
                 </div>
@@ -2782,17 +3057,32 @@ export default function IntegrationsSettings() {
               </Card>
             )}
 
-            {/* Manage Integrations Modal */}
-            {showManageModal && (
+            {/* Manage Integrations Modal (for Facebook, Instagram, LinkedIn only) */}
+            {showManageModal && !['threads', 'gbp', 'tiktok', 'youtube', 'pinterest', 'community', 'bluesky'].includes(managePlatform) && (
               <Card className="col-span-full">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>
-                    Manage {managePlatform === 'facebook' ? 'Facebook' : managePlatform === 'instagram' ? 'Instagram' : 'LinkedIn'} Integrations
+                    Manage {managePlatform === 'facebook' ? 'Facebook' 
+                      : managePlatform === 'instagram' ? 'Instagram' 
+                      : managePlatform === 'linkedin' ? 'LinkedIn'
+                      : managePlatform === 'tiktok' ? 'TikTok'
+                      : managePlatform === 'threads' ? 'Threads'
+                      : managePlatform === 'gbp' ? 'Google Business Profile'
+                      : managePlatform === 'youtube' ? 'YouTube'
+                      : managePlatform === 'pinterest' ? 'Pinterest'
+                      : managePlatform === 'community' ? 'Community'
+                      : managePlatform === 'bluesky' ? 'Bluesky'
+                      : managePlatform.charAt(0).toUpperCase() + managePlatform.slice(1)} Integrations
                   </CardTitle>
                   <CardDescription>
-                    View and manage all connected {managePlatform === 'facebook' ? 'pages' : managePlatform === 'instagram' ? 'accounts' : 'profiles'}
+                    View and manage all connected {managePlatform === 'facebook' ? 'pages' 
+                      : managePlatform === 'instagram' ? 'accounts' 
+                      : managePlatform === 'linkedin' ? 'profiles'
+                      : managePlatform === 'youtube' ? 'channels'
+                      : managePlatform === 'gbp' ? 'locations'
+                      : 'accounts'}
                   </CardDescription>
                 </div>
                 <Button
