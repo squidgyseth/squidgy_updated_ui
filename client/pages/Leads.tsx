@@ -25,7 +25,7 @@ import { MobileLeads } from '../components/mobile/leads/MobileLeads';
 export default function Leads() {
   const navigate = useNavigate();
   const { user, profile, isReady, isAuthenticated } = useUser();
-  const { companyName, faviconUrl, isLoading } = useCompanyBranding();
+  const { companyName, isLoading } = useCompanyBranding();
 
   const [statusFilter, setStatusFilter] = useState('All');
   const [minQualification, setMinQualification] = useState('');
@@ -250,23 +250,27 @@ export default function Leads() {
                     {user?.email || 'admin@example.com'}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center overflow-hidden">
-                  {!isLoading && faviconUrl ? (
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full flex items-center justify-center overflow-hidden">
+                  {profile?.profile_avatar_url ? (
                     <img
-                      src={faviconUrl}
-                      alt={`${companyName} logo`}
+                      src={profile.profile_avatar_url}
+                      alt="Profile"
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        // Fallback to checkmark icon if favicon fails to load
                         const target = e.currentTarget as HTMLImageElement;
                         target.style.display = 'none';
                         if (target.nextElementSibling) {
-                          (target.nextElementSibling as HTMLElement).style.display = 'block';
+                          (target.nextElementSibling as HTMLElement).style.display = 'flex';
                         }
                       }}
                     />
                   ) : null}
-                  <CheckCircle className="w-6 h-6 text-white" style={{ display: faviconUrl ? 'none' : 'block' }} />
+                  <span 
+                    className="text-white text-sm font-bold" 
+                    style={{ display: profile?.profile_avatar_url ? 'none' : 'flex' }}
+                  >
+                    {profile?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
                 </div>
               </div>
             </div>

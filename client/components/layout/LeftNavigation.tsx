@@ -3,6 +3,7 @@ import { authService } from "../../lib/auth-service";
 import { useCompanyBranding } from "../../hooks/useCompanyBranding";
 import { useUser } from "../../hooks/useUser";
 import { onboardingRouter } from "../../services/onboardingRouter";
+import { User } from "lucide-react";
 
 interface LeftNavigationProps {
   currentPage?: 'chat' | 'dashboard' | 'home' | 'leads' | 'referrals' | 'settings' | 'onboarding';
@@ -11,8 +12,8 @@ interface LeftNavigationProps {
 function LeftNavigation({ currentPage }: LeftNavigationProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { companyName, faviconUrl, isLoading } = useCompanyBranding();
-  const { userId } = useUser();
+  const { companyName, isLoading } = useCompanyBranding();
+  const { userId, profile, user } = useUser();
 
 
   // Auto-detect current page if not provided
@@ -315,36 +316,31 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
 
         {/* Profile Section */}
         <div className="flex flex-col items-center p-2 w-full">
-          <div className="w-8 h-8 rounded-full mb-1 flex items-center justify-center overflow-hidden bg-gray-100">
-            {!isLoading && faviconUrl && faviconUrl.trim() !== '' ? (
+          <div className="w-8 h-8 rounded-full mb-1 flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-400 to-pink-600">
+            {profile?.profile_avatar_url ? (
               <img
-                src={faviconUrl}
-                alt={`${companyName} logo`}
+                src={profile.profile_avatar_url}
+                alt="Profile"
                 className="w-full h-full rounded-full object-cover"
                 onError={(e) => {
-                  console.log('Company favicon failed to load, falling back to Squidgy logo');
-                  // Fallback to Squidgy logo if company favicon fails to load
-                  e.currentTarget.src = "https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64";
-                }}
-              />
-            ) : (
-              <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64"
-                alt="Squidgy logo"
-                className="w-full h-full rounded-full object-cover"
-                onError={(e) => {
-                  console.log('Squidgy logo failed to load');
-                  // If Squidgy logo fails, show text fallback
-                  const container = e.currentTarget.parentElement;
-                  if (container) {
-                    container.innerHTML = '<div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-medium">S</div>';
+                  console.log('Profile avatar failed to load');
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.style.display = 'none';
+                  if (target.nextElementSibling) {
+                    (target.nextElementSibling as HTMLElement).style.display = 'flex';
                   }
                 }}
               />
-            )}
+            ) : null}
+            <span 
+              className="text-white text-xs font-bold"
+              style={{ display: profile?.profile_avatar_url ? 'none' : 'flex' }}
+            >
+              {profile?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+            </span>
           </div>
           <span className="text-gray-500 text-[8.5px] font-normal leading-4 text-center w-[46px] truncate">
-            {isLoading ? 'Loading...' : (companyName && companyName.trim() !== '' ? companyName : '')}
+            {profile?.full_name?.split(' ')[0] || 'Profile'}
           </span>
         </div>
       </div>

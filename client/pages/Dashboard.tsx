@@ -46,8 +46,8 @@ export default function Index() {
   const [isLoadingUserName, setIsLoadingUserName] = useState(true);
   const [enabledAgentIds, setEnabledAgentIds] = useState<string[]>([]);
   const navigate = useNavigate();
-  const { companyName, faviconUrl, isLoading } = useCompanyBranding();
-  const { user, userId } = useUser();
+  const { companyName, isLoading } = useCompanyBranding();
+  const { user, userId, profile } = useUser();
 
   // Check if we should show onboarding modal - SIMPLE LOGIC
   useEffect(() => {
@@ -187,33 +187,27 @@ export default function Index() {
                     {user?.email || 'admin@example.com'}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
-                  {!isLoading && faviconUrl && faviconUrl.trim() !== '' ? (
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full flex items-center justify-center overflow-hidden">
+                  {profile?.profile_avatar_url ? (
                     <img
-                      src={faviconUrl}
-                      alt={`${companyName} logo`}
+                      src={profile.profile_avatar_url}
+                      alt="Profile"
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        // Fallback to Squidgy logo if company favicon fails to load
-                        e.currentTarget.src = "https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64";
-                      }}
-                    />
-                  ) : (
-                    <img
-                      src="https://api.builder.io/api/v1/image/assets/TEMP/e6ed19c13dbe3dffb61007c6e83218b559da44fe?width=64"
-                      alt="Squidgy logo"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        // If Squidgy logo fails, show checkmark fallback
                         const target = e.currentTarget as HTMLImageElement;
                         target.style.display = 'none';
-                        const container = target.parentElement;
-                        if (container) {
-                          container.innerHTML = '<div class="w-full h-full bg-green-600 rounded-full flex items-center justify-center"><svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></div>';
+                        if (target.nextElementSibling) {
+                          (target.nextElementSibling as HTMLElement).style.display = 'flex';
                         }
                       }}
                     />
-                  )}
+                  ) : null}
+                  <span 
+                    className="text-white text-sm font-bold" 
+                    style={{ display: profile?.profile_avatar_url ? 'none' : 'flex' }}
+                  >
+                    {profile?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
                 </div>
               </div>
             </div>
