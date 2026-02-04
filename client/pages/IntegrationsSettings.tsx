@@ -2285,6 +2285,77 @@ export default function IntegrationsSettings() {
               </CardContent>
             </Card>
 
+            {/* Show account selection modal for Facebook social media */}
+            {showSocialMediaPages && socialMediaPlatform === 'facebook' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Facebook Social Media Accounts</CardTitle>
+                      <CardDescription>Select Facebook pages to connect for social media posting</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowSocialMediaPages(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {socialMediaLoading ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">Loading accounts...</p>
+                    </div>
+                  ) : socialMediaPages.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No accounts available. Please complete OAuth first.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {socialMediaPages.map((page) => (
+                        <div
+                          key={page.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-center gap-3">
+                            {page.avatar && (
+                              <img
+                                src={page.avatar}
+                                alt={page.name}
+                                className="w-10 h-10 rounded-full"
+                              />
+                            )}
+                            <div>
+                              <p className="font-medium">{page.name}</p>
+                              <p className="text-xs text-gray-500">ID: {page.id}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {page.isConnected ? (
+                              <Badge variant="default" className="bg-green-500">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Connected
+                              </Badge>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => connectSocialMediaPage(page)}
+                                disabled={socialMediaLoading}
+                              >
+                                Connect
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Show manage modal for Facebook social media */}
             {showManageModal && managePlatform === 'facebook' && (
               <Card className="col-span-full">
@@ -2439,6 +2510,77 @@ export default function IntegrationsSettings() {
               </CardContent>
             </Card>
 
+            {/* Show account selection modal for Instagram social media */}
+            {showSocialMediaPages && socialMediaPlatform === 'instagram' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Instagram Social Media Accounts</CardTitle>
+                      <CardDescription>Select Instagram accounts to connect for social media posting</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowSocialMediaPages(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {socialMediaLoading ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">Loading accounts...</p>
+                    </div>
+                  ) : socialMediaPages.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No accounts available. Please complete OAuth first.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {socialMediaPages.map((page) => (
+                        <div
+                          key={page.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-center gap-3">
+                            {page.avatar && (
+                              <img
+                                src={page.avatar}
+                                alt={page.name}
+                                className="w-10 h-10 rounded-full"
+                              />
+                            )}
+                            <div>
+                              <p className="font-medium">{page.name}</p>
+                              <p className="text-xs text-gray-500">ID: {page.id}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {page.isConnected ? (
+                              <Badge variant="default" className="bg-green-500">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Connected
+                              </Badge>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => connectSocialMediaPage(page)}
+                                disabled={socialMediaLoading}
+                              >
+                                Connect
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Show manage modal for Instagram social media */}
             {showManageModal && managePlatform === 'instagram' && (
               <Card className="col-span-full">
@@ -2592,6 +2734,77 @@ export default function IntegrationsSettings() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Show account selection modal for LinkedIn social media */}
+            {showSocialMediaPages && socialMediaPlatform === 'linkedin' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>LinkedIn Social Media Accounts</CardTitle>
+                      <CardDescription>Select LinkedIn profiles to connect for social media posting</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowSocialMediaPages(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {socialMediaLoading ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">Loading accounts...</p>
+                    </div>
+                  ) : socialMediaPages.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No accounts available. Please complete OAuth first.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {socialMediaPages.map((page) => (
+                        <div
+                          key={page.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-center gap-3">
+                            {page.avatar && (
+                              <img
+                                src={page.avatar}
+                                alt={page.name}
+                                className="w-10 h-10 rounded-full"
+                              />
+                            )}
+                            <div>
+                              <p className="font-medium">{page.name}</p>
+                              <p className="text-xs text-gray-500">ID: {page.id}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {page.isConnected ? (
+                              <Badge variant="default" className="bg-green-500">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Connected
+                              </Badge>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => connectSocialMediaPage(page)}
+                                disabled={socialMediaLoading}
+                              >
+                                Connect
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Show manage modal for LinkedIn social media */}
             {showManageModal && managePlatform === 'linkedin' && (
