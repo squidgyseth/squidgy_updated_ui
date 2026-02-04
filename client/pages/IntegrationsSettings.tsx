@@ -1711,7 +1711,17 @@ export default function IntegrationsSettings() {
         </div>
 
         {/* Integration Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="relative">
+          {(refreshingToken || pollingForToken) && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
+              <div className="text-center">
+                <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
+                <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
+                <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Google Account Integration */}
           <Card className="hover:shadow-lg transition-shadow">
             <CardContent className="pt-6">
@@ -2016,21 +2026,23 @@ export default function IntegrationsSettings() {
               </div>
             </CardContent>
           </Card>
+          </div>
         </div>
 
         {/* Social Media Integrations Section */}
-        <div className="mt-8 relative">
+        <div className="mt-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Social Media Integrations</h2>
-          {(refreshingToken || pollingForToken) && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
-              <div className="text-center">
-                <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
-                <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
-                <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
+          <div className="relative">
+            {(refreshingToken || pollingForToken) && (
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
+                <div className="text-center">
+                  <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
+                  <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
+                  <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
+                </div>
               </div>
-            </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Facebook Social Media Posting */}
             <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="pt-6">
@@ -2240,6 +2252,7 @@ export default function IntegrationsSettings() {
                 </div>
               </CardContent>
             </Card>
+            </div>
           </div>
         </div>
 
