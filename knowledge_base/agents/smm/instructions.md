@@ -75,4 +75,4 @@ Follow `shared/response_format.md`. Use:
 3. **Include relevant hashtags** per platform rules
 4. **Always suggest posting times** with content
 5. **Never exceed platform limits** - will be rejected
-6. **Use button format** from `shared/button_patterns.md`
+6. **Use button format** `$$Button Text$$` from `shared/button_patterns.md`

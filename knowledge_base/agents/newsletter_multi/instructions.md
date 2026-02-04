@@ -71,4 +71,4 @@ Follow `shared/response_format.md`. Use:
 4. **One question at a time** - wait for answer before next
 5. **Always end with question** or completion message
 6. **Never hallucinate** answers not given by user
-7. **Use button format** from `shared/button_patterns.md`
+7. **Use button format** `$$Button Text$$` from `shared/button_patterns.md`

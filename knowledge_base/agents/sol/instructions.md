@@ -69,4 +69,4 @@ Follow `shared/response_format.md`. Use:
 3. **Don't schedule unqualified leads** - offer alternatives instead
 4. **Handle disqualification gracefully** - suggest community solar, efficiency tips
 5. **One question at a time** during qualification
-6. **Use button format** from `shared/button_patterns.md`
+6. **Use button format** `$$Button Text$$` from `shared/button_patterns.md`

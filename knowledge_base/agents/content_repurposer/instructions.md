@@ -63,4 +63,4 @@ Follow `shared/response_format.md`. Use:
 3. **Database state is truth** - never hallucinate answers
 4. **Always end with question** or completion message
 5. **Match brand voice** from user context
-6. **Use button format** from `shared/button_patterns.md`
+6. **Use button format** `$$Button Text$$` from `shared/button_patterns.md`
