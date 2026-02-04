@@ -2694,13 +2694,10 @@ export default function IntegrationsSettings() {
                 </div>
               </CardContent>
             </Card>
-            </div>
-          </div>
-        </div>
 
-        {/* Social Media Pages Modal */}
-        {showSocialMediaPages && (
-          <Card className="mt-6">
+            {/* Social Media Pages Modal */}
+            {showSocialMediaPages && (
+              <Card className="col-span-full">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -2782,12 +2779,12 @@ export default function IntegrationsSettings() {
                 </div>
               )}
             </CardContent>
-          </Card>
-        )}
+              </Card>
+            )}
 
-        {/* Manage Integrations Modal */}
-        {showManageModal && (
-          <Card className="mt-6">
+            {/* Manage Integrations Modal */}
+            {showManageModal && (
+              <Card className="col-span-full">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -2893,8 +2890,11 @@ export default function IntegrationsSettings() {
                   })}
               </div>
             </CardContent>
-          </Card>
-        )}
+              </Card>
+            )}
+            </div>
+          </div>
+        </div>
 
         {/* Coming Soon Section */}
         <Card className="border-dashed mt-8">
