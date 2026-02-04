@@ -1548,6 +1548,9 @@ export default function IntegrationsSettings() {
         // Refresh the profiles list
         fetchSocialMediaAccountsWithOAuthId(socialMediaOAuthId, 'linkedin');
         
+        // Refresh connected accounts to update the UI
+        fetchConnectedSocialMediaAccounts();
+        
         return;
       } catch (error: any) {
         console.error('❌ Error connecting LinkedIn profile:', error);
@@ -2012,8 +2015,16 @@ export default function IntegrationsSettings() {
         </div>
 
         {/* Social Media Integrations Section */}
-        <div className="mt-8">
+        <div className="mt-8 relative">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Social Media Integrations</h2>
+          {refreshingToken && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
+              <div className="text-center">
+                <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
+                <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Facebook Social Media Posting */}
             <Card className="hover:shadow-lg transition-shadow">
