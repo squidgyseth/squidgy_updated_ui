@@ -949,7 +949,13 @@ export default function N8nChatInterface({
   const uploadFileToSupabase = async (file: File) => {
     try {
       const timestamp = Date.now();
-      const fileName = `${userId}_${timestamp}_${file.name}`;
+      // Sanitize filename - remove special characters and spaces that cause "Invalid key" errors
+      const sanitizedFileName = file.name
+        .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace special chars (including em-dashes) with underscore
+        .replace(/\s+/g, '_') // Replace spaces with underscore
+        .replace(/_+/g, '_') // Replace multiple underscores with single
+        .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+      const fileName = `${userId}_${timestamp}_${sanitizedFileName}`;
       const uploadTrackingId = `upload_${timestamp}_${Math.random().toString(36).slice(2, 8)}`;
 
       // Track the upload immediately so the UI can show an indicator

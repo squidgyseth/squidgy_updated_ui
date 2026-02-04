@@ -4,6 +4,7 @@ import { Save } from 'lucide-react';
 import { useUser } from '../hooks/useUser';
 import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
+import { supabase } from '../lib/supabase';
 
 export default function AccountSettings() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export default function AccountSettings() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [locationId, setLocationId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -21,6 +23,30 @@ export default function AccountSettings() {
       setAvatarUrl(profile.profile_avatar_url || '');
     }
   }, [profile]);
+
+  // Fetch location_id from ghl_subaccounts
+  useEffect(() => {
+    const fetchLocationId = async () => {
+      if (!profile?.user_id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('ghl_subaccounts')
+          .select('ghl_location_id')
+          .eq('firm_user_id', profile.user_id)
+          .limit(1)
+          .single();
+        
+        if (!error && data?.ghl_location_id) {
+          setLocationId(data.ghl_location_id);
+        }
+      } catch (err) {
+        console.log('No location_id found');
+      }
+    };
+    
+    fetchLocationId();
+  }, [profile?.user_id]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -259,6 +285,11 @@ export default function AccountSettings() {
                 Change
               </button>
             </div>
+          </div>
+          {/* User ID and Location ID - Right bottom */}
+          <div className="text-right space-y-1 self-end">
+            <p className="text-xs text-gray-400">User ID: {profile?.user_id || 'N/A'}</p>
+            <p className="text-xs text-gray-400">Location ID: {locationId || 'N/A'}</p>
           </div>
         </div>
       </div>
