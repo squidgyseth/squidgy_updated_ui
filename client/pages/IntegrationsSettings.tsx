@@ -1579,7 +1579,7 @@ export default function IntegrationsSettings() {
         // Match GHL's exact POST body format
         const requestBody = {
           originId: page.id,
-          type: socialMediaPlatform === 'linkedin' ? 'profile' : 'account',
+          type: page.type || (socialMediaPlatform === 'linkedin' ? 'profile' : 'account'),
           name: page.name,
           avatar: page.avatar,
           ...(page.urn && { urn: page.urn })
