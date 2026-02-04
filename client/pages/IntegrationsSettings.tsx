@@ -60,11 +60,11 @@ export default function IntegrationsSettings() {
   const [socialMediaLoading, setSocialMediaLoading] = useState(false);
   const [manualOAuthId, setManualOAuthId] = useState<string>('');
   const [connectedSocialMediaAccounts, setConnectedSocialMediaAccounts] = useState<any[]>([]);
-  const [socialMediaPlatform, setSocialMediaPlatform] = useState<'facebook' | 'instagram' | 'linkedin'>('facebook');
+  const [socialMediaPlatform, setSocialMediaPlatform] = useState<'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky'>('facebook');
   const [socialMediaPolling, setSocialMediaPolling] = useState(false);
   const [oauthWindowOpen, setOauthWindowOpen] = useState(false);
   const [showManageModal, setShowManageModal] = useState(false);
-  const [managePlatform, setManagePlatform] = useState<'facebook' | 'instagram' | 'linkedin'>('facebook');
+  const [managePlatform, setManagePlatform] = useState<'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky'>('facebook');
 
   // Helper function to decode Firebase token and extract user_id
   const decodeFirebaseToken = (token: string): string | null => {
@@ -1268,6 +1268,69 @@ export default function IntegrationsSettings() {
     }
   };
 
+  // Generic handler for new social media platforms using direct GHL OAuth
+  const handleSocialMediaConnect = async (platform: 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky') => {
+    setSocialMediaPlatform(platform);
+    if (!locationId || !ghlUserId) {
+      toast.error('Missing location ID or user ID. Please ensure GHL integration is set up.');
+      return;
+    }
+
+    try {
+      // Construct GHL's OAuth URL directly
+      const oauthUrl = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${platform}/start?locationId=${locationId}&userId=${ghlUserId}`;
+
+      // Open OAuth URL in a centered popup window
+      const width = 600;
+      const height = 700;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+
+      const popup = window.open(
+        oauthUrl,
+        `${platform.charAt(0).toUpperCase() + platform.slice(1)}SocialMediaOAuth`,
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+
+      if (popup) {
+        setSocialMediaPolling(true);
+        setOauthWindowOpen(true);
+        console.log(`🔄 Started real-time polling for ${platform} account updates`);
+      }
+
+      let checkPopup: NodeJS.Timeout;
+
+      // Listen for messages from the popup
+      const messageHandler = (event: MessageEvent) => {
+        if (event.data && event.data.accountId && event.data.platform === platform) {
+          console.log(`✅ Received accountId (OAuth ID) from ${platform} popup:`, event.data.accountId);
+          window.removeEventListener('message', messageHandler);
+          clearInterval(checkPopup);
+          fetchSocialMediaAccountsWithOAuthId(event.data.accountId, platform);
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
+        }
+      };
+      window.addEventListener('message', messageHandler);
+
+      // Also check for popup closure as fallback
+      checkPopup = setInterval(() => {
+        if (popup && popup.closed) {
+          clearInterval(checkPopup);
+          window.removeEventListener('message', messageHandler);
+          console.log(`✅ ${platform} OAuth window closed, stopping polling`);
+          setSocialMediaPolling(false);
+          setOauthWindowOpen(false);
+          fetchSocialMediaAccounts(platform);
+        }
+      }, 1000);
+
+    } catch (error: any) {
+      console.error(`❌ Error starting ${platform} OAuth:`, error);
+      toast.error(error.message || `Failed to start ${platform} OAuth`);
+    }
+  };
+
   const fetchConnectedSocialMediaAccounts = async () => {
     if (!locationId || !firebaseToken || !accessToken) {
       return;
@@ -1414,7 +1477,7 @@ export default function IntegrationsSettings() {
     pollForAccounts();
   };
 
-  const fetchSocialMediaAccountsWithOAuthId = async (oAuthId: string, platform: 'facebook' | 'instagram' | 'linkedin' = 'facebook') => {
+  const fetchSocialMediaAccountsWithOAuthId = async (oAuthId: string, platform: 'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky' = 'facebook') => {
     if (!locationId || !firebaseToken || !accessToken) {
       console.error('Missing required tokens for GHL API call');
       return;
@@ -2237,6 +2300,384 @@ export default function IntegrationsSettings() {
                         className="flex-1"
                         onClick={() => {
                           setManagePlatform('linkedin');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Threads Social Media */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Threads_%28app%29.svg/2048px-Threads_%28app%29.svg.png" 
+                      alt="Threads"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">Threads Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect Threads accounts for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'threads' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'threads' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'threads' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-black to-gray-800 hover:from-gray-900 hover:to-gray-700 text-white"
+                      onClick={() => handleSocialMediaConnect('threads')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'threads' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('threads');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Google Business Profile */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://www.gstatic.com/images/branding/product/2x/google_my_business_96dp.png" 
+                      alt="Google Business Profile"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">GBP Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect Google Business Profile for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'gbp' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'gbp' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'gbp' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white"
+                      onClick={() => handleSocialMediaConnect('gbp')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'gbp' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('gbp');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* TikTok Social Media */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://sf16-website-login.neutral.ttwstatic.com/obj/tiktok_web_login_static/tiktok/webapp/main/webapp-desktop/8152caf0c8e8bc67ae0d.png" 
+                      alt="TikTok"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">TikTok Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect TikTok accounts for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'tiktok' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'tiktok' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'tiktok' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-black to-pink-600 hover:from-gray-900 hover:to-pink-700 text-white"
+                      onClick={() => handleSocialMediaConnect('tiktok')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'tiktok' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('tiktok');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* YouTube Social Media */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg" 
+                      alt="YouTube"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">YouTube Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect YouTube channels for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'youtube' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'youtube' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'youtube' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
+                      onClick={() => handleSocialMediaConnect('youtube')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'youtube' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('youtube');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pinterest Social Media */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://upload.wikimedia.org/wikipedia/commons/0/08/Pinterest-logo.png" 
+                      alt="Pinterest"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">Pinterest Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect Pinterest accounts for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'pinterest' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'pinterest' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'pinterest' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white"
+                      onClick={() => handleSocialMediaConnect('pinterest')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'pinterest' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('pinterest');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Community Social Media */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://www.gstatic.com/images/branding/product/2x/communities_96dp.png" 
+                      alt="Community"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">Community Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect Community accounts for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'community' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'community' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'community' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white"
+                      onClick={() => handleSocialMediaConnect('community')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'community' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('community');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Bluesky Social Media */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img 
+                      src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Bluesky_Logo.svg" 
+                      alt="Bluesky"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">Bluesky Social Media</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect Bluesky accounts for social media posting
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'bluesky' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'bluesky' && !a.deleted).length} Account{connectedSocialMediaAccounts.filter(a => a.platform === 'bluesky' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white"
+                      onClick={() => handleSocialMediaConnect('bluesky')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Account'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'bluesky' && !a.deleted).length > 0 && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('bluesky');
                           setShowManageModal(true);
                         }}
                       >
