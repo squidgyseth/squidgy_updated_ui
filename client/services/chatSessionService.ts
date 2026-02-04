@@ -21,12 +21,74 @@ export interface ChatMessage {
 
 class ChatSessionService {
   private static instance: ChatSessionService;
+  private readonly SESSION_STORAGE_KEY = 'squidgy_active_sessions';
 
   static getInstance(): ChatSessionService {
     if (!ChatSessionService.instance) {
       ChatSessionService.instance = new ChatSessionService();
     }
     return ChatSessionService.instance;
+  }
+
+  /**
+   * Get stored session ID from localStorage for a specific agent
+   */
+  private getStoredSessionId(userId: string, agentId: string): string | null {
+    try {
+      const stored = localStorage.getItem(this.SESSION_STORAGE_KEY);
+      if (stored) {
+        const sessions = JSON.parse(stored);
+        const key = `${userId}_${agentId}`;
+        const sessionData = sessions[key];
+        if (sessionData) {
+          // Check if session was created within the last hour
+          const createdAt = new Date(sessionData.createdAt);
+          const now = new Date();
+          const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+          if (hoursSinceCreation < 1) {
+            return sessionData.sessionId;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error reading stored session:', error);
+    }
+    return null;
+  }
+
+  /**
+   * Store session ID in localStorage for a specific agent
+   */
+  public storeSessionId(userId: string, agentId: string, sessionId: string): void {
+    try {
+      const stored = localStorage.getItem(this.SESSION_STORAGE_KEY);
+      const sessions = stored ? JSON.parse(stored) : {};
+      const key = `${userId}_${agentId}`;
+      sessions[key] = {
+        sessionId,
+        createdAt: new Date().toISOString()
+      };
+      localStorage.setItem(this.SESSION_STORAGE_KEY, JSON.stringify(sessions));
+    } catch (error) {
+      console.error('Error storing session:', error);
+    }
+  }
+
+  /**
+   * Clear stored session ID for a specific agent (called when user clicks New Chat)
+   */
+  clearStoredSessionId(userId: string, agentId: string): void {
+    try {
+      const stored = localStorage.getItem(this.SESSION_STORAGE_KEY);
+      if (stored) {
+        const sessions = JSON.parse(stored);
+        const key = `${userId}_${agentId}`;
+        delete sessions[key];
+        localStorage.setItem(this.SESSION_STORAGE_KEY, JSON.stringify(sessions));
+      }
+    } catch (error) {
+      console.error('Error clearing stored session:', error);
+    }
   }
 
   /**
@@ -237,12 +299,20 @@ class ChatSessionService {
   /**
    * Get or create session with 1-hour persistence logic
    * Returns existing session if active within 1 hour, otherwise creates new one
+   * Also checks localStorage for sessions without messages yet (preserves across navigation)
    */
   async getOrCreateActiveSession(userId: string, agentId: string): Promise<string> {
     try {
       console.log(`🔄 getOrCreateActiveSession: Checking for active session for userId=${userId}, agentId=${agentId}`);
       
-      // Get the most recent session for this user+agent
+      // First check localStorage for a session that hasn't had messages yet
+      const storedSessionId = this.getStoredSessionId(userId, agentId);
+      if (storedSessionId) {
+        console.log(`📦 Found stored session in localStorage: ${storedSessionId}`);
+        return storedSessionId;
+      }
+      
+      // Get the most recent session for this user+agent from database
       const recentSessions = await this.getRecentSessions(userId, agentId, 1);
       
       if (recentSessions.length > 0) {
@@ -256,6 +326,8 @@ class ChatSessionService {
         
         if (hoursSinceLastActivity < 1) {
           console.log(`✅ Session still active within 1 hour, continuing session: ${mostRecentSession.session_id}`);
+          // Store in localStorage for future navigation
+          this.storeSessionId(userId, agentId, mostRecentSession.session_id);
           return mostRecentSession.session_id;
         } else {
           console.log(`⏰ Session expired (${hoursSinceLastActivity.toFixed(2)} hours), creating new session`);
@@ -264,8 +336,9 @@ class ChatSessionService {
         console.log(`📭 No recent sessions found, creating new session`);
       }
       
-      // Create new session
+      // Create new session and store in localStorage
       const newSessionId = this.generateSessionId(userId, agentId);
+      this.storeSessionId(userId, agentId, newSessionId);
       console.log(`🆕 Created new session: ${newSessionId}`);
       return newSessionId;
       
@@ -273,6 +346,7 @@ class ChatSessionService {
       console.error('❌ Error in getOrCreateActiveSession:', error);
       // Fallback to creating new session
       const newSessionId = this.generateSessionId(userId, agentId);
+      this.storeSessionId(userId, agentId, newSessionId);
       console.log(`🆘 Fallback: Created new session due to error: ${newSessionId}`);
       return newSessionId;
     }

@@ -95,6 +95,9 @@ export default function DynamicAgentDashboard() {
   const handleNewChat = (agentId: string) => {
     console.log(`New chat clicked for agent: ${agentId}`);
 
+    // Clear stored session so a new one is created
+    chatSessionService.clearStoredSessionId(userId, agentId);
+
     // When user explicitly clicks "New Chat", always generate a fresh session
     const newSessionId = chatSessionService.generateSessionId(userId, agentId);
     setCurrentSessionId(newSessionId);
@@ -105,6 +108,12 @@ export default function DynamicAgentDashboard() {
   const handleSessionSelect = (sessionId: string) => {
     console.log(`🔄 Session selected: ${sessionId}`);
     console.log(`🔄 Previous session ID was: ${currentSessionId}`);
+    
+    // Store the selected session in localStorage so it persists across navigation
+    if (agentId) {
+      chatSessionService.storeSessionId(userId, agentId, sessionId);
+    }
+    
     setCurrentSessionId(sessionId);
     console.log(`✅ Current session ID updated to: ${sessionId}`);
   };

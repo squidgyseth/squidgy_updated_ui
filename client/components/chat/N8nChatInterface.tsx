@@ -63,6 +63,7 @@ export default function N8nChatInterface({
   const [conversationState, setConversationState] = useState<Record<string, unknown> | undefined>(undefined); // State for multi-turn agents like newsletter_multi
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const currentSessionRef = useRef<string>(sessionId); // Track current session to prevent stale updates
   const chatHistoryService = ChatHistoryService.getInstance();
   const fileUploadService = FileUploadService.getInstance();
 
@@ -107,10 +108,13 @@ export default function N8nChatInterface({
     console.log(`📨 N8nChatInterface: sessionId changed to: ${sessionId}`);
     console.log(`📨 N8nChatInterface: agentId: ${agent.id}, userId: ${userId}`);
 
+    // Update ref to track current session
+    currentSessionRef.current = sessionId;
+
     // Clear existing messages immediately when session changes
     setMessages([]);
 
-    loadSessionMessages();
+    loadSessionMessages(sessionId);
 
     // Load conversation state from database for multi-turn agents
     if (isMultiTurnAgent()) {
@@ -237,18 +241,24 @@ export default function N8nChatInterface({
     }
   };
 
-  const loadSessionMessages = async () => {
-    console.log(`🔍 loadSessionMessages called with sessionId: ${sessionId}`);
-    if (!sessionId) {
+  const loadSessionMessages = async (targetSessionId: string) => {
+    console.log(`🔍 loadSessionMessages called with sessionId: ${targetSessionId}`);
+    if (!targetSessionId) {
       console.log('❌ No sessionId provided, returning early');
       return;
     }
 
     try {
-      console.log(`🔄 Fetching messages for session: ${sessionId}`);
+      console.log(`🔄 Fetching messages for session: ${targetSessionId}`);
       // Load existing messages for this session
-      const existingMessages = await chatSessionService.getSessionMessages(sessionId);
+      const existingMessages = await chatSessionService.getSessionMessages(targetSessionId);
       console.log(`📊 Found ${existingMessages.length} existing messages`);
+
+      // Check if session changed while fetching - prevent stale data
+      if (currentSessionRef.current !== targetSessionId) {
+        console.log(`⚠️ Session changed during fetch (current: ${currentSessionRef.current}, fetched: ${targetSessionId}), discarding results`);
+        return;
+      }
 
       if (existingMessages.length > 0) {
         // Convert database messages to ChatMessage format
@@ -260,7 +270,7 @@ export default function N8nChatInterface({
             content: fileInfo.messageText,
             sender: msg.sender.toLowerCase() as 'user' | 'agent',
             timestamp: new Date(msg.timestamp),
-            status: msg.sender.toLowerCase() === 'agent' ? 'Ready' : undefined, // Add status for agent messages
+            status: undefined, // No streaming for loaded messages - only stream new messages
             fileUpload: fileInfo.hasFile
               ? {
                   fileName: fileInfo.fileName,
@@ -281,23 +291,32 @@ export default function N8nChatInterface({
         const messagesWithIntro = introText
           ? [
               {
-                id: `intro_${sessionId}`,
+                id: `intro_${targetSessionId}`,
                 content: introText,
                 sender: 'agent' as const,
-                timestamp: new Date(existingMessages[0].timestamp.getTime() - 1000), // 1 second before first message
-                status: 'Ready' as const // Enable streaming for intro message
+                timestamp: new Date(new Date(existingMessages[0].timestamp).getTime() - 1000), // 1 second before first message
+                status: undefined // No streaming for loaded sessions - only stream new messages
               },
               ...chatMessages
             ]
           : chatMessages;
 
         console.log(`✅ Setting ${messagesWithIntro.length} messages in state (including intro)`);
-        setMessages(messagesWithIntro);
-        console.log(`✅ Loaded ${chatMessages.length} messages + intro for session ${sessionId}`);
+        // Final check before setting state
+        if (currentSessionRef.current === targetSessionId) {
+          setMessages(messagesWithIntro);
+          console.log(`✅ Loaded ${chatMessages.length} messages + intro for session ${targetSessionId}`);
+        }
       } else {
         console.log(`📝 No existing messages, showing intro message (not saving to DB)`);
         // New session - get context-aware intro message
         const introText = await getIntroMessage();
+
+        // Check if session changed while getting intro
+        if (currentSessionRef.current !== targetSessionId) {
+          console.log(`⚠️ Session changed during intro fetch, discarding results`);
+          return;
+        }
 
         if (introText) {
           const introMessage: ChatMessage = {
@@ -315,6 +334,13 @@ export default function N8nChatInterface({
       }
     } catch (error) {
       console.error('❌ Error loading session messages:', error);
+      
+      // Check if session changed during error handling
+      if (currentSessionRef.current !== targetSessionId) {
+        console.log(`⚠️ Session changed during error handling, discarding results`);
+        return;
+      }
+      
       // Fallback to default intro message for new sessions (but don't save to DB)
       const introText = await getIntroMessage();
       if (introText) {
