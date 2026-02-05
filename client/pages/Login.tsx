@@ -6,6 +6,7 @@ import { signIn } from '../lib/api';
 import { useUser } from "@/hooks/useUser";
 import { onboardingRouter } from "@/services/onboardingRouter";
 import { linkScoresToUser, getGameHistory } from '@/services/anonymousPlayer';
+import TermsModal from '../components/TermsModal';
 
 // Game URL - update this to your deployed game URL
 const GAME_URL = 'https://squidgy-waitlist-game.vercel.app';
@@ -99,6 +100,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Modal state for Terms/Privacy
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<'terms' | 'privacy'>('terms');
+
   // Check if user arrived after email confirmation
   useEffect(() => {
     const emailVerified = sessionStorage.getItem('email_verified');
@@ -119,6 +124,18 @@ export default function Login() {
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
+  };
+
+  const openTermsModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setModalType('terms');
+    setIsModalOpen(true);
+  };
+
+  const openPrivacyModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setModalType('privacy');
+    setIsModalOpen(true);
   };
 
   const handleGoogleLogin = () => {
@@ -316,9 +333,21 @@ export default function Login() {
           <div className="text-center mt-4">
             <p className="text-[#9CA3AF] text-[11px] leading-4">
               By creating an account, you agree to our{" "}
-              <a href="/terms" className="font-bold text-[#5E17EB] hover:underline">Terms of service</a>
+              <button
+                type="button"
+                onClick={openTermsModal}
+                className="font-bold text-[#5E17EB] hover:underline"
+              >
+                Terms of service
+              </button>
               {" "}and{" "}
-              <a href="/privacy" className="font-bold text-[#5E17EB] hover:underline">Privacy policy</a>
+              <button
+                type="button"
+                onClick={openPrivacyModal}
+                className="font-bold text-[#5E17EB] hover:underline"
+              >
+                Privacy policy
+              </button>
             </p>
           </div>
         </div>
@@ -438,6 +467,14 @@ export default function Login() {
           </div>
         )}
       </div>
+
+      {/* Terms/Privacy Modal */}
+      <TermsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        type={modalType}
+        onScrollComplete={() => {}}
+      />
     </div>
   );
 }
