@@ -478,128 +478,210 @@ function TermsContent() {
   );
 }
 
-// Privacy Content Component - Content from https://squidgy.ai/privacy
+// Privacy Content Component - Full content from https://squidgy.ai/privacy
 function PrivacyContent() {
   return (
-    <div className="space-y-6">
-      <p className="text-sm text-gray-600 mb-6">
-        Squidgy ("we," "us," and "our") respects your privacy and is committed to protecting it through compliance with this Privacy Notice ("Privacy Notice"). This Privacy Notice describes the types of Information we may collect from you when you visit the website at or use the Services offered there (the "Platform"), and that you may provide in electronic messages to Squidgy.
-      </p>
-
+    <div className="space-y-6 text-sm">
       <section>
         <h2 className="text-xl font-bold mb-3">1. Overview</h2>
-        <p className="mb-3 text-sm">
+        <p className="mb-3">
+          Squidgy ("we," "us," and "our") respects your privacy and is committed to protecting it through compliance with this Privacy Notice ("Privacy Notice"). This Privacy Notice describes the types of Information we may collect from you when you visit the website at or use the Services offered there (the "Platform"), and that you may provide in electronic messages to Squidgy. It also describes our practices for collecting, using, maintaining, protecting, and disclosing that Information.
+        </p>
+        <p className="mb-3">
           Please read this Privacy Notice to understand our policies and practices regarding your Information and how we will handle it. If you do not agree with our policies and practices, do not use the Platform. By accessing or using the Platform, you agree to this Privacy Notice.
         </p>
-        <p className="mb-3 text-sm">
-          Squidgy may change this Privacy Notice at any time. Your continued use of the Platform after we make changes is deemed to be acceptance of those changes.
+        <p className="mb-3">
+          Squidgy may change this Privacy Notice at any time, at its discretion. Your continued use of the Platform after we make changes is deemed to be acceptance of those changes, so please check the Privacy Notice periodically for updates.
+        </p>
+        <p className="mb-3">
+          This Privacy Notice is subject to and governed by the Squidgy Terms of Service ("Terms of Service") available on the Platform. The Services are part of the Platform and are described further in the Terms of Service.
         </p>
       </section>
 
       <section>
-        <h2 className="text-xl font-bold mb-3">2. Information We Collect</h2>
-        <p className="mb-3 text-sm">
-          Squidgy may collect two types of information: Personal Information and Non-Personal Information. We collect Information directly from you, through communications, from third parties, automatically as you navigate, and through analytics.
+        <h2 className="text-xl font-bold mb-3">2. The Types of Information That Squidgy Collects About You and How Squidgy Collects Information About You</h2>
+        <p className="mb-3">
+          Squidgy may collect two types of information from you when you visit the Platform: Personal Information and Non-Personal Information (collectively "Information").
+        </p>
+        <p className="mb-3">
+          "Personal Information" refers to data by which you may be personally identified, such as name, email address, employer, job title and department, telephone number, and other information listed in Section 12.
+        </p>
+        <p className="mb-3">
+          "Non-Personal Information" means data that is about you, but does not identify you specifically. If you do nothing during your visit to our Platform but browse, read pages, or view content, we will gather and store Information about your visit that does not identify you personally.
+        </p>
+        <p className="mb-2">We collect Information:</p>
+        <ul className="list-disc pl-5 mb-3 space-y-1">
+          <li>Directly from you when you provide it to us.</li>
+          <li>Through our communications with you.</li>
+          <li>From third parties.</li>
+          <li>Automatically as you navigate through the Platform.</li>
+          <li>Automatically, on an aggregate level, when you utilize our Services.</li>
+          <li>Through analytics.</li>
+        </ul>
+
+        <p className="mb-2 font-semibold mt-4">Information You Provide Directly to Squidgy.</p>
+        <p className="mb-2">The Information that you provide us directly through our Platform may include:</p>
+        <ul className="list-disc pl-5 mb-3 space-y-1">
+          <li>Information that you provide when you subscribe to our Services or purchase our products.</li>
+          <li>Information you provide when you create an account on our Platform or subscribe to our mailing list.</li>
+          <li>Information that you provide by filling in forms on our Platform.</li>
+          <li>Information that you provide when you report a problem with our Platform.</li>
+          <li>Information that you provide in connection with an inquiry you have.</li>
+          <li>Records and copies of your correspondence (including email addresses), if you contact us.</li>
+          <li>Your responses to surveys.</li>
+          <li>Details of transactions you carry out through the Platform.</li>
+        </ul>
+
+        <p className="mb-2 font-semibold mt-4">Information Automatically Collected from You.</p>
+        <p className="mb-2">The Information that Squidgy may automatically collect and store about you when you visit the Platform may include:</p>
+        <ul className="list-disc pl-5 mb-3 space-y-1">
+          <li>Your location;</li>
+          <li>The Internet Protocol Address and domain name used;</li>
+          <li>The type of browser and operating system you used;</li>
+          <li>The date and time you visited the Platform;</li>
+          <li>The web pages or Services you accessed at the Platform;</li>
+          <li>The website you visited prior to coming to the Platform; and</li>
+          <li>Cookies and similar tracking technologies.</li>
+        </ul>
+
+        <p className="mb-3 mt-4">
+          <strong>Google Analytics Advertising Features.</strong> We may have Google Analytics Advertising Features implemented. To learn how to opt-out, please see <a href="https://tools.google.com/dlpage/gaoptout" className="text-blue-600 hover:underline">https://tools.google.com/dlpage/gaoptout</a>.
         </p>
       </section>
 
       <section>
-        <h2 className="text-xl font-bold mb-3">3. How We Use Your Information</h2>
-        <p className="mb-2 text-sm">We use Information to:</p>
-        <ul className="list-disc pl-5 mb-3 text-sm space-y-1">
-          <li>Present our Platform and provide Services</li>
-          <li>Provide customer support and fulfill contracts</li>
-          <li>Communicate about products and Services (including marketing if consented)</li>
-          <li>Analyze usage and improve our Platform</li>
-          <li>Maintain security and comply with legal obligations</li>
+        <h2 className="text-xl font-bold mb-3">3. How Squidgy Uses Information It Collects About You and the Purposes for the Collection and Use</h2>
+        <p className="mb-2">We use Information that we collect about you or that you provide to us, including any Personal Information, for the following purposes:</p>
+        <ul className="list-disc pl-5 mb-3 space-y-1">
+          <li>To present our Platform and the Platform Content to you.</li>
+          <li>To provide you with the products or Services that you request from us.</li>
+          <li>To provide customer support.</li>
+          <li>To carry out our obligations and enforce our rights arising from any contracts.</li>
+          <li>To analyze how our products and Services are used.</li>
+          <li>To notify you about changes to our Platform.</li>
+          <li>To provide you with information regarding your account.</li>
+          <li>To communicate with you regarding our products and Services, including for marketing purposes.</li>
+          <li>To personalize our Services and advertising to you.</li>
+          <li>To diagnose Service or technical problems.</li>
+          <li>To maintain security.</li>
+          <li>For any other purpose with your consent.</li>
+        </ul>
+        <p className="mb-3">
+          We will only retain your Personal Information for as long as reasonably necessary to fulfill the purposes we collected it for, including for legal, regulatory, tax, accounting or reporting requirements.
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-bold mb-3">4. How Squidgy Protects Your Information</h2>
+        <p className="mb-3">
+          We have implemented measures designed to protect your Information from accidental loss and from unauthorized access, use, alteration, and disclosure. However, the internet is not completely secure, and we cannot guarantee absolute security of your Information.
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-bold mb-3">5. When Squidgy Shares Your Information</h2>
+        <p className="mb-2">We may disclose Personal Information that we collect or you provide as described in this Privacy Notice:</p>
+        <ul className="list-disc pl-5 mb-3 space-y-1">
+          <li>To our subsidiaries and affiliates.</li>
+          <li>To contractors, service providers, and other third parties we use to support our business.</li>
+          <li>To a buyer or other successor in connection with a merger or asset sale.</li>
+          <li>To fulfill the purpose for which you provide it.</li>
+          <li>With your consent.</li>
+          <li>To comply with any court order, law, or legal process.</li>
+          <li>To enforce or apply our Terms of Service.</li>
+          <li>If we believe disclosure is necessary to protect rights, property, or safety.</li>
         </ul>
       </section>
 
       <section>
-        <h2 className="text-xl font-bold mb-3">4. Data Protection</h2>
-        <p className="mb-3 text-sm">
-          We implement measures to protect your Information from accidental loss and unauthorized access. However, the internet is not completely secure, and we cannot guarantee absolute security.
+        <h2 className="text-xl font-bold mb-3">6. Updating and Correcting Information</h2>
+        <p className="mb-3">
+          You may change any of your Personal Information in your account online at any time. You may ask to have Information on your account deleted or removed; however, some Information may not be deleted due to backup procedures and legal requirements.
         </p>
       </section>
 
       <section>
-        <h2 className="text-xl font-bold mb-3">5. When We Share Your Information</h2>
-        <p className="mb-2 text-sm">We may share Personal Information with:</p>
-        <ul className="list-disc pl-5 mb-3 text-sm space-y-1">
-          <li>Subsidiaries, affiliates, and service providers</li>
-          <li>Buyers in connection with mergers or asset sales</li>
-          <li>As required by law or to protect rights and safety</li>
-        </ul>
-      </section>
-
-      <section>
-        <h2 className="text-xl font-bold mb-3">6. Third Parties Providing Services</h2>
-        <p className="mb-3 text-sm">
-          We use third parties for hosting, analytics, and payment processing. These companies are bound by contractual obligations to keep Information confidential.
+        <h2 className="text-xl font-bold mb-3">7. Third Parties Providing Services On Our Behalf</h2>
+        <p className="mb-3">
+          We use third parties to host the Platform, design and operate the Platform features, and to perform administrative, analytics, and payment processing. These companies are bound by contractual obligations to keep Information confidential.
         </p>
       </section>
 
       <section>
-        <h2 className="text-xl font-bold mb-3">7. Your Rights (EEA and UK Residents)</h2>
-        <p className="mb-3 text-sm">
-          <strong>Controller:</strong> Squidgy, 20 Wenlock Road, Islington London N17GU
+        <h2 className="text-xl font-bold mb-3">8. Information From Children</h2>
+        <p className="mb-3">
+          We do not knowingly collect, use, or disclose Information from children under 16. If we learn that we have collected the Personal Information of a child under 16, we will take steps to delete the information as soon as possible.
         </p>
-        <p className="mb-2 text-sm">You have the right to:</p>
-        <ul className="list-disc pl-5 mb-3 text-sm space-y-1">
-          <li>Access and request copies of your Personal Information</li>
-          <li>Correct inaccurate information</li>
-          <li>Request deletion or restrict processing</li>
-          <li>Object to processing and request data portability</li>
-          <li>Withdraw consent at any time</li>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-bold mb-3">9. Links to Other Websites and Services</h2>
+        <p className="mb-3">
+          We are not responsible for the practices employed by websites or services linked to or from the Platform. Our Privacy Notice does not apply to third-party websites or services.
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-bold mb-3">10. Do Not Track</h2>
+        <p className="mb-3">
+          Some browsers incorporate a "Do Not Track" ("DNT") feature. At this time, the Platform does not respond to DNT signals.
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-bold mb-3">11. Residents of the European Economic Area ("EEA") and United Kingdom ("UK")</h2>
+        <p className="mb-3">
+          If you are located in the EEA or UK, you may have certain rights with respect to your Personal Information.
+        </p>
+        <p className="mb-3">
+          <strong>Controller of Personal Information.</strong> Squidgy is the Controller of your Personal Information. Squidgy's primary place of business is 20 Wenlock Road, Islington London N17GU.
+        </p>
+        <p className="mb-2"><strong>Your Rights.</strong> Subject to applicable law, you may have the right to:</p>
+        <ul className="list-disc pl-5 mb-3 space-y-1">
+          <li>Ask whether we hold Personal Information about you and request copies.</li>
+          <li>Request that inaccurate Personal Information is corrected.</li>
+          <li>Request deletion of Personal Information.</li>
+          <li>Ask us to restrict the processing of Personal Information.</li>
+          <li>Object to the processing of Personal Information.</li>
+          <li>Request portability of Personal Information.</li>
+          <li>Lodge a complaint with data protection authorities.</li>
         </ul>
       </section>
 
       <section>
-        <h2 className="text-xl font-bold mb-3">8. California Privacy Rights</h2>
-        <p className="mb-2 text-sm">California residents have rights including:</p>
-        <ul className="list-disc pl-5 mb-3 text-sm space-y-1">
-          <li>Know what Personal Information is collected and how it's shared</li>
-          <li>Access and request deletion of Personal Information</li>
-          <li>Opt-out of the sale of Personal Information (Note: Squidgy does not sell your Personal Information)</li>
-          <li>Correct Personal Information</li>
+        <h2 className="text-xl font-bold mb-3">12. California Privacy Rights</h2>
+        <p className="mb-2">Under California law, California residents have certain rights regarding their Personal Information, including:</p>
+        <ul className="list-disc pl-5 mb-3 space-y-1">
+          <li>The right to know what Personal Information we have collected.</li>
+          <li>The right to know the business purposes for sharing Personal Information.</li>
+          <li>The right to know the categories of third parties with whom we have shared Personal Information.</li>
+          <li>The right to access and request deletion of your Information.</li>
+          <li>The right to opt-out of the sale of Personal Information (Note: Squidgy does not sell your Personal Information).</li>
+          <li>The right to correct your Personal Information.</li>
         </ul>
-        <p className="text-sm mb-3">
+        <p className="mb-3">
           To exercise these rights, contact: support@gohighlevel.com
         </p>
       </section>
 
       <section>
-        <h2 className="text-xl font-bold mb-3">9. Your Choices</h2>
-        <p className="mb-3 text-sm">
-          You can opt-out of marketing communications by clicking unsubscribe links, contacting us, or updating your account settings. We may still send non-promotional emails about your account or business relations.
+        <h2 className="text-xl font-bold mb-3">13. Your Choices About Information</h2>
+        <p className="mb-3">
+          We may send you emails regarding new products and Services. You can opt-out by clicking unsubscribe links in emails, contacting us, or updating your account settings.
         </p>
       </section>
 
       <section>
-        <h2 className="text-xl font-bold mb-3">10. Children's Privacy</h2>
-        <p className="mb-3 text-sm">
-          We do not knowingly collect Information from children under 16. If you are under 16, do not provide any Information. If we learn we have collected Information from a child under 16, we will delete it promptly.
-        </p>
-      </section>
-
-      <section>
-        <h2 className="text-xl font-bold mb-3">11. International Data Transfers</h2>
-        <p className="mb-3 text-sm">
-          Your data may be transferred to and processed in countries outside the UK/EEA, including the United States. We ensure appropriate safeguards are in place for such transfers.
-        </p>
-      </section>
-
-      <section>
-        <h2 className="text-xl font-bold mb-3">12. Contact Us</h2>
-        <p className="mb-2 text-sm">For questions about this Privacy Notice, contact:</p>
-        <p className="text-sm">
+        <h2 className="text-xl font-bold mb-3">14. How To Contact Us About This Privacy Notice</h2>
+        <p className="mb-2">To ask questions about this Privacy Notice, contact us at:</p>
+        <p className="mb-3">
           <strong>Squidgy</strong><br />
           20 Wenlock Road, Islington<br />
           London N17GU
         </p>
       </section>
 
-      <div className="mt-8 pt-6 border-t border-gray-300">
+      <div className="mt-6 pt-4 border-t border-gray-300">
         <p className="text-xs text-gray-600">
           <strong>EFFECTIVE DATE:</strong> January 1, 2026
         </p>
