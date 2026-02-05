@@ -118,7 +118,6 @@ export class ChatHistoryService {
             // Parse the JSON response to extract posts
             const parsedContent = contentRepurposerParser.default.parseContentResponse(record.message);
             
-            console.log('✅ Saving content repurposer with Ready status to history_content_repurposer');
             const historyResult = await contentRepurposerApi.upsertByChat({
               user_id: record.user_id,
               session_id: record.session_id,
@@ -141,7 +140,6 @@ export class ChatHistoryService {
               // Create image records from extracted posts and general assets
               const imageRecords = contentRepurposerParser.default.createImageRecords(parsedContent.posts, historyRecord, parsedContent.generalAssets);
               
-              console.log(`✅ Saving ${imageRecords.length} posts to content_repurposer_images table`);
               const { data: insertedRecords, error: imageError } = await supabase
                 .from('content_repurposer_images')
                 .insert(imageRecords)
@@ -150,7 +148,6 @@ export class ChatHistoryService {
               if (imageError) {
                 console.error('Error saving to content_repurposer_images:', imageError);
               } else {
-                console.log(`✅ Successfully saved ${insertedRecords?.length || 0} image records`);
               }
             }
           } catch (err) {
@@ -158,7 +155,6 @@ export class ChatHistoryService {
             // Don't fail the main save if this fails
           }
         } else {
-          console.log(`⚠️ Skipping content repurposer save - agent_status: ${record.agent_status || 'undefined'}`);
         }
       }
 
@@ -175,7 +171,6 @@ export class ChatHistoryService {
             const newsletterNumber = Math.floor(Math.random() * 9999) + 1;
             const generatedTitle = `Newsletter_${newsletterNumber}_${currentDate}`;
             
-            console.log('✅ Saving newsletter with Ready status to history_newsletters');
             await newslettersApi.upsertByChat({
               user_id: record.user_id,
               session_id: record.session_id,
@@ -189,7 +184,6 @@ export class ChatHistoryService {
             // Don't fail the main save if this fails
           }
         } else {
-          console.log(`⚠️ Skipping newsletter save - agent_status: ${record.agent_status || 'undefined'}`);
         }
       }
 
@@ -467,8 +461,6 @@ export class ChatHistoryService {
    */
   async getPreviousNewsletters(userId: string): Promise<NewsletterHistory[]> {
     try {
-      console.log('🔍 QUERY: Fetching newsletters from history_newsletters for user:', userId);
-      console.log('🔍 User ID type:', typeof userId);
       
       // Get newsletters from dedicated history_newsletters table
       const { data, error } = await supabase
@@ -478,9 +470,6 @@ export class ChatHistoryService {
         .order('updated_at', { ascending: false })
         .limit(50);
 
-      console.log('📰 QUERY RESULT: newsletters from history_newsletters count:', data?.length || 0);
-      console.log('📰 QUERY ERROR:', error);
-      console.log('📰 QUERY DATA:', data);
 
       if (error) {
         console.error('Error fetching newsletter history from history_newsletters:', error);
@@ -509,7 +498,6 @@ export class ChatHistoryService {
    */
   async getPreviousSocialContent(userId: string): Promise<SocialContentHistory[]> {
     try {
-      console.log('🔍 QUERY: Fetching social content from content_repurposer_images ONLY for user:', userId);
       
       // Get social media content from content_repurposer_images table with history data
       const { data: imageData, error: imageError } = await supabase
@@ -530,7 +518,6 @@ export class ChatHistoryService {
         .order('created_date', { ascending: false })
         .limit(100);
 
-      console.log('📱 IMAGES ONLY: found', imageData?.length || 0, 'image records');
 
       if (imageError) {
         console.error('Error fetching social content from content_repurposer_images:', imageError);
@@ -538,7 +525,6 @@ export class ChatHistoryService {
       }
       
       if (!imageData || imageData.length === 0) {
-        console.log('📱 No image records found - this is expected until webhook populates the table');
         return [];
       }
 
@@ -566,7 +552,6 @@ export class ChatHistoryService {
         }
       });
       
-      console.log('📱 IMAGES ONLY: Grouped by history_content_repurposer_id, found groups:', contentGroups.size);
       return Array.from(contentGroups.values());
       
     } catch (error) {

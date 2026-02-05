@@ -35,7 +35,6 @@ export default function CategorizedAgentSidebar() {
 
   // Refresh agents when needed (can be called from outside)
   const refreshAgents = () => {
-    console.log('🔄 CategorizedAgentSidebar: Refreshing agents');
     loadAgentsFromYAML();
   };
 
@@ -61,7 +60,6 @@ export default function CategorizedAgentSidebar() {
       // Get current user from auth
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('No authenticated user, showing only Personal Assistant');
         setCategories([]);
         return;
       }
@@ -90,9 +88,6 @@ export default function CategorizedAgentSidebar() {
       const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
       
       // Debug logging
-      console.log(`🔍 CategorizedAgentSidebar: Enabled agents from DB:`, enabledAgents);
-      console.log(`🔍 CategorizedAgentSidebar: Enabled agent IDs:`, Array.from(enabledAgentIds));
-      console.log(`🔍 CategorizedAgentSidebar: All available configs:`, allAgentConfigs.map(c => c.agent.id));
       
       // Always include Personal Assistant (pinned)
       enabledAgentIds.add('personal_assistant');
@@ -102,7 +97,6 @@ export default function CategorizedAgentSidebar() {
         enabledAgentIds.has(config.agent.id)
       );
       
-      console.log(`🔍 CategorizedAgentSidebar: Final enabled configs:`, enabledConfigs.map(c => c.agent.name));
       
       // Transform configs to match sidebar format
       const assistants: Assistant[] = enabledConfigs.map((config) => {
@@ -120,7 +114,6 @@ export default function CategorizedAgentSidebar() {
         };
       });
 
-      console.log(`🔍 CategorizedAgentSidebar: Loaded ${assistants.length} enabled agents for user`);
 
       // Group by category
       const grouped = groupAssistantsByCategory(assistants);
@@ -171,7 +164,6 @@ export default function CategorizedAgentSidebar() {
 
 
   const handleCreateGroup = (groupName: string, selectedAssistants: string[]) => {
-    console.log('Creating group:', groupName, 'with assistants:', selectedAssistants);
     // Here you would typically handle the group creation logic
   };
 

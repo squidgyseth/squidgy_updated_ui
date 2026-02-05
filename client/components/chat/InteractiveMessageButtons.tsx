@@ -61,7 +61,6 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
 
   // Parse the content to find button patterns - flexible detection
   const parseButtonOptions = (text: string): ButtonOption[] => {
-    console.log('🔍 InteractiveMessageButtons: Parsing content:', text);
     const options: ButtonOption[] = [];
 
     // Button format: $**emoji Text - Description**$ (standard format)
@@ -113,7 +112,6 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
       processMatch(match[0], match[1]);
     }
 
-    console.log('🔍 InteractiveMessageButtons: Found button options:', options);
     return options;
   };
 
@@ -167,9 +165,6 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
   // Use streamingText if provided, otherwise clean the content
   const textContent = streamingText || cleanContent(content);
 
-  console.log('🔍 InteractiveMessageButtons: Clean text content:', textContent);
-  console.log('🔍 InteractiveMessageButtons: Button options count:', buttonOptions.length);
-  console.log('🔍 InteractiveMessageButtons: Image previews count:', imagePreviews.length);
 
   // Check if a button corresponds to an image (e.g., "Image 1", "Select Image 1", "Image 2")
   const getImageForButton = (buttonText: string): string | undefined => {
@@ -201,12 +196,10 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
         const agentId = agentMappingService.getAgentId(agentName);
 
         if (agentId) {
-          console.log(`🔗 Navigating to chat with agent: ${agentName} -> ${agentId}`);
           // Navigate to chat page
           window.location.href = `/chat/${agentId}`;
           return;
         } else {
-          console.warn(`⚠️ No agent ID found for: "${agentName}", sending message to AI instead`);
           // Fallback: send message to AI - it will respond with sidebar instructions
           onButtonClick(option.text);
           return;

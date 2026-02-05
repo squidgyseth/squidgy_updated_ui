@@ -97,32 +97,19 @@ const AuthHandler = () => {
       const accessToken = urlParams.get('access_token');
       const refreshToken = urlParams.get('refresh_token');
 
-      console.log('AuthHandler: Checking URL params:', {
-        pathname: location.pathname,
-        code: !!code,
-        type,
-        accessToken: !!accessToken,
-        refreshToken: !!refreshToken,
-        error,
-        allParams: Object.fromEntries(urlParams.entries())
-      });
 
       // Only redirect if we're on the root path with auth parameters
       if (location.pathname === '/' && (code || accessToken) && !error) {
-        console.log('AuthHandler: Auth callback detected on root path');
         
         if (type === 'recovery') {
           // Password reset flow
-          console.log('AuthHandler: Redirecting to reset password page');
           navigate('/reset-password' + location.search, { replace: true });
         } else if (type === 'signup') {
           // Signup confirmation flow
-          console.log('AuthHandler: Redirecting to login page for signup confirmation');
           navigate('/login' + location.search, { replace: true });
         } else if (code || accessToken) {
           // Generic auth callback - could be either, check for password reset indicators
           // If no specific type, default to login page
-          console.log('AuthHandler: Generic auth callback, redirecting to login');
           navigate('/login' + location.search, { replace: true });
         }
       }
@@ -131,7 +118,6 @@ const AuthHandler = () => {
       // This is the only reliable way to detect password reset vs email verification
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
-          console.log('AuthHandler: PASSWORD_RECOVERY event detected, redirecting to reset-password');
           navigate('/reset-password', { replace: true });
         }
       });

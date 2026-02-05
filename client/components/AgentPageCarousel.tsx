@@ -56,14 +56,11 @@ export default function AgentPageCarousel({ config, className = '' }: AgentPageC
       // Build the import path - this must match the actual file location
       const importPath = `../pages/agents/${config.agentId}/${fileName}`;
       
-      console.log(`Loading component from YAML config: ${page.path}`);
-      console.log(`Import path: ${importPath}`);
       
       try {
         // Dynamically import the component
         const Component = lazy(() => import(/* @vite-ignore */ importPath));
         components.set(page.name, Component);
-        console.log(`Successfully loaded: ${page.name}`);
       } catch (error) {
         console.error(`Failed to load component for ${page.name}:`, error);
         // No fallback - component must exist

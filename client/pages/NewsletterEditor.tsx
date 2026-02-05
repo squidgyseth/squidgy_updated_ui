@@ -246,7 +246,6 @@ export default function NewsletterEditor() {
         if (error) {
           // If bucket doesn't exist or RLS issue, try creating bucket
           if (error.message.includes('bucket') || error.message.includes('not found') || error.message.includes('row-level security')) {
-            console.log('Creating newsletter-images bucket...');
             const { error: bucketError } = await supabase.storage.createBucket('newsletter-images', {
               public: true,
               allowedMimeTypes: ['image/*']
@@ -463,14 +462,12 @@ export default function NewsletterEditor() {
   const loadNewsletterByChatHistory = async (chatHistoryId: string) => {
     setIsLoading(true);
     try {
-      console.log('Loading content from chat_history_id:', chatHistoryId);
       
       // First try to find existing newsletter in history_newsletters table
       const { data: existingNewsletter, error: newsletterError } = await newslettersApi.getByChatHistoryId(chatHistoryId);
       
       if (existingNewsletter && !newsletterError) {
         // Load existing newsletter
-        console.log('Found existing newsletter');
         const newsletter = existingNewsletter as Newsletter;
         setCurrentNewsletterId(newsletter.id);
         setNewsletterTitle(newsletter.title);
@@ -486,11 +483,9 @@ export default function NewsletterEditor() {
         }
       } else {
         // Load original content from chat_history table
-        console.log('Loading original content from chat_history table');
         const { data: chatMessage, error: chatError } = await chatHistoryApi.getById(chatHistoryId);
         
         if (chatMessage && !chatError) {
-          console.log('Found chat message, loading content');
           setCurrentNewsletterId(null); // This will be a new newsletter
           
           // Generate newsletter title with number and date
@@ -610,18 +605,15 @@ export default function NewsletterEditor() {
         
         // If no URL parameters but we have content that might be from chat, try to find matching chat history
         if (!sessionId && !chatHistoryId && !agentId && content.length > 1000) {
-          console.log('No URL parameters found, searching for matching chat history...');
           const matchingChat = await findMatchingChatHistory(content);
           if (matchingChat) {
             sessionId = matchingChat.session_id;
             chatHistoryId = matchingChat.chat_history_id;
             agentId = matchingChat.agent_id;
-            console.log('Found matching chat history:', matchingChat);
             
             // Check if newsletter already exists for this exact combination
             const { data: existingNewsletter } = await newslettersApi.getByChatHistoryId(chatHistoryId);
             if (existingNewsletter) {
-              console.log('Found existing newsletter for this chat history, updating instead of creating new');
               setCurrentNewsletterId(existingNewsletter.id);
               setNewsletterTitle(existingNewsletter.title);
             }
@@ -639,12 +631,6 @@ export default function NewsletterEditor() {
           agent_id: agentId || 'newsletter' // Default to 'newsletter' if no agent_id
         };
         
-        console.log('Saving newsletter with data:', {
-          session_id: sessionId,
-          chat_history_id: chatHistoryId,
-          agent_id: agentId,
-          hasContent: !!content
-        });
 
         let result;
         if (currentNewsletterId) {
@@ -677,7 +663,6 @@ export default function NewsletterEditor() {
           setTimeout(() => setIsSaved(false), 3000);
           // Reload newsletters list
           loadNewsletters(userId);
-          console.log('Newsletter saved successfully');
         }
       } catch (error) {
         console.error('Save error:', error);

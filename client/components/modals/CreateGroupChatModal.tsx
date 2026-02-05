@@ -70,7 +70,6 @@ export default function CreateGroupChatModal({ isOpen, onClose, onCreateGroup }:
       );
 
       if (groupChat) {
-        console.log('✅ Group chat created:', groupChat);
         
         // Call the original callback for any additional handling
         onCreateGroup(groupChat.name, selectedAssistants);

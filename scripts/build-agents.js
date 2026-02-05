@@ -23,7 +23,6 @@ async function upsertAgentsToSupabase(agents) {
   const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    console.warn('⚠️  Supabase credentials not found - skipping database sync');
     return;
   }
 
@@ -44,8 +43,6 @@ async function upsertAgentsToSupabase(agents) {
   const enabledCount = records.filter(r => r.is_enabled).length;
   const disabledCount = records.filter(r => !r.is_enabled).length;
 
-  console.log(`\n🔄 Syncing ${records.length} agents to Supabase...`);
-  console.log(`   📊 Enabled: ${enabledCount} | Disabled: ${disabledCount}`);
 
   // Upsert each record (based on config_type + code unique constraint)
   for (const record of records) {
@@ -58,17 +55,13 @@ async function upsertAgentsToSupabase(agents) {
         });
 
       if (error) {
-        console.warn(`⚠️  Failed to upsert ${record.code}:`, error.message);
       } else {
         const status = record.is_enabled ? '✅' : '⬚';
-        console.log(`   ${status} ${record.emoji} ${record.display_name} (${record.code})`);
       }
     } catch (err) {
-      console.warn(`⚠️  Error upserting ${record.code}:`, err.message);
     }
   }
 
-  console.log(`✅ Database sync complete\n`);
 }
 
 /**
@@ -106,7 +99,6 @@ async function buildAgents() {
           agentMap[config.agent.id] = config;
         }
       } catch (error) {
-        console.warn(`⚠️  Failed to parse ${file}:`, error.message);
       }
     }
     
@@ -196,9 +188,6 @@ export const TOTAL_AGENTS = ${agents.length};
     
     await fs.writeFile(outputFile, tsContent);
     
-    console.log(`✅ Built ${agents.length} agents into optimized TypeScript module`);
-    console.log(`📁 Output: ${outputFile}`);
-    console.log(`🚀 Performance: Single import, zero runtime parsing, instant access`);
     
     // Also generate a simple JSON version for external use
     const jsonOutput = path.join(__dirname, '../public/agents-compiled.json');
@@ -212,7 +201,6 @@ export const TOTAL_AGENTS = ${agents.length};
       }
     }, null, 2));
     
-    console.log(`📋 Also generated JSON: ${jsonOutput}`);
 
     // Sync agents to Supabase database
     await upsertAgentsToSupabase(agents);

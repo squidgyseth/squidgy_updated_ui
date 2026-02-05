@@ -15,7 +15,6 @@ export class FigmaScraperService {
    * Scrape deployed Figma site and extract HTML/CSS
    */
   async scrapeFigmaDeployedSite(url: string): Promise<ScrapedFigmaData> {
-    console.log(`🕷️ Scraping deployed Figma site: ${url}`);
     
     try {
       // Fetch the HTML content
@@ -45,7 +44,6 @@ export class FigmaScraperService {
       $('link[rel="stylesheet"]').each((_, element) => {
         const href = $(element).attr('href');
         if (href) {
-          console.log(`📎 Found external stylesheet: ${href}`);
         }
       });
       
@@ -58,12 +56,6 @@ export class FigmaScraperService {
       // Extract layout structure
       const structure = this.analyzeStructure($, bodyHtml);
       
-      console.log(`✅ Scraped data:`, {
-        title,
-        stylesCount: styles.length,
-        htmlLength: bodyHtml.length,
-        colors: colorPalette.length
-      });
       
       return {
         html: bodyHtml,

@@ -255,7 +255,6 @@ export default function ComprehensiveOnboarding() {
             file
           });
 
-          console.log('Company material saved successfully:', result.file_id);
         } else {
           throw new Error('Failed to save to knowledge base');
         }

@@ -18,10 +18,6 @@ export class EnhancedMultiPageGenerator {
    * Generate all pages for a multi-page agent using multi-agent system
    */
   async generateAgentPages(config: AgentConfig): Promise<MultiPageGenerationResult> {
-    console.log(`\n🤖 ENHANCED MULTI-AGENT GENERATION`);
-    console.log(`📱 Agent: ${config.agent.name}`);
-    console.log(`📁 Category: ${config.agent.category}`);
-    console.log('='.repeat(60));
     
     const result: MultiPageGenerationResult = {
       agentId: config.agent.id,
@@ -45,12 +41,9 @@ export class EnhancedMultiPageGenerator {
         throw new Error('No pages found in configuration');
       }
 
-      console.log(`📄 Generating ${pages.length} pages with multi-agent system...`);
 
       // Generate each page using multi-agent approach
       for (const [index, pageConfig] of pages.entries()) {
-        console.log(`\n📄 PAGE ${index + 1}/${pages.length}: ${pageConfig.name}`);
-        console.log('-'.repeat(40));
         
         try {
           const generatedPage = await this.generateSinglePageWithAgents(
@@ -60,7 +53,6 @@ export class EnhancedMultiPageGenerator {
           );
           
           result.pages.push(generatedPage);
-          console.log(`✅ Successfully generated: ${generatedPage.filePath}`);
           
         } catch (pageError: any) {
           console.error(`❌ Failed to generate ${pageConfig.name}:`, pageError.message);
@@ -75,7 +67,6 @@ export class EnhancedMultiPageGenerator {
 
       result.success = result.pages.length > 0;
       
-      console.log(`\n✨ GENERATION COMPLETE: ${result.pages.length}/${pages.length} pages successful`);
       
     } catch (error: any) {
       console.error('❌ Error in enhanced generation:', error.message);
@@ -118,7 +109,6 @@ export class EnhancedMultiPageGenerator {
 
     // Handle screenshot capture for deployed URLs
     if (source.type === 'figma_deployed') {
-      console.log(`📸 Capturing screenshots from: ${source.url}`);
       const screenshotData = await this.screenshotService.captureDeployedFigmaScreenshots(
         source.url,
         `${config.agent.id}_${pageConfig.name}`
@@ -127,7 +117,6 @@ export class EnhancedMultiPageGenerator {
     }
 
     // Run multi-agent generation process
-    console.log(`🤖 Starting multi-agent code generation...`);
     const session = await this.coordinator.generateAndValidateCode(request);
 
     if (session.status !== 'completed' || !session.finalCode) {
@@ -144,9 +133,6 @@ export class EnhancedMultiPageGenerator {
     }
 
     // Success! The file should already be written by the QA Agent
-    console.log(`✅ Multi-agent generation completed successfully!`);
-    console.log(`📊 Final confidence: ${session.finalCode.confidence}%`);
-    console.log(`🔄 Iterations used: ${session.currentIteration}`);
 
     return {
       agentId: config.agent.id,
@@ -173,9 +159,7 @@ export class EnhancedMultiPageGenerator {
     // Create directory if it doesn't exist
     if (!fs.existsSync(baseDir)) {
       fs.mkdirSync(baseDir, { recursive: true });
-      console.log(`📁 Created folder: ${baseDir}`);
     } else {
-      console.log(`📁 Using existing folder: ${baseDir}`);
     }
 
     return baseDir;
@@ -250,7 +234,6 @@ export const agentConfig = ${JSON.stringify({
 
     const indexPath = path.join(agentFolder, 'index.tsx');
     fs.writeFileSync(indexPath, indexContent, 'utf8');
-    console.log(`📄 Generated enhanced index file: ${indexPath}`);
   }
 
   /**

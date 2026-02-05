@@ -72,11 +72,6 @@ class ImageService {
       ...options
     };
 
-    console.log('🎨 Calling image generator:', {
-      url: n8nImageGeneratorUrl,
-      method: 'POST',
-      body: requestBody
-    });
 
     const response = await fetch(n8nImageGeneratorUrl, {
       method: 'POST',
@@ -97,7 +92,6 @@ class ImageService {
     }
 
     const data: ImageGenerationResponse = await response.json();
-    console.log('✅ Image generated successfully, base64 length:', data.Image?.length || 0);
     
     if (!data.Image) {
       throw new Error('No image data received from generator');
@@ -192,12 +186,6 @@ class ImageService {
       const timestamp = Date.now();
       const uniqueFileName = `${userId}/${timestamp}_${sanitizedFileName}`;
 
-      console.log('📁 Uploading file to Supabase storage:', {
-        bucket: 'content_repurposer',
-        fileName: uniqueFileName,
-        fileSize: file.size,
-        fileType: file.type
-      });
 
       // Upload to Supabase storage
       const { data, error } = await supabase.storage
@@ -212,7 +200,6 @@ class ImageService {
         throw error;
       }
 
-      console.log('✅ File uploaded successfully:', data);
 
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -257,7 +244,6 @@ class ImageService {
     postId: string
   ): Promise<ImageRecord[]> {
     try {
-      console.log(`🔍 ImageService: Searching for post_id: "${postId}"`);
       
       // Try exact match first
       let { data, error } = await supabase
@@ -273,12 +259,10 @@ class ImageService {
         throw error;
       }
 
-      console.log(`🔍 ImageService: Exact match found ${data?.length || 0} images`);
 
       // If no exact match and postId contains UUID, try without UUID
       if ((!data || data.length === 0) && postId.includes('-') && postId.split('-').length > 3) {
         const shortPostId = postId.split('-').slice(0, 3).join('-');
-        console.log(`🔍 ImageService: Trying shortened post_id: "${shortPostId}"`);
         
         const { data: shortData, error: shortError } = await supabase
           .from('content_repurposer_images')
@@ -293,13 +277,11 @@ class ImageService {
           throw shortError;
         }
         
-        console.log(`🔍 ImageService: Shortened match found ${shortData?.length || 0} images`);
         data = shortData;
       }
       
       // If still no match and postId is short, try with wildcard pattern
       if ((!data || data.length === 0) && !postId.includes('-', postId.lastIndexOf('_') + 1)) {
-        console.log(`🔍 ImageService: Trying wildcard pattern for post_id starting with: "${postId}"`);
         
         const { data: wildcardData, error: wildcardError } = await supabase
           .from('content_repurposer_images')
@@ -314,7 +296,6 @@ class ImageService {
           throw wildcardError;
         }
         
-        console.log(`🔍 ImageService: Wildcard match found ${wildcardData?.length || 0} images`);
         data = wildcardData;
       }
 
@@ -347,7 +328,6 @@ class ImageService {
         const urlParts = imageRecord.image_url.split('/');
         const fileName = urlParts.slice(-2).join('/'); // Get last two parts: userId/filename
         
-        console.log('🗑️ Deleting image from storage:', fileName);
         
         const { error: storageError } = await supabase.storage
           .from('content_repurposer')
@@ -373,7 +353,6 @@ class ImageService {
         throw error;
       }
       
-      console.log('✅ Image deleted from storage, database record preserved with image_url set to NULL');
     } catch (error) {
       console.error('Error deleting image:', error);
       throw error;

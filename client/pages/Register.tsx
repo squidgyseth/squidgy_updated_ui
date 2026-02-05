@@ -156,48 +156,32 @@ export default function Register() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log('🚀 REGISTER: Form submission started');
-    console.log('📊 REGISTER: Form data:', { 
-      fullName: fullName ? `${fullName.substring(0, 2)}***` : 'empty', 
-      email: email ? `${email.substring(0, 3)}***@${email.split('@')[1] || '***'}` : 'empty',
-      passwordLength: password ? password.length : 0,
-      confirmPasswordLength: confirmPassword ? confirmPassword.length : 0
-    });
-    
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      console.log('❌ REGISTER: Password mismatch validation failed');
       toast.error('Passwords do not match');
       return;
     }
 
     // Validate required consents
     if (!termsScrolledToBottom || !privacyScrolledToBottom) {
-      console.log('❌ REGISTER: Documents not fully read');
       toast.error('You must read through the entire Beta User Agreement and Privacy Policy before accepting');
       return;
     }
 
     if (!termsAccepted) {
-      console.log('❌ REGISTER: Terms acceptance validation failed');
       toast.error('You must accept the Terms and Privacy Policy to continue');
       return;
     }
 
     if (!aiConsentAccepted) {
-      console.log('❌ REGISTER: AI consent validation failed');
       toast.error('You must consent to AI processing to use our services');
       return;
     }
 
-    console.log('✅ REGISTER: Form validation passed, setting loading state');
     setLoading(true);
-    
-    try {
-      console.log('🔄 REGISTER: Calling signUp API...');
-      const startTime = Date.now();
 
+    try {
       const response = await signUp({
         email,
         password,
@@ -210,38 +194,21 @@ export default function Register() {
         privacyViewed: privacyScrolledToBottom,
         privacyScrolledToBottom
       });
-      
-      const endTime = Date.now();
-      console.log(`✅ REGISTER: signUp API completed in ${endTime - startTime}ms`);
-      console.log('📋 REGISTER: API Response:', {
-        hasUser: !!response?.user,
-        needsEmailConfirmation: response?.needsEmailConfirmation,
-        hasProfile: !!response?.profile,
-        message: response?.message
-      });
-      
-      if (response.needsEmailConfirmation) {
-        console.log('📧 REGISTER: Email confirmation required, showing success message');
-        toast.success('Account created! Please check your email to verify your account before signing in.');
 
-        console.log('⏰ REGISTER: Setting 2-second timeout for navigation to /login');
+      if (response.needsEmailConfirmation) {
+        toast.success('Account created! Please check your email to verify your account before signing in.');
         setTimeout(() => {
-          console.log('🔄 REGISTER: Navigating to /login after timeout');
           navigate('/login');
         }, 2000);
       } else {
-        console.log('🎉 REGISTER: Account created and verified, navigating to login');
         toast.success('Account created successfully! Please sign in to continue.');
         // Redirect to login page
         navigate('/login');
       }
     } catch (error: any) {
       console.error('❌ REGISTER: Error during signup:', error);
-      console.error('❌ REGISTER: Error message:', error.message);
-      console.error('❌ REGISTER: Error stack:', error.stack);
       toast.error(error.message || 'Registration failed');
     } finally {
-      console.log('🔄 REGISTER: Setting loading state to false');
       setLoading(false);
     }
   };

@@ -35,7 +35,6 @@ class ReferralService {
     try {
       // MOCK DATA (commented out - uncomment if database issues)
       /*
-      console.log('🔧 Using mock referral code for user:', userId);
       
       // Generate a consistent mock code based on userId
       const userIdShort = userId.substring(0, 8).toUpperCase();
@@ -121,7 +120,6 @@ class ReferralService {
     try {
       // MOCK DATA (commented out - uncomment if database issues)
       /*
-      console.log('🔧 Using mock referral stats for user:', userId);
       
       return {
         total_referrals: 7,
@@ -276,7 +274,6 @@ class ReferralService {
     try {
       // MOCK DATA (commented out - uncomment if database issues)
       /*
-      console.log('🔧 Using mock share stats for user:', userId);
       
       return {
         total_shares: 15,
@@ -363,7 +360,6 @@ class ReferralService {
     try {
       // MOCK DATA (commented out - uncomment if database issues)
       /*
-      console.log('🔧 Using mock waitlist position for user:', userId);
       
       return {
         current_position: 12,
@@ -468,7 +464,6 @@ class ReferralService {
     try {
       // MOCK DATA (commented out - uncomment if database issues)
       /*
-      console.log('🔧 Using mock leaderboard data');
       
       const mockLeaderboard: LeaderboardEntry[] = [
         {

@@ -89,7 +89,6 @@ class NavigationService {
       
       // Fallback if popup is blocked
       if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        console.warn('Popup blocked, navigating in same tab');
         this.navigateInSameTab(url, options);
       }
     } else {

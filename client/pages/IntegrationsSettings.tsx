@@ -95,9 +95,6 @@ export default function IntegrationsSettings() {
       const isExpired = now >= exp;
       
       if (isExpired) {
-        console.log('⚠️ Firebase token is expired!');
-        console.log(`  Token expired at: ${new Date(exp * 1000).toISOString()}`);
-        console.log(`  Current time: ${new Date(now * 1000).toISOString()}`);
       }
       
       return isExpired;
@@ -123,7 +120,6 @@ export default function IntegrationsSettings() {
     if (firebaseToken) {
       const userId = decodeFirebaseToken(firebaseToken);
       if (userId) {
-        console.log('🔑 Extracted user_id from Firebase token:', userId);
         setFirebaseUserId(userId);
       }
     }
@@ -134,10 +130,8 @@ export default function IntegrationsSettings() {
     if (locationId && firebaseToken && accessToken && !refreshingToken) {
       Promise.all([
         fetchFacebookPagesFromGHL().catch(err => {
-          console.log('⚠️ Skipping Facebook pages auto-fetch:', err.message);
         }),
         fetchFacebookAdAccountsFromGHL().catch(err => {
-          console.log('⚠️ Skipping Facebook ad accounts auto-fetch:', err.message);
         })
       ]);
     }
@@ -154,7 +148,6 @@ export default function IntegrationsSettings() {
   useEffect(() => {
     if (!socialMediaPolling || !firmUserId) return;
 
-    console.log('🔄 Starting real-time polling for social media account updates...');
     const pollInterval = setInterval(() => {
       fetchConnectedSocialMediaAccounts();
     }, 5000); // Poll every 5 seconds
@@ -162,7 +155,6 @@ export default function IntegrationsSettings() {
     // Stop polling after 2 minutes
     const timeout = setTimeout(() => {
       setSocialMediaPolling(false);
-      console.log('⏱️ Social media polling timeout reached');
     }, 120000);
 
     return () => {
@@ -177,14 +169,12 @@ export default function IntegrationsSettings() {
 
     const checkWindowClosed = setInterval(() => {
       // OAuth window was closed, trigger refresh
-      console.log('🔄 OAuth window activity detected, refreshing accounts...');
       fetchConnectedSocialMediaAccounts();
     }, 3000); // Check every 3 seconds
 
     // Stop checking after 5 minutes
     const timeout = setTimeout(() => {
       setOauthWindowOpen(false);
-      console.log('⏱️ OAuth window monitoring timeout');
     }, 300000);
 
     return () => {
@@ -205,7 +195,6 @@ export default function IntegrationsSettings() {
     
     setRefreshingToken(true);
     try {
-      console.log('🔄 Requesting Firebase token refresh...');
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       
       const response = await fetch(`${backendUrl}/api/ghl/refresh-firebase-token`, {
@@ -218,12 +207,10 @@ export default function IntegrationsSettings() {
       
       if (result.success) {
         if (result.token_refreshed) {
-          console.log('✅ Firebase token refresh started in background');
         } else {
           const ageText = result.token_age_minutes !== undefined && result.token_age_minutes !== null 
             ? `${result.token_age_minutes} minutes` 
             : 'unknown';
-          console.log(`✅ Firebase token is fresh (age: ${ageText})`);
           // Token is fresh, fetch it now
           await fetchTokensFromDatabase(false);
         }
@@ -240,7 +227,6 @@ export default function IntegrationsSettings() {
     if (!firmUserId) return;
     
     try {
-      console.log('🔑 Fetching tokens from database...');
       
       // Fetch from ghl_subaccounts table including token timestamp
       const { data: ghlData, error: ghlError } = await supabase
@@ -272,14 +258,11 @@ export default function IntegrationsSettings() {
             const tokenDate = new Date(tokenTime);
             const now = new Date();
             const ageInMinutes = (now.getTime() - tokenDate.getTime()) / (1000 * 60);
-            console.log(`🕐 Firebase token age: ${Math.floor(ageInMinutes)} minutes`);
             
             if (ageInMinutes > 60) {
-              console.log('⚠️ Firebase token is older than 1 hour, triggering refresh...');
               tokenNeedsRefresh = true;
             }
           } else if (!fbToken || !tokenTime) {
-            console.log('⚠️ Firebase token or timestamp missing, triggering refresh...');
             tokenNeedsRefresh = true;
           }
           
@@ -297,12 +280,6 @@ export default function IntegrationsSettings() {
         setPitToken(pitTok);
         setLocationId(locId);
         
-        console.log('✅ Tokens fetched:', {
-          hasFirebaseToken: !!fbToken,
-          hasAccessToken: !!accessTok,
-          hasPITToken: !!pitTok,
-          locationId: locId
-        });
       }
     } catch (error) {
       console.error('❌ Error fetching tokens:', error);
@@ -313,7 +290,6 @@ export default function IntegrationsSettings() {
     if (pollingForToken) return; // Already polling
     
     setPollingForToken(true);
-    console.log('🔄 Starting token polling (checking every 5 seconds)...');
     
     const pollInterval = setInterval(async () => {
       try {
@@ -330,11 +306,9 @@ export default function IntegrationsSettings() {
             const now = new Date();
             const ageInMinutes = (now.getTime() - tokenDate.getTime()) / (1000 * 60);
             
-            console.log(`🔍 Token age: ${ageInMinutes.toFixed(2)} minutes`);
             
             // If token is fresh (less than 5 minutes old), it's been updated
             if (ageInMinutes < 5) {
-              console.log('✅ Token has been refreshed! Stopping polling and reloading page.');
               clearInterval(pollInterval);
               setPollingForToken(false);
               setTokenRefreshRequested(false);
@@ -353,7 +327,6 @@ export default function IntegrationsSettings() {
       clearInterval(pollInterval);
       setPollingForToken(false);
       setTokenRefreshRequested(false);
-      console.log('⏱️ Token polling timeout reached');
     }, 300000); // 5 minutes
   };
 
@@ -367,7 +340,6 @@ export default function IntegrationsSettings() {
     
     // Check if token is expired before making API call
     if (isFirebaseTokenExpired(firebaseToken)) {
-      console.log('🔄 Token expired, triggering refresh before calendar check...');
       setCheckingCalendar(false);
       await refreshFirebaseToken();
       startTokenPolling();
@@ -376,8 +348,6 @@ export default function IntegrationsSettings() {
     
     setCheckingCalendar(true);
     try {
-      console.log('📅 Checking Google Calendar connection...');
-      console.log('🔑 Using userId:', userIdToUse, '(from', firebaseUserId ? 'Firebase token' : 'database', ')');
       
       const calendarUrl = `https://services.leadconnectorhq.com/calendars/connections/calendars?locationId=${locationId}&userId=${userIdToUse}`;
       
@@ -397,7 +367,6 @@ export default function IntegrationsSettings() {
       }
       
       const calendarData = await response.json();
-      console.log('✅ Calendar connections response:', calendarData);
       
       // Check if Google calendar is connected
       const googleCalendars = calendarData.thirdPartyCalendars?.google || {};
@@ -439,8 +408,6 @@ export default function IntegrationsSettings() {
       setGhlUserName(userName);
       setGhlUserEmail(googleEmail);
       
-      console.log(`📅 Google Calendar connected: ${hasGoogleCalendar}`, googleEmail ? `(${googleEmail})` : '');
-      console.log(`📅 Outlook Calendar connected: ${hasOutlookCalendar}`, outlookEmail ? `(${outlookEmail})` : '');
     } catch (error: any) {
       console.error('❌ Error checking Google Calendar:', error);
     } finally {
@@ -454,7 +421,6 @@ export default function IntegrationsSettings() {
     }
     
     try {
-      console.log('📊 Fetching all Facebook Ad Accounts from GHL backend API...');
       
       const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/allAdAccounts?limit=100`;
 
@@ -470,17 +436,14 @@ export default function IntegrationsSettings() {
       });
       
       if (!response.ok) {
-        console.log('ℹ️ No ad accounts found');
         setFacebookAdAccounts([]);
         return;
       }
       
       const data = await response.json();
-      console.log('✅ Facebook Ad Accounts response:', data);
       
       const adAccounts = data.adAccounts || [];
       setFacebookAdAccounts(adAccounts);
-      console.log(`✅ Found ${adAccounts.length} ad accounts`);
     } catch (error: any) {
       console.error('❌ Error fetching Facebook ad accounts:', error);
       setFacebookAdAccounts([]);
@@ -490,14 +453,12 @@ export default function IntegrationsSettings() {
   const fetchFacebookPagesFromGHL = async () => {
     if (!locationId || !firebaseToken || !accessToken) {
       if (!refreshingToken) {
-        console.log('⚠️ Missing required tokens. Waiting for token refresh...');
       }
       return;
     }
     
     setFacebookLoading(true);
     try {
-      console.log('📄 Fetching Facebook pages from GHL backend API...');
       
       // First, fetch connected pages
       const connectedPagesUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/pages?getAll=true`;
@@ -515,7 +476,6 @@ export default function IntegrationsSettings() {
       let connectedPageIds = new Set();
       if (connectedResponse.ok) {
         const connectedData = await connectedResponse.json();
-        console.log('✅ Connected pages response:', connectedData);
         const connectedPages = connectedData.pages || [];
         connectedPageIds = new Set(connectedPages.map((p: any) => p.facebookPageId));
       }
@@ -534,13 +494,11 @@ export default function IntegrationsSettings() {
       });
       
       if (!allPagesResponse.ok) {
-        console.log('ℹ️ No pages found');
         setFacebookPages([]);
         return;
       }
       
       const allPagesData = await allPagesResponse.json();
-      console.log('✅ All available pages response:', allPagesData);
       
       const pages = (allPagesData.pages || []).map((page: any) => ({
         ...page,
@@ -548,7 +506,6 @@ export default function IntegrationsSettings() {
       }));
       
       setFacebookPages(pages);
-      console.log(`✅ Found ${pages.length} pages (${connectedPageIds.size} connected)`);
     } catch (error: any) {
       console.error('❌ Error fetching Facebook pages:', error);
       if (!refreshingToken) {
@@ -582,7 +539,6 @@ export default function IntegrationsSettings() {
     const handleOAuthCallback = (event: MessageEvent) => {
       // Check if message is from GHL OAuth
       if (event.data?.type === 'oauth-success' || event.data === 'oauth-success') {
-        console.log('OAuth success detected, refreshing connection status...');
         // Refresh connection status after OAuth completes
         setTimeout(() => {
           checkGoogleCalendarConnection();
@@ -593,7 +549,6 @@ export default function IntegrationsSettings() {
     // Listen for window focus to refresh status when user returns from OAuth popup
     const handleWindowFocus = () => {
       if (locationId && pitToken) {
-        console.log('Window focused, refreshing connection status...');
         setTimeout(() => {
           checkGoogleCalendarConnection();
         }, 1000);
@@ -637,7 +592,6 @@ export default function IntegrationsSettings() {
         .single();
 
       if (solError) {
-        console.warn('No SOL agent integration found, using first available:', solError.message);
         // Fallback to first integration if SOL not found
         if (allData && allData.length > 0) {
           setLocationId(allData[0].ghl_location_id);
@@ -646,7 +600,6 @@ export default function IntegrationsSettings() {
         }
       } else if (solData) {
         // Use SOL agent's location for social media integrations
-        console.log('✅ Using SOL agent location for social media:', solData.ghl_location_id);
         setLocationId(solData.ghl_location_id);
         setGhlUserId(solData.soma_ghl_user_id || null);
         setPitToken(solData.pit_token || null);
@@ -667,7 +620,6 @@ export default function IntegrationsSettings() {
       return;
     }
     
-    console.log('🔑 Using userId for Google OAuth:', userIdToUse, '(from', firebaseUserId ? 'Firebase token' : 'database', ')');
     const oauthUrl = `https://api.leadconnectorhq.com/gmail/start_oauth?locationId=${locationId}&userId=${userIdToUse}`;
     
     // Open in a centered popup window
@@ -712,7 +664,6 @@ export default function IntegrationsSettings() {
           // Check if popup is closed
           if (popup.closed) {
             clearInterval(pollTimer);
-            console.log('OAuth popup closed, refreshing connection status...');
             setTimeout(() => {
               checkGoogleCalendarConnection();
             }, 2000);
@@ -724,7 +675,6 @@ export default function IntegrationsSettings() {
             const popupUrl = popup.location.href;
             // Check if redirected to success/completion page
             if (popupUrl.includes('success') || popupUrl.includes('complete') || popupUrl.includes('callback')) {
-              console.log('OAuth success detected from URL:', popupUrl);
               popup.close();
               clearInterval(pollTimer);
               setTimeout(() => {
@@ -752,11 +702,9 @@ export default function IntegrationsSettings() {
 
   const generateFacebookOAuthUrl = async () => {
     if (!firmUserId) {
-      console.log('🔍 No firmUserId available');
       return;
     }
 
-    console.log('🚀 Starting Facebook OAuth URL generation for firmUserId:', firmUserId);
     setFacebookLoading(true);
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -818,7 +766,6 @@ export default function IntegrationsSettings() {
 
         const finalOAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?${oauthParams.toString()}`;
         setFacebookOAuthUrl(finalOAuthUrl);
-        console.log('✅ Successfully generated Facebook OAuth URL');
       } else {
         throw new Error('Invalid OAuth response from server');
       }
@@ -844,7 +791,6 @@ export default function IntegrationsSettings() {
     
     setFacebookLoading(true);
     try {
-      console.log('🔗 Starting Facebook OAuth automation...');
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       
       // Step 1: Start backend automation that will intercept tokens
@@ -861,7 +807,6 @@ export default function IntegrationsSettings() {
       }
       
       if (result.success && result.oauth_url) {
-        console.log('✅ Automation started, opening OAuth popup...');
         
         // Step 2: Open OAuth URL in popup window
         const width = 600;
@@ -877,7 +822,6 @@ export default function IntegrationsSettings() {
         
         if (popup) {
           toast.success('Facebook login window opened. The automation is capturing your tokens in the background.');
-          console.log('✅ OAuth popup opened, session_id:', result.session_id);
           
           // Store session ID for status checking
           sessionStorage.setItem('fb_oauth_session_id', result.session_id);
@@ -932,7 +876,6 @@ export default function IntegrationsSettings() {
 
     setFacebookLoading(true);
     try {
-      console.log('🗑️ Disconnecting Facebook page:', pageName);
       
       // Get all currently connected pages except the one to remove
       const remainingPages = facebookPages
@@ -946,7 +889,6 @@ export default function IntegrationsSettings() {
           facebookIgnoreMessages: false
         }));
       
-      console.log('📤 Sending updated page list (without removed page):', { pages: remainingPages });
       
       // POST updated list to GHL backend API
       const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/pages`;
@@ -972,7 +914,6 @@ export default function IntegrationsSettings() {
       }
 
       const result = await response.json();
-      console.log('✅ Page disconnected successfully:', result);
       
       toast.success(`Successfully disconnected ${pageName}`);
       
@@ -1000,7 +941,6 @@ export default function IntegrationsSettings() {
 
     setFacebookLoading(true);
     try {
-      console.log('🔗 Connecting selected pages to GHL...');
       
       // Get full page data for selected pages and format payload
       const selectedPagesData = facebookPages
@@ -1014,7 +954,6 @@ export default function IntegrationsSettings() {
           facebookIgnoreMessages: false
         }));
       
-      console.log('📤 Payload:', { pages: selectedPagesData });
       
       // POST to GHL backend API to connect pages
       const ghlBackendUrl = `https://backend.leadconnectorhq.com/integrations/facebook/${locationId}/pages`;
@@ -1040,7 +979,6 @@ export default function IntegrationsSettings() {
       }
 
       const result = await response.json();
-      console.log('✅ Pages connected successfully:', result);
       
       toast.success(`Successfully connected ${selectedFacebookPages.length} Facebook page${selectedFacebookPages.length !== 1 ? 's' : ''}!`);
       
@@ -1066,7 +1004,6 @@ export default function IntegrationsSettings() {
       return;
     }
     
-    console.log('🔑 Using userId for Outlook OAuth:', userIdToUse, '(from', firebaseUserId ? 'Firebase token' : 'database', ')');
     const oauthUrl = `https://api.leadconnectorhq.com/api/outlook/start_oauth?location_id=${locationId}&user_id=${userIdToUse}&requestedBy=${userIdToUse}`;
     
     // Open in a centered popup window
@@ -1132,7 +1069,6 @@ export default function IntegrationsSettings() {
         // Start real-time polling for account updates
         setSocialMediaPolling(true);
         setOauthWindowOpen(true);
-        console.log('🔄 Started real-time polling for Facebook account updates');
       }
 
       // Declare checkPopup variable first so it can be referenced in messageHandler
@@ -1142,7 +1078,6 @@ export default function IntegrationsSettings() {
       const messageHandler = (event: MessageEvent) => {
         // GHL's OAuth callback sends: { actionType: "close", platform: "facebook", accountId: "...", ... }
         if (event.data && event.data.accountId && event.data.platform === 'facebook') {
-          console.log('✅ Received accountId (OAuth ID) from popup:', event.data.accountId);
           window.removeEventListener('message', messageHandler);
           clearInterval(checkPopup);
           fetchSocialMediaAccountsWithOAuthId(event.data.accountId, 'facebook');
@@ -1157,7 +1092,6 @@ export default function IntegrationsSettings() {
         if (popup && popup.closed) {
           clearInterval(checkPopup);
           window.removeEventListener('message', messageHandler);
-          console.log('✅ OAuth window closed, stopping polling');
           setSocialMediaPolling(false);
           setOauthWindowOpen(false);
           // After OAuth, try to fetch OAuth connections and then accounts
@@ -1220,7 +1154,6 @@ export default function IntegrationsSettings() {
         // Start real-time polling for account updates
         setSocialMediaPolling(true);
         setOauthWindowOpen(true);
-        console.log('🔄 Started real-time polling for Instagram account updates');
       }
 
       // Declare checkPopup variable first so it can be referenced in messageHandler
@@ -1230,7 +1163,6 @@ export default function IntegrationsSettings() {
       const messageHandler = (event: MessageEvent) => {
         // GHL's OAuth callback sends: { actionType: "close", platform: "instagram", accountId: "...", ... }
         if (event.data && event.data.accountId && event.data.platform === 'instagram') {
-          console.log('✅ Received accountId (OAuth ID) from popup:', event.data.accountId);
           window.removeEventListener('message', messageHandler);
           clearInterval(checkPopup);
           fetchSocialMediaAccountsWithOAuthId(event.data.accountId, 'instagram');
@@ -1245,7 +1177,6 @@ export default function IntegrationsSettings() {
         if (popup && popup.closed) {
           clearInterval(checkPopup);
           window.removeEventListener('message', messageHandler);
-          console.log('✅ OAuth window closed, stopping polling');
           setSocialMediaPolling(false);
           setOauthWindowOpen(false);
           // After OAuth, try to fetch OAuth connections and then accounts
@@ -1286,7 +1217,6 @@ export default function IntegrationsSettings() {
         // Start real-time polling for account updates
         setSocialMediaPolling(true);
         setOauthWindowOpen(true);
-        console.log('🔄 Started real-time polling for LinkedIn account updates');
       }
 
       // Declare checkPopup variable first so it can be referenced in messageHandler
@@ -1296,7 +1226,6 @@ export default function IntegrationsSettings() {
       const messageHandler = (event: MessageEvent) => {
         // GHL's OAuth callback sends: { actionType: "close", platform: "linkedin", accountId: "...", ... }
         if (event.data && event.data.accountId && event.data.platform === 'linkedin') {
-          console.log('✅ Received accountId (OAuth ID) from popup:', event.data.accountId);
           window.removeEventListener('message', messageHandler);
           clearInterval(checkPopup);
           fetchSocialMediaAccountsWithOAuthId(event.data.accountId, 'linkedin');
@@ -1311,7 +1240,6 @@ export default function IntegrationsSettings() {
         if (popup && popup.closed) {
           clearInterval(checkPopup);
           window.removeEventListener('message', messageHandler);
-          console.log('✅ OAuth window closed, stopping polling');
           setSocialMediaPolling(false);
           setOauthWindowOpen(false);
           // After OAuth, try to fetch OAuth connections and then accounts
@@ -1352,7 +1280,6 @@ export default function IntegrationsSettings() {
       if (popup) {
         setSocialMediaPolling(true);
         setOauthWindowOpen(true);
-        console.log(`🔄 Started real-time polling for ${platform} account updates`);
       }
 
       let checkPopup: NodeJS.Timeout;
@@ -1360,7 +1287,6 @@ export default function IntegrationsSettings() {
       // Listen for messages from the popup
       const messageHandler = (event: MessageEvent) => {
         if (event.data && event.data.accountId && event.data.platform === platform) {
-          console.log(`✅ Received accountId (OAuth ID) from ${platform} popup:`, event.data.accountId);
           window.removeEventListener('message', messageHandler);
           clearInterval(checkPopup);
           fetchSocialMediaAccountsWithOAuthId(event.data.accountId, platform);
@@ -1375,7 +1301,6 @@ export default function IntegrationsSettings() {
         if (popup && popup.closed) {
           clearInterval(checkPopup);
           window.removeEventListener('message', messageHandler);
-          console.log(`✅ ${platform} OAuth window closed, stopping polling`);
           setSocialMediaPolling(false);
           setOauthWindowOpen(false);
           fetchSocialMediaAccounts(platform);
@@ -1394,7 +1319,6 @@ export default function IntegrationsSettings() {
     }
 
     try {
-      console.log('📱 Fetching connected social media accounts from GHL...');
 
       // Call GHL's accounts endpoint directly to get all connected accounts
       const accountsEndpoint = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
@@ -1417,7 +1341,6 @@ export default function IntegrationsSettings() {
       }
 
       const data = await response.json();
-      console.log('📊 GHL accounts response:', data);
 
       if (data.success && data.results && data.results.accounts) {
         // Filter out deleted accounts and ensure each has platform field
@@ -1429,14 +1352,7 @@ export default function IntegrationsSettings() {
           }));
 
         setConnectedSocialMediaAccounts(allAccounts);
-        console.log('✅ Total connected social media accounts:', allAccounts.length);
-        console.log('� Accounts by platform:', {
-          facebook: allAccounts.filter((a: any) => a.platform === 'facebook').length,
-          instagram: allAccounts.filter((a: any) => a.platform === 'instagram').length,
-          linkedin: allAccounts.filter((a: any) => a.platform === 'linkedin').length
-        });
       } else {
-        console.log('⚠️ No accounts found in GHL response');
         setConnectedSocialMediaAccounts([]);
       }
 
@@ -1461,7 +1377,6 @@ export default function IntegrationsSettings() {
     const pollForAccounts = async () => {
       try {
         attempts++;
-        console.log(`📱 Polling for ${platform} OAuth connections (attempt ${attempts}/${maxAttempts})...`);
 
         // Call GHL's accounts endpoint directly to get OAuth IDs
         const accountsEndpoint = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
@@ -1480,7 +1395,6 @@ export default function IntegrationsSettings() {
 
         if (response.ok) {
           const data = await response.json();
-          console.log(`✅ GHL accounts response:`, data);
 
           // Filter accounts by platform and get OAuth ID
           // Note: We don't filter by deleted here because we need the OAuth ID to fetch available pages/accounts
@@ -1490,20 +1404,17 @@ export default function IntegrationsSettings() {
               acc.platform === platform
             );
 
-            console.log(`✅ Found ${platformAccounts.length} ${platform} OAuth connections`);
 
             if (platformAccounts.length > 0) {
               // Get the first OAuth ID for this platform
               const oAuthId = platformAccounts[0].oauthId;
               
               if (oAuthId) {
-                console.log(`✅ Using OAuth ID: ${oAuthId}`);
                 await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
                 setSocialMediaLoading(false);
                 return; // Stop polling
               }
             } else {
-              console.log(`⏳ No ${platform} OAuth connections found yet, waiting for OAuth completion...`);
             }
           }
         } else {
@@ -1514,7 +1425,6 @@ export default function IntegrationsSettings() {
         if (attempts < maxAttempts) {
           setTimeout(pollForAccounts, 5000); // Poll every 5 seconds
         } else {
-          console.log('⏱️ Max polling attempts reached');
           toast.info(`OAuth completed. Please click "Connect ${platform === 'facebook' ? 'Facebook' : 'Instagram'}" again to see available ${platform === 'facebook' ? 'pages' : 'accounts'}.`);
           setSocialMediaLoading(false);
         }
@@ -1543,8 +1453,6 @@ export default function IntegrationsSettings() {
     setSocialMediaLoading(true);
     setSocialMediaPlatform(platform);
     try {
-      console.log(`📱 Fetching ${platform} ${platform === 'facebook' ? 'pages' : 'accounts'} with OAuth ID:`, oAuthId);
-      console.log(`🔑 Using locationId: ${locationId}, oAuthId: ${oAuthId}`);
 
       // Call GHL's backend API directly - matching exact pattern from HAR file
       const endpoint = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${platform}/accounts/${oAuthId}`;
@@ -1568,36 +1476,23 @@ export default function IntegrationsSettings() {
       }
 
       const data = await response.json();
-      console.log(`✅ GHL ${platform} response:`, data);
 
       if (data.success && data.results) {
         // GHL returns pages in results.pages for Facebook, accounts in results.accounts for Instagram, profile in results.profile for LinkedIn
-        console.log('🔍 Checking results structure:', {
-          hasPages: !!data.results.pages,
-          pagesLength: data.results.pages?.length,
-          hasAccounts: !!data.results.accounts,
-          accountsLength: data.results.accounts?.length,
-          hasProfile: !!data.results.profile,
-          profileLength: data.results.profile?.length,
-          platform
-        });
         
         // Check for non-empty arrays - empty arrays are truthy but we need items
         const items = (data.results.pages && data.results.pages.length > 0) ? data.results.pages
           : (data.results.accounts && data.results.accounts.length > 0) ? data.results.accounts
           : (data.results.profile && data.results.profile.length > 0) ? data.results.profile
           : [];
-        console.log('📋 Extracted items:', items);
         
         if (items.length > 0) {
-          console.log('✅ Setting socialMediaPages with', items.length, 'items');
           setSocialMediaPages(items);
           setSocialMediaOAuthId(oAuthId);
           setShowSocialMediaPages(true);
           const itemType = platform === 'facebook' ? 'page' : platform === 'linkedin' ? 'profile' : 'account';
           toast.success(`Found ${items.length} available ${itemType}${items.length !== 1 ? 's' : ''}`);
         } else {
-          console.log('⚠️ No items found in response');
           const itemType = platform === 'facebook' ? 'pages' : platform === 'linkedin' ? 'profiles' : 'accounts';
           toast.info(`No ${itemType} found for this OAuth connection`);
         }
@@ -1628,7 +1523,6 @@ export default function IntegrationsSettings() {
 
       setSocialMediaLoading(true);
       try {
-        console.log(`🔗 Connecting ${socialMediaPlatform} account:`, page);
 
         // Call GHL's API directly to connect account
         const endpoint = `https://backend.leadconnectorhq.com/social-media-posting/oauth/${locationId}/${socialMediaPlatform}/accounts/${socialMediaOAuthId}`;
@@ -1650,8 +1544,6 @@ export default function IntegrationsSettings() {
           ...(page.urn && { urn: page.urn })
         };
 
-        console.log('📤 POST request to GHL:', endpoint);
-        console.log('📤 Request body:', requestBody);
 
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -1674,7 +1566,6 @@ export default function IntegrationsSettings() {
         }
 
         const data = await response.json();
-        console.log(`✅ ${socialMediaPlatform} account connected:`, data);
 
         toast.success(`Connected ${page.name} successfully!`);
         
@@ -1701,7 +1592,6 @@ export default function IntegrationsSettings() {
 
     setSocialMediaLoading(true);
     try {
-      console.log(`🔗 Connecting ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}:`, page);
 
       // Extract originId - ensure it's a string
       const originId = String(page.originId || page.id || '').trim();
@@ -1710,7 +1600,6 @@ export default function IntegrationsSettings() {
         throw new Error(`${socialMediaPlatform === 'facebook' ? 'Page' : 'Account'} originId is missing`);
       }
 
-      console.log('📄 Using originId:', originId);
 
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -1728,7 +1617,6 @@ export default function IntegrationsSettings() {
         avatar: page.avatar || ''
       };
 
-      console.log('📤 POST request body:', requestBody);
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -1746,7 +1634,6 @@ export default function IntegrationsSettings() {
       }
 
       const data = await response.json();
-      console.log(`✅ Connected ${socialMediaPlatform} ${socialMediaPlatform === 'facebook' ? 'page' : 'account'}:`, data);
 
       if (data.success) {
         toast.success(data.message || `Connected ${page.name} successfully!`);
@@ -1775,13 +1662,11 @@ export default function IntegrationsSettings() {
     }
 
     try {
-      console.log('🗑️ Deleting social media account:', account);
 
       // Call GHL's DELETE endpoint
       // Format: /social-media-posting/{locationId}/accounts/{accountId}?userId={userId}
       const endpoint = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts/${account.id}?userId=${ghlUserId}`;
 
-      console.log('📤 DELETE request to:', endpoint);
 
       const response = await fetch(endpoint, {
         method: 'DELETE',
@@ -1802,7 +1687,6 @@ export default function IntegrationsSettings() {
       }
 
       const data = await response.json();
-      console.log('✅ Account deleted:', data);
 
       toast.success(`Successfully deleted ${account.name}`);
 

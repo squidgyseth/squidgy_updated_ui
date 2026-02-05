@@ -159,7 +159,6 @@ export default function SolarConfig() {
         });
       }
     } catch (error) {
-      console.log('No existing config found');
     } finally {
       setLoading(false);
     }

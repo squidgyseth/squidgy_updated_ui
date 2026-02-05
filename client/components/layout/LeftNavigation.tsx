@@ -73,9 +73,7 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
 
   const handleLogout = async () => {
     try {
-      console.log('Starting logout process...');
       await authService.signOut();
-      console.log('Logout successful, redirecting to login...');
       navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
@@ -323,7 +321,6 @@ function LeftNavigation({ currentPage }: LeftNavigationProps) {
                 alt="Profile"
                 className="w-full h-full rounded-full object-cover"
                 onError={(e) => {
-                  console.log('Profile avatar failed to load');
                   const target = e.currentTarget as HTMLImageElement;
                   target.style.display = 'none';
                   if (target.nextElementSibling) {

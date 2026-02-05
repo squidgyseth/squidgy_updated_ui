@@ -37,7 +37,6 @@ export class QAAgent {
    * Validate generated code comprehensively
    */
   async validateCode(generatedCode: GeneratedCode): Promise<QAValidationResult> {
-    console.log(`🔍 QA Agent: Validating ${generatedCode.fileName}`);
     
     const result: QAValidationResult = {
       isValid: false,
@@ -52,33 +51,27 @@ export class QAAgent {
     try {
       // Step 1: Write code to file system
       await this.writeCodeToFile(generatedCode);
-      console.log('✅ Code written to file system');
 
       // Step 2: Syntax validation
       const syntaxErrors = await this.validateSyntax(generatedCode.filePath);
       result.errors.push(...syntaxErrors);
-      console.log(`📝 Syntax check: ${syntaxErrors.length} errors`);
 
       // Step 3: TypeScript type checking
       const typeErrors = await this.validateTypes(generatedCode.filePath);
       result.errors.push(...typeErrors);
-      console.log(`🔤 Type check: ${typeErrors.length} errors`);
 
       // Step 4: Import resolution
       const importErrors = await this.validateImports(generatedCode);
       result.errors.push(...importErrors);
-      console.log(`📦 Import check: ${importErrors.length} errors`);
 
       // Step 5: Build validation (if no critical errors)
       if (result.errors.filter(e => e.severity === 'error').length === 0) {
         result.buildSuccessful = await this.validateBuild();
-        console.log(`🏗️ Build check: ${result.buildSuccessful ? 'passed' : 'failed'}`);
       }
 
       // Step 6: Dev server validation (if build passes)
       if (result.buildSuccessful) {
         result.devServerStarted = await this.validateDevServer();
-        console.log(`🚀 Dev server check: ${result.devServerStarted ? 'passed' : 'failed'}`);
       }
 
       // Step 7: Generate suggestions
@@ -88,7 +81,6 @@ export class QAAgent {
       result.isValid = this.calculateValidationResult(result);
       result.confidence = this.calculateConfidence(result);
 
-      console.log(`✨ QA Validation complete: ${result.isValid ? 'PASSED' : 'FAILED'}`);
       
       return result;
 
@@ -246,7 +238,6 @@ export class QAAgent {
    */
   private async validateBuild(): Promise<boolean> {
     try {
-      console.log('🏗️ Running build validation...');
       
       const { stdout, stderr } = await execAsync(
         'npm run build',
@@ -262,7 +253,6 @@ export class QAAgent {
              (stdout.includes('built successfully') || stdout.includes('Build complete'));
 
     } catch (error: any) {
-      console.log('❌ Build failed:', error.message);
       return false;
     }
   }
@@ -272,7 +262,6 @@ export class QAAgent {
    */
   private async validateDevServer(): Promise<boolean> {
     return new Promise((resolve) => {
-      console.log('🚀 Testing dev server startup...');
       
       let serverStarted = false;
       let timeout: NodeJS.Timeout;
@@ -451,10 +440,8 @@ export class QAAgent {
     try {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-        console.log(`🧹 Cleaned up: ${filePath}`);
       }
     } catch (error) {
-      console.warn(`⚠️ Could not clean up ${filePath}:`, error);
     }
   }
 }

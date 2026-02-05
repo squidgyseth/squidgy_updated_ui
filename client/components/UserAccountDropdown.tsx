@@ -25,7 +25,6 @@ export function UserAccountDropdown() {
   }, []);
 
   // Debug logging
-  console.log('UserAccountDropdown - Auth status:', { isAuthenticated, user, profile, isReady });
 
   // Show loading state while auth is initializing
   if (!isReady) {

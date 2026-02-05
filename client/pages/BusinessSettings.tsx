@@ -110,7 +110,6 @@ export default function BusinessSettings() {
           .single();
 
         if (data) {
-          console.log('🔍 Loaded business settings:', data);
           setSettings({
             companyName: data.company_name || '-',
             industry: '', // data.industry || '' YERİNE DİREKT BOŞ BIRAKTIK
@@ -132,7 +131,6 @@ export default function BusinessSettings() {
             setEmergencyNumbers(data.emergency_numbers.length > 0 ? data.emergency_numbers : ['']);
           }
         } else {
-          console.log('🔍 No existing business settings found');
         }
       } catch (error) {
         console.error('Error loading business settings:', error);
@@ -168,7 +166,6 @@ export default function BusinessSettings() {
       if (logoFile) {
         try {
           const uploadedUrl = await uploadCompanyLogo(logoFile);
-          console.log('Logo uploaded, URL:', uploadedUrl);
           if (uploadedUrl) {
             newLogoUrl = uploadedUrl;
             // Update settings state with the actual URL (not base64)
@@ -200,7 +197,6 @@ export default function BusinessSettings() {
         updated_at: new Date().toISOString()
       };
 
-      console.log('Saving business settings:', businessData);
 
       // Use upsert since we have unique constraint on user_id
       const { error } = await supabase

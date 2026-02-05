@@ -25,33 +25,25 @@ export default function HistoricalNewsletters() {
         return;
       }
 
-      console.log('📰 Loading newsletters from history_newsletters table for user:', userId);
       
       // Load newsletters directly from database
       const chatService = new ChatHistoryService();
-      console.log('📰 Calling getPreviousNewsletters with userId:', userId);
       
       const newsletterData = await chatService.getPreviousNewsletters(userId);
       
-      console.log('📰 Raw newsletter data received:', newsletterData);
-      console.log('📰 Newsletter data length:', newsletterData.length);
       
       setNewsletters(newsletterData);
       
       // Group by date
       const grouped = ChatHistoryService.groupContentByDate(newsletterData);
-      console.log('📰 Grouped newsletters:', grouped);
       setGroupedNewsletters(grouped);
       
       // Set first date as active tab
       const dates = Object.keys(grouped).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-      console.log('📰 Available dates:', dates);
       if (dates.length > 0) {
         setActiveTab(dates[0]);
-        console.log('📰 Set active tab to:', dates[0]);
       }
       
-      console.log(`✅ Loaded ${newsletterData.length} newsletters from database`);
     } catch (error) {
       console.error('Error loading newsletters:', error);
     } finally {
@@ -77,11 +69,9 @@ export default function HistoricalNewsletters() {
       
       if (savedNewsletter && !error) {
         // Use the latest saved version
-        console.log('Using latest saved version');
         contentToPreview = savedNewsletter.content;
       } else {
         // Use original content from chat history
-        console.log('Using original content from chat history');
         contentToPreview = newsletter.message;
       }
       

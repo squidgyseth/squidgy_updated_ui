@@ -6,15 +6,9 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Temporarily allow the app to load without Supabase for development
 if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://your-project.supabase.co' || supabaseAnonKey === 'your-anon-key-here') {
-  console.warn('⚠️ Supabase not configured. Authentication will not work until you add your Supabase credentials to .env');
 }
 
 // Log Supabase configuration for debugging
-console.log('🔧 Supabase client configuration:', {
-  url: supabaseUrl,
-  anonKeyPrefix: supabaseAnonKey ? supabaseAnonKey.substring(0, 20) + '...' : 'not set',
-  isClient: typeof window !== 'undefined'
-});
 
 // Use dummy values if not configured to prevent app crash
 const finalUrl = supabaseUrl || 'https://dummy.supabase.co';

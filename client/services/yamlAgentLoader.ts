@@ -81,7 +81,6 @@ class YamlAgentLoader {
           agents.push(agent);
         }
       } catch (error) {
-        console.warn(`Failed to load agent ${agentId}:`, error);
       }
     }
 

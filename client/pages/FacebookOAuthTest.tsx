@@ -60,27 +60,21 @@ export default function FacebookOAuthTest() {
 
   const generateOAuthUrl = async () => {
     if (!firmUserId) {
-      console.log('🔍 generateOAuthUrl: No firmUserId available');
       return;
     }
 
-    console.log('🚀 generateOAuthUrl: Starting OAuth URL generation for firmUserId:', firmUserId);
     setIsLoading(true);
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      console.log('🔍 generateOAuthUrl: Using backend URL:', backendUrl);
       
       // First check if we have a GHL location ID
-      console.log('🔍 generateOAuthUrl: Checking integration status...');
       const checkResponse = await fetch(`${backendUrl}/api/facebook/check-integration-status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firm_user_id: firmUserId })
       });
       
-      console.log('🔍 generateOAuthUrl: Check response status:', checkResponse.status);
       const checkData = await checkResponse.json();
-      console.log('🔍 generateOAuthUrl: Check data:', checkData);
       let locationId = checkData.ghl_location_id;
       
       if (!locationId) {
@@ -103,7 +97,6 @@ export default function FacebookOAuthTest() {
       }
       
       // Generate OAuth URL
-      console.log('🔍 generateOAuthUrl: Generating OAuth URL with locationId:', locationId);
       const response = await fetch(`${backendUrl}/api/facebook/extract-oauth-params`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,9 +106,7 @@ export default function FacebookOAuthTest() {
         })
       });
       
-      console.log('🔍 generateOAuthUrl: OAuth response status:', response.status);
       const data = await response.json();
-      console.log('🔍 generateOAuthUrl: OAuth response data:', data);
       
       if (data.success && data.params) {
         // Build OAuth URL properly from parameters
@@ -137,7 +128,6 @@ export default function FacebookOAuthTest() {
 
         const finalOAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?${oauthParams.toString()}`;
         setOauthUrl(finalOAuthUrl);
-        console.log('✅ generateOAuthUrl: Successfully generated OAuth URL:', finalOAuthUrl);
       } else {
         console.error('❌ generateOAuthUrl: Invalid OAuth response structure');
         throw new Error('Invalid OAuth response from server');
@@ -155,7 +145,6 @@ export default function FacebookOAuthTest() {
       toast.error('OAuth URL not ready. Please wait...');
       return;
     }
-    console.log('🔗 Opening Facebook OAuth URL in new window');
     window.open(oauthUrl, '_blank');
   };
 
@@ -167,7 +156,6 @@ export default function FacebookOAuthTest() {
 
     setIsLoading(true);
     try {
-      console.log('🔍 handleNext: Getting Facebook pages for user:', firmUserId);
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       
       // Fetch pages using the endpoint
@@ -177,9 +165,7 @@ export default function FacebookOAuthTest() {
         body: JSON.stringify({ firm_user_id: firmUserId })
       });
 
-      console.log('🔍 handleNext: Response status:', response.status);
       const result = await response.json();
-      console.log('🔍 handleNext: Response data:', result);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -198,7 +184,6 @@ export default function FacebookOAuthTest() {
         setLoggedInUser('Facebook User');
         setShowPages(true);
         toast.success(`Found ${result.pages.length} Facebook pages!`);
-        console.log('✅ handleNext: Successfully loaded pages:', result.pages);
       } else {
         throw new Error(result.message || 'No Facebook pages found for your account');
       }
@@ -228,7 +213,6 @@ export default function FacebookOAuthTest() {
 
     setIsLoading(true);
     try {
-      console.log('🔍 handleConnectFinish: Connecting pages:', selectedPages);
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       
       const response = await fetch(`${backendUrl}/api/facebook/connect-selected-pages`, {
@@ -240,9 +224,7 @@ export default function FacebookOAuthTest() {
         })
       });
 
-      console.log('🔍 handleConnectFinish: Response status:', response.status);
       const result = await response.json();
-      console.log('🔍 handleConnectFinish: Response data:', result);
 
       if (!response.ok) {
         throw new Error(result.detail || result.message || 'Failed to connect pages');
@@ -260,7 +242,6 @@ export default function FacebookOAuthTest() {
           toast.success('Facebook pages saved! They will be connected shortly.');
         }
         
-        console.log('✅ handleConnectFinish: Successfully connected pages');
       } else {
         throw new Error(result.message || 'Failed to connect pages');
       }

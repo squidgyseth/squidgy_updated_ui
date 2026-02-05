@@ -96,7 +96,6 @@ class ChatSessionService {
    */
   async getRecentSessions(userId: string, agentId: string, limit = 2): Promise<ChatSession[]> {
     try {
-      console.log(`🔍 getRecentSessions: Fetching sessions for userId=${userId}, agentId=${agentId}`);
       
       const { data, error } = await supabase
         .from('chat_history')
@@ -117,7 +116,6 @@ class ChatSessionService {
         throw error;
       }
 
-      console.log(`📊 Found ${data?.length || 0} total messages for user+agent`);
 
       if (!data || data.length === 0) {
         return [];
@@ -160,7 +158,6 @@ class ChatSessionService {
         }
       });
 
-      console.log(`📋 Grouped into ${sessionMap.size} unique sessions`);
 
       // Filter out sessions that only have intro messages (no user messages)
       // Convert to array and sort by latest timestamp (most recent first)
@@ -169,10 +166,7 @@ class ChatSessionService {
         .sort((a, b) => new Date(b.latest_timestamp).getTime() - new Date(a.latest_timestamp).getTime())
         .slice(0, limit);
 
-      console.log(`✅ Filtered to ${sessions.length} sessions with real conversations`);
-      console.log(`✅ Returning ${sessions.length} most recent sessions`);
       sessions.forEach((session, index) => {
-        console.log(`📝 Session ${index + 1}: ${session.session_id} (${session.message_count} messages, latest: ${session.latest_timestamp})`);
       });
 
       return sessions.map(session => ({
@@ -195,7 +189,6 @@ class ChatSessionService {
    */
   async getSessionMessages(sessionId: string): Promise<ChatMessage[]> {
     try {
-      console.log(`📨 getSessionMessages: Fetching messages for sessionId=${sessionId}`);
       
       const { data, error } = await supabase
         .from('chat_history')
@@ -216,10 +209,7 @@ class ChatSessionService {
         throw error;
       }
 
-      console.log(`📊 Found ${data?.length || 0} messages for session ${sessionId}`);
       if (data && data.length > 0) {
-        console.log(`📝 First message: ${data[0].message.substring(0, 50)}...`);
-        console.log(`📝 Last message: ${data[data.length - 1].message.substring(0, 50)}...`);
       }
 
       return data || [];
@@ -303,12 +293,10 @@ class ChatSessionService {
    */
   async getOrCreateActiveSession(userId: string, agentId: string): Promise<string> {
     try {
-      console.log(`🔄 getOrCreateActiveSession: Checking for active session for userId=${userId}, agentId=${agentId}`);
       
       // First check localStorage for a session that hasn't had messages yet
       const storedSessionId = this.getStoredSessionId(userId, agentId);
       if (storedSessionId) {
-        console.log(`📦 Found stored session in localStorage: ${storedSessionId}`);
         return storedSessionId;
       }
       
@@ -321,25 +309,19 @@ class ChatSessionService {
         const now = new Date();
         const hoursSinceLastActivity = (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60);
         
-        console.log(`⏱️ Last activity: ${lastActivity.toISOString()}`);
-        console.log(`⏱️ Hours since last activity: ${hoursSinceLastActivity.toFixed(2)}`);
         
         if (hoursSinceLastActivity < 1) {
-          console.log(`✅ Session still active within 1 hour, continuing session: ${mostRecentSession.session_id}`);
           // Store in localStorage for future navigation
           this.storeSessionId(userId, agentId, mostRecentSession.session_id);
           return mostRecentSession.session_id;
         } else {
-          console.log(`⏰ Session expired (${hoursSinceLastActivity.toFixed(2)} hours), creating new session`);
         }
       } else {
-        console.log(`📭 No recent sessions found, creating new session`);
       }
       
       // Create new session and store in localStorage
       const newSessionId = this.generateSessionId(userId, agentId);
       this.storeSessionId(userId, agentId, newSessionId);
-      console.log(`🆕 Created new session: ${newSessionId}`);
       return newSessionId;
       
     } catch (error) {
@@ -347,7 +329,6 @@ class ChatSessionService {
       // Fallback to creating new session
       const newSessionId = this.generateSessionId(userId, agentId);
       this.storeSessionId(userId, agentId, newSessionId);
-      console.log(`🆘 Fallback: Created new session due to error: ${newSessionId}`);
       return newSessionId;
     }
   }

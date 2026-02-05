@@ -53,38 +53,23 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   useEffect(() => {
     const initializeUser = async () => {
       try {
-        console.log('🚀 USER_PROVIDER: Starting user initialization...');
         
         // Quick check for existing session to prevent unnecessary redirects
         const startSessionCheck = Date.now();
         const { data: { session } } = await supabase.auth.getSession();
         const endSessionCheck = Date.now();
-        console.log(`⏱️ USER_PROVIDER: Session check completed in ${endSessionCheck - startSessionCheck}ms`);
-        console.log('🔐 USER_PROVIDER: Session exists:', !!session);
-        console.log('👤 USER_PROVIDER: Session user:', session?.user?.id || 'none');
         
         // Check if we're in development mode
         const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
                              !import.meta.env.VITE_SUPABASE_URL || 
                              import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
         
-        console.log('🔍 Environment check:', {
-          VITE_APP_ENV: import.meta.env.VITE_APP_ENV,
-          VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-          isDevelopment
-        });
         
         if (isDevelopment) {
           // Development mode - create or use existing dev user
           let devUserId = localStorage.getItem('dev_user_id') || import.meta.env.VITE_DEV_USER_ID;
           let devUserEmail = localStorage.getItem('dev_user_email') || import.meta.env.VITE_DEV_USER_EMAIL || 'dmacproject123@gmail.com';
           
-          console.log('🔍 UserProvider Dev: Auth values:', {
-            devUserId,
-            devUserEmail,
-            localStorage_dev_user_id: localStorage.getItem('dev_user_id'),
-            localStorage_dev_user_email: localStorage.getItem('dev_user_email')
-          });
           
           if (!devUserId) {
             devUserId = generateUserId();
@@ -94,7 +79,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           // Try to fetch profile from Supabase first using direct API
           let profileData = null;
           try {
-            console.log('🌐 USER_PROVIDER: Using direct API for dev profile lookup');
             
             // First try by user ID
             let result = await profilesApi.getById(devUserId);
@@ -102,46 +86,25 @@ export const UserProvider = ({ children }: UserProviderProps) => {
               
             if (!profileData) {
               // If not found by ID, try by email
-              console.log('🌐 USER_PROVIDER: Trying profile lookup by email');
               result = await profilesApi.getByEmail(devUserEmail);
               profileData = result.data;
             }
             
-            console.log('✅ USER_PROVIDER: Loaded profile from direct API:', {
-              found_by: profileData ? 'database' : 'none',
-              profile_id: profileData?.id,
-              profile_email: profileData?.email,
-              profile_name: profileData?.full_name,
-              lookup_user_id: devUserId,
-              lookup_email: devUserEmail
-            });
           } catch (error) {
-            console.log('⚠️ USER_PROVIDER: No profile found in Supabase, using defaults:', error);
           }
           
-          console.log('UserProvider: Development mode - setting up dev user');
-          console.log('🔍 UserProvider Dev: Initial state:', {
-            devUserId,
-            devUserEmail,
-            profileData,
-            profileDataUserId: profileData?.user_id
-          });
           
           // ALWAYS use user_id from profiles table in development mode
           let finalUserId = profileData?.user_id;
           
           if (!finalUserId) {
-            console.log('🔍 UserProvider Dev: No user_id in profile, doing email lookup for:', devUserEmail);
             try {
               // Try to get the correct user_id by email lookup using direct API
-              console.log('🌐 USER_PROVIDER: Using direct API for user_id lookup by email');
               const emailLookupResult = await profilesApi.getByEmail(devUserEmail);
               
               if (emailLookupResult.data?.user_id) {
                 finalUserId = emailLookupResult.data.user_id;
-                console.log('✅ USER_PROVIDER Dev: Found user_id by email lookup:', finalUserId);
               } else {
-                console.log('⚠️ USER_PROVIDER Dev: No user_id found, using dev fallback');
                 finalUserId = devUserId;
               }
             } catch (error) {
@@ -150,14 +113,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
             }
           }
           
-          console.log('🔍 UserProvider Dev: Final userId decision:', {
-            finalUserId,
-            devUserId, 
-            fromProfile: !!profileData?.user_id,
-            fromEmailLookup: !profileData?.user_id && finalUserId !== devUserId,
-            fallback: finalUserId === devUserId
-          });
-          console.log('🔍 UserProvider Dev: Setting userId state to:', finalUserId);
           
           setIsAuthenticated(true);
           setUser({ id: devUserId, email: devUserEmail });
@@ -181,12 +136,9 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         }
         
         // Production mode - check Supabase authentication with retry logic
-        console.log('🔧 USER_PROVIDER: Production mode - checking Supabase auth');
         
         // If we already found a session, set authenticated immediately to prevent redirect
         if (session?.user) {
-          console.log('✅ USER_PROVIDER: Session exists, setting authenticated state immediately');
-          console.log('👤 USER_PROVIDER: Setting user:', session.user.id);
           setIsAuthenticated(true);
           setUser(session.user);
         }
@@ -197,26 +149,19 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         
         while (retryCount < maxRetries && !authResult) {
           try {
-            console.log(`🔄 USER_PROVIDER: Auth check attempt ${retryCount + 1}/${maxRetries}...`);
             const startAuthCheck = Date.now();
             
             const { user: authUser, profile: userProfile } = await authService.getCurrentUser();
             
             const endAuthCheck = Date.now();
-            console.log(`⏱️ USER_PROVIDER: getCurrentUser completed in ${endAuthCheck - startAuthCheck}ms`);
-            console.log('👤 USER_PROVIDER: Auth user found:', !!authUser);
-            console.log('📋 USER_PROVIDER: Profile found:', !!userProfile);
             
             if (authUser) {
               // Wait for profile if user exists but profile is missing
               if (!userProfile) {
-                console.log('⚠️ USER_PROVIDER: User found but profile missing, waiting 1 second...');
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 // Try to get profile again
-                console.log('🔄 USER_PROVIDER: Retrying profile fetch...');
                 const { profile: retryProfile } = await authService.getCurrentUser();
-                console.log('📋 USER_PROVIDER: Retry profile found:', !!retryProfile);
                 authResult = { user: authUser, profile: retryProfile };
               } else {
                 authResult = { user: authUser, profile: userProfile };
@@ -225,22 +170,13 @@ export const UserProvider = ({ children }: UserProviderProps) => {
             break;
           } catch (error) {
             retryCount++;
-            console.log(`❌ USER_PROVIDER: Auth check attempt ${retryCount} failed:`, error);
             if (retryCount < maxRetries) {
-              console.log(`⏰ USER_PROVIDER: Waiting 1 second before retry ${retryCount + 1}...`);
               await new Promise(resolve => setTimeout(resolve, 1000));
             }
           }
         }
         
         if (authResult?.user) {
-          console.log('UserProvider: User authenticated', { hasProfile: !!authResult.profile });
-          console.log('🔍 UserProvider Prod: Auth result:', {
-            authUserId: authResult.user.id,
-            authUserEmail: authResult.user.email,
-            profileUserId: authResult.profile?.user_id,
-            fullProfile: authResult.profile
-          });
           
           setIsAuthenticated(true);
           setUser(authResult.user);
@@ -251,18 +187,13 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           
           // ALWAYS do email lookup to get correct user_id from profiles table using direct API
           if (authResult.user.email) {
-            console.log('🔧 USER_PROVIDER Prod: Doing email lookup for:', authResult.user.email);
             try {
-              console.log('🌐 USER_PROVIDER: Using direct API for production user_id lookup by email');
               const profileResult = await profilesApi.getByEmail(authResult.user.email);
               
-              console.log('🔍 USER_PROVIDER Prod: Email lookup result:', profileResult.data);
               
               if (profileResult.data?.user_id) {
                 currentUserId = profileResult.data.user_id;
-                console.log('✅ USER_PROVIDER Prod: Using user_id from email lookup:', currentUserId);
               } else {
-                console.log('⚠️ USER_PROVIDER Prod: No user_id found by email, using auth id as fallback');
                 currentUserId = authResult.user.id;
               }
             } catch (error) {
@@ -270,11 +201,9 @@ export const UserProvider = ({ children }: UserProviderProps) => {
               currentUserId = authResult.user.id;
             }
           } else {
-            console.log('⚠️ USER_PROVIDER Prod: No email, using profile or auth fallback');
             currentUserId = currentUserId || authResult.user.id;
           }
           
-          console.log('🔍 UserProvider: Final userId being set:', currentUserId);
           setUserIdState(currentUserId);
           localStorage.setItem('squidgy_user_id', currentUserId);
           
@@ -284,7 +213,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           // Start session monitoring
           sessionManager.startSessionMonitoring();
         } else {
-          console.log('UserProvider: No authenticated user found');
           setIsAuthenticated(false);
           setUser(null);
           setProfile(null);
@@ -320,7 +248,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
             localStorage.setItem('dev_user_id', devUserId);
           }
           
-          console.log('UserProvider: Fallback to development mode');
           setIsAuthenticated(true);
           setUser({ id: devUserId, email: devUserEmail });
           setProfile({ user_id: devUserId, full_name: 'Development User' });
@@ -351,11 +278,9 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         if (!isDevelopment) {
       try {
         const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log('UserProvider: Auth state change:', event, !!session);
           
           if (event === 'SIGNED_IN' && session?.user) {
             try {
-              console.log('UserProvider: User signed in via auth state change');
               
               // Use the session user directly instead of calling getCurrentUser
               const authUser = session.user;
@@ -365,30 +290,24 @@ export const UserProvider = ({ children }: UserProviderProps) => {
               const isEmailConfirmation = urlParams.get('type') === 'signup' || 
                                         urlParams.get('type') === 'email_confirmation';
               
-              console.log('UserProvider: Email confirmation detected:', isEmailConfirmation);
               
               // Only get profile data, don't call getCurrentUser - using direct API
               let userProfile = null;
               try {
-                console.log('🌐 USER_PROVIDER: Using direct API for auth listener profile lookup by id');
                 const profileResult = await profilesApi.getById(authUser.id);
                 userProfile = profileResult.data;
                 
                 if (!userProfile && authUser.email) {
                   // Fallback to email lookup
-                  console.log('🌐 USER_PROVIDER: Using direct API for auth listener profile lookup by email');
                   const emailResult = await profilesApi.getByEmail(authUser.email);
                   userProfile = emailResult.data;
                 }
               } catch (profileError) {
-                console.warn('Profile fetch failed in auth listener:', profileError);
               }
               
               // If this is an email confirmation and we have a profile, update email_confirmed using direct API
               if (isEmailConfirmation && userProfile) {
                 try {
-                  console.log('🔄 USER_PROVIDER: Updating email_confirmed to true for user:', authUser.email);
-                  console.log('🌐 USER_PROVIDER: Using direct API for email confirmation update');
                   
                   const updateResult = await profilesApi.updateById(userProfile.id, { 
                     email_confirmed: true,
@@ -398,7 +317,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
                   if (updateResult.error) {
                     console.error('❌ USER_PROVIDER: Failed to update email_confirmed:', updateResult.error);
                   } else {
-                    console.log('✅ USER_PROVIDER: Email confirmation status updated successfully');
                     // Update the local profile object
                     userProfile = { ...userProfile, email_confirmed: true };
                   }
@@ -415,13 +333,11 @@ export const UserProvider = ({ children }: UserProviderProps) => {
               let currentUserId = userProfile?.user_id;
               
               if (authUser?.email) {
-                console.log('UserProvider AuthListener: Doing email lookup for:', authUser.email);
                 try {
                   const { data: profileData } = await profilesApi.getByEmail(authUser.email);
                   
                   if (profileData?.user_id) {
                     currentUserId = profileData.user_id;
-                    console.log('✅ UserProvider AuthListener: Using user_id from email lookup:', currentUserId);
                   } else {
                     currentUserId = authUser.id;
                   }
@@ -433,19 +349,16 @@ export const UserProvider = ({ children }: UserProviderProps) => {
                 currentUserId = currentUserId || authUser.id;
               }
               
-              console.log('🔍 UserProvider AuthListener: Setting userId:', currentUserId);
               setUserIdState(currentUserId);
               localStorage.setItem('squidgy_user_id', currentUserId);
               
               const currentAgentId = `agent_${currentUserId}`;
               setAgentIdState(currentAgentId);
               
-              console.log('UserProvider: Auth state updated successfully');
             } catch (error) {
               console.error('Error handling auth state change:', error);
             }
           } else if (event === 'SIGNED_OUT') {
-            console.log('UserProvider: User signed out');
             setIsAuthenticated(false);
             setUser(null);
             setProfile(null);
@@ -468,17 +381,14 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   }, []);
 
   const setUserId = (newUserId: string) => {
-    console.log('🚨 UserProvider: setUserId called with:', newUserId);
     console.trace('🚨 Call stack for setUserId:');
     
     // Don't update if it's the same user ID to prevent unnecessary re-renders
     if (newUserId === userId) {
-      console.log('UserProvider: Same user ID, skipping update');
       return;
     }
     
     // Log the setUserId call for debugging
-    console.log('🔍 UserProvider: Setting userId to:', newUserId);
     
     setUserIdState(newUserId);
     localStorage.setItem('squidgy_user_id', newUserId);
@@ -495,7 +405,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       const devUserEmail = localStorage.getItem('dev_user_email') || import.meta.env.VITE_DEV_USER_EMAIL || 'dmacproject123@gmail.com';
       const devUserName = localStorage.getItem('dev_user_name') || import.meta.env.VITE_DEV_USER_NAME || 'Development User';
       const devUserAvatar = localStorage.getItem('dev_user_avatar') || '';
-      console.log('UserProvider: Updating auth state for dev user with localStorage data');
       setIsAuthenticated(true);
       setUser({ id: newUserId, email: devUserEmail });
       setProfile({ 
@@ -550,7 +459,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       }
       
       if (data) {
-        console.log('UserProvider: Profile refreshed from database:', data);
         setProfile(data);
       }
     } catch (error) {

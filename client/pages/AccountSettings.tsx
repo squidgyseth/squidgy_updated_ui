@@ -41,7 +41,6 @@ export default function AccountSettings() {
           setLocationId(data.ghl_location_id);
         }
       } catch (err) {
-        console.log('No location_id found');
       }
     };
     
@@ -187,7 +186,6 @@ export default function AccountSettings() {
         created_at: profile?.created_at || new Date().toISOString()
       };
       
-      console.log('Upserting profile data:', profileData);
       
       // Update profile using user_id
       const { error } = await supabase
@@ -204,7 +202,6 @@ export default function AccountSettings() {
         throw new Error(error.message || 'Failed to update profile');
       }
       
-      console.log('Profile upserted successfully');
       
       // Refresh the profile in UserProvider to show updated data immediately
       if (refreshProfile) {

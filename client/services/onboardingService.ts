@@ -70,7 +70,6 @@ class OnboardingService {
    */
   async enableAgent(agentData: OnboardingAgentData): Promise<boolean> {
     try {
-      console.log(`🔧 OnboardingService: Enabling agent ${agentData.assistant_id} for user ${agentData.user_id}`);
 
       // Check if agent is already enabled
       const { data: existing, error: checkError } = await supabase
@@ -104,7 +103,6 @@ class OnboardingService {
           throw updateError;
         }
 
-        console.log('✅ OnboardingService: Updated existing agent');
       } else {
         // Create new agent entry
         const { error: insertError } = await supabase
@@ -124,7 +122,6 @@ class OnboardingService {
           throw insertError;
         }
 
-        console.log('✅ OnboardingService: Created new agent entry');
       }
 
       // Add to completed agents in session
@@ -146,7 +143,6 @@ class OnboardingService {
    */
   async getEnabledAgents(userId: string): Promise<OnboardingAgentData[]> {
     try {
-      console.log(`🔍 OnboardingService: Fetching enabled agents for user ${userId}`);
 
       const { data, error } = await supabase
         .from('assistant_personalizations')
@@ -159,7 +155,6 @@ class OnboardingService {
         throw error;
       }
 
-      console.log(`✅ OnboardingService: Found ${data?.length || 0} enabled agents`);
       return data || [];
     } catch (error) {
       console.error('❌ OnboardingService: Failed to fetch enabled agents:', error);
@@ -172,7 +167,6 @@ class OnboardingService {
    */
   async getEnabledAgentsCount(userId: string): Promise<number> {
     try {
-      console.log(`🔍 OnboardingService: Getting enabled agents count for user ${userId}`);
       const { count, error } = await supabase
         .from('assistant_personalizations')
         .select('*', { count: 'exact', head: true })
@@ -184,7 +178,6 @@ class OnboardingService {
         return 0;
       }
 
-      console.log(`✅ OnboardingService: Found ${count || 0} enabled agents`);
       return count || 0;
     } catch (error) {
       console.error('❌ OnboardingService: Failed to count enabled agents:', error);
@@ -235,7 +228,6 @@ class OnboardingService {
         return false;
       }
 
-      console.log(`✅ OnboardingService: Disabled agent ${agentId}`);
       return true;
     } catch (error) {
       console.error('❌ OnboardingService: Failed to disable agent:', error);
@@ -323,7 +315,6 @@ class OnboardingService {
         return false;
       }
 
-      console.log(`✅ OnboardingService: Updated customization for agent ${agentId}`);
       return true;
     } catch (error) {
       console.error('❌ OnboardingService: Failed to update agent customization:', error);

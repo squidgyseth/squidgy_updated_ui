@@ -10,12 +10,8 @@ interface EmailCheckResult {
 }
 
 export const testEmailExistence = async (email: string): Promise<EmailCheckResult> => {
-  console.log('🧪 EMAIL_TEST: ===== TESTING EMAIL EXISTENCE CHECK =====');
-  console.log(`📧 EMAIL_TEST: Testing email: ${email}`);
-  console.log(`🕒 EMAIL_TEST: Test started at: ${new Date().toISOString()}`);
   
   try {
-    console.log('🔍 EMAIL_TEST: Checking if email already exists in profiles table...');
     const startEmailCheck = Date.now();
     
     // Test the exact same query from auth-service
@@ -24,12 +20,6 @@ export const testEmailExistence = async (email: string): Promise<EmailCheckResul
     const endEmailCheck = Date.now();
     const timingMs = endEmailCheck - startEmailCheck;
     
-    console.log(`⏱️ EMAIL_TEST: Email check completed in ${timingMs}ms`);
-    console.log('📊 EMAIL_TEST: Query result:', {
-      data: existingProfiles,
-      error: checkError,
-      dataCount: existingProfiles ? existingProfiles.length : 0
-    });
     
     if (checkError) {
       console.error('❌ EMAIL_TEST: Error checking existing email:', checkError);
@@ -51,13 +41,9 @@ export const testEmailExistence = async (email: string): Promise<EmailCheckResul
     const emailExists = existingProfiles && existingProfiles.id;
     
     if (emailExists) {
-      console.log('✅ EMAIL_TEST: Email already exists in profiles table');
-      console.log('📋 EMAIL_TEST: Existing profiles:', existingProfiles);
     } else {
-      console.log('✅ EMAIL_TEST: Email is available for registration');
     }
     
-    console.log('🎯 EMAIL_TEST: ===== EMAIL EXISTENCE CHECK COMPLETED =====');
     
     return {
       exists: emailExists,
@@ -87,13 +73,11 @@ export const testEmailExistence = async (email: string): Promise<EmailCheckResul
 
 // Test function specifically for dmacproject123@gmail.com
 export const testDmacEmail = async (): Promise<EmailCheckResult> => {
-  console.log('🎯 EMAIL_TEST: Testing specific email: dmacproject123@gmail.com');
   return await testEmailExistence('dmacproject123@gmail.com');
 };
 
 // Test with timeout to detect hanging
 export const testEmailWithTimeout = async (email: string, timeoutMs: number = 10000): Promise<EmailCheckResult> => {
-  console.log(`⏰ EMAIL_TEST: Testing email with ${timeoutMs}ms timeout`);
   
   return new Promise((resolve) => {
     const timeoutId = setTimeout(() => {
@@ -123,7 +107,6 @@ export const testEmailWithTimeout = async (email: string, timeoutMs: number = 10
 
 // Debug function to test Supabase connection
 export const testSupabaseConnection = async (): Promise<void> => {
-  console.log('🔧 EMAIL_TEST: Testing basic Supabase connection...');
   
   try {
     // Test basic connection with a simple query
@@ -132,8 +115,6 @@ export const testSupabaseConnection = async (): Promise<void> => {
     if (error) {
       console.error('❌ EMAIL_TEST: Supabase connection error:', error);
     } else {
-      console.log('✅ EMAIL_TEST: Supabase connection successful');
-      console.log('📊 EMAIL_TEST: Basic query result:', data);
     }
   } catch (error) {
     console.error('❌ EMAIL_TEST: Exception during connection test:', error);
@@ -142,19 +123,14 @@ export const testSupabaseConnection = async (): Promise<void> => {
 
 // Test direct HTTP API call bypassing Supabase client
 export const testDirectApiCall = async (email: string): Promise<EmailCheckResult> => {
-  console.log('🌐 EMAIL_TEST: Testing direct HTTP API call...');
-  console.log(`📧 EMAIL_TEST: Testing email via direct API: ${email}`);
   
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
-    console.log('🔧 EMAIL_TEST: Supabase URL:', supabaseUrl);
-    console.log('🔧 EMAIL_TEST: Supabase Key:', supabaseKey ? 'Set' : 'Missing');
     
     const url = `${supabaseUrl}/rest/v1/profiles?email=eq.${email.toLowerCase()}&select=id`;
     
-    console.log('🌐 EMAIL_TEST: Direct API URL:', url);
     
     const startTime = Date.now();
     
@@ -171,9 +147,6 @@ export const testDirectApiCall = async (email: string): Promise<EmailCheckResult
     const endTime = Date.now();
     const timingMs = endTime - startTime;
     
-    console.log(`⏱️ EMAIL_TEST: Direct API call completed in ${timingMs}ms`);
-    console.log('📊 EMAIL_TEST: Response status:', response.status);
-    console.log('📊 EMAIL_TEST: Response ok:', response.ok);
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -192,11 +165,9 @@ export const testDirectApiCall = async (email: string): Promise<EmailCheckResult
     }
     
     const data = await response.json();
-    console.log('📋 EMAIL_TEST: API Response data:', data);
     
     const emailExists = data && data.length > 0;
     
-    console.log(`✅ EMAIL_TEST: Direct API call successful - Email exists: ${emailExists}`);
     
     return {
       exists: emailExists,

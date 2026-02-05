@@ -38,23 +38,15 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
   // Setup notification listeners and load initial notifications
   useEffect(() => {
     if (!userId) {
-      console.log('⚠️ No userId available for NotificationBell');
       return;
     }
 
-    console.log('🔧 NOTIFICATION BELL SETUP:');
-    console.log('   User ID:', userId);
 
     // Load initial notifications
-    console.log('📊 Loading initial notifications...');
     loadNotifications();
 
     // Listen for new notifications (WebSocket managed by GlobalNotificationBell)
     const unsubscribe = notificationsService.onNotification((notification) => {
-      console.log('🎉 NOTIFICATION BELL: New notification received!');
-      console.log('   From:', notification.sender_name);
-      console.log('   Message:', notification.message_content);
-      console.log('   Current unread count:', unreadCount);
       
       // Add to notifications list
       setNotifications(prev => [notification, ...prev].slice(0, 50)); // Keep only latest 50
@@ -62,7 +54,6 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
       setHasNewNotification(true);
       
       // Reset animation after a short delay
-      console.log('✨ Setting bell animation...');
       setTimeout(() => setHasNewNotification(false), 2000);
     });
 

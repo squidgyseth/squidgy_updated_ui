@@ -12,7 +12,6 @@ class SessionManager {
     const authPages = ['/login', '/register', '/forgot-password', '/reset-password'];
     
     if (authPages.includes(currentPath)) {
-      console.log('On auth page, skipping session monitoring');
       return;
     }
     
@@ -42,7 +41,6 @@ class SessionManager {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error || !session) {
-        console.log('No active session found');
         this.handleSessionExpiry();
         return false;
       }
@@ -53,7 +51,6 @@ class SessionManager {
       const sessionAge = now.getTime() - sessionStart.getTime();
       
       if (sessionAge > this.SESSION_DURATION) {
-        console.log('Session expired (1 hour limit reached)');
         await this.handleSessionExpiry();
         return false;
       }
@@ -82,7 +79,6 @@ class SessionManager {
       const authPages = ['/login', '/register', '/forgot-password', '/reset-password'];
       
       if (authPages.includes(currentPath)) {
-        console.log('Already on auth page, skipping redirect');
         return;
       }
       
@@ -157,7 +153,6 @@ class SessionManager {
         return false;
       }
       
-      console.log('Session refreshed successfully');
       
       // Clear warning flag
       localStorage.removeItem('session_expiry_warning');

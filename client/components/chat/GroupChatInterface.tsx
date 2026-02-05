@@ -165,7 +165,6 @@ export default function GroupChatInterface({
         groupChat.participants.map(async (agentId) => {
           const agent = agents.get(agentId);
           if (!agent?.webhookUrl) {
-            console.warn(`No webhook URL found for agent ${agentId}`);
             return;
           }
 
@@ -222,7 +221,6 @@ export default function GroupChatInterface({
         })
       );
 
-      console.log('Agent responses:', agentResponses);
 
     } catch (error) {
       console.error('Error in group chat:', error);

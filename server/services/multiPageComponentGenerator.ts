@@ -22,8 +22,6 @@ export class MultiPageComponentGenerator {
    * Generate all pages for a multi-page agent
    */
   async generateAgentPages(config: AgentConfig): Promise<MultiPageGenerationResult> {
-    console.log(`\n🚀 Generating pages for agent: ${config.agent.name}`);
-    console.log(`📁 Category: ${config.agent.category}`);
     
     const result: MultiPageGenerationResult = {
       agentId: config.agent.id,
@@ -47,11 +45,9 @@ export class MultiPageComponentGenerator {
         throw new Error('No pages found in configuration');
       }
 
-      console.log(`📄 Generating ${pages.length} pages...`);
 
       // Generate each page
       for (const [index, pageConfig] of pages.entries()) {
-        console.log(`\n📄 Page ${index + 1}/${pages.length}: ${pageConfig.name}`);
         
         try {
           const generatedPage = await this.generateSinglePage(
@@ -61,7 +57,6 @@ export class MultiPageComponentGenerator {
           );
           
           result.pages.push(generatedPage);
-          console.log(`✅ Generated: ${generatedPage.filePath}`);
           
         } catch (pageError: any) {
           console.error(`❌ Failed to generate ${pageConfig.name}:`, pageError.message);
@@ -74,7 +69,6 @@ export class MultiPageComponentGenerator {
 
       result.success = result.pages.length > 0;
       
-      console.log(`\n✨ Generated ${result.pages.length}/${pages.length} pages successfully`);
       
     } catch (error: any) {
       console.error('❌ Error generating agent pages:', error.message);
@@ -149,7 +143,6 @@ export class MultiPageComponentGenerator {
     pageConfig: PageConfig,
     url: string
   ): Promise<string> {
-    console.log(`🌐 Processing deployed URL: ${url}`);
     
     // Capture screenshots
     const screenshotData = await this.screenshotService.captureDeployedFigmaScreenshots(
@@ -157,7 +150,6 @@ export class MultiPageComponentGenerator {
       `${config.agent.id}_${pageConfig.name}`
     );
 
-    console.log(`🤖 Python Multi-Agent System: Creating COMPLETE page from ${screenshotData.screenshots.length} screenshots`);
     
     if (screenshotData.screenshots.length === 0) {
       throw new Error('No screenshots captured - cannot generate page');
@@ -170,7 +162,6 @@ export class MultiPageComponentGenerator {
       console.error('❌ Python multi-agent system failed:', error.message);
       
       // Fallback to TypeScript system
-      console.log('🔄 Falling back to TypeScript multi-agent system...');
       return this.generateWithTypeScriptAgents(config, pageConfig, screenshotData.screenshots, url);
     }
   }
@@ -191,7 +182,6 @@ export class MultiPageComponentGenerator {
     const pythonScript = path.join(process.cwd(), 'server/agents/python/ui_development_agents.py');
     const { execSync } = require('child_process');
     
-    console.log('🐍 Executing Python multi-agent system...');
     const command = `python3 "${pythonScript}" "${screenshotDir}" "${componentName}" "${tempOutputFile}"`;
     
     const output = execSync(command, { 
@@ -200,7 +190,6 @@ export class MultiPageComponentGenerator {
       timeout: 300000 // 5 minutes timeout
     });
     
-    console.log('Python output:', output);
     
     // Read the generated component
     if (fs.existsSync(tempOutputFile)) {
@@ -209,7 +198,6 @@ export class MultiPageComponentGenerator {
       // Clean up temp file
       fs.unlinkSync(tempOutputFile);
       
-      console.log('✅ Python Multi-Agent System successfully generated COMPLETE page component');
       return generatedCode;
     } else {
       throw new Error('Python multi-agent system did not generate output file');
@@ -239,7 +227,6 @@ export class MultiPageComponentGenerator {
     
     if (!result.success || !result.finalCode) {
       if (result.session.status === 'completed' && result.session.finalCode?.componentCode) {
-        console.log('⚠️ Using generated code despite success=false (likely due to ignored errors)');
         return result.session.finalCode.componentCode;
       }
       throw new Error(`Multi-Agent System failed to generate component: ${result.errors?.join(', ')}`);
@@ -256,7 +243,6 @@ export class MultiPageComponentGenerator {
     pageConfig: PageConfig,
     url: string
   ): Promise<string> {
-    console.log(`🎨 Processing Figma API URL: ${url}`);
     throw new Error('Figma API generation requires multi-agent system. Please set OPENAI_API_KEY environment variable.');
   }
 
@@ -293,9 +279,7 @@ export class MultiPageComponentGenerator {
     // Create directory if it doesn't exist
     if (!fs.existsSync(baseDir)) {
       fs.mkdirSync(baseDir, { recursive: true });
-      console.log(`📁 Created folder: ${baseDir}`);
     } else {
-      console.log(`📁 Using existing folder: ${baseDir}`);
     }
 
     return baseDir;
@@ -356,6 +340,5 @@ export const agentConfig = ${JSON.stringify({
 
     const indexPath = path.join(agentFolder, 'index.tsx');
     fs.writeFileSync(indexPath, indexContent, 'utf8');
-    console.log(`📄 Generated index file: ${indexPath}`);
   }
 }

@@ -46,7 +46,6 @@ export class PlaywrightScreenshotService {
     deployedUrl: string,
     agentId: string
   ): Promise<ScreenshotData> {
-    console.log(`📸 Capturing screenshots from: ${deployedUrl}`);
     
     await this.initialize();
     
@@ -57,7 +56,6 @@ export class PlaywrightScreenshotService {
       await page.setViewportSize({ width: 1200, height: 800 });
       
       // Navigate to the deployed Figma site
-      console.log('🌐 Loading page...');
       await page.goto(deployedUrl, { 
         waitUntil: 'networkidle',
         timeout: 30000 
@@ -108,8 +106,6 @@ export class PlaywrightScreenshotService {
       
       const totalHeight = scrollInfo.containerHeight;
       
-      console.log(`📏 Page info:`, scrollInfo);
-      console.log(`📏 Page dimensions: ${dimensions.width}x${dimensions.height}, Container height: ${totalHeight}px`);
       
       // Create screenshots directory
       const screenshotsDir = path.join(
@@ -135,7 +131,6 @@ export class PlaywrightScreenshotService {
       
       // Capture screenshots by scrolling - improved logic
       do {
-        console.log(`📸 Capturing screenshot ${screenshotIndex + 1} at scroll: ${currentScroll}px (of ${totalHeight}px)`);
         
         // Scroll to position - scroll the container if it exists, otherwise scroll the window
         await page.evaluate(({ scrollY, scrollInfo }) => {
@@ -153,7 +148,6 @@ export class PlaywrightScreenshotService {
             if (containers.length > 0) {
               const container = containers[0] as HTMLElement;
               container.scrollTop = scrollY;
-              console.log(`Scrolled container to: ${scrollY}px`);
             } else {
               window.scrollTo(0, scrollY);
             }
@@ -181,7 +175,6 @@ export class PlaywrightScreenshotService {
         
         // Safety limit to prevent infinite loops
         if (screenshotIndex > 25) {
-          console.log('⚠️ Reached maximum screenshot limit (25)');
           break;
         }
         
@@ -207,7 +200,6 @@ export class PlaywrightScreenshotService {
         }, { scrollInfo });
         
         if (isAtBottom && currentScroll > totalHeight * 0.8) {
-          console.log('✅ Reached bottom of page');
           break;
         }
         
@@ -222,7 +214,6 @@ export class PlaywrightScreenshotService {
       });
       screenshots.push(fullPagePath);
       
-      console.log(`✅ Captured ${screenshots.length} screenshots`);
       
       return {
         screenshots,
@@ -261,7 +252,6 @@ export class PlaywrightScreenshotService {
       }
     };
     
-    console.log('🔍 Screenshot analysis:', analysis.insights);
     
     return analysis;
   }
@@ -292,7 +282,6 @@ export class PlaywrightScreenshotService {
     
     if (fs.existsSync(screenshotsDir)) {
       fs.rmSync(screenshotsDir, { recursive: true, force: true });
-      console.log(`🧹 Cleaned up screenshots for agent: ${agentId}`);
     }
   }
 }

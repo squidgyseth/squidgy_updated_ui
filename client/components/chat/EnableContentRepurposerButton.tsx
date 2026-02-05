@@ -33,7 +33,6 @@ export default function EnableContentRepurposerButton({
         .single();
 
       if (error) {
-        console.log('No content_repurposer personalization found, showing enable button');
         setIsEnabled(false);
       } else {
         setIsEnabled(data?.is_enabled || false);
@@ -51,7 +50,6 @@ export default function EnableContentRepurposerButton({
     
     try {
       setEnabling(true);
-      console.log('🔧 EnableContentRepurposer: Starting to enable agent...');
       
       // Insert or update the agent personalization to enable it
       const { data, error } = await supabase
@@ -69,19 +67,16 @@ export default function EnableContentRepurposerButton({
         return;
       }
 
-      console.log('✅ Content repurposer enabled successfully:', data);
       
       // Update local state to hide the button
       setIsEnabled(true);
       
       // Refresh the sidebar to show the newly enabled agent
       if ((window as any).refreshAgentSidebar) {
-        console.log('🔄 Refreshing sidebar to show Content Repurposer...');
         (window as any).refreshAgentSidebar();
       }
       
       // Show success message (optional)
-      console.log('🎉 Content Repurposer is now enabled! Check your sidebar.');
       
     } catch (error) {
       console.error('❌ Error in handleEnableClick:', error);

@@ -122,7 +122,6 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-    console.log("Google login");
     // TODO: Implement Google OAuth
   };
 
@@ -141,14 +140,13 @@ export default function Login() {
       
       // Get user ID directly from the sign-in response
       const loggedInUserId = response.profile?.user_id || response.user?.id;
-      
+
       if (!loggedInUserId) {
         console.error('❌ Login: No user ID in response');
         toast.error('Login failed. Please try again.');
         return;
       }
-      
-      console.log('✅ Login: User authenticated with ID:', loggedInUserId);
+
       toast.success('Login successful!');
       
       // Link any anonymous game scores to this user
@@ -160,14 +158,13 @@ export default function Login() {
             toast.success(`${linkedCount} game score${linkedCount > 1 ? 's' : ''} saved to your account!`);
           }
         } catch (err) {
-          console.warn('Failed to link game scores:', err);
+          // Failed to link game scores
         }
       }
       
       // Use smart onboarding router to determine where to go
       try {
         const routeDecision = await onboardingRouter.determineLoginRoute(loggedInUserId);
-        console.log('🧭 Login: Route decision:', routeDecision);
         navigate(routeDecision.redirectPath);
       } catch (error) {
         console.error('❌ Login: Error determining route:', error);

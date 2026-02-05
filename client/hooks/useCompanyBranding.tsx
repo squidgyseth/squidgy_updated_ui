@@ -97,7 +97,6 @@ export function useCompanyBranding(): CompanyBranding {
             // Capitalize first letter
             companyName = companyName.charAt(0).toUpperCase() + companyName.slice(1);
           } catch (e) {
-            console.log('Error parsing website URL:', e);
           }
         }
 
@@ -137,7 +136,6 @@ export function useCompanyBranding(): CompanyBranding {
           filter: `firm_user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('Website analysis updated (branding):', payload);
           // Refetch branding when website_analysis changes
           fetchCompanyBranding();
         }
@@ -156,7 +154,6 @@ export function useCompanyBranding(): CompanyBranding {
           filter: `firm_user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('Business details updated (branding):', payload);
           // Refetch branding when business_details changes
           fetchCompanyBranding();
         }

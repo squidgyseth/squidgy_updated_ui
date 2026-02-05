@@ -8,7 +8,6 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, isReady, user } = useUser();
 
-  console.log('ProtectedRoute: Using UserProvider state:', { isAuthenticated, isReady, hasUser: !!user });
 
   // IMPORTANT: Always wait for isReady before making any navigation decisions
   // This prevents redirecting to login while auth is still being checked
@@ -30,11 +29,9 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // Only redirect to login AFTER we're sure auth check is complete (isReady = true)
   if (!isAuthenticated && !isDevelopment) {
-    console.log('ProtectedRoute: User not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
   // Render protected content if authenticated or in development
-  console.log('ProtectedRoute: Rendering protected content');
   return <>{children}</>;
 };

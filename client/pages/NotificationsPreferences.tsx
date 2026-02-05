@@ -98,9 +98,7 @@ export default function NotificationsPreferences() {
   useEffect(() => {
     const loadExistingData = async () => {
       if (userId && !dataLoaded) {
-        console.log('🔍 NotificationsPreferences: Using userId from hook:', userId);
         const existingData = await getNotificationPreferences(userId);
-        console.log('🔍 NotificationsPreferences: Raw existing data:', existingData);
         
         if (existingData) {
           // Map notification channels from database fields
@@ -121,20 +119,6 @@ export default function NotificationsPreferences() {
             cancellations: existingData.cancellations_reschedules || false,
           });
           
-          console.log('🔍 NotificationsPreferences: Mapped data to state:', {
-            channels: {
-              email: existingData.email_enabled,
-              messenger: existingData.messenger_enabled,
-              sms: existingData.sms_enabled,
-              whatsapp: existingData.whatsapp_enabled,
-              ghl: existingData.ghl_enabled,
-            },
-            types: {
-              confirmations: existingData.appointment_confirmations,
-              reminders: existingData.appointment_reminders,
-              cancellations: existingData.cancellations_reschedules,
-            }
-          });
           
           setDataLoaded(true);
         } else {
@@ -183,7 +167,6 @@ export default function NotificationsPreferences() {
     setIsLoading(true);
     
     try {
-      console.log('🔍 NotificationsPreferences Save: Using userId from hook:', userId);
       const notificationPreferencesData = {
         firm_user_id: userId,
         agent_id: 'SOL',

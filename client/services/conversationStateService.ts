@@ -64,7 +64,6 @@ class ConversationStateService {
    */
   async getState(sessionId: string, agentId: string): Promise<ConversationState | null> {
     try {
-      console.log(`🔍 ConversationStateService: Getting state for session=${sessionId}, agent=${agentId}`);
 
       const { data, error } = await supabase
         .from('agent_conversation_state')
@@ -77,14 +76,12 @@ class ConversationStateService {
       if (error) {
         if (error.code === 'PGRST116') {
           // No rows found
-          console.log('📭 No existing state found');
           return null;
         }
         console.error('❌ Error fetching conversation state:', error);
         throw error;
       }
 
-      console.log('✅ Found existing state:', data.state);
       return data.state as ConversationState;
     } catch (error) {
       console.error('❌ Error in getState:', error);
@@ -102,7 +99,6 @@ class ConversationStateService {
     userId: string
   ): Promise<ConversationState> {
     try {
-      console.log(`🔄 ConversationStateService: getOrCreateState for session=${sessionId}, agent=${agentId}`);
 
       // Try to get existing state
       const existingState = await this.getState(sessionId, agentId);
@@ -112,7 +108,6 @@ class ConversationStateService {
 
       // Create new state
       const defaultState = this.getDefaultState();
-      console.log('🆕 Creating new state with defaults:', defaultState);
 
       const { data, error } = await supabase
         .from('agent_conversation_state')
@@ -129,7 +124,6 @@ class ConversationStateService {
       if (error) {
         // Handle race condition - if another request created the state
         if (error.code === '23505') { // Unique violation
-          console.log('⚠️ State was created by another request, fetching it');
           const existingState = await this.getState(sessionId, agentId);
           return existingState || defaultState;
         }
@@ -137,7 +131,6 @@ class ConversationStateService {
         throw error;
       }
 
-      console.log('✅ Created new state:', data.state);
       return data.state as ConversationState;
     } catch (error) {
       console.error('❌ Error in getOrCreateState:', error);
@@ -156,9 +149,6 @@ class ConversationStateService {
     status: 'active' | 'completed' | 'abandoned' = 'active'
   ): Promise<boolean> {
     try {
-      console.log(`📝 ConversationStateService: Updating state for session=${sessionId}, agent=${agentId}`);
-      console.log('   New state:', newState);
-      console.log('   Status:', status);
 
       const { error } = await supabase
         .from('agent_conversation_state')
@@ -175,7 +165,6 @@ class ConversationStateService {
         throw error;
       }
 
-      console.log('✅ State updated successfully');
       return true;
     } catch (error) {
       console.error('❌ Error in updateState:', error);
@@ -193,7 +182,6 @@ class ConversationStateService {
     aiResponseJson: string | object
   ): Promise<boolean> {
     try {
-      console.log(`💾 ConversationStateService: Saving state from AI response`);
 
       let parsed: { state?: ConversationState; Status?: string };
 
@@ -204,7 +192,6 @@ class ConversationStateService {
       }
 
       if (!parsed.state) {
-        console.warn('⚠️ No state found in AI response');
         return false;
       }
 
@@ -237,7 +224,6 @@ class ConversationStateService {
         return false;
       }
 
-      console.log('✅ Conversation marked as completed');
       return true;
     } catch (error) {
       console.error('❌ Error in markCompleted:', error);
@@ -264,7 +250,6 @@ class ConversationStateService {
         return false;
       }
 
-      console.log('✅ Conversation marked as abandoned');
       return true;
     } catch (error) {
       console.error('❌ Error in markAbandoned:', error);
@@ -288,7 +273,6 @@ class ConversationStateService {
         return false;
       }
 
-      console.log('✅ Conversation state deleted');
       return true;
     } catch (error) {
       console.error('❌ Error in deleteState:', error);
@@ -344,7 +328,6 @@ class ConversationStateService {
         return false;
       }
 
-      console.log('✅ Conversation state reset to initial');
       return true;
     } catch (error) {
       console.error('❌ Error in resetState:', error);

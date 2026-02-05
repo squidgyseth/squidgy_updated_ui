@@ -52,7 +52,6 @@ export function useWebsiteAnalysis() {
         } else if (data) {
           setWebsiteData(data);
           setFaviconUrl(data.favicon_url || null);
-          console.log('Website analysis data fetched:', data);
         }
       } catch (err) {
         console.error('Error in fetchWebsiteAnalysis:', err);
@@ -76,7 +75,6 @@ export function useWebsiteAnalysis() {
           filter: `firm_user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('Website analysis updated:', payload);
           if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
             const newData = payload.new as WebsiteAnalysisData;
             setWebsiteData(newData);

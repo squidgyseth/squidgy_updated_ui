@@ -71,12 +71,10 @@ class ContentRepurposerWebhookService {
     // Fire and forget - don't await this
     this.sendWebhookWithRetry(payload).catch(error => {
       // Log error but don't throw - this is truly async
-      console.warn('[Content Repurposer Webhook] Background webhook failed:', error);
       this.logWebhookError(error, payload);
     });
 
     // Return immediately - don't wait for webhook
-    console.log('[Content Repurposer Webhook] Webhook queued for background processing');
   }
 
   /**
@@ -88,7 +86,6 @@ class ContentRepurposerWebhookService {
     attempt: number = 1
   ): Promise<WebhookResponse> {
     try {
-      console.log(`[Content Repurposer Webhook] Sending webhook (attempt ${attempt}/${this.retryAttempts + 1})`);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
@@ -109,7 +106,6 @@ class ContentRepurposerWebhookService {
       }
 
       const data = await response.json();
-      console.log('[Content Repurposer Webhook] Success:', data);
       
       // Process webhook response and create image records
       await this.processWebhookResponse(payload, data);
@@ -144,13 +140,11 @@ class ContentRepurposerWebhookService {
     webhookData: any
   ): Promise<void> {
     try {
-      console.log('[Content Repurposer Webhook] Processing webhook response:', webhookData);
       
       // Extract social media posts from webhook response
       const posts = this.extractSocialMediaPosts(webhookData);
       
       if (posts.length === 0) {
-        console.log('[Content Repurposer Webhook] No social media posts found in response');
         return;
       }
 
@@ -182,7 +176,6 @@ class ContentRepurposerWebhookService {
         throw error;
       }
 
-      console.log(`[Content Repurposer Webhook] Successfully created ${insertedRecords?.length || 0} image records`);
       
       // Update repurposed_content in history_content_repurposer table
       await this.syncRepurposedContentToHistory(payload.id, webhookData);
@@ -238,7 +231,6 @@ class ContentRepurposerWebhookService {
         this.extractPostsFromDirectFormat(contentData.posts, posts);
       }
 
-      console.log(`[Content Repurposer Webhook] Extracted ${posts.length} social media posts`);
     } catch (error) {
       console.error('[Content Repurposer Webhook] Error extracting social media posts:', error);
     }
@@ -368,7 +360,6 @@ class ContentRepurposerWebhookService {
    */
   private async syncRepurposedContentToHistory(historyRecordId: string, webhookData: any): Promise<void> {
     try {
-      console.log('[Content Repurposer Webhook] Syncing repurposed content to history table');
       
       // Update the repurposed_content column with the webhook response
       const { error } = await supabase
@@ -384,7 +375,6 @@ class ContentRepurposerWebhookService {
         throw error;
       }
 
-      console.log('[Content Repurposer Webhook] Successfully synced repurposed content to history table');
     } catch (error) {
       console.error('[Content Repurposer Webhook] Error syncing repurposed content:', error);
       // Don't throw - this is supplementary sync, shouldn't break main flow
@@ -542,10 +532,8 @@ class ContentRepurposerWebhookService {
    */
   async processExistingContentFromHistory(historyRecord: any): Promise<void> {
     try {
-      console.log('[Content Repurposer Webhook] Processing existing content from history:', historyRecord.id);
       
       if (!historyRecord.repurposed_content) {
-        console.log('[Content Repurposer Webhook] No repurposed content found in history record');
         return;
       }
 
@@ -561,7 +549,6 @@ class ContentRepurposerWebhookService {
       // Process the repurposed content as if it came from webhook
       await this.processWebhookResponse(payload, historyRecord.repurposed_content);
       
-      console.log('[Content Repurposer Webhook] Successfully processed existing content from history');
     } catch (error) {
       console.error('[Content Repurposer Webhook] Error processing existing content from history:', error);
     }

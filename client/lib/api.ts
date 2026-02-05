@@ -255,12 +255,6 @@ interface SolarSetupData {
 
 export const saveSolarSetup = async (data: SolarSetupData): Promise<{ success: boolean; message: string }> => {
   try {
-    console.log('🔍 Debugging solar setup save:', {
-      firm_user_id: data.firm_user_id,
-      agent_id: data.agent_id,
-      installation_price: data.installation_price,
-      dealer_fee: data.dealer_fee
-    });
     
     // First, let's check if this user exists in profiles table (same logic as other saves)
     const { data: profileCheck, error: profileError } = await profilesApi.getByUserId(data.firm_user_id);
@@ -275,12 +269,10 @@ export const saveSolarSetup = async (data: SolarSetupData): Promise<{ success: b
         console.error('Profile not found by id either:', data.firm_user_id, profileByIdError);
         throw new Error('User profile not found. Please ensure you are logged in properly.');
       } else {
-        console.log('✅ Found profile by id:', profileById);
         // Use the user_id from the found profile
         data.firm_user_id = profileById.user_id;
       }
     } else {
-      console.log('✅ Found profile by user_id:', profileCheck);
     }
     
     // Fetch GHL data from ghl_subaccounts table  
@@ -288,12 +280,7 @@ export const saveSolarSetup = async (data: SolarSetupData): Promise<{ success: b
     const ghlData = Array.isArray(ghlDataArray) ? ghlDataArray.find(item => item.agent_id === (data.agent_id || 'SOL')) : null;
     
     if (ghlData) {
-      console.log('✅ Found GHL data:', {
-        ghl_location_id: ghlData.ghl_location_id,
-        ghl_user_id: ghlData.soma_ghl_user_id
-      });
     } else {
-      console.log('⚠️ No GHL data found for this user and agent');
     }
     
     // Check if record exists for UPSERT logic
@@ -305,9 +292,7 @@ export const saveSolarSetup = async (data: SolarSetupData): Promise<{ success: b
     const createdAt = existingRecord?.created_at || new Date().toISOString();
     
     if (existingRecord?.id) {
-      console.log('📝 Found existing solar setup record, will update:', existingRecord.id);
     } else {
-      console.log('🆕 No existing solar setup record, will create new with ID:', recordId);
     }
     
     // Create setup_json object with proper formatting
@@ -359,16 +344,12 @@ export const saveSolarSetup = async (data: SolarSetupData): Promise<{ success: b
       insertData.ghl_user_id = ghlData.soma_ghl_user_id;
     }
 
-    console.log('📝 Final solar setup insert data:', insertData);
-    console.log('🔧 Setup JSON configuration:', setupJson);
 
     // Use UPDATE for existing records, INSERT for new records
     let result, error;
     if (existingRecord?.id) {
-      console.log('🔄 Updating existing solar setup record with ID:', existingRecord.id);
       ({ data: result, error } = await solarSetupApi.updateById(existingRecord.id, insertData));
     } else {
-      console.log('🆕 Creating new solar setup record');
       ({ data: result, error } = await solarSetupApi.create(insertData));
     }
 
@@ -377,7 +358,6 @@ export const saveSolarSetup = async (data: SolarSetupData): Promise<{ success: b
       throw new Error(`Failed to save solar setup: ${error.message}`);
     }
 
-    console.log('✅ Solar setup saved successfully:', result);
 
     return {
       success: true,
@@ -408,12 +388,6 @@ interface CalendarSetupData {
 
 export const saveCalendarSetup = async (data: CalendarSetupData): Promise<{ success: boolean; message: string }> => {
   try {
-    console.log('🔍 Debugging calendar setup save:', {
-      firm_user_id: data.firm_user_id,
-      agent_id: data.agent_id,
-      calendar_name: data.calendar_name,
-      call_duration: data.call_duration
-    });
     
     // First, let's check if this user exists in profiles table (same logic as other saves)
     const { data: profileCheck, error: profileError } = await profilesApi.getByUserId(data.firm_user_id);
@@ -428,12 +402,10 @@ export const saveCalendarSetup = async (data: CalendarSetupData): Promise<{ succ
         console.error('Profile not found by id either:', data.firm_user_id, profileByIdError);
         throw new Error('User profile not found. Please ensure you are logged in properly.');
       } else {
-        console.log('✅ Found profile by id:', profileById);
         // Use the user_id from the found profile
         data.firm_user_id = profileById.user_id;
       }
     } else {
-      console.log('✅ Found profile by user_id:', profileCheck);
     }
     
     // Fetch GHL data from ghl_subaccounts table
@@ -441,9 +413,7 @@ export const saveCalendarSetup = async (data: CalendarSetupData): Promise<{ succ
     const ghlData = Array.isArray(ghlDataArray) ? ghlDataArray.find(item => item.agent_id === (data.agent_id || 'SOL')) : null;
 
     if (ghlData) {
-      console.log('✅ Found GHL data for calendar setup:', ghlData);
     } else {
-      console.log('⚠️ No GHL data found for firm_user_id:', data.firm_user_id, 'agent_id:', data.agent_id);
     }
 
     // Check if record exists for UPDATE/INSERT logic
@@ -455,9 +425,7 @@ export const saveCalendarSetup = async (data: CalendarSetupData): Promise<{ succ
     const createdAt = existingRecord?.created_at || new Date().toISOString();
     
     if (existingRecord?.id) {
-      console.log('📝 Found existing calendar setup record, will update:', existingRecord.id);
     } else {
-      console.log('🆕 No existing calendar setup record, will create new with ID:', recordId);
     }
 
     // Prepare data for database operation
@@ -484,15 +452,12 @@ export const saveCalendarSetup = async (data: CalendarSetupData): Promise<{ succ
       })
     };
 
-    console.log('📝 Final calendar setup data:', insertData);
 
     // Use UPDATE for existing records, INSERT for new records
     let result, error;
     if (existingRecord?.id) {
-      console.log('🔄 Updating existing calendar setup record with ID:', existingRecord.id);
       ({ data: result, error } = await calendarSetupApi.updateById(existingRecord.id, insertData));
     } else {
-      console.log('🆕 Creating new calendar setup record');
       ({ data: result, error } = await calendarSetupApi.create(insertData));
     }
 
@@ -501,7 +466,6 @@ export const saveCalendarSetup = async (data: CalendarSetupData): Promise<{ succ
       throw new Error(`Failed to save calendar setup: ${error.message}`);
     }
 
-    console.log('✅ Calendar setup saved successfully:', result);
 
     return {
       success: true,
@@ -531,12 +495,6 @@ interface NotificationPreferencesData {
 
 export const saveNotificationPreferences = async (data: NotificationPreferencesData): Promise<{ success: boolean; message: string }> => {
   try {
-    console.log('🔍 Debugging notification preferences save:', {
-      firm_user_id: data.firm_user_id,
-      agent_id: data.agent_id,
-      notification_email: data.notification_email,
-      email_enabled: data.email_enabled
-    });
     
     // First, let's check if this user exists in profiles table (same logic as other saves)
     const { data: profileCheck, error: profileError } = await profilesApi.getByUserId(data.firm_user_id);
@@ -551,12 +509,10 @@ export const saveNotificationPreferences = async (data: NotificationPreferencesD
         console.error('Profile not found by id either:', data.firm_user_id, profileByIdError);
         throw new Error('User profile not found. Please ensure you are logged in properly.');
       } else {
-        console.log('✅ Found profile by id:', profileById);
         // Use the user_id from the found profile
         data.firm_user_id = profileById.user_id;
       }
     } else {
-      console.log('✅ Found profile by user_id:', profileCheck);
     }
     
     // Fetch GHL data from ghl_subaccounts table
@@ -564,9 +520,7 @@ export const saveNotificationPreferences = async (data: NotificationPreferencesD
     const ghlData = Array.isArray(ghlDataArray) ? ghlDataArray.find(item => item.agent_id === (data.agent_id || 'SOL')) : null;
 
     if (ghlData) {
-      console.log('✅ Found GHL data for notification preferences:', ghlData);
     } else {
-      console.log('⚠️ No GHL data found for firm_user_id:', data.firm_user_id, 'agent_id:', data.agent_id);
     }
 
     // Check if record exists for UPDATE/INSERT logic
@@ -578,9 +532,7 @@ export const saveNotificationPreferences = async (data: NotificationPreferencesD
     const createdAt = existingRecord?.created_at || new Date().toISOString();
     
     if (existingRecord?.id) {
-      console.log('📝 Found existing notification preferences record, will update:', existingRecord.id);
     } else {
-      console.log('🆕 No existing notification preferences record, will create new with ID:', recordId);
     }
 
     // Prepare data for database operation
@@ -606,15 +558,12 @@ export const saveNotificationPreferences = async (data: NotificationPreferencesD
       })
     };
 
-    console.log('📝 Final notification preferences data:', insertData);
 
     // Use UPDATE for existing records, INSERT for new records
     let result, error;
     if (existingRecord?.id) {
-      console.log('🔄 Updating existing notification preferences record with ID:', existingRecord.id);
       ({ data: result, error } = await notificationPreferencesApi.updateById(existingRecord.id, insertData));
     } else {
-      console.log('🆕 Creating new notification preferences record');
       ({ data: result, error } = await notificationPreferencesApi.create(insertData));
     }
 
@@ -623,7 +572,6 @@ export const saveNotificationPreferences = async (data: NotificationPreferencesD
       throw new Error(`Failed to save notification preferences: ${error.message}`);
     }
 
-    console.log('✅ Notification preferences saved successfully:', result);
 
     return {
       success: true,
@@ -739,8 +687,6 @@ export const callN8NWebhook = async (data: N8NWebhookRequest): Promise<N8NWebhoo
 // Get existing website analysis data
 export const getWebsiteAnalysis = async (userId: string, agentId: string = 'SOL'): Promise<any> => {
   try {
-    console.log('🔍 getWebsiteAnalysis: API called with userId:', userId);
-    console.log('🔍 getWebsiteAnalysis: About to query firm_user_id=', userId, 'agent_id=', agentId);
     
     // Use firm_user_id field for website_analysis table  
     const { data: dataArray, error } = await websiteAnalysisApi.getByUserId(userId);
@@ -761,7 +707,6 @@ export const getWebsiteAnalysis = async (userId: string, agentId: string = 'SOL'
 // Get existing business details data
 export const getBusinessDetails = async (userId: string, agentId: string = 'SOL'): Promise<any> => {
   try {
-    console.log('🔍 getBusinessDetails: Using userId directly as firm_user_id:', userId);
     
     const { data: dataArray, error } = await businessDetailsApi.getByUserId(userId);
     const data = Array.isArray(dataArray) ? dataArray.find(item => item.agent_id === agentId) : null;
@@ -781,7 +726,6 @@ export const getBusinessDetails = async (userId: string, agentId: string = 'SOL'
 // Get existing solar setup data
 export const getSolarSetup = async (userId: string, agentId: string = 'SOL'): Promise<any> => {
   try {
-    console.log('🔍 getSolarSetup: Using userId directly as firm_user_id:', userId);
     
     const { data: dataArray, error } = await solarSetupApi.getByUserId(userId);
     const data = Array.isArray(dataArray) ? dataArray.find(item => item.agent_id === agentId) : null;
@@ -793,7 +737,6 @@ export const getSolarSetup = async (userId: string, agentId: string = 'SOL'): Pr
     
     // If setup_json exists, merge it with the regular columns for backward compatibility
     if (data && data.setup_json) {
-      console.log('📊 Found setup_json configuration:', data.setup_json);
       
       // Convert from JSON format back to database format if needed
       // This ensures the UI gets values in the expected format (percentages as numbers, not decimals)
@@ -828,7 +771,6 @@ export const getSolarSetup = async (userId: string, agentId: string = 'SOL'): Pr
 // Get existing calendar setup data
 export const getCalendarSetup = async (userId: string, agentId: string = 'SOL'): Promise<any> => {
   try {
-    console.log('🔍 getCalendarSetup: Using userId directly as firm_user_id:', userId);
     
     const { data: dataArray, error } = await calendarSetupApi.getByUserId(userId);
     const data = Array.isArray(dataArray) ? dataArray.find(item => item.agent_id === agentId) : null;
@@ -848,7 +790,6 @@ export const getCalendarSetup = async (userId: string, agentId: string = 'SOL'):
 // Get existing notification preferences data
 export const getNotificationPreferences = async (userId: string, agentId: string = 'SOL'): Promise<any> => {
   try {
-    console.log('🔍 getNotificationPreferences: Using userId directly as firm_user_id:', userId);
     
     const { data: dataArray, error } = await notificationPreferencesApi.getByUserId(userId);
     const data = Array.isArray(dataArray) ? dataArray.find(item => item.agent_id === agentId) : null;
@@ -869,7 +810,6 @@ export const getNotificationPreferences = async (userId: string, agentId: string
 // Get the correct user_id from profiles table using email
 export const getProfileUserId = async (email: string): Promise<string | null> => {
   try {
-    console.log('🔍 getProfileUserId: Looking up user_id for email:', email);
     
     // Get the profile user_id from the email
     const { data: profile, error } = await profilesApi.getByEmail(email);
@@ -880,11 +820,9 @@ export const getProfileUserId = async (email: string): Promise<string | null> =>
     }
     
     if (profile?.user_id) {
-      console.log('✅ getProfileUserId: Found user_id:', profile.user_id, 'for email:', email);
       return profile.user_id;
     }
     
-    console.log('⚠️ getProfileUserId: No profile found for email:', email);
     return null;
   } catch (error) {
     console.error('Error getting profile user_id:', error);
@@ -902,7 +840,6 @@ export const checkSetupStatus = async (userId: string, agentId: string = 'SOL'):
   facebookConnect: boolean;
 }> => {
   try {
-    console.log('🔍 checkSetupStatus: Checking status for userId:', userId, 'agentId:', agentId);
     
     // Use userId directly as firm_user_id in all 5 tables
     const [website, business, solar, calendar, notifications] = await Promise.all([
@@ -913,13 +850,6 @@ export const checkSetupStatus = async (userId: string, agentId: string = 'SOL'):
       getNotificationPreferences(userId, agentId)
     ]);
     
-    console.log('🔍 checkSetupStatus: Raw data:', {
-      website: !!website,
-      business: !!business,
-      solar: !!solar,
-      calendar: !!calendar,
-      notifications: !!notifications
-    });
     
     // Check Facebook connection status
     let facebookStatus = false;
@@ -969,12 +899,6 @@ interface WebsiteAnalysisData {
 
 export const saveWebsiteAnalysis = async (data: WebsiteAnalysisData & { isAnalyzeButton?: boolean }): Promise<{ success: boolean; message: string; id?: string; data?: any }> => {
   try {
-    console.log('🔍 Debugging website analysis save:', {
-      firm_user_id: data.firm_user_id,
-      firm_user_id_type: typeof data.firm_user_id,
-      agent_id: data.agent_id,
-      isAnalyzeButton: data.isAnalyzeButton
-    });
     
     // Get firm_id from profiles table - REQUIRED field
     const { data: profileData, error: profileError } = await profilesApi.getByUserId(data.firm_user_id);
@@ -989,12 +913,10 @@ export const saveWebsiteAnalysis = async (data: WebsiteAnalysisData & { isAnalyz
         console.error('Profile not found by id either:', data.firm_user_id, profileByIdError);
         throw new Error('User profile not found. Please ensure you are logged in properly.');
       } else {
-        console.log('✅ Found profile by id:', profileById);
         data.firm_user_id = profileById.user_id;
         var firm_id = profileById.company_id;
       }
     } else {
-      console.log('✅ Found profile by user_id:', profileData);
       var firm_id = profileData.company_id;
     }
     
@@ -1008,12 +930,7 @@ export const saveWebsiteAnalysis = async (data: WebsiteAnalysisData & { isAnalyz
     const ghlData = Array.isArray(ghlDataArray) ? ghlDataArray.find(item => item.agent_id === (data.agent_id || 'SOL')) : null;
     
     if (ghlData) {
-      console.log('✅ Found GHL data for website analysis:', {
-        ghl_location_id: ghlData.ghl_location_id,
-        ghl_user_id: ghlData.soma_ghl_user_id
-      });
     } else {
-      console.log('⚠️ No GHL data found for website analysis');
     }
     
     // Check if user has ANY existing website analysis record (not URL-specific)
@@ -1023,9 +940,7 @@ export const saveWebsiteAnalysis = async (data: WebsiteAnalysisData & { isAnalyz
     ) : null;
     
     if (existingRecord) {
-      console.log(`📝 Found existing record for user. Will update website from "${existingRecord.website_url}" to "${data.website_url}"`);
     } else {
-      console.log('🆕 No existing record found. Will create new record.');
     }
     
     // Generate UUID for new records
@@ -1059,12 +974,9 @@ export const saveWebsiteAnalysis = async (data: WebsiteAnalysisData & { isAnalyz
     if (data.isAnalyzeButton === true) {
       upsertData.screenshot_url = data.screenshot_url || null;
       upsertData.favicon_url = data.favicon_url || null;
-      console.log('📸 Including screenshot/favicon URLs (Analyze button clicked)');
     } else {
-      console.log('📝 Skipping screenshot/favicon URLs (non-Analyze operation)');
     }
 
-    console.log('📝 Final upsert data:', upsertData);
 
     // Use upsert - if existing record found, update it; otherwise insert new
     const { data: result, error } = await websiteAnalysisApi.upsert(upsertData);
@@ -1074,7 +986,6 @@ export const saveWebsiteAnalysis = async (data: WebsiteAnalysisData & { isAnalyz
       throw new Error(`Failed to save website analysis: ${error.message}`);
     }
 
-    console.log('✅ Website analysis saved successfully:', result);
 
     return {
       success: true,
@@ -1107,12 +1018,6 @@ interface BusinessDetailsData {
 
 export const saveBusinessDetails = async (data: BusinessDetailsData): Promise<{ success: boolean; message: string }> => {
   try {
-    console.log('🔍 Debugging business details save:', {
-      firm_user_id: data.firm_user_id,
-      agent_id: data.agent_id,
-      business_name: data.business_name,
-      business_email: data.business_email
-    });
     
     // First, let's check if this user exists in profiles table (same logic as website analysis)
     const { data: profileCheck, error: profileError } = await profilesApi.getByUserId(data.firm_user_id);
@@ -1127,12 +1032,10 @@ export const saveBusinessDetails = async (data: BusinessDetailsData): Promise<{ 
         console.error('Profile not found by id either:', data.firm_user_id, profileByIdError);
         throw new Error('User profile not found. Please ensure you are logged in properly.');
       } else {
-        console.log('✅ Found profile by id:', profileById);
         // Use the user_id from the found profile
         data.firm_user_id = profileById.user_id;
       }
     } else {
-      console.log('✅ Found profile by user_id:', profileCheck);
     }
     
     // Fetch GHL data from ghl_subaccounts table
@@ -1140,12 +1043,7 @@ export const saveBusinessDetails = async (data: BusinessDetailsData): Promise<{ 
     const ghlData = Array.isArray(ghlDataArray) ? ghlDataArray.find(item => item.agent_id === (data.agent_id || 'SOL')) : null;
     
     if (ghlData) {
-      console.log('✅ Found GHL data for business details:', {
-        ghl_location_id: ghlData.ghl_location_id,
-        ghl_user_id: ghlData.soma_ghl_user_id
-      });
     } else {
-      console.log('⚠️ No GHL data found for business details');
     }
     
     // Check if record exists for UPSERT logic
@@ -1157,9 +1055,7 @@ export const saveBusinessDetails = async (data: BusinessDetailsData): Promise<{ 
     const createdAt = existingRecord?.created_at || new Date().toISOString();
     
     if (existingRecord?.id) {
-      console.log('📝 Found existing business details record, will update:', existingRecord.id);
     } else {
-      console.log('🆕 No existing business details record, will create new with ID:', recordId);
     }
     
     // Prepare data for database insert
@@ -1188,15 +1084,12 @@ export const saveBusinessDetails = async (data: BusinessDetailsData): Promise<{ 
       insertData.ghl_user_id = ghlData.soma_ghl_user_id;
     }
 
-    console.log('📝 Final business details data:', insertData);
 
     // Use UPDATE for existing records, INSERT for new records
     let result, error;
     if (existingRecord?.id) {
-      console.log('🔄 Updating existing business details record with ID:', existingRecord.id);
       ({ data: result, error } = await businessDetailsApi.updateById(existingRecord.id, insertData));
     } else {
-      console.log('🆕 Creating new business details record');
       ({ data: result, error } = await businessDetailsApi.create(insertData));
     }
 
@@ -1205,7 +1098,6 @@ export const saveBusinessDetails = async (data: BusinessDetailsData): Promise<{ 
       throw new Error(`Failed to save business details: ${error.message}`);
     }
 
-    console.log('✅ Business details saved successfully:', result);
 
     return {
       success: true,

@@ -90,7 +90,6 @@ class ContentRepurposerParser {
         }
       }
 
-      console.log(`[ContentRepurposerParser] Extracted ${posts.length} posts from content`);
       return { posts, generalAssets };
     } catch (error) {
       console.error('[ContentRepurposerParser] Error parsing content:', error);

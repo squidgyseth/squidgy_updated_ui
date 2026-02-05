@@ -170,7 +170,6 @@ export function ChatInterface({
       // Check if message contains a URL
       const urlMatch = messageContent.match(/(https?:\/\/[^\s]+)/g);
       if (urlMatch && urlMatch[0]) {
-        console.log('🔍 Website URL detected:', urlMatch[0]);
         
         // Show website analysis loading indicators
         const loadingMessage: Message = {
@@ -201,7 +200,6 @@ export function ChatInterface({
         sessionId
       );
 
-      // console.log('N8N Service result:', result);
       
       // Handle N8N response - check for various possible response formats
       if (result) {
@@ -238,7 +236,6 @@ export function ChatInterface({
           botContent = result;
         } else {
           // If no recognized response property, show a default message and log the structure
-          console.log('N8N response structure:', Object.keys(result));
           botContent = 'I received your message and I\'m processing it. The response format is being configured.';
         }
 
@@ -258,7 +255,6 @@ export function ChatInterface({
 
         // Check if a new agent was enabled and refresh the sidebar
         if (result.new_agent_id_is_enabled && result.new_agent_id) {
-          console.log('🔄 New agent enabled:', result.new_agent_id, '- Refreshing sidebar');
           // Call the global refresh function exposed by CategorizedAgentSidebar
           if ((window as any).refreshAgentSidebar) {
             // Add a small delay to ensure the database has been updated

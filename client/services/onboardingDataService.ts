@@ -78,7 +78,6 @@ class OnboardingDataService {
    */
   async isOnboardingCompleted(userId: string): Promise<boolean> {
     try {
-      console.log('🔍 OnboardingDataService: Checking completion status for user:', userId);
       
       const { data, error } = await supabaseApi.select(
         'user_onboarding',
@@ -93,7 +92,6 @@ class OnboardingDataService {
       }
 
       const isCompleted = data?.is_completed || false;
-      console.log('✅ OnboardingDataService: Completion status:', isCompleted);
       return isCompleted;
 
     } catch (error) {
@@ -107,7 +105,6 @@ class OnboardingDataService {
    */
   async getOnboardingProgress(userId: string): Promise<OnboardingProgress | null> {
     try {
-      console.log('🔍 OnboardingDataService: Getting progress for user:', userId);
 
       const { data, error } = await supabaseApi.select(
         'user_onboarding',
@@ -118,14 +115,12 @@ class OnboardingDataService {
 
       if (error) {
         if (error.message?.includes('No rows found')) {
-          console.log('ℹ️ OnboardingDataService: No onboarding record found for user');
           return null;
         }
         console.error('❌ OnboardingDataService: Error getting progress:', error);
         return null;
       }
 
-      console.log('✅ OnboardingDataService: Found progress data');
       return data;
 
     } catch (error) {
@@ -139,7 +134,6 @@ class OnboardingDataService {
    */
   async saveOnboardingProgress(progress: Partial<OnboardingProgress>): Promise<boolean> {
     try {
-      console.log('💾 OnboardingDataService: Saving progress:', progress);
 
       // Check if record exists
       const existing = await this.getOnboardingProgress(progress.user_id!);
@@ -174,7 +168,6 @@ class OnboardingDataService {
         }
       }
 
-      console.log('✅ OnboardingDataService: Progress saved successfully');
       return true;
 
     } catch (error) {
@@ -188,7 +181,6 @@ class OnboardingDataService {
    */
   async markOnboardingCompleted(userId: string): Promise<boolean> {
     try {
-      console.log('🎉 OnboardingDataService: Marking onboarding completed for user:', userId);
 
       const { data, error } = await supabaseApi.update(
         'user_onboarding',
@@ -206,7 +198,6 @@ class OnboardingDataService {
         return false;
       }
 
-      console.log('✅ OnboardingDataService: Onboarding marked as completed');
       return true;
 
     } catch (error) {
@@ -222,7 +213,6 @@ class OnboardingDataService {
    */
   async getAssistantPersonalizations(userId: string): Promise<AssistantPersonalization[]> {
     try {
-      console.log('🔍 OnboardingDataService: Getting personalizations for user:', userId);
 
       const { data, error } = await supabaseApi.select(
         'assistant_personalizations',
@@ -235,7 +225,6 @@ class OnboardingDataService {
         return [];
       }
 
-      console.log('✅ OnboardingDataService: Found', data?.length || 0, 'personalizations');
       return data || [];
 
     } catch (error) {
@@ -249,7 +238,6 @@ class OnboardingDataService {
    */
   async saveAssistantPersonalization(personalization: AssistantPersonalization): Promise<boolean> {
     try {
-      console.log('💾 OnboardingDataService: Saving personalization:', personalization);
 
       // Check if personalization exists
       const { data: existing } = await supabaseApi.select(
@@ -290,7 +278,6 @@ class OnboardingDataService {
         }
       }
 
-      console.log('✅ OnboardingDataService: Personalization saved successfully');
       return true;
 
     } catch (error) {
@@ -304,7 +291,6 @@ class OnboardingDataService {
    */
   async saveMultiplePersonalizations(personalizations: AssistantPersonalization[]): Promise<boolean> {
     try {
-      console.log('💾 OnboardingDataService: Saving', personalizations.length, 'personalizations');
 
       // Save each personalization
       for (const personalization of personalizations) {
@@ -315,7 +301,6 @@ class OnboardingDataService {
         }
       }
 
-      console.log('✅ OnboardingDataService: All personalizations saved successfully');
       return true;
 
     } catch (error) {
@@ -331,7 +316,6 @@ class OnboardingDataService {
    */
   async getCompanyDetails(userId: string): Promise<CompanyDetails | null> {
     try {
-      console.log('🔍 OnboardingDataService: Getting company details for user:', userId);
 
       const { data, error } = await supabaseApi.select(
         'onboarding_company_details',
@@ -342,14 +326,12 @@ class OnboardingDataService {
 
       if (error) {
         if (error.message?.includes('No rows found')) {
-          console.log('ℹ️ OnboardingDataService: No company details found for user');
           return null;
         }
         console.error('❌ OnboardingDataService: Error getting company details:', error);
         return null;
       }
 
-      console.log('✅ OnboardingDataService: Found company details');
       return data;
 
     } catch (error) {
@@ -363,7 +345,6 @@ class OnboardingDataService {
    */
   async saveCompanyDetails(details: CompanyDetails): Promise<boolean> {
     try {
-      console.log('💾 OnboardingDataService: Saving company details:', details);
 
       // Check if record exists
       const existing = await this.getCompanyDetails(details.user_id);
@@ -393,7 +374,6 @@ class OnboardingDataService {
         }
       }
 
-      console.log('✅ OnboardingDataService: Company details saved successfully');
       return true;
 
     } catch (error) {
@@ -409,7 +389,6 @@ class OnboardingDataService {
    */
   async startOnboardingSession(userId: string, sessionId: string): Promise<boolean> {
     try {
-      console.log('🚀 OnboardingDataService: Starting session for user:', userId);
 
       const sessionData: Partial<OnboardingSession> = {
         user_id: userId,
@@ -429,7 +408,6 @@ class OnboardingDataService {
         return false;
       }
 
-      console.log('✅ OnboardingDataService: Session started successfully');
       return true;
 
     } catch (error) {
@@ -443,7 +421,6 @@ class OnboardingDataService {
    */
   async completeOnboardingSession(userId: string, sessionId: string): Promise<boolean> {
     try {
-      console.log('🎉 OnboardingDataService: Completing session for user:', userId);
 
       const { data, error } = await supabaseApi.update(
         'onboarding_sessions',
@@ -462,7 +439,6 @@ class OnboardingDataService {
         return false;
       }
 
-      console.log('✅ OnboardingDataService: Session completed successfully');
       return true;
 
     } catch (error) {
@@ -497,7 +473,6 @@ class OnboardingDataService {
    */
   async clearOnboardingData(userId: string): Promise<boolean> {
     try {
-      console.log('🧹 OnboardingDataService: Clearing onboarding data for user:', userId);
 
       // Delete in reverse dependency order
       await supabaseApi.delete('onboarding_sessions', { user_id: userId });
@@ -505,7 +480,6 @@ class OnboardingDataService {
       await supabaseApi.delete('assistant_personalizations', { user_id: userId });
       await supabaseApi.delete('user_onboarding', { user_id: userId });
 
-      console.log('✅ OnboardingDataService: All onboarding data cleared');
       return true;
 
     } catch (error) {

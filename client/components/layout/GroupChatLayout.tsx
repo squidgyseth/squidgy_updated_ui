@@ -26,15 +26,12 @@ function GroupChatLayoutContent() {
 
   const loadGroupChat = async (id: string) => {
     try {
-      console.log('🔍 Loading group chat:', id);
       const groupChatService = (await import('../../services/groupChatService')).default.getInstance();
       
       const chat = await groupChatService.getGroupChat(id);
       if (chat) {
         setGroupChat(chat);
-        console.log('✅ Loaded group chat:', chat);
       } else {
-        console.warn('⚠️ Group chat not found');
       }
     } catch (error) {
       console.error('❌ Failed to load group chat:', error);
