@@ -166,7 +166,7 @@ export default function Privacy() {
             <p>
               <strong>The Ai.team Limited</strong> (trading as Squidgy)<br />
               Email: privacy@squidgy.ai<br />
-              Address: [ADDRESS]<br />
+              Address: 20 Wenlock Road, London, England, N1 7GU<br />
               Data Protection Officer: [DPO EMAIL]
             </p>
 
