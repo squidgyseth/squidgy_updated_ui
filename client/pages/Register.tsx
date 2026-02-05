@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { signUp } from '../lib/api';
+import TermsModal from '../components/TermsModal';
 
 // Game URL - update this to your deployed game URL
 const GAME_URL = 'https://squidgy-waitlist-game.vercel.app';
@@ -70,6 +71,14 @@ export default function Register() {
   const [aiConsentAccepted, setAiConsentAccepted] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
 
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<'terms' | 'privacy'>('terms');
+
+  // Tracking if user has viewed and scrolled through documents
+  const [termsScrolledToBottom, setTermsScrolledToBottom] = useState(false);
+  const [privacyScrolledToBottom, setPrivacyScrolledToBottom] = useState(false);
+
   // Carousel state
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -125,6 +134,27 @@ export default function Register() {
     setCurrentSlide(index);
   };
 
+  // Modal handlers
+  const openTermsModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setModalType('terms');
+    setIsModalOpen(true);
+  };
+
+  const openPrivacyModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setModalType('privacy');
+    setIsModalOpen(true);
+  };
+
+  const handleScrollComplete = () => {
+    if (modalType === 'terms') {
+      setTermsScrolledToBottom(true);
+    } else {
+      setPrivacyScrolledToBottom(true);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     console.log('🚀 REGISTER: Form submission started');
     console.log('📊 REGISTER: Form data:', { 
@@ -143,6 +173,12 @@ export default function Register() {
     }
 
     // Validate required consents
+    if (!termsScrolledToBottom || !privacyScrolledToBottom) {
+      console.log('❌ REGISTER: Documents not fully read');
+      toast.error('You must read through the entire Beta User Agreement and Privacy Policy before accepting');
+      return;
+    }
+
     if (!termsAccepted) {
       console.log('❌ REGISTER: Terms acceptance validation failed');
       toast.error('You must accept the Terms and Privacy Policy to continue');
@@ -168,7 +204,11 @@ export default function Register() {
         fullName,
         termsAccepted,
         aiProcessingConsent: aiConsentAccepted,
-        marketingConsent
+        marketingConsent,
+        termsViewed: termsScrolledToBottom,
+        termsScrolledToBottom,
+        privacyViewed: privacyScrolledToBottom,
+        privacyScrolledToBottom
       });
       
       const endTime = Date.now();
@@ -359,33 +399,32 @@ export default function Register() {
             {/* Consent Checkboxes */}
             <div className="space-y-3 pt-2">
               {/* Terms and Privacy Policy - Required */}
-              <label className="flex items-start gap-2 cursor-pointer group">
+              <label className={`flex items-start gap-2 ${termsScrolledToBottom && privacyScrolledToBottom ? 'cursor-pointer' : 'cursor-not-allowed'} group`}>
                 <input
                   type="checkbox"
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer"
+                  disabled={!termsScrolledToBottom || !privacyScrolledToBottom}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   required
                 />
                 <span className="text-[13px] text-[#4A5565] leading-snug font-['Open_Sans']">
                   I have read and agree to the{' '}
-                  <a
-                    href="/terms"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#5E17EB] hover:underline font-semibold"
+                  <button
+                    type="button"
+                    onClick={openTermsModal}
+                    className={`text-[#5E17EB] hover:underline font-semibold ${termsScrolledToBottom ? 'text-green-600' : ''}`}
                   >
-                    Beta User Agreement
-                  </a>
+                    Beta User Agreement {termsScrolledToBottom && '✓'}
+                  </button>
                   {' '}and{' '}
-                  <a
-                    href="/privacy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#5E17EB] hover:underline font-semibold"
+                  <button
+                    type="button"
+                    onClick={openPrivacyModal}
+                    className={`text-[#5E17EB] hover:underline font-semibold ${privacyScrolledToBottom ? 'text-green-600' : ''}`}
                   >
-                    Privacy Policy
-                  </a>
+                    Privacy Policy {privacyScrolledToBottom && '✓'}
+                  </button>
                   <span className="text-red-500 ml-1">*</span>
                 </span>
               </label>
@@ -564,6 +603,14 @@ export default function Register() {
         </div>
         )}
       </div>
+
+      {/* Terms/Privacy Modal */}
+      <TermsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onScrollComplete={handleScrollComplete}
+        type={modalType}
+      />
     </div>
   );
 }

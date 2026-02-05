@@ -11,6 +11,10 @@ interface SignUpData {
   termsAccepted?: boolean;
   aiProcessingConsent?: boolean;
   marketingConsent?: boolean;
+  termsViewed?: boolean;
+  termsScrolledToBottom?: boolean;
+  privacyViewed?: boolean;
+  privacyScrolledToBottom?: boolean;
 }
 
 interface SignInData {
@@ -254,6 +258,12 @@ export class AuthService {
               ai_processing_consent: userData.aiProcessingConsent || false,
               marketing_consent: userData.marketingConsent || false,
               consent_timestamp: new Date().toISOString(),
+              terms_viewed: userData.termsViewed || false,
+              terms_scrolled_to_bottom: userData.termsScrolledToBottom || false,
+              terms_viewed_timestamp: userData.termsViewed ? new Date().toISOString() : null,
+              privacy_viewed: userData.privacyViewed || false,
+              privacy_scrolled_to_bottom: userData.privacyScrolledToBottom || false,
+              privacy_viewed_timestamp: userData.privacyViewed ? new Date().toISOString() : null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             };

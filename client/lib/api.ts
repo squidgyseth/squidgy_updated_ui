@@ -28,6 +28,10 @@ interface SignUpData {
   termsAccepted?: boolean;
   aiProcessingConsent?: boolean;
   marketingConsent?: boolean;
+  termsViewed?: boolean;
+  termsScrolledToBottom?: boolean;
+  privacyViewed?: boolean;
+  privacyScrolledToBottom?: boolean;
 }
 
 interface SignInData {
