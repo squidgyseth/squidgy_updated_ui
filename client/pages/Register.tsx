@@ -495,9 +495,21 @@ export default function Register() {
           <div className="mt-6 text-center">
             <p className="text-[#9CA3AF] text-[11px] leading-4">
               By creating an account, you agree to our{" "}
-              <a href="#" className="font-bold text-[#5E17EB] hover:underline">Terms of service</a>
+              <button
+                type="button"
+                onClick={openTermsModal}
+                className="font-bold text-[#5E17EB] hover:underline"
+              >
+                Terms of service
+              </button>
               {" "}and{" "}
-              <a href="#" className="font-bold text-[#5E17EB] hover:underline">Privacy policy</a>
+              <button
+                type="button"
+                onClick={openPrivacyModal}
+                className="font-bold text-[#5E17EB] hover:underline"
+              >
+                Privacy policy
+              </button>
             </p>
           </div>
         </div>

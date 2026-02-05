@@ -319,9 +319,9 @@ export default function Login() {
           <div className="text-center mt-4">
             <p className="text-[#9CA3AF] text-[11px] leading-4">
               By creating an account, you agree to our{" "}
-              <a href="#" className="font-bold text-[#5E17EB] hover:underline">Terms of service</a>
+              <a href="/terms" className="font-bold text-[#5E17EB] hover:underline">Terms of service</a>
               {" "}and{" "}
-              <a href="#" className="font-bold text-[#5E17EB] hover:underline">Privacy policy</a>
+              <a href="/privacy" className="font-bold text-[#5E17EB] hover:underline">Privacy policy</a>
             </p>
           </div>
         </div>
