@@ -31,6 +31,8 @@ import Login from "./pages/Login";
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import SetNewPassword from './pages/SetNewPassword';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import WebsiteDetails from "./pages/WebsiteDetails";
 import BusinessDetails from "./pages/BusinessDetails";
 import SolarSetup from "./pages/SolarSetup";
@@ -163,6 +165,8 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<SetNewPassword />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/test-email-check" element={<TestEmailCheck />} />
           <Route path="/" element={<Login />} />
           <Route path="/welcome" element={
