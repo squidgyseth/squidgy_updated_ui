@@ -478,172 +478,130 @@ function TermsContent() {
   );
 }
 
-// Privacy Content Component
+// Privacy Content Component - Content from https://squidgy.ai/privacy
 function PrivacyContent() {
   return (
     <div className="space-y-6">
+      <p className="text-sm text-gray-600 mb-6">
+        Squidgy ("we," "us," and "our") respects your privacy and is committed to protecting it through compliance with this Privacy Notice ("Privacy Notice"). This Privacy Notice describes the types of Information we may collect from you when you visit the website at or use the Services offered there (the "Platform"), and that you may provide in electronic messages to Squidgy.
+      </p>
+
       <section>
-        <h2 className="text-2xl font-bold mb-4">1. INTRODUCTION</h2>
-        <p>
-          The Ai.team Limited, trading as "Squidgy" ("we", "us", "our"), is committed to protecting your privacy.
-          This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use
-          our Service.
+        <h2 className="text-xl font-bold mb-3">1. Overview</h2>
+        <p className="mb-3 text-sm">
+          Please read this Privacy Notice to understand our policies and practices regarding your Information and how we will handle it. If you do not agree with our policies and practices, do not use the Platform. By accessing or using the Platform, you agree to this Privacy Notice.
+        </p>
+        <p className="mb-3 text-sm">
+          Squidgy may change this Privacy Notice at any time. Your continued use of the Platform after we make changes is deemed to be acceptance of those changes.
         </p>
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold mb-4">2. INFORMATION WE COLLECT</h2>
-        <h3 className="text-xl font-semibold mb-3">2.1 Personal Information</h3>
-        <p>We collect the following personal information when you register for and use our Service:</p>
-        <ul className="list-disc pl-6 mb-4 space-y-2">
-          <li><strong>Account Information:</strong> Full name, email address, password (encrypted)</li>
-          <li><strong>Company Information:</strong> Business name, industry, website URL</li>
-          <li><strong>Contact Information:</strong> Phone number, business address</li>
-          <li><strong>Consent Records:</strong> Your consent to terms, AI processing, and marketing communications,
-          including timestamps for audit purposes</li>
-        </ul>
-
-        <h3 className="text-xl font-semibold mb-3">2.2 Content Data</h3>
-        <p>
-          We process the content you create, upload, or generate through our AI-powered tools, including text,
-          images, and social media posts.
-        </p>
-
-        <h3 className="text-xl font-semibold mb-3">2.3 Usage Data</h3>
-        <p>We automatically collect information about how you interact with our Service, including:</p>
-        <ul className="list-disc pl-6 mb-4 space-y-2">
-          <li>Pages visited, features used, and time spent</li>
-          <li>Device information (browser type, operating system, IP address)</li>
-          <li>Session recordings and analytics data</li>
-        </ul>
-
-        <h3 className="text-xl font-semibold mb-3">2.4 Connected Account Data</h3>
-        <p>
-          When you connect third-party social media accounts, we collect authentication tokens and profile
-          information necessary to provide our posting and scheduling services.
+        <h2 className="text-xl font-bold mb-3">2. Information We Collect</h2>
+        <p className="mb-3 text-sm">
+          Squidgy may collect two types of information: Personal Information and Non-Personal Information. We collect Information directly from you, through communications, from third parties, automatically as you navigate, and through analytics.
         </p>
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold mb-4">3. HOW WE USE YOUR INFORMATION</h2>
-        <p>We use your information to:</p>
-        <ul className="list-disc pl-6 mb-4 space-y-2">
-          <li>Provide, maintain, and improve the Service</li>
-          <li>Process your content through AI services for content generation and optimization</li>
-          <li>Post and schedule content to your connected social media accounts</li>
-          <li>Send you service updates, security alerts, and administrative messages</li>
-          <li>Send you marketing communications (if you have consented)</li>
-          <li>Analyze usage patterns to improve our Service</li>
-          <li>Comply with legal obligations and maintain audit records</li>
+        <h2 className="text-xl font-bold mb-3">3. How We Use Your Information</h2>
+        <p className="mb-2 text-sm">We use Information to:</p>
+        <ul className="list-disc pl-5 mb-3 text-sm space-y-1">
+          <li>Present our Platform and provide Services</li>
+          <li>Provide customer support and fulfill contracts</li>
+          <li>Communicate about products and Services (including marketing if consented)</li>
+          <li>Analyze usage and improve our Platform</li>
+          <li>Maintain security and comply with legal obligations</li>
         </ul>
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold mb-4">4. THIRD-PARTY SERVICE PROVIDERS</h2>
-        <p>We share your information with third-party service providers who assist us in operating the Service:</p>
-        <ul className="list-disc pl-6 mb-4 space-y-2">
-          <li><strong>AI Services:</strong> We send your content to third-party AI providers (such as OpenAI, Anthropic,
-          and others) for text generation, editing, and image creation</li>
-          <li><strong>GoHighLevel:</strong> CRM and automation platform</li>
-          <li><strong>Supabase:</strong> Database and authentication services</li>
-          <li><strong>Vercel:</strong> Hosting and deployment</li>
-          <li><strong>Analytics Providers:</strong> For service monitoring and improvement</li>
-        </ul>
-      </section>
-
-      <section>
-        <h2 className="text-2xl font-bold mb-4">5. CONSENT AND AUDIT RECORDS</h2>
-        <p>We maintain detailed records of your consents, including:</p>
-        <ul className="list-disc pl-6 mb-4 space-y-2">
-          <li>Whether you accepted the Beta User Agreement and Privacy Policy</li>
-          <li>Whether you consented to AI processing of your content</li>
-          <li>Whether you opted in to marketing communications</li>
-          <li><strong>Timestamp:</strong> The exact date and time when each consent was given</li>
-        </ul>
-        <p>
-          These records are maintained for compliance, legal, and audit purposes and may be retained even after
-          account termination as required by law.
+        <h2 className="text-xl font-bold mb-3">4. Data Protection</h2>
+        <p className="mb-3 text-sm">
+          We implement measures to protect your Information from accidental loss and unauthorized access. However, the internet is not completely secure, and we cannot guarantee absolute security.
         </p>
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold mb-4">6. DATA RETENTION</h2>
-        <p>
-          We retain your personal information for as long as your account is active or as needed to provide the Service.
-          Consent records and audit logs may be retained for up to 7 years for legal compliance purposes.
+        <h2 className="text-xl font-bold mb-3">5. When We Share Your Information</h2>
+        <p className="mb-2 text-sm">We may share Personal Information with:</p>
+        <ul className="list-disc pl-5 mb-3 text-sm space-y-1">
+          <li>Subsidiaries, affiliates, and service providers</li>
+          <li>Buyers in connection with mergers or asset sales</li>
+          <li>As required by law or to protect rights and safety</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-bold mb-3">6. Third Parties Providing Services</h2>
+        <p className="mb-3 text-sm">
+          We use third parties for hosting, analytics, and payment processing. These companies are bound by contractual obligations to keep Information confidential.
         </p>
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold mb-4">7. YOUR RIGHTS</h2>
-        <p>Under UK GDPR, you have the right to:</p>
-        <ul className="list-disc pl-6 mb-4 space-y-2">
-          <li>Access your personal data</li>
-          <li>Correct inaccurate data</li>
-          <li>Request deletion of your data</li>
-          <li>Object to processing</li>
+        <h2 className="text-xl font-bold mb-3">7. Your Rights (EEA and UK Residents)</h2>
+        <p className="mb-3 text-sm">
+          <strong>Controller:</strong> Squidgy, 20 Wenlock Road, Islington London N17GU
+        </p>
+        <p className="mb-2 text-sm">You have the right to:</p>
+        <ul className="list-disc pl-5 mb-3 text-sm space-y-1">
+          <li>Access and request copies of your Personal Information</li>
+          <li>Correct inaccurate information</li>
+          <li>Request deletion or restrict processing</li>
+          <li>Object to processing and request data portability</li>
           <li>Withdraw consent at any time</li>
-          <li>Data portability</li>
-        </ul>
-        <p>
-          To exercise these rights, contact us at: <a href="mailto:privacy@squidgy.ai" className="text-blue-600 hover:underline">privacy@squidgy.ai</a>
-        </p>
-      </section>
-
-      <section>
-        <h2 className="text-2xl font-bold mb-4">8. MARKETING COMMUNICATIONS</h2>
-        <p>
-          If you have opted in to marketing communications, we may contact you via email, SMS, phone (including
-          AI-assisted calls), WhatsApp, and other messaging platforms.
-        </p>
-        <p>You can opt out at any time by:</p>
-        <ul className="list-disc pl-6 mb-4 space-y-2">
-          <li>Clicking the unsubscribe link in emails</li>
-          <li>Replying STOP to SMS messages</li>
-          <li>Contacting us at marketing@squidgy.ai</li>
-          <li>Updating your preferences in account settings</li>
         </ul>
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold mb-4">9. SECURITY</h2>
-        <p>
-          We implement appropriate technical and organizational measures to protect your personal information,
-          including encryption, access controls, and regular security assessments.
+        <h2 className="text-xl font-bold mb-3">8. California Privacy Rights</h2>
+        <p className="mb-2 text-sm">California residents have rights including:</p>
+        <ul className="list-disc pl-5 mb-3 text-sm space-y-1">
+          <li>Know what Personal Information is collected and how it's shared</li>
+          <li>Access and request deletion of Personal Information</li>
+          <li>Opt-out of the sale of Personal Information (Note: Squidgy does not sell your Personal Information)</li>
+          <li>Correct Personal Information</li>
+        </ul>
+        <p className="text-sm mb-3">
+          To exercise these rights, contact: support@gohighlevel.com
         </p>
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold mb-4">10. INTERNATIONAL DATA TRANSFERS</h2>
-        <p>
-          Your data may be transferred to and processed in countries outside the UK/EEA, including the United States,
-          where some of our service providers are located. We ensure appropriate safeguards are in place for such transfers.
+        <h2 className="text-xl font-bold mb-3">9. Your Choices</h2>
+        <p className="mb-3 text-sm">
+          You can opt-out of marketing communications by clicking unsubscribe links, contacting us, or updating your account settings. We may still send non-promotional emails about your account or business relations.
         </p>
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold mb-4">11. CHANGES TO THIS POLICY</h2>
-        <p>
-          We may update this Privacy Policy from time to time. We will notify you of material changes via email or
-          through the Service.
+        <h2 className="text-xl font-bold mb-3">10. Children's Privacy</h2>
+        <p className="mb-3 text-sm">
+          We do not knowingly collect Information from children under 16. If you are under 16, do not provide any Information. If we learn we have collected Information from a child under 16, we will delete it promptly.
         </p>
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold mb-4">12. CONTACT US</h2>
-        <p>If you have questions about this Privacy Policy or our data practices, please contact:</p>
-        <p className="mt-4">
-          <strong>The Ai.team Limited</strong> (trading as Squidgy)<br />
-          Email: privacy@squidgy.ai<br />
-          Address: 20 Wenlock Road, London, England, N1 7GU<br />
-          Data Protection Officer: [DPO EMAIL]
+        <h2 className="text-xl font-bold mb-3">11. International Data Transfers</h2>
+        <p className="mb-3 text-sm">
+          Your data may be transferred to and processed in countries outside the UK/EEA, including the United States. We ensure appropriate safeguards are in place for such transfers.
         </p>
       </section>
 
-      <div className="mt-12 pt-8 border-t border-gray-200">
-        <p className="text-sm text-gray-600">
-          <strong>Document Version:</strong> 1.0<br />
-          <strong>Last Updated:</strong> February 5, 2026
+      <section>
+        <h2 className="text-xl font-bold mb-3">12. Contact Us</h2>
+        <p className="mb-2 text-sm">For questions about this Privacy Notice, contact:</p>
+        <p className="text-sm">
+          <strong>Squidgy</strong><br />
+          20 Wenlock Road, Islington<br />
+          London N17GU
+        </p>
+      </section>
+
+      <div className="mt-8 pt-6 border-t border-gray-300">
+        <p className="text-xs text-gray-600">
+          <strong>EFFECTIVE DATE:</strong> January 1, 2026
         </p>
       </div>
     </div>
