@@ -69,8 +69,8 @@
           "value": "nosniff"
         },
         {
-          "key": "X-Frame-Options",
-          "value": "DENY"
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://*.gohighlevel.com https://*.leadconnectorhq.com https://app.squidgy.ai"
         },
         {
           "key": "X-XSS-Protection",
