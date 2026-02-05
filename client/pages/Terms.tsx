@@ -35,7 +35,7 @@ export default function Terms() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">1. INTRODUCTION AND PARTIES</h2>
               <p className="mb-3">This Beta User Agreement ("Agreement") is entered into between:</p>
-              <p className="mb-3"><strong>The Ai.team Limited</strong>, a company registered in England and Wales (Company Number: [NUMBER]), trading as "Squidgy", with registered office at 20 Wenlock Road, London, England, N1 7GU ("we", "us", "our", "Squidgy", or "the Company")</p>
+              <p className="mb-3"><strong>The Ai.team Limited</strong>, a company registered in England and Wales (Company Number: 15859560), trading as "Squidgy", with registered office at 20 Wenlock Road, London, England, N1 7GU ("we", "us", "our", "Squidgy", or "the Company")</p>
               <p className="mb-3">and</p>
               <p className="mb-3"><strong>You</strong>, the individual or entity accessing or using the Squidgy beta service ("you", "your", or "User").</p>
               <p>By creating an account, accessing, or using Squidgy, you acknowledge that you have read, understood, and agree to be bound by this Agreement.</p>
