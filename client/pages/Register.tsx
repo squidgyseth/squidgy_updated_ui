@@ -398,8 +398,20 @@ export default function Register() {
 
             {/* Consent Checkboxes */}
             <div className="space-y-3 pt-2">
+              {/* Instructional message */}
+              {(!termsScrolledToBottom || !privacyScrolledToBottom) && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                  <p className="text-xs text-blue-800 font-medium">
+                    📖 Please click and read through the complete{' '}
+                    {!termsScrolledToBottom && !privacyScrolledToBottom ? 'Beta User Agreement and Privacy Policy' :
+                     !termsScrolledToBottom ? 'Beta User Agreement' : 'Privacy Policy'}{' '}
+                    before you can accept. Scroll to the bottom of each document to enable the checkboxes.
+                  </p>
+                </div>
+              )}
+
               {/* Terms and Privacy Policy - Required */}
-              <label className={`flex items-start gap-2 ${termsScrolledToBottom && privacyScrolledToBottom ? 'cursor-pointer' : 'cursor-not-allowed'} group`}>
+              <label className={`flex items-start gap-2 ${termsScrolledToBottom && privacyScrolledToBottom ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} group`}>
                 <input
                   type="checkbox"
                   checked={termsAccepted}
