@@ -25,6 +25,9 @@ interface SignUpData {
   email: string;
   password: string;
   fullName: string;
+  termsAccepted?: boolean;
+  aiProcessingConsent?: boolean;
+  marketingConsent?: boolean;
 }
 
 interface SignInData {

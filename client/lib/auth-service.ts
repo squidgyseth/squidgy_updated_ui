@@ -8,6 +8,9 @@ interface SignUpData {
   email: string;
   password: string;
   fullName: string;
+  termsAccepted?: boolean;
+  aiProcessingConsent?: boolean;
+  marketingConsent?: boolean;
 }
 
 interface SignInData {
@@ -247,6 +250,10 @@ export class AuthService {
               email: authData.user.email,
               full_name: userData.fullName.trim(),
               role: 'member',
+              terms_accepted: userData.termsAccepted || false,
+              ai_processing_consent: userData.aiProcessingConsent || false,
+              marketing_consent: userData.marketingConsent || false,
+              consent_timestamp: new Date().toISOString(),
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             };

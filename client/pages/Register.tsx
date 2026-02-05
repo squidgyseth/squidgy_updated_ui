@@ -65,6 +65,11 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Consent checkboxes
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [aiConsentAccepted, setAiConsentAccepted] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+
   // Carousel state
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -130,21 +135,41 @@ export default function Register() {
     });
     
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       console.log('❌ REGISTER: Password mismatch validation failed');
       toast.error('Passwords do not match');
       return;
     }
-    
+
+    // Validate required consents
+    if (!termsAccepted) {
+      console.log('❌ REGISTER: Terms acceptance validation failed');
+      toast.error('You must accept the Terms and Privacy Policy to continue');
+      return;
+    }
+
+    if (!aiConsentAccepted) {
+      console.log('❌ REGISTER: AI consent validation failed');
+      toast.error('You must consent to AI processing to use our services');
+      return;
+    }
+
     console.log('✅ REGISTER: Form validation passed, setting loading state');
     setLoading(true);
     
     try {
       console.log('🔄 REGISTER: Calling signUp API...');
       const startTime = Date.now();
-      
-      const response = await signUp({ email, password, fullName });
+
+      const response = await signUp({
+        email,
+        password,
+        fullName,
+        termsAccepted,
+        aiProcessingConsent: aiConsentAccepted,
+        marketingConsent
+      });
       
       const endTime = Date.now();
       console.log(`✅ REGISTER: signUp API completed in ${endTime - startTime}ms`);
@@ -329,6 +354,69 @@ export default function Register() {
                   )}
                 </button>
               </div>
+            </div>
+
+            {/* Consent Checkboxes */}
+            <div className="space-y-3 pt-2">
+              {/* Terms and Privacy Policy - Required */}
+              <label className="flex items-start gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer"
+                  required
+                />
+                <span className="text-[13px] text-[#4A5565] leading-snug font-['Open_Sans']">
+                  I have read and agree to the{' '}
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#5E17EB] hover:underline font-semibold"
+                  >
+                    Beta User Agreement
+                  </a>
+                  {' '}and{' '}
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#5E17EB] hover:underline font-semibold"
+                  >
+                    Privacy Policy
+                  </a>
+                  <span className="text-red-500 ml-1">*</span>
+                </span>
+              </label>
+
+              {/* AI Processing Consent - Required */}
+              <label className="flex items-start gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={aiConsentAccepted}
+                  onChange={(e) => setAiConsentAccepted(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer"
+                  required
+                />
+                <span className="text-[13px] text-[#4A5565] leading-snug font-['Open_Sans']">
+                  I consent to my content being processed by AI services as described in the Agreement
+                  <span className="text-red-500 ml-1">*</span>
+                </span>
+              </label>
+
+              {/* Marketing Communications - Optional */}
+              <label className="flex items-start gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer"
+                />
+                <span className="text-[13px] text-[#4A5565] leading-snug font-['Open_Sans']">
+                  I'd like to receive marketing communications and product updates (optional)
+                </span>
+              </label>
             </div>
 
             {/* Create Account Button */}
