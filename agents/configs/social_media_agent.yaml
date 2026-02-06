@@ -1,7 +1,7 @@
 agent:
   id: social_media_agent
   emoji: "📱"
-  name: Sophia
+  name: "Sophia | Social Media Superhero"
   category: MARKETING
   description: Manage and schedule social media content across Facebook, Instagram, and LinkedIn.
   specialization: "Social Media Superhero"

@@ -18,7 +18,7 @@ agent:
 
   # Display name shown in the sidebar
   # Example: "Newsletter Agent", "CRM Manager", "Lead Generator"
-  name: Rita
+  name: "Rita | Repurposing Maestro"
 
   # Category - Choose ONE from: MARKETING, SALES, HR, SUPPORT, OPERATIONS
   category: SALES

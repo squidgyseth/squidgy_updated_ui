@@ -1,7 +1,7 @@
 agent:
   id: personal_assistant
   emoji: "🤖"
-  name: Pia
+  name: "Pia | Personal Assistant"
   category: GENERAL
   description: Help manage your day-to-day tasks and keep you organised.
   specialization: "Personal Assistant"

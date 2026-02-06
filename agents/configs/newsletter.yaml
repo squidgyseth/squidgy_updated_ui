@@ -1,7 +1,7 @@
 agent:
   id: newsletter
   emoji: "📧"
-  name: Nyla
+  name: "Nyla | Newsletter Ninja"
   category: MARKETING
   description: Craft and send engaging email newsletters to keep your audience informed and connected.
   specialization: "Newsletter Ninja"

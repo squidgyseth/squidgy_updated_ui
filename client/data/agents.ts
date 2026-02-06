@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-02-06T22:06:55.663Z
+// Generated on: 2026-02-06T22:12:02.120Z
 
 export interface AgentConfig {
   agent: {
@@ -49,7 +49,7 @@ export const ALL_AGENTS: AgentConfig[] = [
     "agent": {
       "id": "personal_assistant",
       "emoji": "🤖",
-      "name": "Pia",
+      "name": "Pia | Personal Assistant",
       "category": "GENERAL",
       "description": "Help manage your day-to-day tasks and keep you organised.",
       "specialization": "Personal Assistant",
@@ -319,7 +319,7 @@ export const ALL_AGENTS: AgentConfig[] = [
     "agent": {
       "id": "newsletter",
       "emoji": "📧",
-      "name": "Nyla",
+      "name": "Nyla | Newsletter Ninja",
       "category": "MARKETING",
       "description": "Craft and send engaging email newsletters to keep your audience informed and connected.",
       "specialization": "Newsletter Ninja",
@@ -387,7 +387,7 @@ export const ALL_AGENTS: AgentConfig[] = [
     "agent": {
       "id": "social_media_agent",
       "emoji": "📱",
-      "name": "Sophia",
+      "name": "Sophia | Social Media Superhero",
       "category": "MARKETING",
       "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn.",
       "specialization": "Social Media Superhero",
@@ -502,7 +502,7 @@ export const ALL_AGENTS: AgentConfig[] = [
     "agent": {
       "id": "SOL",
       "emoji": "☀️",
-      "name": "Stella",
+      "name": "Stella | Solar Sales Specialist",
       "category": "SALES",
       "description": "Assist with solar enquiries, qualify leads, and guide prospects through the sales process.",
       "specialization": "Solar Sales Specialist",
@@ -619,7 +619,7 @@ export const ALL_AGENTS: AgentConfig[] = [
     "agent": {
       "id": "content_repurposer",
       "emoji": "🔄",
-      "name": "Rita",
+      "name": "Rita | Repurposing Maestro",
       "category": "SALES",
       "description": "Transform existing content into fresh formats for different platforms—turn blogs into social posts, videos into articles, and more.",
       "uses_conversation_state": true,
@@ -694,7 +694,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "agent": {
       "id": "content_repurposer",
       "emoji": "🔄",
-      "name": "Rita",
+      "name": "Rita | Repurposing Maestro",
       "category": "SALES",
       "description": "Transform existing content into fresh formats for different platforms—turn blogs into social posts, videos into articles, and more.",
       "uses_conversation_state": true,
@@ -836,7 +836,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "agent": {
       "id": "newsletter",
       "emoji": "📧",
-      "name": "Nyla",
+      "name": "Nyla | Newsletter Ninja",
       "category": "MARKETING",
       "description": "Craft and send engaging email newsletters to keep your audience informed and connected.",
       "specialization": "Newsletter Ninja",
@@ -972,7 +972,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "agent": {
       "id": "personal_assistant",
       "emoji": "🤖",
-      "name": "Pia",
+      "name": "Pia | Personal Assistant",
       "category": "GENERAL",
       "description": "Help manage your day-to-day tasks and keep you organised.",
       "specialization": "Personal Assistant",
@@ -1038,7 +1038,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "agent": {
       "id": "social_media_agent",
       "emoji": "📱",
-      "name": "Sophia",
+      "name": "Sophia | Social Media Superhero",
       "category": "MARKETING",
       "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn.",
       "specialization": "Social Media Superhero",
@@ -1218,7 +1218,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "agent": {
       "id": "SOL",
       "emoji": "☀️",
-      "name": "Stella",
+      "name": "Stella | Solar Sales Specialist",
       "category": "SALES",
       "description": "Assist with solar enquiries, qualify leads, and guide prospects through the sales process.",
       "specialization": "Solar Sales Specialist",
@@ -1340,7 +1340,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       "agent": {
         "id": "personal_assistant",
         "emoji": "🤖",
-        "name": "Pia",
+        "name": "Pia | Personal Assistant",
         "category": "GENERAL",
         "description": "Help manage your day-to-day tasks and keep you organised.",
         "specialization": "Personal Assistant",
@@ -1612,7 +1612,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       "agent": {
         "id": "newsletter",
         "emoji": "📧",
-        "name": "Nyla",
+        "name": "Nyla | Newsletter Ninja",
         "category": "MARKETING",
         "description": "Craft and send engaging email newsletters to keep your audience informed and connected.",
         "specialization": "Newsletter Ninja",
@@ -1680,7 +1680,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       "agent": {
         "id": "social_media_agent",
         "emoji": "📱",
-        "name": "Sophia",
+        "name": "Sophia | Social Media Superhero",
         "category": "MARKETING",
         "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn.",
         "specialization": "Social Media Superhero",
@@ -1797,7 +1797,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       "agent": {
         "id": "SOL",
         "emoji": "☀️",
-        "name": "Stella",
+        "name": "Stella | Solar Sales Specialist",
         "category": "SALES",
         "description": "Assist with solar enquiries, qualify leads, and guide prospects through the sales process.",
         "specialization": "Solar Sales Specialist",
@@ -1914,7 +1914,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       "agent": {
         "id": "content_repurposer",
         "emoji": "🔄",
-        "name": "Rita",
+        "name": "Rita | Repurposing Maestro",
         "category": "SALES",
         "description": "Transform existing content into fresh formats for different platforms—turn blogs into social posts, videos into articles, and more.",
         "uses_conversation_state": true,
