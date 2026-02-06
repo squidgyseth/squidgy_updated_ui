@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { signUp } from '../lib/api';
+import BetaUserAgreementModal from '../components/BetaUserAgreementModal';
 import TermsModal from '../components/TermsModal';
 
 // Game URL - update this to your deployed game URL
@@ -72,8 +73,8 @@ export default function Register() {
   const [marketingConsent, setMarketingConsent] = useState(false);
 
   // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'terms' | 'privacy'>('terms');
+  const [isBetaAgreementModalOpen, setIsBetaAgreementModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
   // Tracking if user has viewed and scrolled through documents
   const [termsScrolledToBottom, setTermsScrolledToBottom] = useState(false);
@@ -135,24 +136,22 @@ export default function Register() {
   };
 
   // Modal handlers
-  const openTermsModal = (e: React.MouseEvent) => {
+  const openBetaAgreementModal = (e: React.MouseEvent) => {
     e.preventDefault();
-    setModalType('terms');
-    setIsModalOpen(true);
+    setIsBetaAgreementModalOpen(true);
   };
 
   const openPrivacyModal = (e: React.MouseEvent) => {
     e.preventDefault();
-    setModalType('privacy');
-    setIsModalOpen(true);
+    setIsPrivacyModalOpen(true);
   };
 
-  const handleScrollComplete = () => {
-    if (modalType === 'terms') {
-      setTermsScrolledToBottom(true);
-    } else {
-      setPrivacyScrolledToBottom(true);
-    }
+  const handleBetaAgreementScrollComplete = () => {
+    setTermsScrolledToBottom(true);
+  };
+
+  const handlePrivacyScrollComplete = () => {
+    setPrivacyScrolledToBottom(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -391,7 +390,7 @@ export default function Register() {
                   I have read and agree to the{' '}
                   <button
                     type="button"
-                    onClick={openTermsModal}
+                    onClick={openBetaAgreementModal}
                     className={`text-[#5E17EB] hover:underline font-semibold ${termsScrolledToBottom ? 'text-green-600' : ''}`}
                   >
                     Beta User Agreement {termsScrolledToBottom && '✓'}
@@ -464,7 +463,7 @@ export default function Register() {
               By creating an account, you agree to our{" "}
               <button
                 type="button"
-                onClick={openTermsModal}
+                onClick={openBetaAgreementModal}
                 className="font-bold text-[#5E17EB] hover:underline"
               >
                 Terms of service
@@ -595,12 +594,19 @@ export default function Register() {
         )}
       </div>
 
-      {/* Terms/Privacy Modal */}
+      {/* Beta User Agreement Modal */}
+      <BetaUserAgreementModal
+        isOpen={isBetaAgreementModalOpen}
+        onClose={() => setIsBetaAgreementModalOpen(false)}
+        onScrollComplete={handleBetaAgreementScrollComplete}
+      />
+
+      {/* Privacy Policy Modal */}
       <TermsModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onScrollComplete={handleScrollComplete}
-        type={modalType}
+        isOpen={isPrivacyModalOpen}
+        onClose={() => setIsPrivacyModalOpen(false)}
+        onScrollComplete={handlePrivacyScrollComplete}
+        type="privacy"
       />
     </div>
   );
