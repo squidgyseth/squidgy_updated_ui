@@ -214,9 +214,9 @@ export default function Register() {
   };
 
   return (
-    <div className="flex min-h-screen bg-white font-['Open_Sans']">
+    <div className="flex flex-col md:flex-row min-h-screen bg-white font-['Open_Sans']">
       {/* Left Side - Registration Form */}
-      <div className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 max-w-[600px]">
+      <div className="flex-1 flex flex-col justify-center px-6 py-8 md:px-8 md:py-0 lg:px-16 xl:px-20 2xl:px-24 md:max-w-[600px]">
         <div className="w-full max-w-[400px] mx-auto">
           {/* Logo */}
           <div className="flex justify-center mb-16">
@@ -464,8 +464,8 @@ export default function Register() {
       </div>
 
       {/* Right Side - Carousel */}
-      <div className={`flex-1 flex flex-col min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] ${
-        carouselStates[currentSlide].type === 'game' ? 'p-4' : 'p-12 justify-between'
+      <div className={`flex-1 flex flex-col min-h-[50vh] md:min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] ${
+        carouselStates[currentSlide].type === 'game' ? 'p-4' : 'p-6 md:p-12 justify-between'
       }`}>
         {/* Carousel Indicators */}
         <div className="flex justify-center gap-2 mb-8">
