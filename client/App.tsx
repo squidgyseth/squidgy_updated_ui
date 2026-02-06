@@ -45,6 +45,7 @@ import SetupComplete from "./pages/SetupComplete";
 import Dashboard from "./pages/Dashboard";
 import AccountSettings from "./pages/AccountSettings";
 import AccountPage from "./pages/AccountPage";
+import Help from "./pages/Help";
 import BusinessSettings from "./pages/BusinessSettings";
 import TeamSettings from "./pages/TeamSettings";
 import PersonalisationSettings from "./pages/PersonalisationSettings";
@@ -223,6 +224,11 @@ const App = () => (
           <Route path="/account" element={
             <ProtectedRoute>
               <AccountPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/help" element={
+            <ProtectedRoute>
+              <Help />
             </ProtectedRoute>
           } />
           <Route path="/business-settings" element={
