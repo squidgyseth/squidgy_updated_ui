@@ -32,8 +32,8 @@ export default function TermsModal({ isOpen, onClose, onScrollComplete, type }: 
 
   if (!isOpen) return null;
 
-  const title = type === 'terms' ? 'Beta User Agreement' : 'Privacy Policy';
-  const effectiveDate = 'February 5, 2026';
+  const title = type === 'terms' ? 'Terms of Service' : 'Privacy Policy';
+  const effectiveDate = 'January 1, 2026';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-end bg-black bg-opacity-50">
