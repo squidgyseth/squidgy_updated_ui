@@ -26,6 +26,9 @@ interface Template {
   size: { width: number; height: number };
   layers: TemplateLayer[];
   isEnabled: boolean;
+  groupName?: string;
+  groupTemplates?: Template[];
+  groupCount?: number;
 }
 
 export default function TemplatesSettings() {
@@ -96,45 +99,56 @@ export default function TemplatesSettings() {
     }
   };
 
-  // Toggle template enabled/disabled for user
-  const handleToggleTemplate = async (templateId: string, enable: boolean) => {
+  // Toggle template group enabled/disabled for user (updates all templates in group)
+  const handleToggleTemplate = async (template: Template, enable: boolean) => {
     if (!firmUserId) {
       toast.error('User ID not available');
       return;
     }
     
-    setTogglingTemplateId(templateId);
+    setTogglingTemplateId(template.id);
     
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/templated/templates/toggle`, {
+      
+      // Get all template IDs in the group
+      const templateIds = template.groupTemplates 
+        ? template.groupTemplates.map(t => t.id)
+        : [template.id];
+      
+      const response = await fetch(`${backendUrl}/api/templated/templates/bulk-toggle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          template_id: templateId,
+          template_ids: templateIds,
           user_id: firmUserId,
           enable: enable
         })
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to update template: ${response.statusText}`);
+        throw new Error(`Failed to update templates: ${response.statusText}`);
       }
       
       const data = await response.json();
       
       if (data.success) {
-        // Update local state
+        // Update local state for the group
         setTemplates(prev => prev.map(t => 
-          t.id === templateId ? { ...t, isEnabled: enable } : t
+          t.id === template.id ? { 
+            ...t, 
+            isEnabled: enable,
+            groupTemplates: t.groupTemplates?.map(gt => ({ ...gt, isEnabled: enable }))
+          } : t
         ));
-        toast.success(`Template ${enable ? 'enabled' : 'disabled'}`);
+        const count = templateIds.length;
+        toast.success(`${count} template${count > 1 ? 's' : ''} ${enable ? 'enabled' : 'disabled'}`);
       } else {
-        throw new Error(data.message || 'Failed to update template');
+        throw new Error(data.message || 'Failed to update templates');
       }
     } catch (error: any) {
-      console.error('❌ Error toggling template:', error);
-      toast.error(error.message || 'Failed to update template');
+      console.error('❌ Error toggling templates:', error);
+      toast.error(error.message || 'Failed to update templates');
     } finally {
       setTogglingTemplateId(null);
     }
@@ -201,27 +215,20 @@ export default function TemplatesSettings() {
             {templates.map((template) => (
               <div 
                 key={template.id} 
-                className={`relative rounded-xl overflow-hidden transition-all duration-300 shadow-sm hover:shadow-lg ${
+                className={`relative rounded-xl overflow-hidden transition-all duration-300 ${
                   template.isEnabled 
-                    ? 'ring-3 ring-green-500 shadow-green-100' 
-                    : 'ring-1 ring-gray-200 hover:ring-gray-300'
+                    ? 'ring-2 ring-purple-500 shadow-lg shadow-purple-200' 
+                    : 'ring-1 ring-gray-200 shadow-sm hover:shadow-lg hover:ring-gray-300'
                 }`}
               >
-                {/* Enabled Banner */}
-                {template.isEnabled && (
-                  <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-semibold py-1.5 px-3 flex items-center justify-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    ENABLED
-                  </div>
-                )}
                 
                 {/* Template Preview */}
-                <div className={`relative h-44 bg-gray-100 ${template.isEnabled ? 'mt-0' : ''}`}>
+                <div className={`relative aspect-square bg-gray-100 ${template.isEnabled ? 'mt-0' : ''}`}>
                   {template.preview ? (
                     <img 
                       src={template.preview} 
                       alt={template.name}
-                      className={`w-full h-full object-cover transition-all ${
+                      className={`w-full h-full object-contain transition-all ${
                         template.isEnabled ? 'brightness-100' : 'brightness-95 hover:brightness-100'
                       }`}
                     />
@@ -231,17 +238,16 @@ export default function TemplatesSettings() {
                     </div>
                   )}
                   
-                  {/* Gradient overlay for enabled */}
-                  {template.isEnabled && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-green-500/10 to-transparent pointer-events-none" />
-                  )}
                   
                   {/* Size badge */}
                   <Badge 
                     variant="secondary" 
                     className="absolute bottom-2 right-2 bg-black/80 text-white text-xs font-medium backdrop-blur-sm"
                   >
-                    {template.size.width}×{template.size.height}
+                    {template.groupCount && template.groupCount > 1 
+                      ? `${template.groupCount} templates` 
+                      : `${template.size.width}×${template.size.height}`
+                    }
                   </Badge>
                   
                   {/* Preview button */}
@@ -262,10 +268,10 @@ export default function TemplatesSettings() {
                 </div>
                 
                 {/* Card Content */}
-                <div className={`p-4 bg-white ${template.isEnabled ? 'border-t-2 border-green-500' : ''}`}>
+                <div className="p-4 bg-white">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 truncate">{template.name}</h3>
+                      <h3 className="font-semibold text-gray-900 truncate">{template.groupName || template.name}</h3>
                       {template.description && (
                         <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">
                           {template.description}
@@ -273,8 +279,8 @@ export default function TemplatesSettings() {
                       )}
                     </div>
                     {template.isEnabled && (
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
+                        <CheckCircle className="w-4 h-4 text-purple-600" />
                       </div>
                     )}
                   </div>
@@ -286,7 +292,7 @@ export default function TemplatesSettings() {
                     <Button
                       size="sm"
                       disabled={togglingTemplateId === template.id}
-                      onClick={() => handleToggleTemplate(template.id, !template.isEnabled)}
+                      onClick={() => handleToggleTemplate(template, !template.isEnabled)}
                       className={
                         template.isEnabled 
                           ? "bg-white border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-medium" 
@@ -340,16 +346,19 @@ export default function TemplatesSettings() {
           onClick={() => setPreviewTemplate(null)}
         >
           <div 
-            className="relative bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl max-w-3xl w-full flex flex-col border border-white/20"
+            className="relative bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col border border-white/20"
             style={{ maxHeight: 'calc(100vh - 2rem)' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/20 bg-black/30 backdrop-blur-sm rounded-t-2xl flex-shrink-0">
               <div>
-                <h3 className="font-semibold text-lg text-white">{previewTemplate.name}</h3>
+                <h3 className="font-semibold text-lg text-white">{previewTemplate.groupName || previewTemplate.name}</h3>
                 <p className="text-sm text-white/70">
-                  {previewTemplate.size.width} × {previewTemplate.size.height} • {previewTemplate.layers?.length || 0} layers
+                  {previewTemplate.groupCount && previewTemplate.groupCount > 1 
+                    ? `${previewTemplate.groupCount} templates in this group`
+                    : `${previewTemplate.size.width} × ${previewTemplate.size.height} • ${previewTemplate.layers?.length || 0} layers`
+                  }
                 </p>
               </div>
               <Button
@@ -362,16 +371,42 @@ export default function TemplatesSettings() {
               </Button>
             </div>
             
-            {/* Modal Content - Image Preview */}
-            <div className="flex-1 overflow-auto p-6 bg-transparent flex items-center justify-center">
-              {previewTemplate.preview ? (
-                <img 
-                  src={previewTemplate.preview} 
-                  alt={previewTemplate.name}
-                  className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-2xl"
-                />
+            {/* Modal Content - Image Preview(s) */}
+            <div className="flex-1 overflow-auto p-6 bg-transparent">
+              {previewTemplate.groupTemplates && previewTemplate.groupTemplates.length > 1 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {previewTemplate.groupTemplates.map((t) => (
+                    <div key={t.id} className="flex flex-col items-center">
+                      {t.preview ? (
+                        <img 
+                          src={t.preview} 
+                          alt={t.name}
+                          className="w-full h-auto object-contain rounded-lg shadow-lg"
+                        />
+                      ) : (
+                        <div className="w-full h-32 bg-gray-800/50 rounded-lg flex items-center justify-center text-gray-400">
+                          No preview
+                        </div>
+                      )}
+                      <p className="text-xs text-white/70 mt-2 text-center truncate w-full">
+                        {t.name.includes('-') ? t.name.split('-').slice(1).join('-').trim() : t.name}
+                      </p>
+                      <p className="text-xs text-white/50">{t.size.width}×{t.size.height}</p>
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <div className="text-gray-400">No preview available</div>
+                <div className="flex items-center justify-center">
+                  {previewTemplate.preview ? (
+                    <img 
+                      src={previewTemplate.preview} 
+                      alt={previewTemplate.name}
+                      className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-2xl"
+                    />
+                  ) : (
+                    <div className="text-gray-400">No preview available</div>
+                  )}
+                </div>
               )}
             </div>
             
@@ -401,8 +436,12 @@ export default function TemplatesSettings() {
                   size="sm"
                   disabled={togglingTemplateId === previewTemplate.id}
                   onClick={() => {
-                    handleToggleTemplate(previewTemplate.id, !previewTemplate.isEnabled);
-                    setPreviewTemplate(prev => prev ? { ...prev, isEnabled: !prev.isEnabled } : null);
+                    handleToggleTemplate(previewTemplate, !previewTemplate.isEnabled);
+                    setPreviewTemplate(prev => prev ? { 
+                      ...prev, 
+                      isEnabled: !prev.isEnabled,
+                      groupTemplates: prev.groupTemplates?.map(gt => ({ ...gt, isEnabled: !prev.isEnabled }))
+                    } : null);
                   }}
                   className={
                     previewTemplate.isEnabled 
