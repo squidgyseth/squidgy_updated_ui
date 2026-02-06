@@ -125,12 +125,12 @@ interface:
 
 # Suggestion buttons shown in chat interface
 suggestions:
-  - "First suggested action"
-  - "Second helpful prompt"
-  - "Third common task"
-  - "Fourth useful command"
-  - "Fifth popular request"
-  - "Sixth frequent operation"
+  - "Complete Setup"
+  - "Repurpose blog to social posts"
+  - "Convert video to article"
+  - "Transform article to video script"
+  - "Generate multi-platform content"
+  - "Show my content library"
 
 # Agent personality configuration
 personality:

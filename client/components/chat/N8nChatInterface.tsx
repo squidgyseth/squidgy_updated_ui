@@ -18,6 +18,7 @@ import NewsletterSelector from './NewsletterSelector';
 import InteractiveMessageButtons from './InteractiveMessageButtons';
 import { googleCalendarService } from '../../lib/googleCalendar';
 import { toast } from 'sonner';
+import { useThinkingMessage } from '../../hooks/useThinkingMessage';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -66,6 +67,7 @@ export default function N8nChatInterface({
   const currentSessionRef = useRef<string>(sessionId); // Track current session to prevent stale updates
   const chatHistoryService = ChatHistoryService.getInstance();
   const fileUploadService = FileUploadService.getInstance();
+  const thinkingMessage = useThinkingMessage(); // Get rotating thinking message
 
   // Utility: detect and extract file info embedded in stored message text
   const parseEmbeddedFileInfo = (message: string) => {
@@ -1306,7 +1308,7 @@ export default function N8nChatInterface({
             <div className="bg-gray-100 rounded-lg px-4 py-3">
               <div className="flex items-center gap-2">
                 <Loader className="w-4 h-4 animate-spin" />
-                <span className="text-gray-600">Agent is thinking...</span>
+                <span className="text-gray-600">{thinkingMessage}...</span>
               </div>
             </div>
           </div>
@@ -1416,15 +1418,23 @@ export default function N8nChatInterface({
       {activeInteractiveButtons.length === 0 && agent.suggestionButtons && agent.suggestionButtons.length > 0 && messages.length <= 1 && (
         <div className="px-4 pb-4">
           <div className="flex flex-wrap gap-2">
-            {agent.suggestionButtons.map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => handleSuggestionClick(suggestion)}
-                className="px-3 py-1.5 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                {suggestion}
-              </button>
-            ))}
+            {agent.suggestionButtons.map((suggestion, index) => {
+              // Highlight "Complete Setup" button with pink-to-purple gradient (same as + New Chat)
+              const isCompleteSetup = suggestion.toLowerCase().includes('complete setup');
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className={
+                    isCompleteSetup
+                      ? "px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-full text-sm font-semibold shadow-md hover:shadow-lg transition-all transform hover:scale-105"
+                      : "px-3 py-1.5 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  }
+                >
+                  {suggestion}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

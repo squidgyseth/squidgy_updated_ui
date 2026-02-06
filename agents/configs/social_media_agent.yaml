@@ -42,6 +42,7 @@ interface:
     - suggestion_buttons
 
 suggestions:
+  - "Complete Setup"
   - "Schedule a post for LinkedIn"
   - "Create an Instagram image post"
   - "Generate caption ideas for Facebook"

@@ -93,6 +93,7 @@ interface:
 
 # Suggestion buttons shown in chat interface
 suggestions:
+  - "Complete Setup"
   - "Have I had any new leads today?"
   - "Show me this week's sales performance"
   - "Generate a proposal for commercial solar"

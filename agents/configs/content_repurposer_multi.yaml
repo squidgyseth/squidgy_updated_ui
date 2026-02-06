@@ -121,6 +121,7 @@ interface:
 
 # Suggestion buttons shown in chat interface
 suggestions:
+  - "Complete Setup"
   - "Convert newsletter to social posts"
   - "Create LinkedIn post from content"
   - "Generate Twitter thread"

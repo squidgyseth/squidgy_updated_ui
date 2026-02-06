@@ -29,6 +29,7 @@ agent:
     - "Drafted Instagram captions with trending hashtags"
 
 suggestions:
+  - "Complete Setup"
   - "Schedule a post for tomorrow"
   - "Show my content calendar"
   - "What's the best time to post?"

@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { sendToN8nWorkflow, generateRequestId } from '../../lib/n8nService';
 import StreamingChatMessage from './StreamingChatMessage';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
+import { useThinkingMessage } from '../../hooks/useThinkingMessage';
 
 interface GroupChatInterfaceProps {
   groupId: string;
@@ -41,6 +42,7 @@ export default function GroupChatInterface({
 
   const groupChatService = GroupChatService.getInstance();
   const agentService = OptimizedAgentService.getInstance();
+  const thinkingMessage = useThinkingMessage(); // Get rotating thinking message
 
   useEffect(() => {
     getCurrentUser();
@@ -348,7 +350,7 @@ export default function GroupChatInterface({
                 <Loader className="h-4 w-4 text-gray-500 animate-spin" />
               </div>
               <div className="bg-gray-100 px-4 py-2 rounded-2xl rounded-tl-sm">
-                <p className="text-sm text-gray-500">AI assistants are thinking...</p>
+                <p className="text-sm text-gray-500">{thinkingMessage}...</p>
               </div>
             </div>
           )}

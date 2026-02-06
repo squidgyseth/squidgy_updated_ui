@@ -50,7 +50,7 @@
         ]
       },
       "suggestions": [
-        "Let's start the setup process",
+        "Complete Setup",
         "Analyze my company website",
         "Recommend AI agents for my business",
         "Configure my brand voice and style",
@@ -96,6 +96,7 @@
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Schedule a post for tomorrow",
         "Show my content calendar",
         "What's the best time to post?",
@@ -189,6 +190,7 @@
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Convert newsletter to social posts",
         "Create LinkedIn post from content",
         "Generate Twitter thread",
@@ -230,6 +232,7 @@
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Create newsletter content",
         "Process PDF document",
         "Generate email templates",
@@ -298,6 +301,7 @@
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Create newsletter content",
         "Process PDF document",
         "Generate email templates",
@@ -389,6 +393,7 @@
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Schedule a post for LinkedIn",
         "Create an Instagram image post",
         "Generate caption ideas for Facebook",
@@ -520,6 +525,7 @@
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Have I had any new leads today?",
         "Show me this week's sales performance",
         "Generate a proposal for commercial solar",
@@ -628,12 +634,12 @@
         ]
       },
       "suggestions": [
-        "First suggested action",
-        "Second helpful prompt",
-        "Third common task",
-        "Fourth useful command",
-        "Fifth popular request",
-        "Sixth frequent operation"
+        "Complete Setup",
+        "Repurpose blog to social posts",
+        "Convert video to article",
+        "Transform article to video script",
+        "Generate multi-platform content",
+        "Show my content library"
       ],
       "personality": {
         "tone": "professional",
@@ -701,12 +707,12 @@
         ]
       },
       "suggestions": [
-        "First suggested action",
-        "Second helpful prompt",
-        "Third common task",
-        "Fourth useful command",
-        "Fifth popular request",
-        "Sixth frequent operation"
+        "Complete Setup",
+        "Repurpose blog to social posts",
+        "Convert video to article",
+        "Transform article to video script",
+        "Generate multi-platform content",
+        "Show my content library"
       ],
       "personality": {
         "tone": "professional",
@@ -772,6 +778,7 @@
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Convert newsletter to social posts",
         "Create LinkedIn post from content",
         "Generate Twitter thread",
@@ -813,6 +820,7 @@
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Create newsletter content",
         "Process PDF document",
         "Generate email templates",
@@ -881,6 +889,7 @@
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Create newsletter content",
         "Process PDF document",
         "Generate email templates",
@@ -971,7 +980,7 @@
         ]
       },
       "suggestions": [
-        "Let's start the setup process",
+        "Complete Setup",
         "Analyze my company website",
         "Recommend AI agents for my business",
         "Configure my brand voice and style",
@@ -1038,6 +1047,7 @@
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Schedule a post for LinkedIn",
         "Create an Instagram image post",
         "Generate caption ideas for Facebook",
@@ -1132,6 +1142,7 @@
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Schedule a post for tomorrow",
         "Show my content calendar",
         "What's the best time to post?",
@@ -1234,6 +1245,7 @@
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Have I had any new leads today?",
         "Show me this week's sales performance",
         "Generate a proposal for commercial solar",
@@ -1337,7 +1349,7 @@
           ]
         },
         "suggestions": [
-          "Let's start the setup process",
+          "Complete Setup",
           "Analyze my company website",
           "Recommend AI agents for my business",
           "Configure my brand voice and style",
@@ -1385,6 +1397,7 @@
           ]
         },
         "suggestions": [
+          "Complete Setup",
           "Schedule a post for tomorrow",
           "Show my content calendar",
           "What's the best time to post?",
@@ -1478,6 +1491,7 @@
           ]
         },
         "suggestions": [
+          "Complete Setup",
           "Convert newsletter to social posts",
           "Create LinkedIn post from content",
           "Generate Twitter thread",
@@ -1519,6 +1533,7 @@
           ]
         },
         "suggestions": [
+          "Complete Setup",
           "Create newsletter content",
           "Process PDF document",
           "Generate email templates",
@@ -1587,6 +1602,7 @@
           ]
         },
         "suggestions": [
+          "Complete Setup",
           "Create newsletter content",
           "Process PDF document",
           "Generate email templates",
@@ -1678,6 +1694,7 @@
           ]
         },
         "suggestions": [
+          "Complete Setup",
           "Schedule a post for LinkedIn",
           "Create an Instagram image post",
           "Generate caption ideas for Facebook",
@@ -1811,6 +1828,7 @@
           ]
         },
         "suggestions": [
+          "Complete Setup",
           "Have I had any new leads today?",
           "Show me this week's sales performance",
           "Generate a proposal for commercial solar",
@@ -1919,12 +1937,12 @@
           ]
         },
         "suggestions": [
-          "First suggested action",
-          "Second helpful prompt",
-          "Third common task",
-          "Fourth useful command",
-          "Fifth popular request",
-          "Sixth frequent operation"
+          "Complete Setup",
+          "Repurpose blog to social posts",
+          "Convert video to article",
+          "Transform article to video script",
+          "Generate multi-platform content",
+          "Show my content library"
         ],
         "personality": {
           "tone": "professional",
@@ -1936,6 +1954,6 @@
   },
   "meta": {
     "total": 8,
-    "buildTime": "2026-02-06T22:12:02.122Z"
+    "buildTime": "2026-02-06T22:25:31.728Z"
   }
 }

@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-02-06T22:12:02.120Z
+// Generated on: 2026-02-06T22:25:31.726Z
 
 export interface AgentConfig {
   agent: {
@@ -95,7 +95,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "suggestions": [
-      "Let's start the setup process",
+      "Complete Setup",
       "Analyze my company website",
       "Recommend AI agents for my business",
       "Configure my brand voice and style",
@@ -141,6 +141,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "suggestions": [
+      "Complete Setup",
       "Schedule a post for tomorrow",
       "Show my content calendar",
       "What's the best time to post?",
@@ -234,6 +235,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "suggestions": [
+      "Complete Setup",
       "Convert newsletter to social posts",
       "Create LinkedIn post from content",
       "Generate Twitter thread",
@@ -275,6 +277,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "suggestions": [
+      "Complete Setup",
       "Create newsletter content",
       "Process PDF document",
       "Generate email templates",
@@ -343,6 +346,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "suggestions": [
+      "Complete Setup",
       "Create newsletter content",
       "Process PDF document",
       "Generate email templates",
@@ -434,6 +438,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "suggestions": [
+      "Complete Setup",
       "Schedule a post for LinkedIn",
       "Create an Instagram image post",
       "Generate caption ideas for Facebook",
@@ -565,6 +570,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "suggestions": [
+      "Complete Setup",
       "Have I had any new leads today?",
       "Show me this week's sales performance",
       "Generate a proposal for commercial solar",
@@ -673,12 +679,12 @@ export const ALL_AGENTS: AgentConfig[] = [
       ]
     },
     "suggestions": [
-      "First suggested action",
-      "Second helpful prompt",
-      "Third common task",
-      "Fourth useful command",
-      "Fifth popular request",
-      "Sixth frequent operation"
+      "Complete Setup",
+      "Repurpose blog to social posts",
+      "Convert video to article",
+      "Transform article to video script",
+      "Generate multi-platform content",
+      "Show my content library"
     ],
     "personality": {
       "tone": "professional",
@@ -748,12 +754,12 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
-      "First suggested action",
-      "Second helpful prompt",
-      "Third common task",
-      "Fourth useful command",
-      "Fifth popular request",
-      "Sixth frequent operation"
+      "Complete Setup",
+      "Repurpose blog to social posts",
+      "Convert video to article",
+      "Transform article to video script",
+      "Generate multi-platform content",
+      "Show my content library"
     ],
     "personality": {
       "tone": "professional",
@@ -819,6 +825,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
+      "Complete Setup",
       "Convert newsletter to social posts",
       "Create LinkedIn post from content",
       "Generate Twitter thread",
@@ -860,6 +867,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
+      "Complete Setup",
       "Create newsletter content",
       "Process PDF document",
       "Generate email templates",
@@ -928,6 +936,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
+      "Complete Setup",
       "Create newsletter content",
       "Process PDF document",
       "Generate email templates",
@@ -1018,7 +1027,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
-      "Let's start the setup process",
+      "Complete Setup",
       "Analyze my company website",
       "Recommend AI agents for my business",
       "Configure my brand voice and style",
@@ -1085,6 +1094,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
+      "Complete Setup",
       "Schedule a post for LinkedIn",
       "Create an Instagram image post",
       "Generate caption ideas for Facebook",
@@ -1179,6 +1189,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
+      "Complete Setup",
       "Schedule a post for tomorrow",
       "Show my content calendar",
       "What's the best time to post?",
@@ -1281,6 +1292,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     },
     "suggestions": [
+      "Complete Setup",
       "Have I had any new leads today?",
       "Show me this week's sales performance",
       "Generate a proposal for commercial solar",
@@ -1386,7 +1398,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "suggestions": [
-        "Let's start the setup process",
+        "Complete Setup",
         "Analyze my company website",
         "Recommend AI agents for my business",
         "Configure my brand voice and style",
@@ -1434,6 +1446,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Schedule a post for tomorrow",
         "Show my content calendar",
         "What's the best time to post?",
@@ -1527,6 +1540,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Convert newsletter to social posts",
         "Create LinkedIn post from content",
         "Generate Twitter thread",
@@ -1568,6 +1582,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Create newsletter content",
         "Process PDF document",
         "Generate email templates",
@@ -1636,6 +1651,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Create newsletter content",
         "Process PDF document",
         "Generate email templates",
@@ -1727,6 +1743,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Schedule a post for LinkedIn",
         "Create an Instagram image post",
         "Generate caption ideas for Facebook",
@@ -1860,6 +1877,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "suggestions": [
+        "Complete Setup",
         "Have I had any new leads today?",
         "Show me this week's sales performance",
         "Generate a proposal for commercial solar",
@@ -1968,12 +1986,12 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         ]
       },
       "suggestions": [
-        "First suggested action",
-        "Second helpful prompt",
-        "Third common task",
-        "Fourth useful command",
-        "Fifth popular request",
-        "Sixth frequent operation"
+        "Complete Setup",
+        "Repurpose blog to social posts",
+        "Convert video to article",
+        "Transform article to video script",
+        "Generate multi-platform content",
+        "Show my content library"
       ],
       "personality": {
         "tone": "professional",

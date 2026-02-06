@@ -27,6 +27,7 @@ agent:
     - "Analyzed competitor newsletter performance"
 
 suggestions:
+  - "Complete Setup"
   - "Create newsletter content"
   - "Process PDF document"
   - "Generate email templates"

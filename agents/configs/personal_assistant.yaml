@@ -41,7 +41,7 @@ interface:
     - suggestion_buttons
   
 suggestions:
-  - "Let's start the setup process"
+  - "Complete Setup"
   - "Analyze my company website"
   - "Recommend AI agents for my business"
   - "Configure my brand voice and style"
