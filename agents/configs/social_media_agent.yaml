@@ -1,10 +1,10 @@
 agent:
   id: social_media_agent
   emoji: "📱"
-  name: Social Media Manager
+  name: Sophia
   category: MARKETING
-  description: Manage and schedule social media content across Facebook, Instagram, and LinkedIn
-  specialization: "Social Media Automation"
+  description: Manage and schedule social media content across Facebook, Instagram, and LinkedIn.
+  specialization: "Social Media Superhero"
   tagline: "Consult. Confirm. Execute."
   avatar: "/Squidgy AI Assistants Avatars/16.png"
   pinned: false

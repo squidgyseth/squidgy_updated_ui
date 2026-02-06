@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-02-06T01:14:57.233Z
+// Generated on: 2026-02-06T22:06:55.663Z
 
 export interface AgentConfig {
   agent: {
@@ -49,10 +49,10 @@ export const ALL_AGENTS: AgentConfig[] = [
     "agent": {
       "id": "personal_assistant",
       "emoji": "🤖",
-      "name": "Personal Assistant",
+      "name": "Pia",
       "category": "GENERAL",
-      "description": "Your onboarding assistant for setting up AI agents",
-      "specialization": "Onboarding Expert",
+      "description": "Help manage your day-to-day tasks and keep you organised.",
+      "specialization": "Personal Assistant",
       "tagline": "Friendly & Helpful",
       "avatar": "/Squidgy AI Assistants Avatars/1.png",
       "pinned": true,
@@ -103,7 +103,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "➕ Add Another Assistant"
     ],
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_new"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_advanced"
     },
     "personality": {
       "tone": "professional",
@@ -249,74 +249,6 @@ export const ALL_AGENTS: AgentConfig[] = [
   },
   {
     "agent": {
-      "id": "newsletter",
-      "emoji": "📧",
-      "name": "Newsletter Agent",
-      "category": "MARKETING",
-      "description": "Create and manage newsletters",
-      "specialization": "Creative & Trendy",
-      "tagline": "Content. Create. Distribute.",
-      "avatar": "/Squidgy AI Assistants Avatars/4.png",
-      "pinned": false,
-      "enabled": false,
-      "uses_conversation_state": true,
-      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
-      "capabilities": [
-        "Content creation and optimization for newsletters",
-        "PDF document processing and analysis",
-        "Speech-to-text content input",
-        "Newsletter template generation",
-        "Email marketing best practices"
-      ],
-      "recent_actions": [
-        "Generated newsletter for Q4 product launch",
-        "Processed PDF content from marketing materials",
-        "Analyzed competitor newsletter performance"
-      ]
-    },
-    "suggestions": [
-      "Create newsletter content",
-      "Process PDF document",
-      "Generate email templates",
-      "Analyze newsletter performance",
-      "Design email layout",
-      "Optimize subject lines"
-    ],
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
-      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
-      "pages": [
-        {
-          "name": "newsletter_liquid-blanch-17032840_page1",
-          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-          "order": 1,
-          "source": {
-            "type": "figma_deployed",
-            "url": "https://liquid-blanch-17032840.figma.site/"
-          }
-        }
-      ]
-    },
-    "ui_use": {
-      "pages": [
-        {
-          "name": "Newsletter Liquid-Blanch-17032840 Page1",
-          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-          "order": 1,
-          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
-        }
-      ],
-      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
-    }
-  },
-  {
-    "agent": {
       "id": "newsletter_multi",
       "emoji": "📰",
       "name": "Newsletter Agent Multi",
@@ -385,12 +317,80 @@ export const ALL_AGENTS: AgentConfig[] = [
   },
   {
     "agent": {
+      "id": "newsletter",
+      "emoji": "📧",
+      "name": "Nyla",
+      "category": "MARKETING",
+      "description": "Craft and send engaging email newsletters to keep your audience informed and connected.",
+      "specialization": "Newsletter Ninja",
+      "tagline": "Content. Create. Distribute.",
+      "avatar": "/Squidgy AI Assistants Avatars/4.png",
+      "pinned": false,
+      "enabled": false,
+      "uses_conversation_state": true,
+      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+      "capabilities": [
+        "Content creation and optimization for newsletters",
+        "PDF document processing and analysis",
+        "Speech-to-text content input",
+        "Newsletter template generation",
+        "Email marketing best practices"
+      ],
+      "recent_actions": [
+        "Generated newsletter for Q4 product launch",
+        "Processed PDF content from marketing materials",
+        "Analyzed competitor newsletter performance"
+      ]
+    },
+    "suggestions": [
+      "Create newsletter content",
+      "Process PDF document",
+      "Generate email templates",
+      "Analyze newsletter performance",
+      "Design email layout",
+      "Optimize subject lines"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "ui": {
+      "page_type": "standard",
+      "figma_url": "",
+      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+      "pages": [
+        {
+          "name": "newsletter_liquid-blanch-17032840_page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "source": {
+            "type": "figma_deployed",
+            "url": "https://liquid-blanch-17032840.figma.site/"
+          }
+        }
+      ]
+    },
+    "ui_use": {
+      "pages": [
+        {
+          "name": "Newsletter Liquid-Blanch-17032840 Page1",
+          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+          "order": 1,
+          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+        }
+      ],
+      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+    }
+  },
+  {
+    "agent": {
       "id": "social_media_agent",
       "emoji": "📱",
-      "name": "Social Media Manager",
+      "name": "Sophia",
       "category": "MARKETING",
-      "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn",
-      "specialization": "Social Media Automation",
+      "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn.",
+      "specialization": "Social Media Superhero",
       "tagline": "Consult. Confirm. Execute.",
       "avatar": "/Squidgy AI Assistants Avatars/16.png",
       "pinned": false,
@@ -502,10 +502,10 @@ export const ALL_AGENTS: AgentConfig[] = [
     "agent": {
       "id": "SOL",
       "emoji": "☀️",
-      "name": "Solar Sales Assistant",
+      "name": "Stella",
       "category": "SALES",
-      "description": "Solar sales expert - Calculate savings, design systems, close deals",
-      "specialization": "Solar Energy Expert",
+      "description": "Assist with solar enquiries, qualify leads, and guide prospects through the sales process.",
+      "specialization": "Solar Sales Specialist",
       "tagline": "Illuminate. Calculate. Convert.",
       "avatar": "/Squidgy AI Assistants Avatars/5.png",
       "pinned": true,
@@ -619,11 +619,11 @@ export const ALL_AGENTS: AgentConfig[] = [
     "agent": {
       "id": "content_repurposer",
       "emoji": "🔄",
-      "name": "Content Repurposer",
+      "name": "Rita",
       "category": "SALES",
-      "description": "Repurpose content for different platforms and audiences",
+      "description": "Transform existing content into fresh formats for different platforms—turn blogs into social posts, videos into articles, and more.",
       "uses_conversation_state": true,
-      "specialization": "Content Repurposer",
+      "specialization": "Repurposing Maestro",
       "tagline": "Repurpose. Convert. Deliver.",
       "avatar": "/Squidgy AI Assistants Avatars/15.png",
       "enabled": false,
@@ -694,11 +694,11 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "agent": {
       "id": "content_repurposer",
       "emoji": "🔄",
-      "name": "Content Repurposer",
+      "name": "Rita",
       "category": "SALES",
-      "description": "Repurpose content for different platforms and audiences",
+      "description": "Transform existing content into fresh formats for different platforms—turn blogs into social posts, videos into articles, and more.",
       "uses_conversation_state": true,
-      "specialization": "Content Repurposer",
+      "specialization": "Repurposing Maestro",
       "tagline": "Repurpose. Convert. Deliver.",
       "avatar": "/Squidgy AI Assistants Avatars/15.png",
       "enabled": false,
@@ -836,10 +836,10 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "agent": {
       "id": "newsletter",
       "emoji": "📧",
-      "name": "Newsletter Agent",
+      "name": "Nyla",
       "category": "MARKETING",
-      "description": "Create and manage newsletters",
-      "specialization": "Creative & Trendy",
+      "description": "Craft and send engaging email newsletters to keep your audience informed and connected.",
+      "specialization": "Newsletter Ninja",
       "tagline": "Content. Create. Distribute.",
       "avatar": "/Squidgy AI Assistants Avatars/4.png",
       "pinned": false,
@@ -972,10 +972,10 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "agent": {
       "id": "personal_assistant",
       "emoji": "🤖",
-      "name": "Personal Assistant",
+      "name": "Pia",
       "category": "GENERAL",
-      "description": "Your onboarding assistant for setting up AI agents",
-      "specialization": "Onboarding Expert",
+      "description": "Help manage your day-to-day tasks and keep you organised.",
+      "specialization": "Personal Assistant",
       "tagline": "Friendly & Helpful",
       "avatar": "/Squidgy AI Assistants Avatars/1.png",
       "pinned": true,
@@ -1026,7 +1026,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "➕ Add Another Assistant"
     ],
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_new"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_advanced"
     },
     "personality": {
       "tone": "professional",
@@ -1038,10 +1038,10 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "agent": {
       "id": "social_media_agent",
       "emoji": "📱",
-      "name": "Social Media Manager",
+      "name": "Sophia",
       "category": "MARKETING",
-      "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn",
-      "specialization": "Social Media Automation",
+      "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn.",
+      "specialization": "Social Media Superhero",
       "tagline": "Consult. Confirm. Execute.",
       "avatar": "/Squidgy AI Assistants Avatars/16.png",
       "pinned": false,
@@ -1218,10 +1218,10 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "agent": {
       "id": "SOL",
       "emoji": "☀️",
-      "name": "Solar Sales Assistant",
+      "name": "Stella",
       "category": "SALES",
-      "description": "Solar sales expert - Calculate savings, design systems, close deals",
-      "specialization": "Solar Energy Expert",
+      "description": "Assist with solar enquiries, qualify leads, and guide prospects through the sales process.",
+      "specialization": "Solar Sales Specialist",
       "tagline": "Illuminate. Calculate. Convert.",
       "avatar": "/Squidgy AI Assistants Avatars/5.png",
       "pinned": true,
@@ -1340,10 +1340,10 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       "agent": {
         "id": "personal_assistant",
         "emoji": "🤖",
-        "name": "Personal Assistant",
+        "name": "Pia",
         "category": "GENERAL",
-        "description": "Your onboarding assistant for setting up AI agents",
-        "specialization": "Onboarding Expert",
+        "description": "Help manage your day-to-day tasks and keep you organised.",
+        "specialization": "Personal Assistant",
         "tagline": "Friendly & Helpful",
         "avatar": "/Squidgy AI Assistants Avatars/1.png",
         "pinned": true,
@@ -1394,7 +1394,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "➕ Add Another Assistant"
       ],
       "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_new"
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_advanced"
       },
       "personality": {
         "tone": "professional",
@@ -1542,74 +1542,6 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     },
     {
       "agent": {
-        "id": "newsletter",
-        "emoji": "📧",
-        "name": "Newsletter Agent",
-        "category": "MARKETING",
-        "description": "Create and manage newsletters",
-        "specialization": "Creative & Trendy",
-        "tagline": "Content. Create. Distribute.",
-        "avatar": "/Squidgy AI Assistants Avatars/4.png",
-        "pinned": false,
-        "enabled": false,
-        "uses_conversation_state": true,
-        "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
-        "capabilities": [
-          "Content creation and optimization for newsletters",
-          "PDF document processing and analysis",
-          "Speech-to-text content input",
-          "Newsletter template generation",
-          "Email marketing best practices"
-        ],
-        "recent_actions": [
-          "Generated newsletter for Q4 product launch",
-          "Processed PDF content from marketing materials",
-          "Analyzed competitor newsletter performance"
-        ]
-      },
-      "suggestions": [
-        "Create newsletter content",
-        "Process PDF document",
-        "Generate email templates",
-        "Analyze newsletter performance",
-        "Design email layout",
-        "Optimize subject lines"
-      ],
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
-        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
-        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
-        "pages": [
-          {
-            "name": "newsletter_liquid-blanch-17032840_page1",
-            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-            "order": 1,
-            "source": {
-              "type": "figma_deployed",
-              "url": "https://liquid-blanch-17032840.figma.site/"
-            }
-          }
-        ]
-      },
-      "ui_use": {
-        "pages": [
-          {
-            "name": "Newsletter Liquid-Blanch-17032840 Page1",
-            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-            "order": 1,
-            "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
-          }
-        ],
-        "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
-      }
-    },
-    {
-      "agent": {
         "id": "newsletter_multi",
         "emoji": "📰",
         "name": "Newsletter Agent Multi",
@@ -1678,12 +1610,80 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     },
     {
       "agent": {
+        "id": "newsletter",
+        "emoji": "📧",
+        "name": "Nyla",
+        "category": "MARKETING",
+        "description": "Craft and send engaging email newsletters to keep your audience informed and connected.",
+        "specialization": "Newsletter Ninja",
+        "tagline": "Content. Create. Distribute.",
+        "avatar": "/Squidgy AI Assistants Avatars/4.png",
+        "pinned": false,
+        "enabled": false,
+        "uses_conversation_state": true,
+        "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+        "capabilities": [
+          "Content creation and optimization for newsletters",
+          "PDF document processing and analysis",
+          "Speech-to-text content input",
+          "Newsletter template generation",
+          "Email marketing best practices"
+        ],
+        "recent_actions": [
+          "Generated newsletter for Q4 product launch",
+          "Processed PDF content from marketing materials",
+          "Analyzed competitor newsletter performance"
+        ]
+      },
+      "suggestions": [
+        "Create newsletter content",
+        "Process PDF document",
+        "Generate email templates",
+        "Analyze newsletter performance",
+        "Design email layout",
+        "Optimize subject lines"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
+        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+      },
+      "ui": {
+        "page_type": "standard",
+        "figma_url": "",
+        "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
+        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
+        "pages": [
+          {
+            "name": "newsletter_liquid-blanch-17032840_page1",
+            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+            "order": 1,
+            "source": {
+              "type": "figma_deployed",
+              "url": "https://liquid-blanch-17032840.figma.site/"
+            }
+          }
+        ]
+      },
+      "ui_use": {
+        "pages": [
+          {
+            "name": "Newsletter Liquid-Blanch-17032840 Page1",
+            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
+            "order": 1,
+            "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
+          }
+        ],
+        "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+      }
+    },
+    {
+      "agent": {
         "id": "social_media_agent",
         "emoji": "📱",
-        "name": "Social Media Manager",
+        "name": "Sophia",
         "category": "MARKETING",
-        "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn",
-        "specialization": "Social Media Automation",
+        "description": "Manage and schedule social media content across Facebook, Instagram, and LinkedIn.",
+        "specialization": "Social Media Superhero",
         "tagline": "Consult. Confirm. Execute.",
         "avatar": "/Squidgy AI Assistants Avatars/16.png",
         "pinned": false,
@@ -1797,10 +1797,10 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       "agent": {
         "id": "SOL",
         "emoji": "☀️",
-        "name": "Solar Sales Assistant",
+        "name": "Stella",
         "category": "SALES",
-        "description": "Solar sales expert - Calculate savings, design systems, close deals",
-        "specialization": "Solar Energy Expert",
+        "description": "Assist with solar enquiries, qualify leads, and guide prospects through the sales process.",
+        "specialization": "Solar Sales Specialist",
         "tagline": "Illuminate. Calculate. Convert.",
         "avatar": "/Squidgy AI Assistants Avatars/5.png",
         "pinned": true,
@@ -1914,11 +1914,11 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       "agent": {
         "id": "content_repurposer",
         "emoji": "🔄",
-        "name": "Content Repurposer",
+        "name": "Rita",
         "category": "SALES",
-        "description": "Repurpose content for different platforms and audiences",
+        "description": "Transform existing content into fresh formats for different platforms—turn blogs into social posts, videos into articles, and more.",
         "uses_conversation_state": true,
-        "specialization": "Content Repurposer",
+        "specialization": "Repurposing Maestro",
         "tagline": "Repurpose. Convert. Deliver.",
         "avatar": "/Squidgy AI Assistants Avatars/15.png",
         "enabled": false,

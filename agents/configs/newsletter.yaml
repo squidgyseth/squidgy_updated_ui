@@ -1,10 +1,10 @@
 agent:
   id: newsletter
   emoji: "📧"
-  name: Newsletter Agent
+  name: Nyla
   category: MARKETING
-  description: Create and manage newsletters
-  specialization: "Creative & Trendy"
+  description: Craft and send engaging email newsletters to keep your audience informed and connected.
+  specialization: "Newsletter Ninja"
   tagline: "Content. Create. Distribute."
   avatar: "/Squidgy AI Assistants Avatars/4.png"
   pinned: false

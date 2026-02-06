@@ -1,10 +1,10 @@
 agent:
   id: personal_assistant
   emoji: "🤖"
-  name: Personal Assistant
+  name: Pia
   category: GENERAL
-  description: Your onboarding assistant for setting up AI agents
-  specialization: "Onboarding Expert"
+  description: Help manage your day-to-day tasks and keep you organised.
+  specialization: "Personal Assistant"
   tagline: "Friendly & Helpful"
   avatar: "/Squidgy AI Assistants Avatars/1.png"
   pinned: true
@@ -49,7 +49,7 @@ suggestions:
   - "➕ Add Another Assistant"
 
 n8n:
-  webhook_url: https://n8n.theaiteam.uk/webhook/personal_assistant_new
+  webhook_url: https://n8n.theaiteam.uk/webhook/personal_assistant_advanced
   #https://n8n.theaiteam.uk/webhook/c2fcbad6-abc0-43af-8aa8-d1661ff4461d
   #https://n8n.theaiteam.uk/webhook/Squidgy/PersonalAssistant
 
