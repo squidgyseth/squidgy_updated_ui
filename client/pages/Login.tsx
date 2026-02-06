@@ -6,7 +6,7 @@ import { signIn } from '../lib/api';
 import { useUser } from "@/hooks/useUser";
 import { onboardingRouter } from "@/services/onboardingRouter";
 import { linkScoresToUser, getGameHistory } from '@/services/anonymousPlayer';
-import TermsModal from '../components/TermsModal';
+import AuthFooterLinks from '../components/AuthFooterLinks';
 
 // Game URL - update this to your deployed game URL
 const GAME_URL = 'https://squidgy-waitlist-game.vercel.app';
@@ -101,8 +101,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   // Modal state for Terms/Privacy
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'terms' | 'privacy'>('terms');
 
   // Check if user arrived after email confirmation
   useEffect(() => {
@@ -126,17 +124,6 @@ export default function Login() {
     setCurrentSlide(index);
   };
 
-  const openTermsModal = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setModalType('terms');
-    setIsModalOpen(true);
-  };
-
-  const openPrivacyModal = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setModalType('privacy');
-    setIsModalOpen(true);
-  };
 
   const handleGoogleLogin = () => {
     // TODO: Implement Google OAuth
@@ -329,27 +316,8 @@ export default function Login() {
             </button>
           </div>
 
-          {/* Terms and Privacy */}
-          <div className="text-center mt-4">
-            <p className="text-[#9CA3AF] text-[11px] leading-4">
-              By creating an account, you agree to our{" "}
-              <button
-                type="button"
-                onClick={openTermsModal}
-                className="font-bold text-[#5E17EB] hover:underline"
-              >
-                Terms of service
-              </button>
-              {" "}and{" "}
-              <button
-                type="button"
-                onClick={openPrivacyModal}
-                className="font-bold text-[#5E17EB] hover:underline"
-              >
-                Privacy policy
-              </button>
-            </p>
-          </div>
+          {/* Terms and Privacy - Reusable Component */}
+          <AuthFooterLinks />
         </div>
       </div>
 
@@ -468,13 +436,6 @@ export default function Login() {
         )}
       </div>
 
-      {/* Terms/Privacy Modal */}
-      <TermsModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        type={modalType}
-        onScrollComplete={() => {}}
-      />
     </div>
   );
 }

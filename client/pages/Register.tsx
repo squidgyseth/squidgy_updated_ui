@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { signUp } from '../lib/api';
 import BetaUserAgreementModal from '../components/BetaUserAgreementModal';
 import TermsModal from '../components/TermsModal';
+import AuthFooterLinks from '../components/AuthFooterLinks';
 
 // Game URL - update this to your deployed game URL
 const GAME_URL = 'https://squidgy-waitlist-game.vercel.app';
@@ -75,7 +76,6 @@ export default function Register() {
   // Modal state
   const [isBetaAgreementModalOpen, setIsBetaAgreementModalOpen] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
-  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
   // Tracking if user has viewed and scrolled through documents
   const [termsScrolledToBottom, setTermsScrolledToBottom] = useState(false);
@@ -145,11 +145,6 @@ export default function Register() {
   const openPrivacyModal = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsPrivacyModalOpen(true);
-  };
-
-  const openTermsModal = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsTermsModalOpen(true);
   };
 
   const handleBetaAgreementScrollComplete = () => {
@@ -463,27 +458,8 @@ export default function Register() {
             </button>
           </div>
 
-          {/* Terms and Privacy */}
-          <div className="mt-6 text-center">
-            <p className="text-[#9CA3AF] text-[11px] leading-4">
-              By creating an account, you agree to our{" "}
-              <button
-                type="button"
-                onClick={openTermsModal}
-                className="font-bold text-[#5E17EB] hover:underline"
-              >
-                Terms of service
-              </button>
-              {" "}and{" "}
-              <button
-                type="button"
-                onClick={openPrivacyModal}
-                className="font-bold text-[#5E17EB] hover:underline"
-              >
-                Privacy policy
-              </button>
-            </p>
-          </div>
+          {/* Terms and Privacy - Reusable Component */}
+          <AuthFooterLinks />
         </div>
       </div>
 
@@ -613,14 +589,6 @@ export default function Register() {
         onClose={() => setIsPrivacyModalOpen(false)}
         onScrollComplete={handlePrivacyScrollComplete}
         type="privacy"
-      />
-
-      {/* Terms of Service Modal (informational only, not required for registration) */}
-      <TermsModal
-        isOpen={isTermsModalOpen}
-        onClose={() => setIsTermsModalOpen(false)}
-        onScrollComplete={() => {}}
-        type="terms"
       />
     </div>
   );
