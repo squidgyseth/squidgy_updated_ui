@@ -56,21 +56,21 @@ export function MobileAccount({ onNavigate }: MobileAccountProps) {
           title: 'Profile Settings',
           subtitle: 'Update your personal information',
           icon: User,
-          onClick: () => handleNavigate('/account/profile')
+          onClick: () => handleNavigate('/account-settings')
         },
         {
           id: 'security',
           title: 'Security & Privacy',
           subtitle: 'Password, 2FA, data settings',
           icon: Shield,
-          onClick: () => handleNavigate('/account/security')
+          onClick: () => handleNavigate('/account-settings')
         },
         {
           id: 'billing',
           title: 'Billing & Subscription',
           subtitle: 'Manage your plan and payments',
           icon: CreditCard,
-          onClick: () => handleNavigate('/account/billing')
+          onClick: () => handleNavigate('/billing-settings')
         },
         {
           id: 'referrals',
@@ -117,7 +117,7 @@ export function MobileAccount({ onNavigate }: MobileAccountProps) {
           title: 'Language & Region',
           subtitle: 'English (US)',
           icon: Globe,
-          onClick: () => handleNavigate('/account/language')
+          onClick: () => handleNavigate('/account-settings')
         }
       ]
     },
@@ -129,28 +129,28 @@ export function MobileAccount({ onNavigate }: MobileAccountProps) {
           title: 'Team Management',
           subtitle: 'Manage team members and roles',
           icon: User,
-          onClick: () => handleNavigate('/account/team')
+          onClick: () => handleNavigate('/team-settings')
         },
         {
           id: 'integrations',
           title: 'Integrations',
           subtitle: 'Connect your favorite tools',
           icon: Smartphone,
-          onClick: () => handleNavigate('/account/integrations')
+          onClick: () => handleNavigate('/integrations-settings')
         },
         {
           id: 'branding',
           title: 'Company Branding',
           subtitle: 'Customize your brand appearance',
           icon: Palette,
-          onClick: () => handleNavigate('/account/branding')
+          onClick: () => handleNavigate('/business-settings')
         },
         {
           id: 'data',
           title: 'Data Management',
           subtitle: 'Export, backup, and manage data',
           icon: Database,
-          onClick: () => handleNavigate('/account/data')
+          onClick: () => handleNavigate('/account-settings')
         }
       ]
     },
@@ -236,7 +236,7 @@ export function MobileAccount({ onNavigate }: MobileAccountProps) {
               <TouchButton
                 variant="outline"
                 size="sm"
-                onClick={() => handleNavigate('/account/profile')}
+                onClick={() => handleNavigate('/account-settings')}
                 className="h-8 w-8 p-0"
               >
                 <Settings className="h-4 w-4" />
