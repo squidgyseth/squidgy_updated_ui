@@ -75,6 +75,7 @@ export default function Register() {
   // Modal state
   const [isBetaAgreementModalOpen, setIsBetaAgreementModalOpen] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
   // Tracking if user has viewed and scrolled through documents
   const [termsScrolledToBottom, setTermsScrolledToBottom] = useState(false);
@@ -144,6 +145,11 @@ export default function Register() {
   const openPrivacyModal = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsPrivacyModalOpen(true);
+  };
+
+  const openTermsModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsTermsModalOpen(true);
   };
 
   const handleBetaAgreementScrollComplete = () => {
@@ -463,7 +469,7 @@ export default function Register() {
               By creating an account, you agree to our{" "}
               <button
                 type="button"
-                onClick={openBetaAgreementModal}
+                onClick={openTermsModal}
                 className="font-bold text-[#5E17EB] hover:underline"
               >
                 Terms of service
@@ -607,6 +613,14 @@ export default function Register() {
         onClose={() => setIsPrivacyModalOpen(false)}
         onScrollComplete={handlePrivacyScrollComplete}
         type="privacy"
+      />
+
+      {/* Terms of Service Modal (informational only, not required for registration) */}
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onClose={() => setIsTermsModalOpen(false)}
+        onScrollComplete={() => {}}
+        type="terms"
       />
     </div>
   );
