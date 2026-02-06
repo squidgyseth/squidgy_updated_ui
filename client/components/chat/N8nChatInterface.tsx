@@ -105,8 +105,6 @@ export default function N8nChatInterface({
 
   // Load messages for the current session
   useEffect(() => {
-    console.log(`📨 N8nChatInterface: sessionId changed to: ${sessionId}`);
-    console.log(`📨 N8nChatInterface: agentId: ${agent.id}, userId: ${userId}`);
 
     // Update ref to track current session
     currentSessionRef.current = sessionId;
@@ -131,13 +129,10 @@ export default function N8nChatInterface({
   // Load conversation state from database
   const loadConversationState = async () => {
     try {
-      console.log(`🔄 Loading conversation state for session: ${sessionId}, agent: ${agent.id}`);
       const state = await conversationStateService.getState(sessionId, agent.id);
       if (state) {
-        console.log('✅ Loaded conversation state from DB:', state);
         setConversationState(state);
       } else {
-        console.log('📭 No existing conversation state found, will create on first response');
         setConversationState(undefined);
       }
     } catch (error) {
@@ -177,13 +172,11 @@ export default function N8nChatInterface({
     const preFilledMessage = urlParams.get('message');
     
     if (preFilledMessage) {
-      console.log('🔧 Pre-filled message detected:', preFilledMessage);
       setInputValue(decodeURIComponent(preFilledMessage));
       // Clean up URL parameter
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('message');
       window.history.replaceState({}, document.title, newUrl.toString());
-      console.log('✅ Pre-filled message set in input');
     }
   }, []); // Empty dependency array - runs only once on mount
 
@@ -242,21 +235,16 @@ export default function N8nChatInterface({
   };
 
   const loadSessionMessages = async (targetSessionId: string) => {
-    console.log(`🔍 loadSessionMessages called with sessionId: ${targetSessionId}`);
     if (!targetSessionId) {
-      console.log('❌ No sessionId provided, returning early');
       return;
     }
 
     try {
-      console.log(`🔄 Fetching messages for session: ${targetSessionId}`);
       // Load existing messages for this session
       const existingMessages = await chatSessionService.getSessionMessages(targetSessionId);
-      console.log(`📊 Found ${existingMessages.length} existing messages`);
 
       // Check if session changed while fetching - prevent stale data
       if (currentSessionRef.current !== targetSessionId) {
-        console.log(`⚠️ Session changed during fetch (current: ${currentSessionRef.current}, fetched: ${targetSessionId}), discarding results`);
         return;
       }
 
@@ -301,20 +289,16 @@ export default function N8nChatInterface({
             ]
           : chatMessages;
 
-        console.log(`✅ Setting ${messagesWithIntro.length} messages in state (including intro)`);
         // Final check before setting state
         if (currentSessionRef.current === targetSessionId) {
           setMessages(messagesWithIntro);
-          console.log(`✅ Loaded ${chatMessages.length} messages + intro for session ${targetSessionId}`);
         }
       } else {
-        console.log(`📝 No existing messages, showing intro message (not saving to DB)`);
         // New session - get context-aware intro message
         const introText = await getIntroMessage();
 
         // Check if session changed while getting intro
         if (currentSessionRef.current !== targetSessionId) {
-          console.log(`⚠️ Session changed during intro fetch, discarding results`);
           return;
         }
 
@@ -337,7 +321,6 @@ export default function N8nChatInterface({
       
       // Check if session changed during error handling
       if (currentSessionRef.current !== targetSessionId) {
-        console.log(`⚠️ Session changed during error handling, discarding results`);
         return;
       }
       
@@ -472,7 +455,6 @@ export default function N8nChatInterface({
       if (response) {
         // NEW: Handle redirect responses from Master Agent (legacy routing field)
         if (response.routing?.should_redirect && response.routing?.target_url) {
-          console.log('🔀 Redirect response detected:', response.routing);
 
           // Show the redirect message first
           const redirectMessage: ChatMessage = {
@@ -489,7 +471,6 @@ export default function N8nChatInterface({
 
           // Redirect after a short delay to let user see the message
           setTimeout(() => {
-            console.log('🚀 Navigating to:', response.routing.target_url);
             window.location.href = response.routing.target_url;
           }, 1500);
 
@@ -499,21 +480,18 @@ export default function N8nChatInterface({
 
         // NEW: Process actions_todo - Generic action handler
         if (response.actions_todo && response.actions_todo.length > 0) {
-          console.log('📋 Processing actions_todo:', response.actions_todo);
 
           // Process each action in order
           for (const action of response.actions_todo) {
             const actionType = action.action;
             const metadata = action.metadata || {};
 
-            console.log(`🎬 Processing action: ${actionType}`, metadata);
 
             // Handle different action types
             switch (actionType) {
               case 'user_routed':
                 // User routing - redirect to another agent chat
                 if (metadata.target_url) {
-                  console.log('🔀 User routed action detected:', action);
 
                   // Show the redirect message first
                   const redirectMessage: ChatMessage = {
@@ -530,7 +508,6 @@ export default function N8nChatInterface({
 
                   // Redirect after a short delay to let user see the message
                   setTimeout(() => {
-                    console.log('🚀 Navigating to:', metadata.target_url);
                     window.location.href = metadata.target_url;
                   }, 1500);
 
@@ -541,14 +518,11 @@ export default function N8nChatInterface({
 
               case 'agent_enabled':
                 // Agent enablement - refresh sidebar to show new agent
-                console.log('✅ Agent enabled action detected:', metadata);
 
                 // Refresh sidebar to show newly enabled agent
                 if ((window as any).refreshAgentSidebar) {
                   (window as any).refreshAgentSidebar();
-                  console.log('🔄 Refreshed agent sidebar for:', metadata.agent_name);
                 } else {
-                  console.warn('⚠️ refreshAgentSidebar not available on window');
                 }
 
                 // Show success notification
@@ -562,24 +536,20 @@ export default function N8nChatInterface({
 
               case 'show_preview':
                 // Show preview - metadata might contain preview_url, preview_type, etc.
-                console.log('👁️ Show preview action detected:', metadata);
                 // Future: Handle preview display
                 break;
 
               case 'awaiting_selection':
                 // Waiting for user input - no action needed, just log
-                console.log('⏳ Awaiting user selection:', action.details);
                 break;
 
               case 'refresh_agent_list':
                 // Refresh agent list - future implementation
-                console.log('🔄 Refresh agent list action detected');
                 // Future: Trigger agent list refresh in sidebar
                 break;
 
               default:
                 // Unknown action - log for debugging
-                console.warn(`⚠️ Unknown action type: ${actionType}`, action);
                 break;
             }
           }
@@ -587,7 +557,6 @@ export default function N8nChatInterface({
 
         // Store conversation state for multi-turn agents (like newsletter_multi)
         if (response.state && isMultiTurnAgent()) {
-          console.log('💾 Storing conversation state:', response.state);
           setConversationState(response.state);
 
           // Persist state to database for multi-turn agents
@@ -602,7 +571,6 @@ export default function N8nChatInterface({
               response.state,
               status as 'active' | 'completed' | 'abandoned'
             );
-            console.log('✅ Conversation state saved to database');
           } catch (stateError) {
             console.error('❌ Error saving conversation state to database:', stateError);
           }
@@ -616,12 +584,10 @@ export default function N8nChatInterface({
         if (agent.id === 'personal_assistant') {
           // Check if we have the exact expected format with finished: true
           if (response.finished === true && response.agent_data) {
-            console.log('✅ N8nChatInterface: Found exact structured format - processing agent enablement');
             structuredData = response;
           }
           // Otherwise fallback to legacy text parsing
           else {
-            console.log('🔄 N8nChatInterface: Using legacy text parsing approach');
             structuredData = response.agent_response;
           }
         }
@@ -653,8 +619,6 @@ export default function N8nChatInterface({
         // Trigger Recent Actions refresh after agent response is saved
         onMessageSent?.();
 
-        console.log('🔍 N8N DEBUG: Agent response received from agent.id:', agent.id);
-        console.log('🔍 N8N DEBUG: Response object:', response);
 
         // NOTE: Agent enablement is now handled via actions_todo (see agent_enabled case above)
         // No need for separate AgentEnablementService check
@@ -746,10 +710,8 @@ export default function N8nChatInterface({
       // Match "1. UPPERCASE TEXT" pattern - allow any characters after the number
       if (/^\d+\.\s+[A-Z]/.test(trimmed)) {
         count++;
-        console.log('Matched line:', trimmed);
       }
     }
-    console.log('hasNumberedOptions check:', { lineCount: lines.length, matchCount: count, firstLines: lines.slice(0, 10) });
     return count >= 2; // At least 2 numbered options
   };
 
@@ -765,7 +727,6 @@ export default function N8nChatInterface({
         options.push(match[1].trim());
       }
     }
-    console.log('extractNumberedOptions:', options);
     return options;
   };
 
@@ -987,8 +948,6 @@ export default function N8nChatInterface({
       // Track the upload immediately so the UI can show an indicator
       setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { name: file.name, status: 'uploading' })));
       
-      console.log('Uploading file to Supabase...', fileName);
-      console.log('File details:', { name: file.name, size: file.size, type: file.type });
       
       // Step 1: Upload to Supabase storage
       const { data, error } = await supabase.storage
@@ -1001,7 +960,6 @@ export default function N8nChatInterface({
         throw new Error(`Upload failed: ${error.message}`);
       }
       
-      console.log('File uploaded successfully:', data);
 
       // Step 2: Get public URL
       const { data: urlData } = supabase.storage
@@ -1009,7 +967,6 @@ export default function N8nChatInterface({
         .getPublicUrl(data.path);
 
       const fileUrl = urlData.publicUrl;
-      console.log('File URL:', fileUrl);
 
       // Clear uploading indicator once upload completes (processing happens in background)
       setUploadingFiles(prev => {
@@ -1041,13 +998,6 @@ export default function N8nChatInterface({
       formData.append('agent_id', agent.id);
       formData.append('agent_name', agent.name);
       
-      console.log('Calling backend processing...', {
-        firm_user_id: userId,
-        file_name: fileName,
-        file_url: fileUrl,
-        agent_id: agent.id,
-        agent_name: agent.name
-      });
       
       // Use the backend URL from environment variables, default to localhost for development
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
@@ -1056,7 +1006,6 @@ export default function N8nChatInterface({
         body: formData
       });
       
-      console.log('Backend response status:', response.status, response.statusText);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -1065,7 +1014,6 @@ export default function N8nChatInterface({
       }
     
     const result = await response.json();
-    console.log('Backend response:', result);
     
     // Track the file upload for status monitoring
     const fileId = result.data?.file_id;
@@ -1156,7 +1104,6 @@ export default function N8nChatInterface({
 
   const handleMicrophoneClick = () => {
     // TODO: Implement voice input functionality
-    console.log('Microphone button clicked');
   };
 
   return (
@@ -1168,7 +1115,6 @@ export default function N8nChatInterface({
             onNewsletterSelect={(newsletterId) => {
               setSelectedNewsletterId(newsletterId);
               if (newsletterId) {
-                console.log('Newsletter selected:', newsletterId);
               }
             }}
             selectedNewsletterId={selectedNewsletterId}

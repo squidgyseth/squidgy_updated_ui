@@ -60,7 +60,6 @@ router.get('/list', async (req, res) => {
           agents.push(config);
         }
       } catch (error) {
-        console.warn(`Failed to parse ${file}:`, error);
       }
     }
     
@@ -109,7 +108,6 @@ router.get('/:agentId/config', async (req, res) => {
           return res.json(config);
         }
       } catch (error) {
-        console.warn(`Failed to parse ${file}:`, error);
       }
     }
     
@@ -154,7 +152,6 @@ router.get('/categories', async (req, res) => {
           categories[category].push(config);
         }
       } catch (error) {
-        console.warn(`Failed to parse ${file}:`, error);
       }
     }
     

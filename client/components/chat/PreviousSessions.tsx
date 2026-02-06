@@ -42,7 +42,6 @@ export default function PreviousSessions({
       // Keep only the 2 most recent previous sessions
       setSessions(previousSessions.slice(0, 2));
 
-      console.log(`📋 PreviousSessions: Loaded ${previousSessions.length} previous sessions (filtered out current: ${currentSessionId})`);
     } catch (error) {
       console.error('Error loading previous sessions:', error);
       setSessions([]);
@@ -52,7 +51,6 @@ export default function PreviousSessions({
   };
 
   const handleSessionClick = (sessionId: string) => {
-    console.log(`🖱️ PreviousSessions: Session clicked: ${sessionId}`);
     onSessionSelect(sessionId);
   };
 

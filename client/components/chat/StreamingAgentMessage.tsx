@@ -174,7 +174,6 @@ export default function StreamingAgentMessage({
       speed: streamingSpeed,
       autoStart: shouldStream,
       onComplete: () => {
-        console.log('✅ Streaming complete for message:', response.request_id);
       }
     }
   );

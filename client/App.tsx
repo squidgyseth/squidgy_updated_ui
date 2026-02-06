@@ -31,6 +31,8 @@ import Login from "./pages/Login";
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import SetNewPassword from './pages/SetNewPassword';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import WebsiteDetails from "./pages/WebsiteDetails";
 import BusinessDetails from "./pages/BusinessDetails";
 import SolarSetup from "./pages/SolarSetup";
@@ -43,6 +45,7 @@ import SetupComplete from "./pages/SetupComplete";
 import Dashboard from "./pages/Dashboard";
 import AccountSettings from "./pages/AccountSettings";
 import AccountPage from "./pages/AccountPage";
+import Help from "./pages/Help";
 import BusinessSettings from "./pages/BusinessSettings";
 import TeamSettings from "./pages/TeamSettings";
 import PersonalisationSettings from "./pages/PersonalisationSettings";
@@ -96,32 +99,19 @@ const AuthHandler = () => {
       const accessToken = urlParams.get('access_token');
       const refreshToken = urlParams.get('refresh_token');
 
-      console.log('AuthHandler: Checking URL params:', {
-        pathname: location.pathname,
-        code: !!code,
-        type,
-        accessToken: !!accessToken,
-        refreshToken: !!refreshToken,
-        error,
-        allParams: Object.fromEntries(urlParams.entries())
-      });
 
       // Only redirect if we're on the root path with auth parameters
       if (location.pathname === '/' && (code || accessToken) && !error) {
-        console.log('AuthHandler: Auth callback detected on root path');
         
         if (type === 'recovery') {
           // Password reset flow
-          console.log('AuthHandler: Redirecting to reset password page');
           navigate('/reset-password' + location.search, { replace: true });
         } else if (type === 'signup') {
           // Signup confirmation flow
-          console.log('AuthHandler: Redirecting to login page for signup confirmation');
           navigate('/login' + location.search, { replace: true });
         } else if (code || accessToken) {
           // Generic auth callback - could be either, check for password reset indicators
           // If no specific type, default to login page
-          console.log('AuthHandler: Generic auth callback, redirecting to login');
           navigate('/login' + location.search, { replace: true });
         }
       }
@@ -130,7 +120,6 @@ const AuthHandler = () => {
       // This is the only reliable way to detect password reset vs email verification
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
-          console.log('AuthHandler: PASSWORD_RECOVERY event detected, redirecting to reset-password');
           navigate('/reset-password', { replace: true });
         }
       });
@@ -164,6 +153,8 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<SetNewPassword />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/test-email-check" element={<TestEmailCheck />} />
           <Route path="/" element={<Login />} />
           <Route path="/welcome" element={
@@ -234,6 +225,11 @@ const App = () => (
           <Route path="/account" element={
             <ProtectedRoute>
               <AccountPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/help" element={
+            <ProtectedRoute>
+              <Help />
             </ProtectedRoute>
           } />
           <Route path="/business-settings" element={

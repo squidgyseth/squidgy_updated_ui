@@ -32,12 +32,9 @@ export function SetupStepsSidebar({ currentStep, onRetryFacebook, isRetrying }: 
   useEffect(() => {
     const loadCompletionStatus = async () => {
       if (userId) {
-        console.log('🔍 SetupStepsSidebar: Using userId from hook:', userId);
         const status = await checkSetupStatus(userId);
-        console.log('✅ SetupStepsSidebar: Completion status loaded:', status);
         setCompletionStatus(status);
       } else {
-        console.log('⚠️ SetupStepsSidebar: No userId found');
       }
     };
     

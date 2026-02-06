@@ -354,7 +354,6 @@ export default function ReferralHub() {
               <ReferralLeaderboard 
                 entries={leaderboardEntries}
                 timeframe="all_time"
-                onTimeframeChange={(timeframe) => console.log('Timeframe changed:', timeframe)}
                 loading={loading}
               />
             </TabsContent>

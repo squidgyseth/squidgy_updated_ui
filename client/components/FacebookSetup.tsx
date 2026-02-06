@@ -47,7 +47,6 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
           return;
         }
 
-        console.log('🔍 Getting user profile for:', user.email);
 
         // Get profile to get firm_user_id
         const { data: profile, error: profileError } = await profilesApi.getByEmail(user.email);
@@ -60,8 +59,6 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
 
         if (profile?.user_id) {
           setFirmUserId(profile.user_id);
-          console.log('✅ Got firm_user_id:', profile.user_id);
-          console.log('👤 User name:', profile.full_name);
         } else {
           console.error('❌ No user_id found in profile');
           toast.error('User profile incomplete. Please contact support.');
@@ -89,7 +86,6 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
       });
 
       const data = await response.json();
-      console.log('Integration status:', data);
 
       setIntegrationStatus(data);
       if (data.exists && data.has_tokens) {
@@ -115,7 +111,6 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
 
     setIsLoading(true);
     try {
-      console.log('🔗 Generating OAuth URL for user:', firmUserId);
       
       // First, get the integration status to ensure we have ghl_location_id
       await checkIntegrationStatus();
@@ -125,7 +120,6 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
       }
 
       const locationId = integrationStatus.ghl_location_id;
-      console.log('📍 Using location ID:', locationId);
 
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       
@@ -146,7 +140,6 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
       }
 
       const result = await response.json();
-      console.log('✅ OAuth params received:', result);
       
       if (result.success && result.params) {
         // Build OAuth URL with proper parameters
@@ -166,7 +159,6 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
 
         const finalUrl = `https://www.facebook.com/v18.0/dialog/oauth?${oauthParams.toString()}`;
         setOauthUrl(finalUrl);
-        console.log('🔗 Generated OAuth URL:', finalUrl);
         toast.success('Facebook login URL generated successfully!');
       } else {
         throw new Error('Invalid OAuth response from server');
@@ -407,7 +399,6 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
                       });
                       
                       const data = await response.json();
-                      console.log('✅ OAuth response data:', data);
                       
                       if (data.success && data.params) {
                         // Build OAuth URL with correct format
@@ -429,7 +420,6 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
 
                         const finalUrl = `https://www.facebook.com/v18.0/dialog/oauth?${oauthParams.toString()}`;
                         setOauthUrl(finalUrl);
-                        console.log('🔗 Generated OAuth URL:', finalUrl);
                         toast.success('Facebook login ready! Click the button to connect.');
                       } else {
                         throw new Error('Invalid OAuth response from server');

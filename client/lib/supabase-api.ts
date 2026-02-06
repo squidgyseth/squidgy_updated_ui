@@ -56,7 +56,6 @@ class SupabaseDirectApi {
     }
   ): Promise<{ data: T | T[], error: any }> {
     try {
-      console.log(`🌐 SUPABASE_API: SELECT from ${table}`, { columns, filters, options });
       
       let endpoint = `/${table}`;
       const params: Record<string, any> = {};
@@ -92,7 +91,6 @@ class SupabaseDirectApi {
       });
       
       const endTime = Date.now();
-      console.log(`⏱️ SUPABASE_API: SELECT completed in ${endTime - startTime}ms`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -101,7 +99,6 @@ class SupabaseDirectApi {
       }
       
       const data = await response.json();
-      console.log(`📋 SUPABASE_API: SELECT result:`, Array.isArray(data) ? `${data.length} rows` : 'single row');
       
       if (options?.single) {
         return { data: data.length > 0 ? data[0] : null, error: null };
@@ -125,7 +122,6 @@ class SupabaseDirectApi {
     }
   ): Promise<{ data: T | T[], error: any }> {
     try {
-      console.log(`🌐 SUPABASE_API: INSERT into ${table}`, { data, options });
       
       const endpoint = `/${table}`;
       const url = this.buildUrl(endpoint);
@@ -143,7 +139,6 @@ class SupabaseDirectApi {
       });
       
       const endTime = Date.now();
-      console.log(`⏱️ SUPABASE_API: INSERT completed in ${endTime - startTime}ms`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -152,7 +147,6 @@ class SupabaseDirectApi {
       }
       
       const result = await response.json();
-      console.log(`✅ SUPABASE_API: INSERT successful`);
       
       return { data: result, error: null };
       
@@ -172,7 +166,6 @@ class SupabaseDirectApi {
     }
   ): Promise<{ data: T | T[], error: any }> {
     try {
-      console.log(`🌐 SUPABASE_API: UPDATE ${table}`, { data, filters, options });
       
       let endpoint = `/${table}`;
       const params: Record<string, any> = {};
@@ -192,7 +185,6 @@ class SupabaseDirectApi {
       });
       
       const endTime = Date.now();
-      console.log(`⏱️ SUPABASE_API: UPDATE completed in ${endTime - startTime}ms`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -201,7 +193,6 @@ class SupabaseDirectApi {
       }
       
       const result = await response.json();
-      console.log(`✅ SUPABASE_API: UPDATE successful`);
       
       return { data: result, error: null };
       
@@ -221,7 +212,6 @@ class SupabaseDirectApi {
     }
   ): Promise<{ data: T | T[], error: any }> {
     try {
-      console.log(`🌐 SUPABASE_API: UPSERT into ${table}`, { data, options });
       
       // Fall back to INSERT with proper upsert headers
       const endpoint = `/${table}`;
@@ -238,7 +228,6 @@ class SupabaseDirectApi {
       });
       
       const endTime = Date.now();
-      console.log(`⏱️ SUPABASE_API: UPSERT completed in ${endTime - startTime}ms`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -247,7 +236,6 @@ class SupabaseDirectApi {
       }
       
       const result = await response.json();
-      console.log(`✅ SUPABASE_API: UPSERT successful`);
       
       return { data: result, error: null };
       
@@ -266,7 +254,6 @@ class SupabaseDirectApi {
     }
   ): Promise<{ data: T | T[], error: any }> {
     try {
-      console.log(`🌐 SUPABASE_API: DELETE from ${table}`, { filters, options });
       
       let endpoint = `/${table}`;
       const params: Record<string, any> = {};
@@ -285,7 +272,6 @@ class SupabaseDirectApi {
       });
       
       const endTime = Date.now();
-      console.log(`⏱️ SUPABASE_API: DELETE completed in ${endTime - startTime}ms`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -294,7 +280,6 @@ class SupabaseDirectApi {
       }
       
       const result = await response.json();
-      console.log(`✅ SUPABASE_API: DELETE successful`);
       
       return { data: result, error: null };
       

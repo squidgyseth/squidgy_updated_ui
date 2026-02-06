@@ -42,11 +42,8 @@ export class GHLMediaService {
       // Fetch all GHL subaccounts for this user
       const { data: ghlDataArray } = await ghlSubaccountsApi.getByUserId(userId);
       
-      console.log('[GHL Media] Fetched GHL subaccounts:', ghlDataArray);
-      console.log('[GHL Media] Looking for agent_id:', agentId);
       
       if (Array.isArray(ghlDataArray)) {
-        console.log('[GHL Media] Available agent_ids:', ghlDataArray.map(item => item.agent_id));
       }
       
       // Find the record matching the agent_id
@@ -58,7 +55,6 @@ export class GHLMediaService {
         console.error('[GHL Media] No record found for agent_id:', agentId);
         // Try to use the first available record if no exact match
         if (Array.isArray(ghlDataArray) && ghlDataArray.length > 0) {
-          console.log('[GHL Media] Using first available record instead');
           const firstRecord = ghlDataArray[0];
           if (firstRecord.ghl_location_id && firstRecord.pit_token) {
             return {
@@ -75,7 +71,6 @@ export class GHLMediaService {
         return null;
       }
 
-      console.log('[GHL Media] Found credentials for location:', ghlData.ghl_location_id);
       return {
         locationId: ghlData.ghl_location_id,
         bearerToken: ghlData.pit_token

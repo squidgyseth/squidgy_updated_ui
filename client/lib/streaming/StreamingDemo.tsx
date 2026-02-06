@@ -6,7 +6,6 @@ export function StreamingDemo() {
 
     const { streamedText, isStreaming, restart, stop, start } = useStreamingText(text, {
         speed: 30,
-        onComplete: () => console.log("Streaming completed!")
     });
 
     return (

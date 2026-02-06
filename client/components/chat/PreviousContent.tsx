@@ -38,7 +38,6 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
     try {
       const chatService = ChatHistoryService.getInstance();
       
-      console.log('🔍 DEBUG: Loading content for agent:', agentId, 'userId:', userId);
       
       // Load content based on agent type
       let newsletterData: NewsletterHistory[] = [];
@@ -47,18 +46,15 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
       if (agentId === 'newsletter') {
         // Only load newsletters for newsletter agent
         newsletterData = await chatService.getPreviousNewsletters(userId);
-        console.log('📰 Newsletters found for newsletter agent:', newsletterData.length);
       } else if (agentId === 'content_repurposer') {
         // Only load social content for content repurposer agent
         socialData = await chatService.getPreviousSocialContent(userId);
-        console.log('📱 Social content found for content_repurposer agent:', socialData.length);
       } else if (!agentId) {
         // Load both if no specific agent (fallback)
         [newsletterData, socialData] = await Promise.all([
           chatService.getPreviousNewsletters(userId),
           chatService.getPreviousSocialContent(userId)
         ]);
-        console.log('📰📱 All content loaded - Newsletters:', newsletterData.length, 'Social:', socialData.length);
       }
       // For other agents, don't load any content (arrays stay empty)
 

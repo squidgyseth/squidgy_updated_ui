@@ -45,7 +45,6 @@ class ContentRepurposerEditService {
    */
   async updatePost(postId: string, updates: EditPostData): Promise<boolean> {
     try {
-      console.log('📝 ContentRepurposerEditService: Updating post', postId, updates);
 
       // Update the post in content_repurposer_images
       const { data, error } = await supabase
@@ -72,7 +71,6 @@ class ContentRepurposerEditService {
       // Sync changes back to history table
       await this.syncToHistoryTable(data.history_content_repurposer_id);
 
-      console.log('✅ Post updated successfully and synced to history table');
       return true;
     } catch (error) {
       console.error('❌ Error updating post:', error);
@@ -85,7 +83,6 @@ class ContentRepurposerEditService {
    */
   async deleteImage(postId: string): Promise<boolean> {
     try {
-      console.log('🗑️ ContentRepurposerEditService: Deleting image for post', postId);
 
       return await this.updatePost(postId, {
         image_url: null
@@ -101,7 +98,6 @@ class ContentRepurposerEditService {
    */
   async deletePost(postId: string): Promise<boolean> {
     try {
-      console.log('🗑️ ContentRepurposerEditService: Deleting entire post', postId);
 
       // Soft delete the post
       const { data, error } = await supabase
@@ -128,7 +124,6 @@ class ContentRepurposerEditService {
       // Sync changes back to history table
       await this.syncToHistoryTable(data.history_content_repurposer_id);
 
-      console.log('✅ Post deleted successfully and synced to history table');
       return true;
     } catch (error) {
       console.error('❌ Error deleting post:', error);
@@ -141,7 +136,6 @@ class ContentRepurposerEditService {
    */
   async restorePost(postId: string): Promise<boolean> {
     try {
-      console.log('🔄 ContentRepurposerEditService: Restoring post', postId);
 
       // Restore the post
       const { data, error } = await supabase
@@ -168,7 +162,6 @@ class ContentRepurposerEditService {
       // Sync changes back to history table
       await this.syncToHistoryTable(data.history_content_repurposer_id);
 
-      console.log('✅ Post restored successfully and synced to history table');
       return true;
     } catch (error) {
       console.error('❌ Error restoring post:', error);
@@ -182,7 +175,6 @@ class ContentRepurposerEditService {
    */
   private async syncToHistoryTable(historyRecordId: string): Promise<void> {
     try {
-      console.log('🔄 ContentRepurposerEditService: Syncing to history table', historyRecordId);
 
       // Get all active posts for this history record
       const { data: posts, error: postsError } = await supabase
@@ -214,7 +206,6 @@ class ContentRepurposerEditService {
         return;
       }
 
-      console.log('✅ Successfully synced to history table');
     } catch (error) {
       console.error('❌ Error syncing to history table:', error);
     }

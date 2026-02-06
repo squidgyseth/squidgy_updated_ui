@@ -22,20 +22,14 @@ if (!fs.existsSync(yamlPath)) {
 
 const yamlContent = fs.readFileSync(yamlPath, 'utf8');
 
-console.log('📦 Importing agent from:', yamlPath);
 
 // Send to server
 axios.post(`${serverUrl}/api/agents/import`, {
   yamlContent
 })
 .then(response => {
-  console.log('✅ Agent imported successfully!');
-  console.log('📍 Agent ID:', response.data.agent.agent_id);
-  console.log('📍 Agent Name:', response.data.agent.name);
   if (response.data.componentPath) {
-    console.log('🎨 Generated component:', response.data.componentPath);
   }
-  console.log('\n✨ Your agent is now available in the chat interface!');
 })
 .catch(error => {
   console.error('❌ Import failed:', error.response?.data?.error || error.message);

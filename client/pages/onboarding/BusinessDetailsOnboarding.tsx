@@ -128,13 +128,6 @@ export default function BusinessDetailsOnboarding() {
               setCountry(detectedCountry);
               setDataLoaded(true);
               
-              console.log('🔄 BusinessDetails: Populated from website analysis data:', {
-                businessName: businessNameToUse,
-                detectedCountry,
-                websiteUrl: websiteData.website_url,
-                companyName: websiteData.company_name,
-                originalDescription: websiteData.company_description
-              });
             } else {
               setDataLoaded(true);
             }
@@ -292,7 +285,6 @@ export default function BusinessDetailsOnboarding() {
             file
           });
           
-          console.log('Company material saved successfully:', result.file_id);
         } else {
           throw new Error('Failed to save to knowledge base');
         }

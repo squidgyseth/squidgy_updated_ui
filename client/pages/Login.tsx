@@ -6,6 +6,7 @@ import { signIn } from '../lib/api';
 import { useUser } from "@/hooks/useUser";
 import { onboardingRouter } from "@/services/onboardingRouter";
 import { linkScoresToUser, getGameHistory } from '@/services/anonymousPlayer';
+import AuthFooterLinks from '../components/AuthFooterLinks';
 
 // Game URL - update this to your deployed game URL
 const GAME_URL = 'https://squidgy-waitlist-game.vercel.app';
@@ -99,6 +100,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Modal state for Terms/Privacy
+
   // Check if user arrived after email confirmation
   useEffect(() => {
     const emailVerified = sessionStorage.getItem('email_verified');
@@ -121,8 +124,8 @@ export default function Login() {
     setCurrentSlide(index);
   };
 
+
   const handleGoogleLogin = () => {
-    console.log("Google login");
     // TODO: Implement Google OAuth
   };
 
@@ -141,14 +144,13 @@ export default function Login() {
       
       // Get user ID directly from the sign-in response
       const loggedInUserId = response.profile?.user_id || response.user?.id;
-      
+
       if (!loggedInUserId) {
         console.error('❌ Login: No user ID in response');
         toast.error('Login failed. Please try again.');
         return;
       }
-      
-      console.log('✅ Login: User authenticated with ID:', loggedInUserId);
+
       toast.success('Login successful!');
       
       // Link any anonymous game scores to this user
@@ -160,14 +162,13 @@ export default function Login() {
             toast.success(`${linkedCount} game score${linkedCount > 1 ? 's' : ''} saved to your account!`);
           }
         } catch (err) {
-          console.warn('Failed to link game scores:', err);
+          // Failed to link game scores
         }
       }
       
       // Use smart onboarding router to determine where to go
       try {
         const routeDecision = await onboardingRouter.determineLoginRoute(loggedInUserId);
-        console.log('🧭 Login: Route decision:', routeDecision);
         navigate(routeDecision.redirectPath);
       } catch (error) {
         console.error('❌ Login: Error determining route:', error);
@@ -193,9 +194,9 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div className="flex flex-col md:flex-row min-h-screen bg-white">
       {/* Left Side - Login Form */}
-      <div className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 max-w-[600px]">
+      <div className="flex-1 flex flex-col justify-center px-6 py-8 md:px-8 md:py-0 lg:px-16 xl:px-20 2xl:px-24 md:max-w-[600px]">
         <div className="w-full max-w-[400px] mx-auto">
           {/* Logo */}
           <div className="flex justify-center mb-16">
@@ -315,21 +316,14 @@ export default function Login() {
             </button>
           </div>
 
-          {/* Terms and Privacy */}
-          <div className="text-center mt-4">
-            <p className="text-[#9CA3AF] text-[11px] leading-4">
-              By creating an account, you agree to our{" "}
-              <a href="#" className="font-bold text-[#5E17EB] hover:underline">Terms of service</a>
-              {" "}and{" "}
-              <a href="#" className="font-bold text-[#5E17EB] hover:underline">Privacy policy</a>
-            </p>
-          </div>
+          {/* Terms and Privacy - Reusable Component */}
+          <AuthFooterLinks />
         </div>
       </div>
 
       {/* Right Side - Carousel */}
-      <div className={`flex-1 flex flex-col min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] ${
-        carouselStates[currentSlide].type === 'game' ? 'p-4' : 'p-12 justify-between'
+      <div className={`flex-1 flex flex-col min-h-[100vh] md:min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] ${
+        carouselStates[currentSlide].type === 'game' ? 'p-4' : 'p-6 md:p-12 justify-between'
       }`}>
         {/* Carousel Indicators */}
         <div className={`flex justify-center gap-2 ${carouselStates[currentSlide].type === 'game' ? 'mb-4' : 'mb-8'}`}>
@@ -441,6 +435,7 @@ export default function Login() {
           </div>
         )}
       </div>
+
     </div>
   );
 }

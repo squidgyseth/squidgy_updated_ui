@@ -68,7 +68,6 @@ export default function AssistantSidebar({ selectedAssistant, onSelectAssistant 
   };
 
   const handleCreateGroup = (groupName: string, selectedAssistants: string[]) => {
-    console.log('Creating group:', groupName, 'with assistants:', selectedAssistants);
     // Here you would typically handle the group creation logic
   };
 

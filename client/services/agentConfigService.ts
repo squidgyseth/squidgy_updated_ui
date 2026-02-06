@@ -127,7 +127,6 @@ export class AgentConfigService {
     try {
       const agentService = OptimizedAgentService.getInstance();
       const agents = agentService.getAllAgents();
-      console.log('Loaded agents (optimized):', agents);
       return agents as AgentConfig[];
     } catch (error) {
       console.error('Could not load agents:', error);

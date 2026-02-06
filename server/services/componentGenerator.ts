@@ -25,18 +25,15 @@ export class ComponentGenerator {
     deployedUrl: string,
     n8nWebhookUrl: string
   ): Promise<string> {
-    console.log(`🎨 Generating component from deployed Figma: ${agentName}...`);
     
     try {
       // Step 1: Capture screenshots
-      console.log('📸 Capturing screenshots...');
       const screenshotData = await this.screenshotService.captureDeployedFigmaScreenshots(
         deployedUrl,
         agentId
       );
       
       // Step 2: Analyze screenshots with LLM
-      console.log('🧠 Analyzing screenshots with AI...');
       const designAnalysis = await this.analysisService.analyzeScreenshots(screenshotData.screenshots);
       
       // Step 3: Combine analysis with screenshot data
@@ -47,12 +44,6 @@ export class ComponentGenerator {
         deployedUrl
       };
       
-      console.log(`🎨 AI Design Analysis completed:`, {
-        sections: designAnalysis.sections.length,
-        components: designAnalysis.components.length,
-        overallStyle: designAnalysis.overallStyle,
-        screenshotCount: screenshotData.screenshots.length
-      });
       
       // Step 4: Generate component code using AI analysis
       const componentCode = this.generateComponentFromAnalysis(
@@ -87,7 +78,6 @@ export class ComponentGenerator {
     figmaUrl: string,
     n8nWebhookUrl: string
   ): Promise<string> {
-    console.log(`🎨 Fetching Figma design for ${agentName}...`);
     
     // Fetch Figma data
     const figmaData = await this.figmaService.fetchFigmaFile(figmaUrl);
@@ -95,10 +85,6 @@ export class ComponentGenerator {
     // Extract design tokens
     const tokens = this.figmaService.generateDesignTokens(figmaData);
     
-    console.log(`🎨 Extracted design tokens:`, {
-      colors: Object.keys(tokens.colors).length,
-      typography: tokens.typography.length
-    });
     
     // Generate component code
     const componentCode = this.generateComponentCode(
@@ -643,7 +629,6 @@ ${colorVars}
     // Write component to file
     fs.writeFileSync(filePath, componentCode);
     
-    console.log(`✅ Component saved to: ${filePath}`);
     
     return `/client/pages/agents/${fileName}`;
   }

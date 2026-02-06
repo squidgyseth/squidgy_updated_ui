@@ -34,7 +34,6 @@ class GroupChatService {
    */
   async createGroupChat(userId: string, name: string, participants: string[]): Promise<GroupChat | null> {
     try {
-      console.log(`🆕 createGroupChat: Creating group "${name}" for userId=${userId} with participants:`, participants);
       
       const { data, error } = await supabase
         .from('group_chats')
@@ -51,7 +50,6 @@ class GroupChatService {
         throw error;
       }
 
-      console.log('✅ createGroupChat: Created group chat:', data);
       return data;
     } catch (error) {
       console.error('❌ createGroupChat failed:', error);
@@ -64,7 +62,6 @@ class GroupChatService {
    */
   async getGroupChat(groupId: string): Promise<GroupChat | null> {
     try {
-      console.log(`🔍 getGroupChat: Fetching group chat ${groupId}`);
       
       const { data, error } = await supabase
         .from('group_chats')
@@ -77,7 +74,6 @@ class GroupChatService {
         throw error;
       }
 
-      console.log('✅ getGroupChat: Found group chat:', data);
       return data;
     } catch (error) {
       console.error('❌ getGroupChat failed:', error);
@@ -90,7 +86,6 @@ class GroupChatService {
    */
   async getUserGroupChats(userId: string): Promise<GroupChat[]> {
     try {
-      console.log(`🔍 getUserGroupChats: Fetching group chats for userId=${userId}`);
       
       const { data, error } = await supabase
         .from('group_chats')
@@ -103,7 +98,6 @@ class GroupChatService {
         throw error;
       }
 
-      console.log('✅ getUserGroupChats: Found group chats:', data);
       return data || [];
     } catch (error) {
       console.error('❌ getUserGroupChats failed:', error);
@@ -116,7 +110,6 @@ class GroupChatService {
    */
   async getGroupMessages(groupId: string): Promise<GroupChatMessage[]> {
     try {
-      console.log(`🔍 getGroupMessages: Fetching messages for groupId=${groupId}`);
       
       const { data, error } = await supabase
         .from('group_chat_messages')
@@ -129,7 +122,6 @@ class GroupChatService {
         throw error;
       }
 
-      console.log('✅ getGroupMessages: Found messages:', data?.length || 0);
       return data || [];
     } catch (error) {
       console.error('❌ getGroupMessages failed:', error);
@@ -148,7 +140,6 @@ class GroupChatService {
     content: string
   ): Promise<GroupChatMessage | null> {
     try {
-      console.log(`💾 saveGroupMessage: Saving ${senderType} message to group ${groupId}`);
       
       const { data, error } = await supabase
         .from('group_chat_messages')
@@ -173,7 +164,6 @@ class GroupChatService {
         .update({ updated_at: new Date().toISOString() })
         .eq('id', groupId);
 
-      console.log('✅ saveGroupMessage: Saved message:', data);
       return data;
     } catch (error) {
       console.error('❌ saveGroupMessage failed:', error);
@@ -186,7 +176,6 @@ class GroupChatService {
    */
   async deleteGroupChat(groupId: string): Promise<boolean> {
     try {
-      console.log(`🗑️ deleteGroupChat: Deleting group ${groupId}`);
       
       // Delete messages first (foreign key constraint)
       await supabase
@@ -205,7 +194,6 @@ class GroupChatService {
         throw error;
       }
 
-      console.log('✅ deleteGroupChat: Deleted group chat');
       return true;
     } catch (error) {
       console.error('❌ deleteGroupChat failed:', error);

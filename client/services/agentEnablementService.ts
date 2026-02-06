@@ -22,7 +22,6 @@ export interface AgentEnablementData {
 // DEV: enableAgentFromOnboarding method
 async enableAgentFromOnboarding(data: AgentEnablementData, userId?: string): Promise<boolean> {
   try {
-    console.log('🎯 AgentEnablementService: Enabling agent from onboarding:', data);
 
     let actualUserId = userId;
 
@@ -62,7 +61,6 @@ async enableAgentFromOnboarding(data: AgentEnablementData, userId?: string): Pro
     const success = await onboardingService.enableAgent(agentData);
 
     if (success) {
-      console.log('✅ AgentEnablementService: Agent enabled successfully');
       this.refreshAgentSidebar();
       this.showEnablementNotification(data.agentId, data.customName);
       return true;
@@ -79,7 +77,6 @@ async enableAgentFromOnboarding(data: AgentEnablementData, userId?: string): Pro
 // DEV: parseOnboardingResponse method
 parseOnboardingResponse(responseText: string): AgentEnablementData | null {
   try {
-    console.log('🔍 AgentEnablementService: Parsing response for agent enablement');
 
     const agentService = OptimizedAgentService.getInstance();
     const allAgents = agentService.getAllAgents();
@@ -98,7 +95,6 @@ parseOnboardingResponse(responseText: string): AgentEnablementData | null {
                          enablementIndicators.some(ind => responseText.includes(ind));
 
     if (!hasEnablement) {
-      console.log('❌ AgentEnablementService: No enablement keywords/indicators found');
       return null;
     }
 
@@ -117,7 +113,6 @@ parseOnboardingResponse(responseText: string): AgentEnablementData | null {
       const hasAllNameWords = nameWords.every(word => textLower.includes(word));
 
       if (hasAllNameWords && (hasAgentOrAssistant || hasEnablement)) {
-        console.log(`✅ AgentEnablementService: Matched "${agentName}" (${agentId})`);
         return {
           agentId: agentId,
           customName: agentName
@@ -125,7 +120,6 @@ parseOnboardingResponse(responseText: string): AgentEnablementData | null {
       }
     }
 
-    console.log('❌ AgentEnablementService: No agent matched from config');
     return null;
   } catch (error) {
     console.error('❌ AgentEnablementService: Error parsing response:', error);
@@ -189,7 +183,6 @@ private async handleStructuredEnablement(data: any): Promise<void> {
     if (error) {
       console.error('❌ AgentEnablementService: Database error:', error);
     } else {
-      console.log('✅ AgentEnablementService: Agent enabled successfully via structured format');
 
       if (targetAudience && targetAudience !== 'REUSE_EXISTING') {
         const profileUpdate: Record<string, any> = {};
@@ -248,7 +241,6 @@ class AgentEnablementService {
         }
       });
       
-      console.log('🔄 AgentEnablementService: Built dynamic agent mapping:', this.agentNameToIdMap);
     } catch (error) {
       console.error('❌ AgentEnablementService: Error building agent mapping:', error);
       this.agentNameToIdMap = {};
@@ -259,7 +251,6 @@ class AgentEnablementService {
     try {
       if ((window as any).refreshAgentSidebar) {
         (window as any).refreshAgentSidebar();
-        console.log('🔄 AgentEnablementService: Refreshed agent sidebar');
       }
     } catch (error) {
       console.error('❌ AgentEnablementService: Error refreshing sidebar:', error);
@@ -299,7 +290,6 @@ class AgentEnablementService {
 
   async handleOnboardingResponse(responseData: any, userId?: string): Promise<void> {
     try {
-      console.log('🔍 AgentEnablementService: Received responseData:', responseData);
 
       let actualData = responseData;
       if (Array.isArray(responseData) && responseData.length > 0) {
@@ -314,10 +304,6 @@ class AgentEnablementService {
 
         if (enableAction && enableAction.input?.fieldValues2_Field_Value) {
           const agentId = enableAction.input.fieldValues2_Field_Value;
-          console.log('✅ AgentEnablementService: Detected Enable_Agent in actions_performed');
-          console.log('   agent_id:', agentId);
-          console.log('🔍 AgentEnablementService: n8n Enable Agent tool already saved to database');
-          console.log('   → Just refreshing sidebar to display the enabled agent');
 
           // n8n Enable_Agent tool already inserted into assistant_personalizations
           // n8n Save_User_Settings tool already updated profiles table
@@ -325,13 +311,10 @@ class AgentEnablementService {
           this.refreshAgentSidebar();
           this.showEnablementNotification(agentId);
 
-          console.log('✅ AgentEnablementService: Agent enablement handled successfully');
           return;
         }
       }
 
-      console.log('❌ AgentEnablementService: No agent enablement action detected');
-      console.log('   Expected: actions_performed array with Enable_Agent action');
     } catch (error) {
       console.error('❌ AgentEnablementService: Error handling onboarding response:', error);
     }

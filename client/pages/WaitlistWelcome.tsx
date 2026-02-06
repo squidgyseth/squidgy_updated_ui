@@ -39,7 +39,6 @@ export default function WaitlistWelcome() {
 
   useEffect(() => {
     if (isReady && userId) {
-      console.log('WaitlistWelcome: Loading data for user:', { userId, profile });
       loadWaitlistData();
     }
   }, [isReady, userId, profile]);

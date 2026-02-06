@@ -40,7 +40,6 @@ export default function PersonalisationSettings() {
   useEffect(() => {
     const navigationState = location.state as { selectedAgent?: string; openSection?: string } | null;
     if (navigationState?.selectedAgent) {
-      console.log('Auto-selecting agent from navigation:', navigationState.selectedAgent);
       // We'll handle the agent selection after agents are loaded
     }
   }, [location.state]);
@@ -242,7 +241,6 @@ export default function PersonalisationSettings() {
         last_updated: new Date().toISOString()
       };
 
-      console.log('Saving agent customization:', { assistant_id: selectedAgent.id, ...updateFields });
 
       // Check if a row already exists for this user+agent
       const { data: existing } = await supabase

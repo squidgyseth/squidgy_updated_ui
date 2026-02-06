@@ -75,7 +75,6 @@ export default function AgentSettings() {
 
         if (config) {
           setAgentConfig(config);
-          console.log(`${config.agent.name} config loaded for settings`);
         } else {
           setError(`Failed to load configuration for agent: ${agentId}`);
         }
@@ -108,10 +107,8 @@ export default function AgentSettings() {
         if (data.file_id && data.instructions) {
           setCustomInstructionsFileId(data.file_id);
           setCurrentText(data.instructions);
-          console.log('Loaded existing custom instructions:', data.file_id);
         }
       } else {
-        console.log('No existing custom instructions found');
       }
     } catch (error) {
       console.error('Error fetching custom instructions:', error);
@@ -136,7 +133,6 @@ export default function AgentSettings() {
       if (response.ok) {
         const data = await response.json();
         setPreviousFiles(data.files || []);
-        console.log(`Loaded ${data.files?.length || 0} previous files`);
       } else {
         console.error('Failed to fetch previous files');
         setPreviousFiles([]);
@@ -315,12 +311,10 @@ export default function AgentSettings() {
       }
 
       if (response.status === 404) {
-        console.log('File not found in database - already deleted');
       }
 
       // Update local state - remove from list regardless
       setPreviousFiles(prev => prev.filter(file => file.file_id !== fileId));
-      console.log('File deleted successfully');
     } catch (error) {
       console.error('Error deleting file:', error);
       // Still remove from local state and refresh list
@@ -361,7 +355,6 @@ export default function AgentSettings() {
 
             if (response.ok) {
               successCount++;
-              console.log('Custom instructions updated successfully');
             } else {
               console.error('Failed to update custom instructions');
             }
@@ -382,7 +375,6 @@ export default function AgentSettings() {
               const result = await response.json();
               setCustomInstructionsFileId(result.file_id);
               successCount++;
-              console.log('Custom instructions created successfully:', result.file_id);
             } else {
               console.error('Failed to create custom instructions');
             }
@@ -427,7 +419,6 @@ export default function AgentSettings() {
 
             if (response.ok) {
               const result = await response.json();
-              console.log('File uploaded successfully:', file.name, 'ID:', result.file_id);
               
               // Update state with file ID
               setFileProcessingStates(prev => {
@@ -461,7 +452,6 @@ export default function AgentSettings() {
 
       // Show success/error feedback
       if (successCount === totalOperations) {
-        console.log('All knowledge saved successfully!');
 
         // Clear voice state (but keep currentText - it's the persistent custom instructions)
         setVoiceText('');

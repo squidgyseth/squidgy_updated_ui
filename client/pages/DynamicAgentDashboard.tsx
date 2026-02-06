@@ -46,7 +46,6 @@ export default function DynamicAgentDashboard() {
 
         if (config) {
           setAgentConfig(config);
-          console.log(`${config.agent.name} config loaded from YAML`);
 
           // For Personal Assistant, check if user has website info
           if (agentId === 'personal_assistant' && userId) {
@@ -56,10 +55,8 @@ export default function DynamicAgentDashboard() {
               if (result.success && result.data && result.data.length > 0) {
                 const websiteInfo = result.data[0].website_analysis_info;
                 setHasWebsiteInfo(!!websiteInfo && websiteInfo.trim() !== '');
-                console.log('📊 Website info status:', !!websiteInfo);
               }
             } catch (err) {
-              console.warn('Could not fetch PA config for intro message:', err);
               // Continue with default behavior on error
             }
           }
@@ -78,7 +75,6 @@ export default function DynamicAgentDashboard() {
   }, [agentId, configService, userId]);
 
   const handlePinToggle = (agentId: string, pinned: boolean) => {
-    console.log(`Agent ${agentId} pin toggled to: ${pinned}`);
     // TODO: Implement pin toggle persistence
   };
 
@@ -86,14 +82,12 @@ export default function DynamicAgentDashboard() {
   useNavigationService();
 
   const handleSettingsClick = (agentId: string) => {
-    console.log(`Settings clicked for agent: ${agentId}`);
 
     // Navigate to agent settings page (voice input, file upload, instructions)
     navigate(`/agent-settings/${agentId}`);
   };
 
   const handleNewChat = (agentId: string) => {
-    console.log(`New chat clicked for agent: ${agentId}`);
 
     // Clear stored session so a new one is created
     chatSessionService.clearStoredSessionId(userId, agentId);
@@ -102,12 +96,9 @@ export default function DynamicAgentDashboard() {
     const newSessionId = chatSessionService.generateSessionId(userId, agentId);
     setCurrentSessionId(newSessionId);
 
-    console.log(`Created new chat session: ${newSessionId}`);
   };
 
   const handleSessionSelect = (sessionId: string) => {
-    console.log(`🔄 Session selected: ${sessionId}`);
-    console.log(`🔄 Previous session ID was: ${currentSessionId}`);
     
     // Store the selected session in localStorage so it persists across navigation
     if (agentId) {
@@ -115,7 +106,6 @@ export default function DynamicAgentDashboard() {
     }
     
     setCurrentSessionId(sessionId);
-    console.log(`✅ Current session ID updated to: ${sessionId}`);
   };
 
   // Initialize with session persistence logic (1-hour timeout)
@@ -126,7 +116,6 @@ export default function DynamicAgentDashboard() {
           // Use session persistence logic - continue existing session within 1 hour or create new one
           const sessionId = await chatSessionService.getOrCreateActiveSession(userId, agentId);
           setCurrentSessionId(sessionId);
-          console.log(`🔄 DynamicAgentDashboard: Session initialized for ${agentId}: ${sessionId}`);
         } catch (error) {
           console.error(`❌ Error initializing session for ${agentId}:`, error);
           // Fallback to creating new session

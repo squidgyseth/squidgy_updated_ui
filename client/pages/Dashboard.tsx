@@ -59,14 +59,11 @@ export default function Index() {
         const onboardingService = OnboardingService.getInstance();
         const enabledAgentsCount = await onboardingService.getEnabledAgentsCount(userId);
 
-        console.log(`🔍 Dashboard: User ${userId} has ${enabledAgentsCount} enabled agents`);
 
         // SIMPLE: If 0 enabled agents, show onboarding. If 1+, don't show.
         if (enabledAgentsCount === 0) {
-          console.log('🎯 Dashboard: Showing onboarding - no enabled agents');
           setShowOnboarding(true);
         } else {
-          console.log('🚫 Dashboard: Not showing onboarding - user has enabled agents');
           setShowOnboarding(false);
         }
       } catch (error) {
@@ -88,7 +85,6 @@ export default function Index() {
       }
 
       try {
-        console.log('🔍 Dashboard: Fetching profile for user_id:', userId);
 
         const { data: profile, error } = await supabase
           .from('profiles')
@@ -103,9 +99,7 @@ export default function Index() {
           // Extract first name from full_name
           const firstName = profile.full_name.split(' ')[0];
           setUserFirstName(firstName);
-          console.log('✅ Dashboard: User first name set to:', firstName);
         } else {
-          console.log('ℹ️ Dashboard: No full_name found in profile');
           setUserFirstName("User");
         }
       } catch (error) {
@@ -138,7 +132,6 @@ export default function Index() {
 
         const agentIds = data?.map((row: { assistant_id: string }) => row.assistant_id) || [];
         setEnabledAgentIds(agentIds);
-        console.log('✅ Dashboard: Enabled agents:', agentIds);
       } catch (error) {
         console.error('❌ Dashboard: Error in fetchEnabledAgents:', error);
       }

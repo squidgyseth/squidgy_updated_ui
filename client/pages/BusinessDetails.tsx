@@ -83,7 +83,6 @@ export default function BusinessDetails() {
         });
         
         setUploadedMaterials(materials);
-        console.log('📁 BusinessDetails: Loaded', materials.length, 'previously uploaded files');
       }
     } catch (error) {
       console.error('Error loading uploaded files:', error);
@@ -146,12 +145,6 @@ export default function BusinessDetails() {
             setPostalCode("");
             setDataLoaded(true);
             
-            console.log('🔄 BusinessDetails: Populated from website analysis data:', {
-              extractedBusinessName,
-              detectedCountry,
-              websiteUrl: websiteAnalysisData.website_url,
-              originalDescription: websiteAnalysisData.company_description
-            });
           } else {
             // No data at all - use minimal defaults
             setEmergencyNumbers(['']);
@@ -161,7 +154,6 @@ export default function BusinessDetails() {
             setCountry("GB");
             setDataLoaded(true);
             
-            console.log('📝 BusinessDetails: No existing data found, using empty defaults');
           }
         }
       }
@@ -303,7 +295,6 @@ export default function BusinessDetails() {
             file
           });
           
-          console.log('Company material saved successfully:', result.file_id);
         } else {
           throw new Error('Failed to save to knowledge base');
         }
@@ -376,7 +367,6 @@ export default function BusinessDetails() {
             if (error) {
               console.error('Error deleting file from Supabase:', error);
             } else {
-              console.log('📁 BusinessDetails: Deleted file from Supabase:', fileToDelete.name);
             }
           }
         }

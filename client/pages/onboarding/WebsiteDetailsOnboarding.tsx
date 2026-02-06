@@ -110,9 +110,7 @@ export default function WebsiteDetailsOnboarding() {
 
   useEffect(() => {
     const loadConfiguration = async () => {
-      console.log('🔍 WebsiteDetails: loadConfiguration called', { isReady, userId });
       if (!isReady) {
-        console.log('🔍 WebsiteDetails: Not ready yet, waiting...');
         return;
       }
 
@@ -186,7 +184,6 @@ export default function WebsiteDetailsOnboarding() {
       // Update screenshot URL state if provided
       if (result.screenshot_url) {
         setScreenshotUrl(result.screenshot_url);
-        console.log('✅ Screenshot URL updated from WebSocket event:', result.screenshot_url);
       }
 
       toast.success("Website analyzed successfully from chat");
@@ -202,7 +199,6 @@ export default function WebsiteDetailsOnboarding() {
   // Helper function to parse agent response and extract business information
   const parseAgentResponse = (agentResponse: string) => {
     try {
-      console.log('🔍 Parsing agent response:', agentResponse);
 
       // Try to parse as JSON first (new format)
       try {
@@ -210,7 +206,6 @@ export default function WebsiteDetailsOnboarding() {
 
         // Check if it's the new JSON format
         if (jsonData && typeof jsonData === 'object') {
-          console.log('🔍 Detected JSON format response:', jsonData);
 
           // Extract data from JSON structure
           const companyName = jsonData.company_name || '';
@@ -234,7 +229,6 @@ export default function WebsiteDetailsOnboarding() {
           };
         }
       } catch (jsonError) {
-        console.log('🔍 Not JSON format, falling back to text parsing');
       }
 
       // Fallback to original text parsing for legacy format
@@ -247,8 +241,6 @@ export default function WebsiteDetailsOnboarding() {
       const faviconMatch = agentResponse.match(/https?:\/\/[^\s]*supabase[^\s]*\/favicons\/[^\s)]*/i) ||
         agentResponse.match(/https?:\/\/[^\s]*favicon[^\s)]*/i);
 
-      console.log('🔍 Screenshot match result:', screenshotMatch);
-      console.log('🔍 Favicon match result:', faviconMatch);
 
       // Clean the response by removing ALL HTML and markdown links first
       let cleanedResponse = agentResponse
@@ -385,12 +377,10 @@ export default function WebsiteDetailsOnboarding() {
         request_id: requestId
       };
 
-      console.log('Sending N8N webhook request:', n8nPayload);
 
       // Call N8N webhook
       const n8nResponse = await callN8NWebhook(n8nPayload);
 
-      console.log('N8N webhook response:', n8nResponse);
 
       // Parse the agent response to extract business information
       if (n8nResponse.agent_response) {
@@ -406,17 +396,13 @@ export default function WebsiteDetailsOnboarding() {
         // Update screenshot URL state (React will handle UI update)
         if (parsedData.screenshotUrl) {
           setScreenshotUrl(parsedData.screenshotUrl);
-          console.log('✅ Screenshot URL extracted and state updated:', parsedData.screenshotUrl);
         } else {
-          console.log('⚠️ No screenshot URL found in agent response');
         }
 
         // Update favicon URL state
         if (parsedData.faviconUrl) {
           setFaviconUrl(parsedData.faviconUrl);
-          console.log('✅ Favicon URL extracted:', parsedData.faviconUrl);
         } else {
-          console.log('⚠️ No favicon URL found in agent response');
         }
 
         toast.success('Website analyzed successfully');
@@ -501,12 +487,10 @@ export default function WebsiteDetailsOnboarding() {
         request_id: requestId
       };
 
-      console.log('Sending N8N webhook request:', n8nPayload);
 
       // Call N8N webhook
       const n8nResponse = await callN8NWebhook(n8nPayload);
 
-      console.log('N8N webhook response:', n8nResponse);
 
       // Parse the agent response to extract business information
       if (n8nResponse.agent_response) {
@@ -522,17 +506,13 @@ export default function WebsiteDetailsOnboarding() {
         // Update screenshot URL state (React will handle UI update)
         if (parsedData.screenshotUrl) {
           setScreenshotUrl(parsedData.screenshotUrl);
-          console.log('✅ Screenshot URL extracted and state updated:', parsedData.screenshotUrl);
         } else {
-          console.log('⚠️ No screenshot URL found in agent response');
         }
 
         // Update favicon URL state
         if (parsedData.faviconUrl) {
           setFaviconUrl(parsedData.faviconUrl);
-          console.log('✅ Favicon URL extracted:', parsedData.faviconUrl);
         } else {
-          console.log('⚠️ No favicon URL found in agent response');
         }
 
         toast.success("Website analyzed successfully");
@@ -568,7 +548,6 @@ export default function WebsiteDetailsOnboarding() {
   };
 
   const handleContinue = async () => {
-    console.log('🔍 WebsiteDetails: handleContinue called', { userId, isReady });
     if (!isReady || !userId) {
       console.error('🔍 WebsiteDetails: Authentication check failed', { userId, isReady });
       toast.error('Authentication required. Please log in and try again.');
@@ -601,19 +580,15 @@ export default function WebsiteDetailsOnboarding() {
         throw new Error('User authentication lost. Please refresh the page and try again.');
       }
 
-      console.log('🔍 WebsiteDetails: About to save website analysis with userId:', userId);
       const savedData = await saveWebsiteAnalysis({
         ...websiteAnalysisData,
         isAnalyzeButton: true // Continue button includes screenshots/favicons
       });
 
-      console.log('[Newsletter] saveWebsiteAnalysis result:', savedData);
-      console.log('[Newsletter] savedData.id:', savedData?.id);
 
       // Fire webhook asynchronously (doesn't block the UI)
       // This runs in the background without delaying navigation
       if (savedData?.id) {
-        console.log('[Newsletter] Using saved website analysis ID for webhook:', savedData.id);
         newsletterWebhookService.fireWebhookAsync({
           firm_user_id: userId,
           id: savedData.id, // Use the actual saved record ID
@@ -624,10 +599,8 @@ export default function WebsiteDetailsOnboarding() {
           ghl_user_id: profile?.ghl_user_id || user?.id || '' // Get from profile/user if available
         });
 
-        console.log('[Newsletter] Webhook triggered in background for newsletter questions generation');
       } else {
         console.error('[Newsletter] Cannot fire webhook - no saved website analysis ID available');
-        console.log('[Newsletter] savedData:', savedData);
       }
 
       toast.success('Website analysis saved!');
@@ -742,7 +715,6 @@ export default function WebsiteDetailsOnboarding() {
                 onLoad={() => setScreenshotLoading(false)}
                 onError={(e) => {
                   setScreenshotLoading(false);
-                  console.log('⚠️ Screenshot failed to load');
                 }}
               />
             )}

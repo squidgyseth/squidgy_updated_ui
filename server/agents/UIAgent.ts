@@ -40,7 +40,6 @@ export class UIAgent {
    * Generate React component code from design sources
    */
   async generateCode(request: CodeGenerationRequest): Promise<GeneratedCode> {
-    console.log(`🎨 UI Agent: Generating code for ${request.pageName} (Iteration ${request.iteration || 1})`);
 
     try {
       let componentCode: string;

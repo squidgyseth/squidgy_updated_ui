@@ -17,7 +17,6 @@ export default function NewsletterPreview() {
       if (storedContent) {
         setNewsletterContent(storedContent);
       } else {
-        console.warn('No newsletter content found in localStorage');
       }
     } catch (error) {
       console.error('Error loading newsletter content:', error);

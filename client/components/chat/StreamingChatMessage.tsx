@@ -24,7 +24,6 @@ export default function StreamingChatMessage({
 }: StreamingChatMessageProps) {
     // Add debug log to verify mount
     useEffect(() => {
-        console.log("🚀 StreamingChatMessage mounted");
     }, []);
 
     // Force placeholder slides if none provided
@@ -102,7 +101,6 @@ export default function StreamingChatMessage({
                             className="w-full h-full object-cover block"
                             style={{ display: 'block', width: '100%', height: '100%' }}
                             loading="lazy"
-                            onLoad={() => console.log("✅ Image loaded:", slides[currentSlide])}
                             onError={(e) => console.error("❌ Image failed to load:", slides[currentSlide], e)}
                         />
                     </div>

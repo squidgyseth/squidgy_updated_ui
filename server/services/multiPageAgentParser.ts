@@ -109,7 +109,6 @@ export class MultiPageAgentParser {
 
     // Check for N8N configuration
     if (!config.n8n?.webhook_url && !agent.n8n?.webhook_url) {
-      console.warn('⚠️ No N8N webhook URL configured for agent:', agent.id);
     }
 
     // UI config is now in root or agent
@@ -224,7 +223,6 @@ export class MultiPageAgentParser {
       });
       
       fs.writeFileSync(filePath, yamlStr, 'utf8');
-      console.log(`✅ Updated YAML with ${generatedPages.length} generated pages`);
       
     } catch (error: any) {
       console.error('Failed to update YAML:', error.message);

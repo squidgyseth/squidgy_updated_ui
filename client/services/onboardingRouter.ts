@@ -32,11 +32,9 @@ class OnboardingRouter {
    */
   async determineLoginRoute(userId: string, userEmail?: string): Promise<OnboardingRouteDecision> {
     try {
-      console.log('🧭 OnboardingRouter: Determining route for user:', userId);
 
       // Check if user has completed onboarding
       const isCompleted = await onboardingDataService.isOnboardingCompleted(userId);
-      console.log('📋 OnboardingRouter: Onboarding completed:', isCompleted);
 
       if (isCompleted) {
         // Existing user - go to dashboard
@@ -97,7 +95,6 @@ class OnboardingRouter {
    */
   async handleOnboardingIconClick(userId: string): Promise<OnboardingRouteDecision> {
     try {
-      console.log('🔄 OnboardingRouter: Handling onboarding icon click for user:', userId);
 
       // Get current onboarding progress
       const progress = await onboardingDataService.getOnboardingProgress(userId);
@@ -175,7 +172,6 @@ class OnboardingRouter {
    */
   async saveStepProgress(userId: string, stepNumber: number, stepData: any): Promise<boolean> {
     try {
-      console.log(`💾 OnboardingRouter: Saving step ${stepNumber} progress for user:`, userId);
 
       // Get current progress
       const currentProgress = await onboardingDataService.getOnboardingProgress(userId);
@@ -225,7 +221,6 @@ class OnboardingRouter {
       const success = await onboardingDataService.saveOnboardingProgress(updatedProgress);
       
       if (success) {
-        console.log(`✅ OnboardingRouter: Step ${stepNumber} progress saved successfully`);
       } else {
         console.error(`❌ OnboardingRouter: Failed to save step ${stepNumber} progress`);
       }
@@ -243,12 +238,10 @@ class OnboardingRouter {
    */
   async loadOnboardingDataForStep(userId: string, stepNumber: number): Promise<any> {
     try {
-      console.log(`🔍 OnboardingRouter: Loading data for step ${stepNumber}, user:`, userId);
 
       const progress = await onboardingDataService.getOnboardingProgress(userId);
       
       if (!progress) {
-        console.log('ℹ️ OnboardingRouter: No progress data found');
         return null;
       }
 

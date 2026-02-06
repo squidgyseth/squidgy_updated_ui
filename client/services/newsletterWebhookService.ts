@@ -71,13 +71,11 @@ class NewsletterWebhookService {
     // Fire and forget - don't await this
     this.sendWebhookWithRetry(payload).catch(error => {
       // Log error but don't throw - this is truly async
-      console.warn('[Newsletter Webhook] Background webhook failed:', error);
       // You could also send this to an error tracking service
       this.logWebhookError(error, payload);
     });
 
     // Return immediately - don't wait for webhook
-    console.log('[Newsletter Webhook] Webhook queued for background processing');
   }
 
   /**
@@ -89,7 +87,6 @@ class NewsletterWebhookService {
     attempt: number = 1
   ): Promise<WebhookResponse> {
     try {
-      console.log(`[Newsletter Webhook] Sending webhook (attempt ${attempt}/${this.retryAttempts})`);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
@@ -110,7 +107,6 @@ class NewsletterWebhookService {
       }
 
       const data = await response.json();
-      console.log('[Newsletter Webhook] Success:', data);
       
       // Optionally store success in localStorage for debugging
       this.logWebhookSuccess(payload, data);

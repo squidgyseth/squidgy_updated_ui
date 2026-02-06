@@ -47,22 +47,11 @@ export default function HistoricalSocialPosts() {
         return;
       }
 
-      console.log('📱 Loading social content from content_repurposer_images table for user:', userId);
       
       // Load social content directly from database
       const chatService = new ChatHistoryService();
       const socialData = await chatService.getPreviousSocialContent(userId);
       
-      console.log('🔍 HistoricalSocialPosts DEBUG: Raw socialData from service:', socialData);
-      console.log('🔍 HistoricalSocialPosts DEBUG: socialData length:', socialData?.length || 0);
-      console.log('🔍 HistoricalSocialPosts DEBUG: socialData details:', 
-        socialData?.map(item => ({
-          id: item.id,
-          session_id: item.session_id,
-          timestamp: item.timestamp,
-          title: item.title
-        }))
-      );
       
       setSocialContent(socialData);
       
@@ -76,7 +65,6 @@ export default function HistoricalSocialPosts() {
         setActiveTab(dates[0]);
       }
       
-      console.log(`✅ Loaded ${socialData.length} social content sessions from database`);
     } catch (error) {
       console.error('Error loading social content:', error);
     } finally {

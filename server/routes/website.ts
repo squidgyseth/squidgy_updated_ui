@@ -22,7 +22,6 @@ export const analyzeWebsite = async (req: Request, res: Response) => {
       const domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
       faviconUrl = `https://${domain}/favicon.ico?t=${timestamp}`;
     } catch (e) {
-      console.warn('Could not extract domain for favicon:', e);
     }
 
     // Mock analysis results - replace with actual website scraping/analysis

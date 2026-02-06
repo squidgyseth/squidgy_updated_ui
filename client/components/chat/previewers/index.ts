@@ -34,7 +34,6 @@ const previewRegistry: Map<string, PreviewComponent> = new Map();
  */
 export function registerPreview(type: string, component: PreviewComponent): void {
   previewRegistry.set(type, component);
-  console.log(`📦 Registered preview component for type: ${type}`);
 }
 
 /**

@@ -126,7 +126,6 @@ class NotificationsService {
   connectWebSocket(userId: string, sessionId: string = 'default'): void {
     // Always disconnect existing connection before creating new one to prevent duplicate connections
     if (this.ws) {
-      console.log('🔄 Disconnecting existing WebSocket before reconnecting');
       this.disconnectWebSocket();
     }
 
@@ -138,19 +137,10 @@ class NotificationsService {
     const connectionId = `${userId}_${sessionId}`;
     const fullWsUrl = `${wsUrl}/ws/${userId}/${sessionId}`;
     
-    console.log('🔌 WEBSOCKET CONNECTION ATTEMPT:');
-    console.log('   Backend URL:', BACKEND_URL);
-    console.log('   WebSocket URL:', fullWsUrl);
-    console.log('   User ID:', userId);
-    console.log('   Session ID:', sessionId);
-    console.log('   Connection ID:', connectionId);
     
     this.ws = new WebSocket(fullWsUrl);
 
     this.ws.onopen = () => {
-      console.log('✅ WEBSOCKET CONNECTED SUCCESSFULLY!');
-      console.log('   Connection state:', this.ws?.readyState);
-      console.log('   Expected connection ID on backend:', connectionId);
       this.reconnectAttempts = 0;
       this.lastHeartbeat = Date.now();
       
@@ -160,7 +150,6 @@ class NotificationsService {
         userId,
         sessionId,
       };
-      console.log('📤 Sending connection message:', connectionMessage);
       this.ws?.send(JSON.stringify(connectionMessage));
       
       // Start heartbeat monitoring
@@ -170,7 +159,6 @@ class NotificationsService {
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('📨 WEBSOCKET MESSAGE RECEIVED:', data);
         
         // Handle notification messages
         if (data.type === 'notification') {
@@ -178,17 +166,9 @@ class NotificationsService {
           
           // Check for duplicate notifications
           if (this.processedNotifications.has(notificationId)) {
-            console.log('⚠️ Duplicate notification detected, skipping:', notificationId);
             return;
           }
           
-          console.log('🎉 NOTIFICATION MESSAGE DETECTED!');
-          console.log('   Sender:', data.sender_name);
-          console.log('   Message:', data.message);
-          console.log('   Type:', data.message_type);
-          console.log('   Location ID:', data.ghl_location_id);
-          console.log('   Contact ID:', data.ghl_contact_id);
-          console.log('   Notification ID:', notificationId);
           
           // Mark notification as processed
           this.processedNotifications.add(notificationId);
@@ -223,21 +203,17 @@ class NotificationsService {
           };
           
           // Notify all listeners
-          console.log('🔔 Notifying', this.listeners.size, 'listeners');
           this.listeners.forEach(listener => listener(notification));
           
           // Show browser notification if permitted
-          console.log('🌐 Triggering browser notification');
           this.showBrowserNotification(notification);
         } else if (data.type === 'ping') {
-          console.log('💓 Received ping from server');
           this.lastHeartbeat = Date.now();
           // Send pong back to server
           if (this.ws?.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify({ type: 'pong' }));
           }
         } else {
-          console.log('ℹ️ Other message type:', data.type);
         }
       } catch (error) {
         console.error('❌ Error parsing WebSocket message:', error);
@@ -252,20 +228,14 @@ class NotificationsService {
     };
 
     this.ws.onclose = (event) => {
-      console.log('🔌 WEBSOCKET DISCONNECTED');
-      console.log('   Code:', event.code);
-      console.log('   Reason:', event.reason);
-      console.log('   Clean close:', event.wasClean);
       this.ws = null;
       
       // Always attempt to reconnect (infinite attempts)
       this.reconnectAttempts++;
       const delay = Math.min(1000 * Math.pow(2, Math.min(this.reconnectAttempts, 6)), 30000);
-      console.log(`🔄 Reconnecting in ${delay}ms... (attempt ${this.reconnectAttempts})`);
       
       this.reconnectTimeout = setTimeout(() => {
         if (this.currentUserId) {
-          console.log('🔄 Attempting reconnection for user:', this.currentUserId);
           this.connectWebSocket(this.currentUserId, this.currentSessionId);
         }
       }, delay);
@@ -315,7 +285,6 @@ class NotificationsService {
    */
   async requestNotificationPermission(): Promise<NotificationPermission> {
     if (!('Notification' in window)) {
-      console.log('This browser does not support notifications');
       return 'denied';
     }
 
@@ -370,7 +339,6 @@ class NotificationsService {
       
       // If no heartbeat for 60 seconds, consider connection dead
       if (timeSinceLastHeartbeat > 60000) {
-        console.log('💔 No heartbeat for 60s, forcing reconnection');
         if (this.ws) {
           this.ws.close();
         }
@@ -379,7 +347,6 @@ class NotificationsService {
       
       // Send ping to server every 30 seconds
       if (this.ws?.readyState === WebSocket.OPEN && timeSinceLastHeartbeat > 30000) {
-        console.log('💓 Sending heartbeat ping');
         this.ws.send(JSON.stringify({ type: 'ping' }));
         this.lastHeartbeat = Date.now();
       }
@@ -406,15 +373,12 @@ class NotificationsService {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.5);
       
-      console.log('✅ Notification sound played successfully');
     } catch (error) {
-      console.log('❌ Error playing notification sound:', error);
       // Fallback: try to play a system beep
       try {
         const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYcBjiS2+/XdSUE');
         audio.play();
       } catch (fallbackError) {
-        console.log('❌ Fallback sound also failed:', fallbackError);
       }
     }
   }

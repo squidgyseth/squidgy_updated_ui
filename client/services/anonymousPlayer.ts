@@ -55,7 +55,6 @@ export function getOrCreateAnonymousId(): string {
     return anonymousId;
   } catch (error) {
     // Fallback if localStorage is not available
-    console.warn('localStorage not available, using session-only ID');
     return `anon_${generateUUID()}`;
   }
 }
@@ -89,7 +88,6 @@ export function saveGameScore(result: GameResult): void {
       localStorage.setItem(STORAGE_KEYS.HIGH_SCORE, result.score.toString());
     }
   } catch (error) {
-    console.warn('Failed to save game score:', error);
   }
 }
 
@@ -134,7 +132,6 @@ export function clearAnonymousData(): void {
     localStorage.removeItem(STORAGE_KEYS.GAME_HISTORY);
     localStorage.removeItem(STORAGE_KEYS.HIGH_SCORE);
   } catch (error) {
-    console.warn('Failed to clear anonymous data:', error);
   }
 }
 
@@ -195,13 +192,11 @@ export async function submitAnonymousScore(result: GameResult): Promise<boolean>
     });
 
     if (error) {
-      console.warn('Failed to submit score to backend:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.warn('Error submitting anonymous score:', error);
     return false;
   }
 }

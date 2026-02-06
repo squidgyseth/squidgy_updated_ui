@@ -40,7 +40,6 @@ class AgentMappingService {
         // e.g., "content_repurposer" -> ["content", "repurposer"]
         const words = id.toLowerCase().split('_').filter(w => w.length > 0);
 
-        console.log(`🔍 Agent: "${name}" (${id}) -> words: [${words.join(', ')}]`);
 
         return { id, name, words };
       });
@@ -50,7 +49,6 @@ class AgentMappingService {
       this.agents.sort((a, b) => b.words.length - a.words.length);
 
       this.isLoaded = true;
-      console.log('🔍 Agent mappings loaded:', this.agents.map(a => `${a.name} (${a.id})`));
     } catch (error) {
       console.error('Failed to load agent mappings:', error);
       this.isLoaded = true; // Mark as loaded to prevent retry loops
@@ -59,21 +57,18 @@ class AgentMappingService {
 
   getAgentId(targetText: string): string | null {
     if (!this.isLoaded) {
-      console.warn('Agent mappings not loaded yet');
       return null;
     }
 
     // Lowercase the target text for matching
     const textLower = targetText.toLowerCase().trim();
 
-    console.log(`🔍 Finding agent for: "${targetText}"`);
 
     // Strategy 1: Match by agent display name (most reliable)
     // e.g., "Social Media Manager" matches agent with name "Social Media Manager"
     for (const agent of this.agents) {
       const nameLower = agent.name.toLowerCase();
       if (textLower.includes(nameLower) || nameLower.includes(textLower)) {
-        console.log(`✅ Matched by display name: "${agent.name}" (${agent.id})`);
         return agent.id;
       }
     }
@@ -86,7 +81,6 @@ class AgentMappingService {
       const allWordsMatch = agent.words.every(word => textLower.includes(word));
 
       if (allWordsMatch && (hasAgentWord || agent.words.length >= 2)) {
-        console.log(`✅ Matched by ID words: "${agent.name}" (${agent.id})`);
         return agent.id;
       }
     }
@@ -98,13 +92,11 @@ class AgentMappingService {
     for (const agent of this.agents) {
       const nameWords = agent.name.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !genericWords.has(w));
       if (nameWords.length > 0 && nameWords.every(word => textLower.includes(word))) {
-        console.log(`✅ Matched by name words: "${agent.name}" (${agent.id})`);
         return agent.id;
       }
     }
 
     // No match found
-    console.warn(`❌ No agent ID found for: "${targetText}"`);
     return null;
   }
 

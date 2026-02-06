@@ -91,19 +91,15 @@ export function LeadDetails({ lead, isOpen, onClose }: LeadDetailsProps) {
   };
 
   const handleAssignAssistant = () => {
-    console.log('Assign assistant clicked for lead:', lead.id);
   };
 
   const handleScheduleSurvey = () => {
-    console.log('Schedule survey clicked for lead:', lead.id);
   };
 
   const handleSendProposal = () => {
-    console.log('Send proposal clicked for lead:', lead.id);
   };
 
   const handleCheckChat = () => {
-    console.log('Check chat clicked for lead:', lead.id);
   };
 
   return (

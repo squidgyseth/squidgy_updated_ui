@@ -52,7 +52,6 @@ export class ScreenshotAnalysisService {
    * Analyze multiple screenshots using OpenAI Vision API
    */
   async analyzeScreenshots(screenshotPaths: string[]): Promise<DesignAnalysis> {
-    console.log(`🔍 Analyzing ${screenshotPaths.length} screenshots with LLM...`);
 
     // Prepare images for OpenAI
     const imageMessages = await this.prepareScreenshotsForAnalysis(screenshotPaths);
@@ -126,12 +125,10 @@ Focus on extracting exact colors, precise layout details, and specific styling t
       });
 
       const analysisText = response.choices[0].message.content;
-      console.log('📊 Raw LLM Analysis:', analysisText);
 
       // Parse JSON response
       const analysis = this.parseAnalysisResponse(analysisText);
       
-      console.log('✅ Parsed Design Analysis:', JSON.stringify(analysis, null, 2));
       return analysis;
 
     } catch (error: any) {
@@ -202,7 +199,6 @@ Focus on extracting exact colors, precise layout details, and specific styling t
       return this.extractAnalysisFromText(analysisText);
       
     } catch (error) {
-      console.warn('⚠️ Failed to parse LLM response as JSON, using fallback');
       return this.extractAnalysisFromText(analysisText);
     }
   }

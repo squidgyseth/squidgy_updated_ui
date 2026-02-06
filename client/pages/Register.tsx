@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { signUp } from '../lib/api';
+import BetaUserAgreementModal from '../components/BetaUserAgreementModal';
+import TermsModal from '../components/TermsModal';
+import AuthFooterLinks from '../components/AuthFooterLinks';
 
 // Game URL - update this to your deployed game URL
 const GAME_URL = 'https://squidgy-waitlist-game.vercel.app';
@@ -65,6 +68,19 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Consent checkboxes
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [aiConsentAccepted, setAiConsentAccepted] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+
+  // Modal state
+  const [isBetaAgreementModalOpen, setIsBetaAgreementModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+
+  // Tracking if user has viewed and scrolled through documents
+  const [termsScrolledToBottom, setTermsScrolledToBottom] = useState(false);
+  const [privacyScrolledToBottom, setPrivacyScrolledToBottom] = useState(false);
+
   // Carousel state
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -120,71 +136,87 @@ export default function Register() {
     setCurrentSlide(index);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    console.log('🚀 REGISTER: Form submission started');
-    console.log('📊 REGISTER: Form data:', { 
-      fullName: fullName ? `${fullName.substring(0, 2)}***` : 'empty', 
-      email: email ? `${email.substring(0, 3)}***@${email.split('@')[1] || '***'}` : 'empty',
-      passwordLength: password ? password.length : 0,
-      confirmPasswordLength: confirmPassword ? confirmPassword.length : 0
-    });
-    
+  // Modal handlers
+  const openBetaAgreementModal = (e: React.MouseEvent) => {
     e.preventDefault();
-    
+    setIsBetaAgreementModalOpen(true);
+  };
+
+  const openPrivacyModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsPrivacyModalOpen(true);
+  };
+
+  const handleBetaAgreementScrollComplete = () => {
+    setTermsScrolledToBottom(true);
+  };
+
+  const handlePrivacyScrollComplete = () => {
+    setPrivacyScrolledToBottom(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     if (password !== confirmPassword) {
-      console.log('❌ REGISTER: Password mismatch validation failed');
       toast.error('Passwords do not match');
       return;
     }
-    
-    console.log('✅ REGISTER: Form validation passed, setting loading state');
-    setLoading(true);
-    
-    try {
-      console.log('🔄 REGISTER: Calling signUp API...');
-      const startTime = Date.now();
-      
-      const response = await signUp({ email, password, fullName });
-      
-      const endTime = Date.now();
-      console.log(`✅ REGISTER: signUp API completed in ${endTime - startTime}ms`);
-      console.log('📋 REGISTER: API Response:', {
-        hasUser: !!response?.user,
-        needsEmailConfirmation: response?.needsEmailConfirmation,
-        hasProfile: !!response?.profile,
-        message: response?.message
-      });
-      
-      if (response.needsEmailConfirmation) {
-        console.log('📧 REGISTER: Email confirmation required, showing success message');
-        toast.success('Account created! Please check your email to verify your account before signing in.');
 
-        console.log('⏰ REGISTER: Setting 2-second timeout for navigation to /login');
+    // Validate required consents
+    if (!termsScrolledToBottom || !privacyScrolledToBottom) {
+      toast.error('You must read through the entire Beta User Agreement and Privacy Policy before accepting');
+      return;
+    }
+
+    if (!termsAccepted) {
+      toast.error('You must accept the Terms and Privacy Policy to continue');
+      return;
+    }
+
+    if (!aiConsentAccepted) {
+      toast.error('You must consent to AI processing to use our services');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await signUp({
+        email,
+        password,
+        fullName,
+        termsAccepted,
+        aiProcessingConsent: aiConsentAccepted,
+        marketingConsent,
+        termsViewed: termsScrolledToBottom,
+        termsScrolledToBottom,
+        privacyViewed: privacyScrolledToBottom,
+        privacyScrolledToBottom
+      });
+
+      if (response.needsEmailConfirmation) {
+        toast.success('Account created! Please check your email to verify your account before signing in.');
         setTimeout(() => {
-          console.log('🔄 REGISTER: Navigating to /login after timeout');
           navigate('/login');
         }, 2000);
       } else {
-        console.log('🎉 REGISTER: Account created and verified, navigating to login');
         toast.success('Account created successfully! Please sign in to continue.');
         // Redirect to login page
         navigate('/login');
       }
     } catch (error: any) {
       console.error('❌ REGISTER: Error during signup:', error);
-      console.error('❌ REGISTER: Error message:', error.message);
-      console.error('❌ REGISTER: Error stack:', error.stack);
       toast.error(error.message || 'Registration failed');
     } finally {
-      console.log('🔄 REGISTER: Setting loading state to false');
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-white font-['Open_Sans']">
+    <div className="flex flex-col md:flex-row min-h-screen bg-white font-['Open_Sans']">
       {/* Left Side - Registration Form */}
-      <div className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-16 xl:px-20 2xl:px-24 max-w-[600px]">
+      <div className="flex-1 flex flex-col justify-center px-6 py-8 md:px-8 md:py-0 lg:px-16 xl:px-20 2xl:px-24 md:max-w-[600px]">
         <div className="w-full max-w-[400px] mx-auto">
           {/* Logo */}
           <div className="flex justify-center mb-16">
@@ -331,6 +363,80 @@ export default function Register() {
               </div>
             </div>
 
+            {/* Consent Checkboxes */}
+            <div className="space-y-3 pt-2">
+              {/* Instructional message */}
+              {(!termsScrolledToBottom || !privacyScrolledToBottom) && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                  <p className="text-xs text-blue-800 font-medium">
+                    📖 Please click and read through the complete{' '}
+                    {!termsScrolledToBottom && !privacyScrolledToBottom ? 'Beta User Agreement and Privacy Policy' :
+                     !termsScrolledToBottom ? 'Beta User Agreement' : 'Privacy Policy'}{' '}
+                    before you can accept. Scroll to the bottom of each document to enable the checkboxes.
+                  </p>
+                </div>
+              )}
+
+              {/* Terms and Privacy Policy - Required */}
+              <label className={`flex items-start gap-2 ${termsScrolledToBottom && privacyScrolledToBottom ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} group`}>
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  disabled={!termsScrolledToBottom || !privacyScrolledToBottom}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  required
+                />
+                <span className="text-[13px] text-[#4A5565] leading-snug font-['Open_Sans']">
+                  I have read and agree to the{' '}
+                  <button
+                    type="button"
+                    onClick={openBetaAgreementModal}
+                    className={`text-[#5E17EB] hover:underline font-semibold ${termsScrolledToBottom ? 'text-green-600' : ''}`}
+                  >
+                    Beta User Agreement {termsScrolledToBottom && '✓'}
+                  </button>
+                  {' '}and{' '}
+                  <button
+                    type="button"
+                    onClick={openPrivacyModal}
+                    className={`text-[#5E17EB] hover:underline font-semibold ${privacyScrolledToBottom ? 'text-green-600' : ''}`}
+                  >
+                    Privacy Policy {privacyScrolledToBottom && '✓'}
+                  </button>
+                  <span className="text-red-500 ml-1">*</span>
+                </span>
+              </label>
+
+              {/* AI Processing Consent - Required */}
+              <label className="flex items-start gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={aiConsentAccepted}
+                  onChange={(e) => setAiConsentAccepted(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer"
+                  required
+                />
+                <span className="text-[13px] text-[#4A5565] leading-snug font-['Open_Sans']">
+                  I consent to my content being processed by AI services as described in the Agreement
+                  <span className="text-red-500 ml-1">*</span>
+                </span>
+              </label>
+
+              {/* Marketing Communications - Optional */}
+              <label className="flex items-start gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer"
+                />
+                <span className="text-[13px] text-[#4A5565] leading-snug font-['Open_Sans']">
+                  I'd like to receive marketing communications and product updates (optional)
+                </span>
+              </label>
+            </div>
+
             {/* Create Account Button */}
             <button
               type="submit"
@@ -352,21 +458,14 @@ export default function Register() {
             </button>
           </div>
 
-          {/* Terms and Privacy */}
-          <div className="mt-6 text-center">
-            <p className="text-[#9CA3AF] text-[11px] leading-4">
-              By creating an account, you agree to our{" "}
-              <a href="#" className="font-bold text-[#5E17EB] hover:underline">Terms of service</a>
-              {" "}and{" "}
-              <a href="#" className="font-bold text-[#5E17EB] hover:underline">Privacy policy</a>
-            </p>
-          </div>
+          {/* Terms and Privacy - Reusable Component */}
+          <AuthFooterLinks />
         </div>
       </div>
 
       {/* Right Side - Carousel */}
-      <div className={`flex-1 flex flex-col min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] ${
-        carouselStates[currentSlide].type === 'game' ? 'p-4' : 'p-12 justify-between'
+      <div className={`flex-1 flex flex-col min-h-[100vh] md:min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] ${
+        carouselStates[currentSlide].type === 'game' ? 'p-4' : 'p-6 md:p-12 justify-between'
       }`}>
         {/* Carousel Indicators */}
         <div className="flex justify-center gap-2 mb-8">
@@ -476,6 +575,21 @@ export default function Register() {
         </div>
         )}
       </div>
+
+      {/* Beta User Agreement Modal */}
+      <BetaUserAgreementModal
+        isOpen={isBetaAgreementModalOpen}
+        onClose={() => setIsBetaAgreementModalOpen(false)}
+        onScrollComplete={handleBetaAgreementScrollComplete}
+      />
+
+      {/* Privacy Policy Modal */}
+      <TermsModal
+        isOpen={isPrivacyModalOpen}
+        onClose={() => setIsPrivacyModalOpen(false)}
+        onScrollComplete={handlePrivacyScrollComplete}
+        type="privacy"
+      />
     </div>
   );
 }

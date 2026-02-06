@@ -49,9 +49,6 @@ export class MultiAgentCoordinator {
    */
   async generateAndValidateCode(request: CodeGenerationRequest): Promise<MultiAgentSession> {
     const sessionId = this.generateSessionId();
-    console.log(`\n🚀 MULTI-AGENT SESSION STARTED: ${sessionId}`);
-    console.log(`📄 Target: ${request.agentId}/${request.pageName}`);
-    console.log(`🔄 Max iterations: ${this.maxIterations}\n`);
 
     const session: MultiAgentSession = {
       sessionId,
@@ -85,8 +82,6 @@ export class MultiAgentCoordinator {
     while (session.currentIteration < session.maxIterations && session.status === 'running') {
       session.currentIteration++;
       
-      console.log(`\n🔄 ITERATION ${session.currentIteration}/${session.maxIterations}`);
-      console.log('=' .repeat(50));
 
       const iteration: AgentIteration = {
         iterationNumber: session.currentIteration,
@@ -98,29 +93,20 @@ export class MultiAgentCoordinator {
 
       try {
         // Step 1: UI Agent generates code
-        console.log('\n1️⃣ UI AGENT: Generating code...');
         const generationRequest = this.prepareGenerationRequest(session);
         iteration.uiAgentCode = await this.uiAgent.generateCode(generationRequest);
         
-        console.log(`✅ Code generated: ${iteration.uiAgentCode.fileName}`);
-        console.log(`📊 Confidence: ${iteration.uiAgentCode.confidence}%`);
 
         // Step 2: QA Agent validates code
-        console.log('\n2️⃣ QA AGENT: Validating code...');
         iteration.qaValidation = await this.qaAgent.validateCode(iteration.uiAgentCode);
         
-        console.log(`📊 Validation confidence: ${iteration.qaValidation.confidence}%`);
-        console.log(`🔍 Errors found: ${iteration.qaValidation.errors.length}`);
-        console.log(`⚠️ Warnings: ${iteration.qaValidation.warnings.length}`);
 
         // Step 3: Check if validation passed
         if (iteration.qaValidation.isValid) {
-          console.log('\n✨ SUCCESS: Code passed all validations!');
           iteration.success = true;
           session.finalCode = iteration.uiAgentCode;
           session.status = 'completed';
         } else {
-          console.log('\n❌ VALIDATION FAILED: Preparing feedback for UI Agent...');
           this.logValidationErrors(iteration.qaValidation);
           
           // Clean up failed attempt
@@ -145,7 +131,6 @@ export class MultiAgentCoordinator {
     if (session.status === 'running') {
       if (session.currentIteration >= session.maxIterations) {
         session.status = 'max_iterations';
-        console.log(`⚠️ Maximum iterations (${session.maxIterations}) reached`);
       } else {
         session.status = 'failed';
       }
@@ -171,25 +156,17 @@ export class MultiAgentCoordinator {
    */
   private logValidationErrors(validation: QAValidationResult): void {
     if (validation.errors.length > 0) {
-      console.log('\n🚨 ERRORS FOUND:');
       validation.errors.forEach((error, index) => {
-        console.log(`  ${index + 1}. [${error.type.toUpperCase()}] ${error.message}`);
-        if (error.line) console.log(`     Line ${error.line}${error.column ? `, Column ${error.column}` : ''}`);
-        if (error.suggestion) console.log(`     💡 Suggestion: ${error.suggestion}`);
       });
     }
 
     if (validation.warnings.length > 0) {
-      console.log('\n⚠️ WARNINGS:');
       validation.warnings.forEach((warning, index) => {
-        console.log(`  ${index + 1}. ${warning.message}`);
       });
     }
 
     if (validation.suggestions.length > 0) {
-      console.log('\n💡 SUGGESTIONS:');
       validation.suggestions.forEach((suggestion, index) => {
-        console.log(`  ${index + 1}. ${suggestion}`);
       });
     }
   }
@@ -202,29 +179,16 @@ export class MultiAgentCoordinator {
       ? ((session.endTime.getTime() - session.startTime.getTime()) / 1000).toFixed(1)
       : 'N/A';
 
-    console.log('\n' + '='.repeat(60));
-    console.log('📊 MULTI-AGENT SESSION SUMMARY');
-    console.log('='.repeat(60));
-    console.log(`🆔 Session ID: ${session.sessionId}`);
-    console.log(`📄 Target: ${session.request.agentId}/${session.request.pageName}`);
-    console.log(`⏱️ Duration: ${duration}s`);
-    console.log(`🔄 Iterations: ${session.currentIteration}/${session.maxIterations}`);
-    console.log(`✨ Status: ${session.status.toUpperCase()}`);
     
     if (session.finalCode) {
-      console.log(`📁 Generated file: ${session.finalCode.fileName}`);
-      console.log(`📊 Final confidence: ${session.finalCode.confidence}%`);
     }
 
     // Iteration breakdown
-    console.log('\n📈 ITERATION BREAKDOWN:');
     session.iterations.forEach((iteration, index) => {
       const status = iteration.success ? '✅ PASS' : '❌ FAIL';
       const errors = iteration.qaValidation?.errors?.length || 0;
-      console.log(`  ${index + 1}. ${status} (${errors} errors, ${iteration.uiAgentCode?.confidence || 0}% confidence)`);
     });
 
-    console.log('='.repeat(60));
   }
 
   /**

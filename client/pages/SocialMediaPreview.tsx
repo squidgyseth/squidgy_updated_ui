@@ -59,7 +59,6 @@ function convertLocalStorageContentToPosts(content: any): SocialPost[] {
         const rawContent = content.raw.replace(/```json\n|\n```/g, '');
         processedContent = JSON.parse(rawContent);
       } catch (error) {
-        console.warn('❌ Failed to parse raw content from error structure:', error);
         return posts;
       }
     }
@@ -74,11 +73,9 @@ function convertLocalStorageContentToPosts(content: any): SocialPost[] {
     } else if (processedContent && (processedContent.LinkedIn || processedContent.InstagramFacebook || processedContent.TikTokReels)) {
       socialMediaContent = processedContent;
     } else {
-      console.warn('❌ Unknown content format:', processedContent);
       return posts;
     }
 
-    console.log('📱 Processing social media content:', socialMediaContent);
 
     // Process LinkedIn posts
     if (socialMediaContent.LinkedIn) {
@@ -128,7 +125,6 @@ function convertLocalStorageContentToPosts(content: any): SocialPost[] {
       });
     }
 
-    console.log('✅ Successfully converted to posts:', posts);
     return posts;
 
   } catch (error) {
@@ -170,7 +166,6 @@ export default function SocialMediaPreview() {
         const config = await configService.loadAgentConfig(agentId);
         if (config) {
           setAgentConfig(config);
-          console.log(`Loaded ${config.agent.name} config for image generation`);
         } else {
           throw new Error(`Agent config not found for ${agentId}`);
         }
@@ -189,7 +184,6 @@ export default function SocialMediaPreview() {
   }, [agentId, searchParams, configService]);
 
   useEffect(() => {
-    console.log('🔄 SocialMediaPreview useEffect triggered:', { userId, searchParamsChanged: !!searchParams.get('session_id') });
     loadSocialContent();
   }, [userId, searchParams]);
 
@@ -198,7 +192,6 @@ export default function SocialMediaPreview() {
 
   const loadSocialContent = async () => {
     if (!userId) {
-      console.log('❌ SocialMediaPreview: No userId available');
       return;
     }
 
@@ -207,10 +200,6 @@ export default function SocialMediaPreview() {
       const sessionId = searchParams.get('session_id');
       const historyId = searchParams.get('history_id');
 
-      console.log('🔍 SocialMediaPreview: Loading social content from database');
-      console.log('🔍 SocialMediaPreview: userId:', userId);
-      console.log('🔍 SocialMediaPreview: sessionId:', sessionId);
-      console.log('🔍 SocialMediaPreview: historyId:', historyId);
 
       // Also load the history record to get GeneralAssets from the original content
       let historyQuery = supabase
@@ -242,10 +231,8 @@ export default function SocialMediaPreview() {
       // Priority filtering: history_id takes precedence over session_id
       if (historyId) {
         query = query.eq('history_content_repurposer_id', historyId);
-        console.log('🔍 SocialMediaPreview: Filtering by history_content_repurposer_id:', historyId);
       } else if (sessionId) {
         query = query.eq('session_id', sessionId);
-        console.log('🔍 SocialMediaPreview: Filtering by session_id:', sessionId);
       }
 
       // Execute both queries
@@ -297,8 +284,6 @@ export default function SocialMediaPreview() {
 
 
       if (!data || data.length === 0) {
-        console.log('❌ SocialMediaPreview: No social content found in database');
-        console.log('🔄 SocialMediaPreview: Attempting to load from localStorage as fallback');
 
         // Try to load from localStorage as fallback
         const localStorageContent = localStorage.getItem('socialMediaContent');
@@ -367,18 +352,12 @@ export default function SocialMediaPreview() {
 
       const parsedPosts: SocialPost[] = Array.from(seenPosts.values());
 
-      console.log('📱 Before deduplication:', allParsedPosts.length, 'posts');
-      console.log('📱 After deduplication:', parsedPosts.length, 'posts');
 
-      console.log('📱 Converted posts:', parsedPosts);
-      console.log('📱 Sample post structure:', parsedPosts[0]);
-      console.log('📱 Platforms found:', [...new Set(parsedPosts.map(post => post.platform))]);
 
       setPosts(parsedPosts);
 
       // Set the first platform with posts as active tab
       const platforms = [...new Set(parsedPosts.map(post => post.platform))];
-      console.log('📱 Setting active tab to:', platforms[0]);
       if (platforms.length > 0) {
         setActiveTab(platforms[0]);
       }
@@ -617,17 +596,10 @@ export default function SocialMediaPreview() {
     try {
       const imagesMap: Record<string, ImageRecord[]> = {};
 
-      console.log('🖼️ Loading images for posts:', postsToLoad.map(p => ({
-        id: p.id,
-        platform: p.platform,
-        originalPostId: p.originalPostId,
-        searchPostId: p.originalPostId || p.id
-      })));
 
       // Load images for each post
       for (const post of postsToLoad) {
         const searchPostId = post.originalPostId || post.id;
-        console.log(`🔍 Searching for images with post_id: "${searchPostId}" for platform: ${post.platform}`);
 
         const images = await imageService.getPostImages(
           userId,
@@ -635,11 +607,9 @@ export default function SocialMediaPreview() {
           searchPostId // Use originalPostId for database queries
         );
 
-        console.log(`📷 Found ${images.length} images for post ${post.platform} (${searchPostId}):`, images);
         imagesMap[post.id] = images; // Still use composite ID for React state
       }
 
-      console.log('🖼️ Final images map:', imagesMap);
       setPostImages(imagesMap);
     } catch (error) {
       console.error('Error loading post images:', error);
@@ -782,13 +752,6 @@ export default function SocialMediaPreview() {
 
   const activePosts = activeTab === 'Additional Assets' ? [] : (groupedPosts[activeTab] || []);
 
-  console.log('🎯 Render debug:', {
-    postsLength: posts.length,
-    platforms: platforms,
-    activeTab: activeTab,
-    activePostsLength: activePosts.length,
-    groupedPosts: groupedPosts
-  });
 
   return (
     <div className="min-h-screen bg-gray-50">

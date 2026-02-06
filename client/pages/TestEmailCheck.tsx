@@ -7,7 +7,6 @@ export default function TestEmailCheck() {
   const [result, setResult] = useState<any>(null);
 
   const runEmailTest = async () => {
-    console.log('🧪 Starting email existence test...');
     setIsLoading(true);
     setResult(null);
     
@@ -19,7 +18,6 @@ export default function TestEmailCheck() {
       const testResult = await testEmailWithTimeout('dmacproject123@gmail.com', 15000); // 15 second timeout
       
       setResult(testResult);
-      console.log('🎯 Test completed:', testResult);
       
     } catch (error) {
       console.error('❌ Test failed:', error);
@@ -35,7 +33,6 @@ export default function TestEmailCheck() {
   };
 
   const runQuickTest = async () => {
-    console.log('⚡ Running quick email test...');
     setIsLoading(true);
     setResult(null);
     
@@ -56,7 +53,6 @@ export default function TestEmailCheck() {
   };
 
   const runDirectApiTest = async () => {
-    console.log('🌐 Running direct API test...');
     setIsLoading(true);
     setResult(null);
     
