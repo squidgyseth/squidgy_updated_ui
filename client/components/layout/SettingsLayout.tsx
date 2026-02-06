@@ -25,6 +25,7 @@ export function SettingsLayout({ children, title }: SettingsLayoutProps) {
     if (path.includes('/team-settings')) return 'Team';
     if (path.includes('/personalisation-settings')) return 'Personalisation';
     if (path.includes('/integrations-settings')) return 'Integrations';
+    if (path.includes('/templates-settings')) return 'Templates';
     if (path.includes('/billing-settings')) return 'Billing & Subscription';
     return 'Settings';
   };
@@ -176,6 +177,22 @@ export function SettingsLayout({ children, title }: SettingsLayoutProps) {
                       <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     Integrations
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/templates-settings')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors ${isActivePage('Templates')
+                      ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                      : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="3" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <rect x="14" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <rect x="3" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <rect x="14" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Templates
                   </button>
 
                   {/* 

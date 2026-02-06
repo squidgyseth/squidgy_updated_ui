@@ -20,6 +20,26 @@ interface GHLIntegration {
   created_at: string;
 }
 
+interface TemplateLayer {
+  name: string;
+  type: string;
+  description?: string;
+  text?: string;
+  fontFamily?: string;
+  color?: string;
+  imageUrl?: string;
+}
+
+interface Template {
+  id: string;
+  name: string;
+  description?: string;
+  preview?: string;
+  size: { width: number; height: number };
+  layers: TemplateLayer[];
+  isEnabled: boolean;
+}
+
 export default function IntegrationsSettings() {
   const { user } = useUser();
   const [ghlIntegrations, setGhlIntegrations] = useState<GHLIntegration[]>([]);
@@ -65,6 +85,12 @@ export default function IntegrationsSettings() {
   const [oauthWindowOpen, setOauthWindowOpen] = useState(false);
   const [showManageModal, setShowManageModal] = useState(false);
   const [managePlatform, setManagePlatform] = useState<'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky'>('facebook');
+
+  // Templates states
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
+  const [togglingTemplateId, setTogglingTemplateId] = useState<string | null>(null);
 
   // Helper function to decode Firebase token and extract user_id
   const decodeFirebaseToken = (token: string): string | null => {
@@ -571,11 +597,93 @@ export default function IntegrationsSettings() {
     }
   };
 
+  // Fetch templates from Templated.io
+  const fetchTemplates = async () => {
+    if (!firmUserId) return;
+    
+    setTemplatesLoading(true);
+    setTemplatesError(null);
+    
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const response = await fetch(`${backendUrl}/api/templated/templates/${firmUserId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch templates: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setTemplates(data.templates || []);
+        console.log(`✅ Loaded ${data.templates?.length || 0} templates (${data.enabledCount || 0} enabled)`);
+      } else {
+        throw new Error(data.message || 'Failed to fetch templates');
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching templates:', error);
+      setTemplatesError(error.message || 'Failed to load templates');
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
+  // Toggle template enabled/disabled for user
+  const handleToggleTemplate = async (templateId: string, enable: boolean) => {
+    if (!firmUserId) {
+      toast.error('User ID not available');
+      return;
+    }
+    
+    setTogglingTemplateId(templateId);
+    
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const response = await fetch(`${backendUrl}/api/templated/templates/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template_id: templateId,
+          user_id: firmUserId,
+          enable: enable
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update template: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Update local state
+        setTemplates(prev => prev.map(t => 
+          t.id === templateId ? { ...t, isEnabled: enable } : t
+        ));
+        toast.success(`Template ${enable ? 'enabled' : 'disabled'}`);
+      } else {
+        throw new Error(data.message || 'Failed to update template');
+      }
+    } catch (error: any) {
+      console.error('❌ Error toggling template:', error);
+      toast.error(error.message || 'Failed to update template');
+    } finally {
+      setTogglingTemplateId(null);
+    }
+  };
+
   useEffect(() => {
     if (locationId) {
       checkGoogleCalendarConnection();
     }
   }, [locationId]);
+
+  // Fetch templates when firmUserId is available
+  useEffect(() => {
+    if (firmUserId) {
+      fetchTemplates();
+    }
+  }, [firmUserId]);
 
   useEffect(() => {
     // Listen for OAuth callback messages from popup

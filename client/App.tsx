@@ -47,6 +47,7 @@ import BusinessSettings from "./pages/BusinessSettings";
 import TeamSettings from "./pages/TeamSettings";
 import PersonalisationSettings from "./pages/PersonalisationSettings";
 import IntegrationsSettings from "./pages/IntegrationsSettings";
+import TemplatesSettings from "./pages/TemplatesSettings";
 import BillingSettings from "./pages/BillingSettings";
 import Leads from "./pages/Leads";
 import TestEmailCheck from "./pages/TestEmailCheck";
@@ -253,6 +254,11 @@ const App = () => (
           <Route path="/integrations-settings" element={
             <ProtectedRoute>
               <IntegrationsSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/templates-settings" element={
+            <ProtectedRoute>
+              <TemplatesSettings />
             </ProtectedRoute>
           } />
           <Route path="/billing-settings" element={

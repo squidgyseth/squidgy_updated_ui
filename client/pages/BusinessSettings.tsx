@@ -94,6 +94,7 @@ export default function BusinessSettings() {
   ];
 
   const [emergencyNumbers, setEmergencyNumbers] = useState(['']);
+  const [businessId, setBusinessId] = useState<string | null>(null);
 
   // Load existing business settings
   useEffect(() => {
@@ -111,6 +112,8 @@ export default function BusinessSettings() {
 
         if (data) {
           console.log('🔍 Loaded business settings:', data);
+          // Store the business_settings.id
+          setBusinessId(data.id);
           setSettings({
             companyName: data.company_name || '-',
             industry: '', // data.industry || '' YERİNE DİREKT BOŞ BIRAKTIK
@@ -359,7 +362,7 @@ export default function BusinessSettings() {
               className="hidden"
             />
           </div>
-          <div className="flex-1">
+          <div>
             <h3 className="text-lg font-medium text-gray-900">Company Logo</h3>
             <p className="text-sm text-gray-500 mb-4">This will be displayed on your company profile</p>
             <div className="flex gap-3">
@@ -381,6 +384,10 @@ export default function BusinessSettings() {
                 {isUploadingLogo ? 'Uploading...' : 'Change'}
               </button>
             </div>
+          </div>
+          {/* Business ID - Right bottom like Profile page */}
+          <div className="text-right space-y-1 self-end ml-auto">
+            <p className="text-xs text-gray-400">Business ID: {businessId || 'N/A'}</p>
           </div>
         </div>
       </div>
