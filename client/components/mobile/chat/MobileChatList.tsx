@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Plus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { Input } from '../../ui/input';
@@ -6,6 +7,9 @@ import { TouchButton } from '../layout/TouchButton';
 import { MobileCard } from '../layout/MobileCard';
 import { Badge } from '../../ui/badge';
 import { cn } from '../../../lib/utils';
+import OptimizedAgentService from '../../../services/optimizedAgentService';
+import OnboardingService from '../../../services/onboardingService';
+import { supabase } from '../../../lib/supabase';
 
 interface Agent {
   id: string;
@@ -18,94 +22,88 @@ interface Agent {
   unreadCount?: number;
 }
 
-// Sample agent data based on the screenshots
-const sampleAgents: Agent[] = [
-  {
-    id: '1',
-    name: 'Solar Sales Assistant',
-    description: 'Close deals. Save energy.',
-    avatar: '/agents/solar-sales.jpg',
-    isOnline: true,
-    lastMessageTime: '11:04 am',
-    unreadCount: 0,
-  },
-  {
-    id: '2',
-    name: 'Content Strategist',
-    description: 'Plan. Write. Repurpose.',
-    avatar: '/agents/content-strategist.jpg',
-    isOnline: true,
-    lastMessageTime: '12:036 pm',
-    unreadCount: 0,
-  },
-  {
-    id: '3',
-    name: 'Lead Generator',
-    description: 'Find leads fast.',
-    avatar: '/agents/lead-generator.jpg',
-    isOnline: true,
-    lastMessageTime: '4:16 pm',
-    unreadCount: 0,
-  },
-  {
-    id: '4',
-    name: 'CRM Updater',
-    description: 'Keep data clean.',
-    avatar: '/agents/crm-updater.jpg',
-    isOnline: true,
-    lastMessageTime: '12:04 am',
-    unreadCount: 0,
-  },
-  {
-    id: '5',
-    name: 'Recruiter Assistant',
-    description: 'Hire with ease.',
-    avatar: '/agents/recruiter.jpg',
-    isOnline: true,
-    lastMessageTime: '11:04 am',
-    unreadCount: 0,
-  },
-  {
-    id: '6',
-    name: 'Onboarding Coach',
-    description: 'Welcome new talent.',
-    avatar: '/agents/onboarding.jpg',
-    isOnline: true,
-    lastMessageTime: '10:04 am',
-    unreadCount: 0,
-  },
-  {
-    id: '7',
-    name: 'Business Analyst',
-    description: 'Decide with data.',
-    avatar: '/agents/business-analyst.jpg',
-    isOnline: true,
-    lastMessageTime: '5:04 am',
-    unreadCount: 0,
-  },
-  {
-    id: '8',
-    name: 'Meeting Prep Bot',
-    description: 'Enter prepared.',
-    avatar: '/agents/meeting-prep.jpg',
-    isOnline: true,
-    lastMessageTime: '11:25 pm',
-    unreadCount: 0,
-  },
-];
-
 interface MobileChatListProps {
   agents?: Agent[];
   onAgentSelect?: (agent: Agent) => void;
   onCreateAgent?: () => void;
 }
 
-export function MobileChatList({ 
-  agents = sampleAgents,
+export function MobileChatList({
+  agents: propAgents,
   onAgentSelect,
   onCreateAgent,
 }: MobileChatListProps) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [agents, setAgents] = useState<Agent[]>([]);
+
+  useEffect(() => {
+    loadEnabledAgents();
+  }, []);
+
+  const loadEnabledAgents = async () => {
+    try {
+      // Get current user from auth
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setAgents([]);
+        return;
+      }
+
+      // Get the correct user_id from profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('Error fetching profile:', profileError);
+        setAgents([]);
+        return;
+      }
+
+      const actualUserId = profile.user_id;
+
+      const agentService = OptimizedAgentService.getInstance();
+      const onboardingService = OnboardingService.getInstance();
+      const allAgentConfigs = agentService.getAllAgents();
+
+      // Get enabled agents for this user
+      const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
+      const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
+
+      // Always include Personal Assistant (pinned)
+      enabledAgentIds.add('personal_assistant');
+
+      // Filter configs to only show enabled agents
+      const enabledConfigs = allAgentConfigs.filter(config =>
+        enabledAgentIds.has(config.agent.id)
+      );
+
+      // Transform configs to match mobile format
+      const loadedAgents: Agent[] = enabledConfigs.map((config) => {
+        // Get custom data for this agent
+        const customData = enabledAgents.find(agent => agent.assistant_id === config.agent.id);
+
+        return {
+          id: config.agent.id,
+          name: customData?.custom_name || config.agent.name,
+          description: config.agent.description || config.agent.specialization || 'AI Assistant',
+          avatar: config.agent.avatar || "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+          isOnline: true,
+          lastMessageTime: '',
+          unreadCount: 0,
+        };
+      });
+
+      setAgents(loadedAgents);
+
+    } catch (error) {
+      console.error('Failed to load enabled agents:', error);
+      setAgents([]);
+    }
+  };
 
   const filteredAgents = agents.filter((agent) =>
     agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -113,8 +111,29 @@ export function MobileChatList({
   );
 
   const handleAgentClick = (agent: Agent) => {
+    // Navigate to the agent's chat page
+    navigate(`/chat/${agent.id}`, {
+      state: { fromMobileList: true }
+    });
+
+    // Still call the callback if provided
     if (onAgentSelect) {
       onAgentSelect(agent);
+    }
+  };
+
+  const handleCreateAgent = () => {
+    // Navigate to Personal Assistant with add new message
+    navigate('/chat/personal_assistant', {
+      state: {
+        showAddNewMessage: true,
+        addNewTimestamp: Date.now() // Force re-trigger on every click
+      }
+    });
+
+    // Still call the callback if provided
+    if (onCreateAgent) {
+      onCreateAgent();
     }
   };
 
@@ -133,7 +152,7 @@ export function MobileChatList({
         <TouchButton
           variant="ghost"
           size="icon"
-          onClick={onCreateAgent}
+          onClick={handleCreateAgent}
           className="h-10 w-10 rounded-full bg-primary text-primary-foreground"
         >
           <Plus className="h-5 w-5" />
@@ -224,7 +243,7 @@ export function MobileChatList({
               <TouchButton
                 variant="gradient"
                 className="mt-4"
-                onClick={onCreateAgent}
+                onClick={handleCreateAgent}
               >
                 Create Agent
               </TouchButton>
