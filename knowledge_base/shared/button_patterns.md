@@ -1,18 +1,18 @@
 # Button Patterns
 
 ## SYNTAX
-Simple: `$$Button Text$$`
-With description: `$$Option Text - Description$$`
+Simple: `$**Button Text**$`
+With description: `$**Option Text|Description**$`
 
 ## EXAMPLES
 ```
-$$Create Newsletter$$
-$$Yes, continue$$
-$$No, cancel$$
-$$Skip for now$$
-$$B2B Decision Makers - CTOs, CEOs, Directors$$
-$$Start Chat with Newsletter Agent$$
-$$Add Another Assistant$$
+$**Create Newsletter**$
+$**Yes, continue**$
+$**No, cancel**$
+$**Skip for now**$
+$**B2B Decision Makers|CTOs, CEOs, Directors**$
+$**Start Chat with Newsletter Agent**$
+$**Add Another Assistant**$
 ```
 
 ## RULES
