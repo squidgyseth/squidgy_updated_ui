@@ -3206,7 +3206,6 @@ export default function IntegrationsSettings() {
                           alt={page.name}
                           className="w-10 h-10 rounded-full"
                         />
-                        )}
                         <div>
                           <p className="font-medium">{page.name}</p>
                           <p className="text-xs text-gray-500">ID: {page.id}</p>
@@ -3578,7 +3577,6 @@ export default function IntegrationsSettings() {
                           alt={page.name}
                           className="w-10 h-10 rounded-full"
                         />
-                        )}
                         <div>
                           <p className="font-medium">{page.name}</p>
                           <p className="text-xs text-gray-500">ID: {page.id}</p>

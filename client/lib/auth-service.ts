@@ -235,6 +235,46 @@ export class AuthService {
             console.error('❌ AUTH_SERVICE: Profile creation error:', error);
             throw new Error('Failed to create user profile');
           }
+
+          // Auto-create business_settings for new users
+          if (profile && profile.user_id) {
+            try {
+              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+              const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+              const businessSettingsUrl = `${supabaseUrl}/rest/v1/business_settings`;
+
+              const businessSettingsData = {
+                user_id: profile.user_id,
+                company_name: null, // User will fill this later
+                industry: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
+
+              const businessResponse = await fetch(businessSettingsUrl, {
+                method: 'POST',
+                headers: {
+                  'apikey': supabaseKey,
+                  'Authorization': `Bearer ${supabaseKey}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify(businessSettingsData)
+              });
+
+              if (businessResponse.ok) {
+                const createdBusinessSettings = await businessResponse.json();
+                console.log('✅ AUTH_SERVICE: Auto-created business_settings:', createdBusinessSettings);
+              } else {
+                const errorText = await businessResponse.text();
+                console.warn('⚠️ AUTH_SERVICE: business_settings creation failed (non-critical):', businessResponse.status, errorText);
+                // Don't throw - this is non-critical, user can complete later
+              }
+            } catch (error: any) {
+              console.warn('⚠️ AUTH_SERVICE: business_settings creation error (non-critical):', error);
+              // Don't throw - this is non-critical, user can complete later
+            }
+          }
         } else if (existingProfile) {
           // Update the existing profile with any missing data
           if (!existingProfile.user_id || !existingProfile.company_id) {
@@ -275,6 +315,58 @@ export class AuthService {
               }
             } catch (error: any) {
               console.error('⚠️ AUTH_SERVICE: Profile update error:', error);
+            }
+          }
+
+          // Auto-create business_settings for existing users if missing
+          if (existingProfile && existingProfile.user_id) {
+            try {
+              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+              const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+              // Check if business_settings already exists
+              const checkUrl = `${supabaseUrl}/rest/v1/business_settings?user_id=eq.${existingProfile.user_id}&select=id`;
+              const checkResponse = await fetch(checkUrl, {
+                method: 'GET',
+                headers: {
+                  'apikey': supabaseKey,
+                  'Authorization': `Bearer ${supabaseKey}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              if (checkResponse.ok) {
+                const existingBusinessSettings = await checkResponse.json();
+
+                // Only create if doesn't exist
+                if (!existingBusinessSettings || existingBusinessSettings.length === 0) {
+                  const businessSettingsUrl = `${supabaseUrl}/rest/v1/business_settings`;
+                  const businessSettingsData = {
+                    user_id: existingProfile.user_id,
+                    company_name: null,
+                    industry: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  };
+
+                  const businessResponse = await fetch(businessSettingsUrl, {
+                    method: 'POST',
+                    headers: {
+                      'apikey': supabaseKey,
+                      'Authorization': `Bearer ${supabaseKey}`,
+                      'Content-Type': 'application/json',
+                      'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(businessSettingsData)
+                  });
+
+                  if (businessResponse.ok) {
+                    console.log('✅ AUTH_SERVICE: Auto-created business_settings for existing user');
+                  }
+                }
+              }
+            } catch (error: any) {
+              console.warn('⚠️ AUTH_SERVICE: business_settings check/creation error (non-critical):', error);
             }
           }
         }

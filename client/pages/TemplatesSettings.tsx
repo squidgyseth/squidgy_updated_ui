@@ -5,31 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, RefreshCw, Eye, X } from 'lucide-react';
 import { useUser } from '../hooks/useUser';
-import { profilesApi } from '../lib/supabase-api';
+import { templatesService, type Template } from '../lib/templates-api';
 import { toast } from 'sonner';
-
-interface TemplateLayer {
-  name: string;
-  type: string;
-  description?: string;
-  text?: string;
-  fontFamily?: string;
-  color?: string;
-  imageUrl?: string;
-}
-
-interface Template {
-  id: string;
-  name: string;
-  description?: string;
-  preview?: string;
-  size: { width: number; height: number };
-  layers: TemplateLayer[];
-  isEnabled: boolean;
-  groupName?: string;
-  groupTemplates?: Template[];
-  groupCount?: number;
-}
 
 export default function TemplatesSettings() {
   const { user } = useUser();
@@ -40,27 +17,34 @@ export default function TemplatesSettings() {
   const [togglingTemplateId, setTogglingTemplateId] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
 
-  // Get user's business ID from business_settings table
+  // Get business ID from business_settings table (consistent across the app)
   const getUserFirmId = async () => {
-    if (!user?.email) return;
+    if (!user?.email) {
+      console.warn('⚠️ No user email available');
+      return;
+    }
+
     try {
-      const { data: profile } = await profilesApi.getByEmail(user.email);
-      if (profile?.user_id) {
-        // Fetch business_settings.id using user_id
-        const { supabase } = await import('../lib/supabase');
-        const { data: businessSettings } = await supabase
-          .from('business_settings')
-          .select('id')
-          .eq('user_id', profile.user_id)
-          .single();
-        
-        if (businessSettings?.id) {
-          setFirmUserId(businessSettings.id);
-          console.log('✅ Business ID from business_settings:', businessSettings.id);
+      console.log('🔍 Fetching business ID for email:', user.email);
+      const { businessId, error } = await templatesService.getBusinessId(user.email);
+
+      if (error || !businessId) {
+        console.error('❌ Failed to get business ID:', error);
+
+        if (error.code === 'BUSINESS_NOT_FOUND') {
+          // Show helpful message with button on page (no toast - less intrusive)
+          setTemplatesError('Please complete your business setup first to access templates.');
+        } else {
+          setTemplatesError(error.message || 'Failed to load business information');
         }
+        return;
       }
-    } catch (error) {
-      console.error('Error getting business ID:', error);
+
+      setFirmUserId(businessId);
+      console.log('✅ Business ID:', businessId);
+    } catch (error: any) {
+      console.error('❌ Error getting business ID:', error);
+      setTemplatesError('Failed to load business information. Please try again.');
     }
   };
 
@@ -70,26 +54,29 @@ export default function TemplatesSettings() {
 
   // Fetch templates from Templated.io
   const fetchTemplates = async () => {
-    if (!firmUserId) return;
-    
+    if (!firmUserId) {
+      console.warn('⚠️ Cannot fetch templates: firmUserId is not set');
+      return;
+    }
+
     setTemplatesLoading(true);
     setTemplatesError(null);
-    
+
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/templated/templates/${firmUserId}`);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch templates: ${response.statusText}`);
+      const { data, error } = await templatesService.getByBusinessId(firmUserId);
+
+      if (error || !data) {
+        throw new Error(error?.message || 'Failed to fetch templates');
       }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setTemplates(data.templates || []);
-        console.log(`✅ Loaded ${data.templates?.length || 0} templates (${data.enabledCount || 0} enabled)`);
-      } else {
-        throw new Error(data.message || 'Failed to fetch templates');
+
+      setTemplates(data.templates || []);
+
+      if (data.debug) {
+        console.log('🔍 Debug info:', data.debug);
+      }
+
+      if (data.templates.length === 0) {
+        setTemplatesError('No templates found. Please contact support to get templates tagged with "showeveryone".');
       }
     } catch (error: any) {
       console.error('❌ Error fetching templates:', error);
@@ -105,38 +92,29 @@ export default function TemplatesSettings() {
       toast.error('User ID not available');
       return;
     }
-    
+
     setTogglingTemplateId(template.id);
-    
+
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      
       // Get all template IDs in the group
-      const templateIds = template.groupTemplates 
+      const templateIds = template.groupTemplates
         ? template.groupTemplates.map(t => t.id)
         : [template.id];
-      
-      const response = await fetch(`${backendUrl}/api/templated/templates/bulk-toggle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          template_ids: templateIds,
-          user_id: firmUserId,
-          enable: enable
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to update templates: ${response.statusText}`);
+
+      // Use the appropriate service method based on enable/disable
+      const { data, error } = enable
+        ? await templatesService.enableMultiple(templateIds, firmUserId)
+        : await templatesService.disableMultiple(templateIds, firmUserId);
+
+      if (error || !data) {
+        throw new Error(error?.message || 'Failed to update templates');
       }
-      
-      const data = await response.json();
-      
+
       if (data.success) {
         // Update local state for the group
-        setTemplates(prev => prev.map(t => 
-          t.id === template.id ? { 
-            ...t, 
+        setTemplates(prev => prev.map(t =>
+          t.id === template.id ? {
+            ...t,
             isEnabled: enable,
             groupTemplates: t.groupTemplates?.map(gt => ({ ...gt, isEnabled: enable }))
           } : t
@@ -144,7 +122,7 @@ export default function TemplatesSettings() {
         const count = templateIds.length;
         toast.success(`${count} template${count > 1 ? 's' : ''} ${enable ? 'enabled' : 'disabled'}`);
       } else {
-        throw new Error(data.message || 'Failed to update templates');
+        throw new Error('Failed to update templates');
       }
     } catch (error: any) {
       console.error('❌ Error toggling templates:', error);
@@ -169,7 +147,10 @@ export default function TemplatesSettings() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Templates</h1>
           <p className="text-gray-500 mt-1">
-            Select which templates you want to use for your business. Enabled templates will be available for your social media posts.
+            Choose from our template library to create social media content. Click "Enable" to activate templates for your business.
+          </p>
+          <p className="text-sm text-gray-400 mt-2">
+            💡 Templates shown here are either available to everyone or specifically selected for your business. Enable the ones you want to use for content creation.
           </p>
         </div>
 
@@ -194,19 +175,25 @@ export default function TemplatesSettings() {
             <span className="ml-2 text-gray-500">Loading templates...</span>
           </div>
         ) : templatesError ? (
-          /* Error State */
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="py-6">
-              <p className="text-red-600">{templatesError}</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-2"
-                onClick={fetchTemplates}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Retry
-              </Button>
+          /* Setup Prompt - Welcoming, not an error */
+          <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
+            <CardContent className="py-12 text-center">
+              <div className="max-w-md mx-auto">
+                <div className="text-4xl mb-4">🎨</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Let's Set Up Your Business First
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Complete your business profile to unlock our template library and start creating amazing content.
+                </p>
+                <Button
+                  size="lg"
+                  onClick={() => window.location.href = '/business-settings'}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  Set Up Business Profile →
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
