@@ -111,23 +111,30 @@ export default function IntegrationsSettings() {
     try {
       const parts = token.split('.');
       if (parts.length !== 3) return true;
-      
+
       const payload = JSON.parse(atob(parts[1]));
       const exp = payload.exp;
-      
+
       if (!exp) return true;
-      
+
       const now = Math.floor(Date.now() / 1000);
       const isExpired = now >= exp;
-      
+
       if (isExpired) {
       }
-      
+
       return isExpired;
     } catch (error) {
       console.error('Error checking token expiration:', error);
       return true;
     }
+  };
+
+  // Helper function to get placeholder avatar for social media platforms
+  const getPlaceholderAvatar = (platform?: string, accountName?: string): string => {
+    // Use dicebear API with platform name as seed for consistent placeholder
+    const seed = accountName || platform || 'default';
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
   };
 
   useEffect(() => {
@@ -2229,8 +2236,8 @@ export default function IntegrationsSettings() {
                         <div className="space-y-2 max-h-32 overflow-y-auto">
                           {connectedSocialMediaAccounts.filter(a => a.platform === 'facebook' && !a.deleted).map((account) => (
                             <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                              <img 
-                                src={account.avatar} 
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('facebook', account.name)}
                                 alt={account.name}
                                 className="w-8 h-8 rounded-full"
                               />
@@ -2310,13 +2317,11 @@ export default function IntegrationsSettings() {
                           className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
                         >
                           <div className="flex items-center gap-3">
-                            {page.avatar && (
-                              <img
-                                src={page.avatar}
-                                alt={page.name}
-                                className="w-10 h-10 rounded-full"
-                              />
-                            )}
+                            <img
+                              src={page.avatar || getPlaceholderAvatar('facebook', page.name)}
+                              alt={page.name}
+                              className="w-10 h-10 rounded-full"
+                            />
                             <div>
                               <p className="font-medium">{page.name}</p>
                               <p className="text-xs text-gray-500">ID: {page.id}</p>
@@ -2372,20 +2377,18 @@ export default function IntegrationsSettings() {
                         const isExpired = account.isExpired || false;
                         const expireDate = account.expire ? new Date(account.expire) : null;
                         const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
-                        
+
                         return (
                           <div
                             key={account.id}
                             className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
                           >
                             <div className="flex items-start gap-3 flex-1">
-                              {account.avatar && (
-                                <img
-                                  src={account.avatar}
-                                  alt={account.name}
-                                  className="w-12 h-12 rounded-full"
-                                />
-                              )}
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('facebook', account.name)}
+                                alt={account.name}
+                                className="w-12 h-12 rounded-full"
+                              />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <p className="font-medium text-gray-900">{account.name}</p>
@@ -2454,8 +2457,8 @@ export default function IntegrationsSettings() {
                         <div className="space-y-2 max-h-32 overflow-y-auto">
                           {connectedSocialMediaAccounts.filter(a => a.platform === 'instagram' && !a.deleted).map((account) => (
                             <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                              <img 
-                                src={account.avatar} 
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('instagram', account.name)}
                                 alt={account.name}
                                 className="w-8 h-8 rounded-full"
                               />
@@ -2535,13 +2538,11 @@ export default function IntegrationsSettings() {
                           className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
                         >
                           <div className="flex items-center gap-3">
-                            {page.avatar && (
-                              <img
-                                src={page.avatar}
-                                alt={page.name}
-                                className="w-10 h-10 rounded-full"
-                              />
-                            )}
+                            <img
+                              src={page.avatar || getPlaceholderAvatar('instagram', page.name)}
+                              alt={page.name}
+                              className="w-10 h-10 rounded-full"
+                            />
                             <div>
                               <p className="font-medium">{page.name}</p>
                               <p className="text-xs text-gray-500">ID: {page.id}</p>
@@ -2597,20 +2598,18 @@ export default function IntegrationsSettings() {
                         const isExpired = account.isExpired || false;
                         const expireDate = account.expire ? new Date(account.expire) : null;
                         const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
-                        
+
                         return (
                           <div
                             key={account.id}
                             className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
                           >
                             <div className="flex items-start gap-3 flex-1">
-                              {account.avatar && (
-                                <img
-                                  src={account.avatar}
-                                  alt={account.name}
-                                  className="w-12 h-12 rounded-full"
-                                />
-                              )}
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('instagram', account.name)}
+                                alt={account.name}
+                                className="w-12 h-12 rounded-full"
+                              />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <p className="font-medium text-gray-900">{account.name}</p>
@@ -2679,8 +2678,8 @@ export default function IntegrationsSettings() {
                         <div className="space-y-2 max-h-32 overflow-y-auto">
                           {connectedSocialMediaAccounts.filter(a => a.platform === 'linkedin' && !a.deleted).map((account) => (
                             <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                              <img 
-                                src={account.avatar} 
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('linkedin', account.name)}
                                 alt={account.name}
                                 className="w-8 h-8 rounded-full"
                               />
@@ -2760,13 +2759,11 @@ export default function IntegrationsSettings() {
                           className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
                         >
                           <div className="flex items-center gap-3">
-                            {page.avatar && (
-                              <img
-                                src={page.avatar}
-                                alt={page.name}
-                                className="w-10 h-10 rounded-full"
-                              />
-                            )}
+                            <img
+                              src={page.avatar || getPlaceholderAvatar('linkedin', page.name)}
+                              alt={page.name}
+                              className="w-10 h-10 rounded-full"
+                            />
                             <div>
                               <p className="font-medium">{page.name}</p>
                               <p className="text-xs text-gray-500">ID: {page.id}</p>
@@ -2822,20 +2819,18 @@ export default function IntegrationsSettings() {
                         const isExpired = account.isExpired || false;
                         const expireDate = account.expire ? new Date(account.expire) : null;
                         const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
-                        
+
                         return (
                           <div
                             key={account.id}
                             className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
                           >
                             <div className="flex items-start gap-3 flex-1">
-                              {account.avatar && (
-                                <img
-                                  src={account.avatar}
-                                  alt={account.name}
-                                  className="w-12 h-12 rounded-full"
-                                />
-                              )}
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('linkedin', account.name)}
+                                alt={account.name}
+                                className="w-12 h-12 rounded-full"
+                              />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <p className="font-medium text-gray-900">{account.name}</p>
@@ -2904,8 +2899,8 @@ export default function IntegrationsSettings() {
                         <div className="space-y-2 max-h-32 overflow-y-auto">
                           {connectedSocialMediaAccounts.filter(a => a.platform === 'threads' && !a.deleted).map((account) => (
                             <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                              <img 
-                                src={account.avatar} 
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('threads', account.name)}
                                 alt={account.name}
                                 className="w-8 h-8 rounded-full"
                               />
@@ -2985,13 +2980,11 @@ export default function IntegrationsSettings() {
                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
                     >
                       <div className="flex items-center gap-3">
-                        {page.avatar && (
-                          <img
-                            src={page.avatar}
-                            alt={page.name}
-                            className="w-10 h-10 rounded-full"
-                          />
-                        )}
+                        <img
+                          src={page.avatar || getPlaceholderAvatar('threads', page.name)}
+                          alt={page.name}
+                          className="w-10 h-10 rounded-full"
+                        />
                         <div>
                           <p className="font-medium">{page.name}</p>
                           <p className="text-xs text-gray-500">ID: {page.id}</p>
@@ -3047,20 +3040,18 @@ export default function IntegrationsSettings() {
                     const isExpired = account.isExpired || false;
                     const expireDate = account.expire ? new Date(account.expire) : null;
                     const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
-                    
+
                     return (
                       <div
                         key={account.id}
                         className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
                       >
                         <div className="flex items-start gap-3 flex-1">
-                          {account.avatar && (
-                            <img
-                              src={account.avatar}
-                              alt={account.name}
-                              className="w-12 h-12 rounded-full"
-                            />
-                          )}
+                          <img
+                            src={account.avatar || getPlaceholderAvatar('threads', account.name)}
+                            alt={account.name}
+                            className="w-12 h-12 rounded-full"
+                          />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-medium text-gray-900">{account.name}</p>
@@ -3129,8 +3120,8 @@ export default function IntegrationsSettings() {
                         <div className="space-y-2 max-h-32 overflow-y-auto">
                           {connectedSocialMediaAccounts.filter(a => a.platform === 'tiktok' && !a.deleted).map((account) => (
                             <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                              <img 
-                                src={account.avatar} 
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('tiktok', account.name)}
                                 alt={account.name}
                                 className="w-8 h-8 rounded-full"
                               />
@@ -3210,12 +3201,11 @@ export default function IntegrationsSettings() {
                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
                     >
                       <div className="flex items-center gap-3">
-                        {page.avatar && (
-                          <img
-                            src={page.avatar}
-                            alt={page.name}
-                            className="w-10 h-10 rounded-full"
-                          />
+                        <img
+                          src={page.avatar || getPlaceholderAvatar('tiktok', page.name)}
+                          alt={page.name}
+                          className="w-10 h-10 rounded-full"
+                        />
                         )}
                         <div>
                           <p className="font-medium">{page.name}</p>
@@ -3272,20 +3262,18 @@ export default function IntegrationsSettings() {
                     const isExpired = account.isExpired || false;
                     const expireDate = account.expire ? new Date(account.expire) : null;
                     const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
-                    
+
                     return (
                       <div
                         key={account.id}
                         className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
                       >
                         <div className="flex items-start gap-3 flex-1">
-                          {account.avatar && (
-                            <img
-                              src={account.avatar}
-                              alt={account.name}
-                              className="w-12 h-12 rounded-full"
-                            />
-                          )}
+                          <img
+                            src={account.avatar || getPlaceholderAvatar('tiktok', account.name)}
+                            alt={account.name}
+                            className="w-12 h-12 rounded-full"
+                          />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-medium text-gray-900">{account.name}</p>
@@ -3354,8 +3342,8 @@ export default function IntegrationsSettings() {
                         <div className="space-y-2 max-h-32 overflow-y-auto">
                           {connectedSocialMediaAccounts.filter(a => a.platform === 'youtube' && !a.deleted).map((account) => (
                             <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                              <img 
-                                src={account.avatar} 
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('youtube', account.name)}
                                 alt={account.name}
                                 className="w-8 h-8 rounded-full"
                               />
@@ -3424,7 +3412,7 @@ export default function IntegrationsSettings() {
                       {socialMediaPages.map((page) => (
                         <div key={page.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                           <div className="flex items-center gap-3">
-                            {page.avatar && <img src={page.avatar} alt={page.name} className="w-10 h-10 rounded-full" />}
+                            <img src={page.avatar || getPlaceholderAvatar('youtube', page.name)} alt={page.name} className="w-10 h-10 rounded-full" />
                             <div><p className="font-medium">{page.name}</p><p className="text-xs text-gray-500">ID: {page.id}</p></div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -3458,7 +3446,7 @@ export default function IntegrationsSettings() {
                       return (
                         <div key={account.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50">
                           <div className="flex items-start gap-3 flex-1">
-                            {account.avatar && <img src={account.avatar} alt={account.name} className="w-12 h-12 rounded-full" />}
+                            <img src={account.avatar || getPlaceholderAvatar('youtube', account.name)} alt={account.name} className="w-12 h-12 rounded-full" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <p className="font-medium text-gray-900">{account.name}</p>
@@ -3504,8 +3492,8 @@ export default function IntegrationsSettings() {
                         <div className="space-y-2 max-h-32 overflow-y-auto">
                           {connectedSocialMediaAccounts.filter(a => a.platform === 'pinterest' && !a.deleted).map((account) => (
                             <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                              <img 
-                                src={account.avatar} 
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('pinterest', account.name)}
                                 alt={account.name}
                                 className="w-8 h-8 rounded-full"
                               />
@@ -3585,12 +3573,11 @@ export default function IntegrationsSettings() {
                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
                     >
                       <div className="flex items-center gap-3">
-                        {page.avatar && (
-                          <img
-                            src={page.avatar}
-                            alt={page.name}
-                            className="w-10 h-10 rounded-full"
-                          />
+                        <img
+                          src={page.avatar || getPlaceholderAvatar('pinterest', page.name)}
+                          alt={page.name}
+                          className="w-10 h-10 rounded-full"
+                        />
                         )}
                         <div>
                           <p className="font-medium">{page.name}</p>
@@ -3647,20 +3634,18 @@ export default function IntegrationsSettings() {
                     const isExpired = account.isExpired || false;
                     const expireDate = account.expire ? new Date(account.expire) : null;
                     const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
-                    
+
                     return (
                       <div
                         key={account.id}
                         className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
                       >
                         <div className="flex items-start gap-3 flex-1">
-                          {account.avatar && (
-                            <img
-                              src={account.avatar}
-                              alt={account.name}
-                              className="w-12 h-12 rounded-full"
-                            />
-                          )}
+                          <img
+                            src={account.avatar || getPlaceholderAvatar('pinterest', account.name)}
+                            alt={account.name}
+                            className="w-12 h-12 rounded-full"
+                          />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-medium text-gray-900">{account.name}</p>
