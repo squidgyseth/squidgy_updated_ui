@@ -217,7 +217,20 @@ export default function NewsletterEditor() {
   // Handle file selection - Upload to Supabase
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
+
+    // Validate MIME type - only allow images
+    const allowedMimeTypes = ['image/*'];
+    if (!file || !file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG, GIF, etc.)');
+      return;
+    }
+
+    // Safety check: Ensure userId is available
+    if (!userId) {
+      alert('User not authenticated. Please refresh and try again.');
+      return;
+    }
+
       const range = saveSelection();
       
       // Show loading state
@@ -232,62 +245,38 @@ export default function NewsletterEditor() {
       }
       
       try {
-        // Upload to Supabase Storage (try existing bucket first)
-        const fileName = `newsletter_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-        let uploadResult = await supabase.storage
+        // Upload to Supabase Storage - same pattern as content_repurposer
+        // Sanitize filename - remove special characters and spaces
+        const sanitizedFileName = file.name
+          .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special chars with underscore
+          .replace(/\s+/g, '_') // Replace spaces with underscore
+          .replace(/_+/g, '_') // Replace multiple underscores with single
+          .toLowerCase(); // Convert to lowercase
+
+        // Create unique filename
+        const timestamp = Date.now();
+        const uniqueFileName = `${userId}/${timestamp}_${sanitizedFileName}`;
+
+        // Upload to Supabase storage
+        const { data, error } = await supabase.storage
           .from('newsletter-images')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-        
-        let { data, error } = uploadResult;
+          .upload(uniqueFileName, file);
 
         if (error) {
-          // If bucket doesn't exist or RLS issue, try creating bucket
-          if (error.message.includes('bucket') || error.message.includes('not found') || error.message.includes('row-level security')) {
-            const { error: bucketError } = await supabase.storage.createBucket('newsletter-images', {
-              public: true,
-              allowedMimeTypes: ['image/*']
-              // No file size limit
-            });
-            
-            if (!bucketError) {
-              // Try upload again
-              const retryResult = await supabase.storage
-                .from('newsletter-images')
-                .upload(fileName, file, {
-                  cacheControl: '3600',
-                  upsert: false
-                });
-              
-              if (!retryResult.error) {
-                const { data: { publicUrl } } = supabase.storage
-                  .from('newsletter-images')
-                  .getPublicUrl(fileName);
-                
-                if (loadingSpan) loadingSpan.remove();
-                insertImageAtPosition(publicUrl, range);
-                return;
-              } else {
-                throw retryResult.error;
-              }
-            } else {
-              console.error('Failed to create bucket:', bucketError);
-              throw new Error('Unable to create storage bucket. Please contact administrator.');
-            }
-          } else {
-            throw error;
+          console.error('❌ Supabase storage error:', error);
+          if (error.message.includes('not found')) {
+            throw new Error('Storage bucket "newsletter-images" not found. Please create the bucket in Supabase dashboard.');
           }
-        } else {
-          // Get public URL
-          const { data: { publicUrl } } = supabase.storage
-            .from('newsletter-images')
-            .getPublicUrl(fileName);
-          
-          if (loadingSpan) loadingSpan.remove();
-          insertImageAtPosition(publicUrl, range);
+          throw error;
         }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('newsletter-images')
+          .getPublicUrl(uniqueFileName);
+
+        if (loadingSpan) loadingSpan.remove();
+        insertImageAtPosition(urlData.publicUrl, range);
       } catch (error) {
         console.error('Failed to upload image:', error);
         alert('Failed to upload image. Please try again or use an image URL instead.');
