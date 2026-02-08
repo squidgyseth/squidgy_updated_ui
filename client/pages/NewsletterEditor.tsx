@@ -231,60 +231,59 @@ export default function NewsletterEditor() {
       return;
     }
 
-      const range = saveSelection();
-      
-      // Show loading state
-      let loadingSpan: HTMLSpanElement | null = null;
-      if (range) {
-        loadingSpan = document.createElement('span');
-        loadingSpan.textContent = '[Uploading image...]';
-        loadingSpan.style.color = '#999';
-        loadingSpan.className = 'newsletter-upload-loading'; // Add class for easy removal
-        range.deleteContents();
-        range.insertNode(loadingSpan);
+    const range = saveSelection();
+
+    // Show loading state
+    let loadingSpan: HTMLSpanElement | null = null;
+    if (range) {
+      loadingSpan = document.createElement('span');
+      loadingSpan.textContent = '[Uploading image...]';
+      loadingSpan.style.color = '#999';
+      loadingSpan.className = 'newsletter-upload-loading'; // Add class for easy removal
+      range.deleteContents();
+      range.insertNode(loadingSpan);
+    }
+
+    try {
+      // Upload to Supabase Storage - same pattern as content_repurposer
+      // Sanitize filename - remove special characters and spaces
+      const sanitizedFileName = file.name
+        .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special chars with underscore
+        .replace(/\s+/g, '_') // Replace spaces with underscore
+        .replace(/_+/g, '_') // Replace multiple underscores with single
+        .toLowerCase(); // Convert to lowercase
+
+      // Create unique filename
+      const timestamp = Date.now();
+      const uniqueFileName = `${userId}/${timestamp}_${sanitizedFileName}`;
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('newsletter-images')
+        .upload(uniqueFileName, file);
+
+      if (error) {
+        console.error('❌ Supabase storage error:', error);
+        if (error.message.includes('not found')) {
+          throw new Error('Storage bucket "newsletter-images" not found. Please create the bucket in Supabase dashboard.');
+        }
+        throw error;
       }
-      
-      try {
-        // Upload to Supabase Storage - same pattern as content_repurposer
-        // Sanitize filename - remove special characters and spaces
-        const sanitizedFileName = file.name
-          .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special chars with underscore
-          .replace(/\s+/g, '_') // Replace spaces with underscore
-          .replace(/_+/g, '_') // Replace multiple underscores with single
-          .toLowerCase(); // Convert to lowercase
 
-        // Create unique filename
-        const timestamp = Date.now();
-        const uniqueFileName = `${userId}/${timestamp}_${sanitizedFileName}`;
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('newsletter-images')
+        .getPublicUrl(uniqueFileName);
 
-        // Upload to Supabase storage
-        const { data, error } = await supabase.storage
-          .from('newsletter-images')
-          .upload(uniqueFileName, file);
+      if (loadingSpan) loadingSpan.remove();
+      insertImageAtPosition(urlData.publicUrl, range);
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      alert('Failed to upload image. Please try again or use an image URL instead.');
 
-        if (error) {
-          console.error('❌ Supabase storage error:', error);
-          if (error.message.includes('not found')) {
-            throw new Error('Storage bucket "newsletter-images" not found. Please create the bucket in Supabase dashboard.');
-          }
-          throw error;
-        }
-
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('newsletter-images')
-          .getPublicUrl(uniqueFileName);
-
-        if (loadingSpan) loadingSpan.remove();
-        insertImageAtPosition(urlData.publicUrl, range);
-      } catch (error) {
-        console.error('Failed to upload image:', error);
-        alert('Failed to upload image. Please try again or use an image URL instead.');
-        
-        // Remove loading text
-        if (loadingSpan) {
-          loadingSpan.remove();
-        }
+      // Remove loading text
+      if (loadingSpan) {
+        loadingSpan.remove();
       }
     }
     // Reset file input
