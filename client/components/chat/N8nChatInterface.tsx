@@ -12,7 +12,7 @@ import { FileUploadService } from '../../services/fileUploadService';
 import { chatSessionService } from '../../services/chatSessionService';
 import { conversationStateService } from '../../services/conversationStateService';
 import { supabase } from '../../lib/supabase';
-import { createProxyUrl } from '../../utils/urlMasking';
+import { createProxyUrl, maskStorageUrlsInText } from '../../utils/urlMasking';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 import NewsletterSelector from './NewsletterSelector';
 import InteractiveMessageButtons from './InteractiveMessageButtons';
@@ -725,14 +725,14 @@ export default function N8nChatInterface({
       .trim();
   };
 
-  // Helper function to detect numbered list options (e.g., "1. OPTION TEXT")
+  // Helper function to detect numbered list options (e.g., "1. OPTION TEXT" or "1. Option Text|Description")
   const hasNumberedOptions = (content: string): boolean => {
     // Split by lines and check each line for numbered option pattern
     const lines = content.split('\n');
     let count = 0;
     for (const line of lines) {
       const trimmed = line.trim();
-      // Match "1. UPPERCASE TEXT" pattern - allow any characters after the number
+      // Match "1. Text" pattern - starts with number, period, space, then any text starting with capital letter
       if (/^\d+\.\s+[A-Z]/.test(trimmed)) {
         count++;
       }
@@ -750,6 +750,28 @@ export default function N8nChatInterface({
       const match = trimmed.match(/^\d+\.\s+(.+)$/);
       if (match && /^[A-Z]/.test(match[1])) {
         options.push(match[1].trim());
+      }
+    }
+    return options;
+  };
+
+  // Helper function to extract numbered options with pipe separator (e.g., "Title|Description")
+  const extractNumberedOptionsWithDescription = (content: string): { title: string; description: string }[] => {
+    const options: { title: string; description: string }[] = [];
+    const lines = content.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // Match "1. TEXT" and extract the text part
+      const match = trimmed.match(/^\d+\.\s+(.+)$/);
+      if (match && /^[A-Z]/.test(match[1])) {
+        const optionText = match[1].trim();
+        // Check for pipe separator
+        if (optionText.includes('|')) {
+          const [title, ...descParts] = optionText.split('|');
+          options.push({ title: title.trim(), description: descParts.join('|').trim() });
+        } else {
+          options.push({ title: optionText, description: '' });
+        }
       }
     }
     return options;
@@ -1277,6 +1299,36 @@ export default function N8nChatInterface({
                               </div>
                             );
                           }
+                        }
+                        
+                        // For personal_assistant, check for numbered options with pipe separator (Title|Description)
+                        if (agent.id === 'personal_assistant' && hasNumberedOptions(message.content)) {
+                          const introText = getContentWithoutNumberedOptions(message.content);
+                          const options = extractNumberedOptionsWithDescription(message.content);
+                          return (
+                            <div className="bg-gray-100 rounded-lg px-4 py-3">
+                              {introText && (
+                                <div 
+                                  className="text-text-primary mb-3"
+                                  dangerouslySetInnerHTML={{ __html: maskStorageUrlsInText(introText) }}
+                                />
+                              )}
+                              <div className="space-y-2">
+                                {options.map((option, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => handleSendMessage(option.title)}
+                                    className="w-full text-left px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors"
+                                  >
+                                    <span className="text-purple-700 font-medium">{idx + 1}. {option.title}</span>
+                                    {option.description && (
+                                      <span className="text-purple-600 text-sm ml-1">- {option.description}</span>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
                         }
                         
                         // Regular message display - check for $$...$$ button patterns

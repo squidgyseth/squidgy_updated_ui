@@ -7,6 +7,7 @@ import SocialMediaLink from './SocialMediaLink';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
 import EnableContentRepurposerButton from './EnableContentRepurposerButton';
 import InteractiveMessageButtons from './InteractiveMessageButtons';
+import { maskStorageUrlsInText } from '../../utils/urlMasking';
 
 interface StreamingAgentMessageProps {
   response: N8nResponse;
@@ -38,6 +39,52 @@ export default function StreamingAgentMessage({
   // Check for both $$....$$ and $...$ patterns
   const hasInteractiveButtons = (text: string): boolean => {
     return /\$\$[^$]+\$\$/.test(text) || /\$[^$]+\$/.test(text);
+  };
+
+  // Helper function to detect numbered list options (e.g., "1. Option Text|Description")
+  const hasNumberedOptions = (content: string): boolean => {
+    const lines = content.split('\n');
+    let count = 0;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (/^\d+\.\s+[A-Z]/.test(trimmed)) {
+        count++;
+      }
+    }
+    return count >= 2;
+  };
+
+  // Helper function to extract numbered options with pipe separator (e.g., "Title|Description")
+  const extractNumberedOptionsWithDescription = (content: string): { title: string; description: string }[] => {
+    const options: { title: string; description: string }[] = [];
+    const lines = content.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      const match = trimmed.match(/^\d+\.\s+(.+)$/);
+      if (match && /^[A-Z]/.test(match[1])) {
+        const optionText = match[1].trim();
+        if (optionText.includes('|')) {
+          const [title, ...descParts] = optionText.split('|');
+          options.push({ title: title.trim(), description: descParts.join('|').trim() });
+        } else {
+          options.push({ title: optionText, description: '' });
+        }
+      }
+    }
+    return options;
+  };
+
+  // Helper function to get content without numbered options (intro text only)
+  const getContentWithoutNumberedOptions = (content: string): string => {
+    const lines = content.split('\n');
+    const introLines: string[] = [];
+    for (const line of lines) {
+      if (/^\d+\.\s+[A-Z]/.test(line.trim())) {
+        break;
+      }
+      introLines.push(line);
+    }
+    return introLines.join('\n').trim();
   };
 
   // Helper to extract text-only content (remove buttons) for streaming
@@ -252,6 +299,43 @@ export default function StreamingAgentMessage({
                 <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
                   ▍
                 </span>
+              )}
+            </div>
+          );
+        }
+
+        // For personal_assistant, check for numbered options with pipe separator (Title|Description)
+        if (response.agent_name === 'personal_assistant' && hasNumberedOptions(safeAgentResponse)) {
+          const introText = getContentWithoutNumberedOptions(safeAgentResponse);
+          const options = extractNumberedOptionsWithDescription(safeAgentResponse);
+          return (
+            <div className="bg-gray-100 rounded-lg px-4 py-3">
+              {introText && (
+                <div 
+                  className="text-text-primary mb-3"
+                  dangerouslySetInnerHTML={{ __html: maskStorageUrlsInText(introText) }}
+                />
+              )}
+              {isStreaming && (
+                <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
+                  ▍
+                </span>
+              )}
+              {!isStreaming && (
+                <div className="space-y-2">
+                  {options.map((option, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => onButtonClick?.(option.title)}
+                      className="w-full text-left px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors"
+                    >
+                      <span className="text-purple-700 font-medium">{idx + 1}. {option.title}</span>
+                      {option.description && (
+                        <span className="text-purple-600 text-sm ml-1">- {option.description}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           );

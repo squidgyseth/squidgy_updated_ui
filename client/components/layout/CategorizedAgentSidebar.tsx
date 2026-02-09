@@ -47,6 +47,60 @@ export default function CategorizedAgentSidebar() {
     };
   }, []);
 
+  // Subscribe to Supabase Realtime for assistant_personalizations changes
+  useEffect(() => {
+    let channel: any = null;
+
+    const setupRealtimeSubscription = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Get the actual user_id from profiles
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('id', user.id)
+          .single();
+
+        if (!profile?.user_id) return;
+
+        // Subscribe to changes in assistant_personalizations for this user
+        channel = supabase
+          .channel('agent-enablement-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*', // Listen to INSERT, UPDATE, DELETE
+              schema: 'public',
+              table: 'assistant_personalizations',
+              filter: `user_id=eq.${profile.user_id}`
+            },
+            (payload) => {
+              console.log('🔄 Agent enablement change detected:', payload);
+              // Refresh the sidebar when any change occurs
+              loadAgentsFromYAML();
+            }
+          )
+          .subscribe((status: string) => {
+            console.log('📡 Realtime subscription status:', status);
+          });
+
+      } catch (error) {
+        console.error('❌ Error setting up realtime subscription:', error);
+      }
+    };
+
+    setupRealtimeSubscription();
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     // Extract selected agent from URL
     const pathParts = location.pathname.split('/');

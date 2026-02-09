@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-02-09T13:14:12.218Z
+// Generated on: 2026-02-09T14:27:11.256Z
 
 export interface AgentConfig {
   agent: {
@@ -103,7 +103,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "➕ Add Another Assistant"
     ],
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_advanced"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_revised"
     },
     "personality": {
       "tone": "professional",
@@ -1035,7 +1035,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "➕ Add Another Assistant"
     ],
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_advanced"
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_revised"
     },
     "personality": {
       "tone": "professional",
@@ -1406,7 +1406,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "➕ Add Another Assistant"
       ],
       "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_advanced"
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_revised"
       },
       "personality": {
         "tone": "professional",

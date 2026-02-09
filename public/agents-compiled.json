@@ -58,7 +58,7 @@
         "➕ Add Another Assistant"
       ],
       "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_advanced"
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_revised"
       },
       "personality": {
         "tone": "professional",
@@ -988,7 +988,7 @@
         "➕ Add Another Assistant"
       ],
       "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_advanced"
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_revised"
       },
       "personality": {
         "tone": "professional",
@@ -1357,7 +1357,7 @@
           "➕ Add Another Assistant"
         ],
         "n8n": {
-          "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_advanced"
+          "webhook_url": "https://n8n.theaiteam.uk/webhook/personal_assistant_revised"
         },
         "personality": {
           "tone": "professional",
@@ -1954,6 +1954,6 @@
   },
   "meta": {
     "total": 8,
-    "buildTime": "2026-02-09T13:14:12.220Z"
+    "buildTime": "2026-02-09T14:27:11.258Z"
   }
 }

@@ -92,20 +92,7 @@ export default function AccountSettings() {
     setIsUploading(true);
     
     try {
-      // Check if Supabase is configured
-      const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                           !import.meta.env.VITE_SUPABASE_URL || 
-                           import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
-
-      if (isDevelopment) {
-        // Simulate upload delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Return the current preview URL (base64) for development
-        return avatarUrl;
-      }
-
-      // Production mode - use Supabase storage
+      // Always try to upload to Supabase Storage
       const { supabase } = await import('../lib/supabase');
       
       // Generate a unique filename
@@ -122,7 +109,10 @@ export default function AccountSettings() {
           upsert: true
         });
         
-      if (error) throw error;
+      if (error) {
+        console.error('Storage upload error:', error);
+        throw error;
+      }
       
       // Get public URL
       const { data: urlData } = supabase
@@ -155,7 +145,7 @@ export default function AccountSettings() {
     setIsSaving(true);
     
     try {
-      let newAvatarUrl = avatarUrl;
+      let newAvatarUrl = profile?.profile_avatar_url || ''; // Start with existing URL
       
       // Upload avatar if changed
       if (avatarFile) {
@@ -167,6 +157,12 @@ export default function AccountSettings() {
         } catch (error: any) {
           throw new Error(`Avatar upload failed: ${error.message}`);
         }
+      }
+      
+      // SAFETY: Never save base64 data to database - only URLs
+      if (newAvatarUrl && newAvatarUrl.startsWith('data:')) {
+        console.warn('Prevented saving base64 avatar data to database');
+        newAvatarUrl = profile?.profile_avatar_url || ''; // Keep existing URL
       }
       
       // Get Supabase client

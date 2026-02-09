@@ -150,6 +150,27 @@ const convertMarkdownBold = (text: string): string => {
 };
 
 /**
+ * Converts markdown headers (## text) to HTML
+ */
+const convertMarkdownHeaders = (text: string): string => {
+  if (!text) return text;
+  let result = text;
+  // H2: ## text - compact margins
+  result = result.replace(/^##\s+(.+)$/gm, '<h2 style="font-size: 1.1rem; font-weight: 600; margin: 0.5rem 0 0.25rem 0;">$1</h2>');
+  // H3: ### text
+  result = result.replace(/^###\s+(.+)$/gm, '<h3 style="font-size: 1rem; font-weight: 600; margin: 0.25rem 0 0.15rem 0;">$1</h3>');
+  return result;
+};
+
+/**
+ * Converts markdown horizontal rules (---) to HTML
+ */
+const convertMarkdownHorizontalRule = (text: string): string => {
+  if (!text) return text;
+  return text.replace(/^---+$/gm, '<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0.5rem 0;" />');
+};
+
+/**
  * Converts raw URLs to clickable links or image previews
  */
 const convertRawUrls = (text: string): string => {
@@ -172,26 +193,34 @@ const convertRawUrls = (text: string): string => {
 
 /**
  * Main function: processes text with markdown and URLs
- * Handles: $$IMG:url$$, **bold**, ![images](url), [links](url), and raw URLs
+ * Handles: $$IMG:url$$, **bold**, ![images](url), [links](url), ## headers, ---, and raw URLs
  */
 export const maskStorageUrlsInText = (text: string): string => {
   if (!text) return text;
   
   let result = text;
   
-  // Process in order: $$IMG:url$$ first, then markdown images, links, bold, raw URLs
+  // Process in order: $$IMG:url$$ first, then markdown images, links, headers, hr, bold, raw URLs
   result = convertDollarImages(result);
   result = convertMarkdownImages(result);
   result = convertMarkdownLinks(result);
+  result = convertMarkdownHeaders(result);
+  result = convertMarkdownHorizontalRule(result);
   result = convertMarkdownBold(result);
   result = convertRawUrls(result);
   
-  // Clean up excessive whitespace (3+ newlines become 2)
-  result = result.replace(/\n{3,}/g, '\n\n');
+  // Clean up excessive whitespace (2+ newlines become 1)
+  result = result.replace(/\n{2,}/g, '\n');
+  // Remove whitespace before/after headers
+  result = result.replace(/\n+(<h[23])/g, '\n$1');
+  result = result.replace(/(<\/h[23]>)\n+/g, '$1\n');
+  // Remove whitespace before/after hr
+  result = result.replace(/\n+(<hr)/g, '\n$1');
+  result = result.replace(/(\/>\s*)\n+/g, '$1\n');
   // Remove whitespace before image divs
   result = result.replace(/\n+(<div style="margin: 8px 0;)/g, '\n$1');
   // Remove whitespace after image divs
-  result = result.replace(/(<\/div>)\n{2,}/g, '$1\n');
+  result = result.replace(/(<\/div>)\n+/g, '$1\n');
   
   return result;
 };
