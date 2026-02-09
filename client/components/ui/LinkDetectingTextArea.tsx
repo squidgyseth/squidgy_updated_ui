@@ -16,7 +16,7 @@ interface LinkDetectingTextAreaProps {
  */
 export function LinkDetectingTextArea({
   content,
-  className = "text-sm leading-relaxed whitespace-pre-line",
+  className = "text-sm leading-relaxed whitespace-pre-line break-words",
   style = {},
   shouldStream = false,
   onStreamComplete
@@ -25,6 +25,13 @@ export function LinkDetectingTextArea({
 
   // Process the content to convert all types of links to HTML
   const processedContent = maskStorageUrlsInText(content);
+  
+  // Merge default word-wrap styles with provided styles
+  const mergedStyle = {
+    wordBreak: 'break-word' as const,
+    overflowWrap: 'anywhere' as const,
+    ...style
+  };
 
   if (shouldStream) {
     return (
@@ -40,7 +47,7 @@ export function LinkDetectingTextArea({
   return (
     <div
       className={className}
-      style={style}
+      style={mergedStyle}
       dangerouslySetInnerHTML={{ __html: processedContent }}
     />
   );

@@ -6,7 +6,7 @@ import HTMLPreview from './HTMLPreview';
 import SocialMediaPreview from './SocialMediaPreview';
 import EnableContentRepurposerButton from './EnableContentRepurposerButton';
 import FileMessage from './FileMessage';
-import { sendToN8nWorkflow, generateRequestId, generateSessionId } from '../../lib/n8nService';
+import { sendToN8nWorkflowStreaming, generateRequestId, generateSessionId } from '../../lib/n8nService';
 import { ChatHistoryService } from '../../services/chatHistoryService';
 import { FileUploadService } from '../../services/fileUploadService';
 import { chatSessionService } from '../../services/chatSessionService';
@@ -52,6 +52,7 @@ export default function N8nChatInterface({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingText, setStreamingText] = useState('');
 
   // Use sessionId from prop directly - parent manages session persistence
   // Fall back to generating new session only if parent doesn't provide one
@@ -251,6 +252,13 @@ export default function N8nChatInterface({
       }
 
       if (existingMessages.length > 0) {
+        // Safe date parsing helper
+        const safeParseDate = (ts: string | undefined): Date => {
+          if (!ts) return new Date();
+          const parsed = new Date(ts);
+          return isNaN(parsed.getTime()) ? new Date() : parsed;
+        };
+
         // Convert database messages to ChatMessage format
         const chatMessages: ChatMessage[] = existingMessages.map(msg => {
           const fileInfo = parseEmbeddedFileInfo(msg.message);
@@ -259,7 +267,7 @@ export default function N8nChatInterface({
             id: msg.id,
             content: fileInfo.messageText,
             sender: msg.sender.toLowerCase() as 'user' | 'agent',
-            timestamp: new Date(msg.timestamp),
+            timestamp: safeParseDate(msg.timestamp),
             status: undefined, // No streaming for loaded messages - only stream new messages
             fileUpload: fileInfo.hasFile
               ? {
@@ -277,6 +285,9 @@ export default function N8nChatInterface({
         // Get context-aware intro message
         const introText = await getIntroMessage();
 
+        // Get first message timestamp safely
+        const firstMsgTime = safeParseDate(existingMessages[0].timestamp).getTime();
+
         // Always prepend the intro message to existing messages
         const messagesWithIntro = introText
           ? [
@@ -284,7 +295,7 @@ export default function N8nChatInterface({
                 id: `intro_${targetSessionId}`,
                 content: introText,
                 sender: 'agent' as const,
-                timestamp: new Date(new Date(existingMessages[0].timestamp).getTime() - 1000), // 1 second before first message
+                timestamp: new Date(firstMsgTime - 1000), // 1 second before first message
                 status: undefined // No streaming for loaded sessions - only stream new messages
               },
               ...chatMessages
@@ -442,11 +453,15 @@ export default function N8nChatInterface({
     await saveMessageToHistory(messageContent, 'User', userMessage.timestamp);
 
     try {
-      // Send to n8n workflow with agent-specific webhook URL and newsletter_id if applicable
-      const response = await sendToN8nWorkflow(
+      // Reset streaming text
+      setStreamingText('');
+      
+      // Send to n8n workflow with streaming updates
+      const response = await sendToN8nWorkflowStreaming(
         userId,
         messageContent, // Send the full message content including file info
         agent.id,
+        (text) => setStreamingText(text), // Callback for streaming updates
         sessionId,
         userMessage.id,
         webhookUrl, // Pass the webhook URL from agent config
@@ -579,7 +594,7 @@ export default function N8nChatInterface({
         }
 
         // Parse response to handle structured JSON format
-        let displayMessage = response.agent_response;
+        let displayMessage = response.agent_response || response.response || 'I received your message but encountered an issue processing the response.';
         let structuredData = null;
         
         // Handle agent enablement for Personal Assistant onboarding
@@ -594,11 +609,19 @@ export default function N8nChatInterface({
           }
         }
 
+        // Safely parse timestamp - fallback to current time if invalid
+        const parseTimestamp = (ts: string | undefined): Date => {
+          if (!ts) return new Date();
+          const parsed = new Date(ts);
+          return isNaN(parsed.getTime()) ? new Date() : parsed;
+        };
+        const messageTimestamp = parseTimestamp(response.timestamp_of_call_made);
+
         const agentMessage: ChatMessage = {
           id: response.request_id,
           content: displayMessage,
           sender: 'agent',
-          timestamp: new Date(response.timestamp_of_call_made),
+          timestamp: messageTimestamp,
           status: response.agent_status || 'Ready', // Default to 'Ready' to enable streaming
           isHtml: (response.agent_status || 'Ready') === 'Ready'
         };
@@ -607,7 +630,7 @@ export default function N8nChatInterface({
         const savedRecord = await saveMessageToHistory(
           displayMessage,
           'Agent',
-          new Date(response.timestamp_of_call_made),
+          messageTimestamp,
           response.agent_status || 'Ready'  // Default to 'Ready' for streaming
         );
 
@@ -1109,7 +1132,7 @@ export default function N8nChatInterface({
   };
 
   return (
-    <div className={`flex flex-col h-full ${className}`}>
+    <div className={`flex flex-col h-full overflow-hidden ${className}`}>
       {/* Newsletter Selector for content_repurposer agent */}
       {showNewsletterSelector && (agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') && (
         <div className="p-4 border-b">
@@ -1125,13 +1148,13 @@ export default function N8nChatInterface({
       )}
       
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
         {messages.map((message, index) => (
           <div
             key={`${message.id}-${index}`}
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            <div className={`max-w-[70%] ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
+            <div className={`max-w-[70%] break-words overflow-hidden ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
               {message.sender === 'agent' ? (
                 <div className="flex items-start gap-3">
                   {agent.avatar && (
@@ -1149,7 +1172,9 @@ export default function N8nChatInterface({
                           user_id: userId,
                           session_id: sessionId,
                           agent_name: agent.id,
-                          timestamp_of_call_made: message.timestamp.toISOString(),
+                          timestamp_of_call_made: message.timestamp instanceof Date && !isNaN(message.timestamp.getTime()) 
+                            ? message.timestamp.toISOString() 
+                            : new Date().toISOString(),
                           request_id: message.content_repurposer_history_id || message.id,
                           agent_response: message.content,
                           agent_status: message.status
@@ -1305,10 +1330,31 @@ export default function N8nChatInterface({
         
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-lg px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Loader className="w-4 h-4 animate-spin" />
-                <span className="text-gray-600">{thinkingMessage}...</span>
+            <div className="flex items-start gap-3">
+              {agent.avatar && (
+                <img
+                  src={agent.avatar ? createProxyUrl(agent.avatar, 'avatar') : agent.avatar}
+                  alt={agent.name}
+                  className="w-8 h-8 rounded-full flex-shrink-0"
+                />
+              )}
+              <div className="flex flex-col gap-2">
+                {/* Thinking indicator - compact collapsible style like Claude */}
+                <details className="group" open={!streamingText}>
+                  <summary className="flex items-center gap-2 cursor-pointer text-sm text-gray-500 hover:text-gray-700 list-none">
+                    <Loader className="w-3 h-3 animate-spin" />
+                    <span>{thinkingMessage}...</span>
+                    <svg className="w-3 h-3 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  {streamingText && (
+                    <div className="mt-2 pl-5 border-l-2 border-gray-200 text-xs text-gray-500 max-h-32 overflow-y-auto break-words">
+                      {streamingText.substring(0, 200)}
+                      {streamingText.length > 200 && '...'}
+                    </div>
+                  )}
+                </details>
               </div>
             </div>
           </div>

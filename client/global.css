@@ -166,3 +166,16 @@
 .animate-slide-in-right {
   animation: slideInRight 0.3s ease-out;
 }
+
+/* Prevent horizontal scroll in chat messages */
+.agent-response,
+.agent-response * {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+.bg-gray-100 {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}

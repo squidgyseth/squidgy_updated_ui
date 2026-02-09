@@ -28,8 +28,11 @@ export default function StreamingAgentMessage({
   streamingSpeed = 15,
   onButtonClick
 }: StreamingAgentMessageProps) {
+  // Ensure agent_response is always a string to prevent undefined errors
+  const safeAgentResponse = response.agent_response ?? response.response ?? '';
+  
   const [shouldStream, setShouldStream] = useState(false);
-  const [displayContent, setDisplayContent] = useState(response.agent_response);
+  const [displayContent, setDisplayContent] = useState(safeAgentResponse);
 
   // Helper to detect if content contains interactive buttons
   // Check for both $$....$$ and $...$ patterns
@@ -86,7 +89,7 @@ export default function StreamingAgentMessage({
   // Check if response is social media content
   const isSocialMediaContent = () => {
     try {
-      const parsed = JSON.parse(response.agent_response);
+      const parsed = JSON.parse(safeAgentResponse);
 
       // Handle error structure with raw JSON content
       if (parsed && parsed.error && parsed.raw) {
@@ -128,11 +131,11 @@ export default function StreamingAgentMessage({
     // Don't stream full HTML documents or social media content
     // Simple inline HTML like <br>, <strong> should still stream as text
     const isFullHtmlDocument = (
-      /<!DOCTYPE/i.test(response.agent_response) ||
-      /<html[\s>]/i.test(response.agent_response) ||
-      /<body[\s>]/i.test(response.agent_response) ||
-      /<table[\s>]/i.test(response.agent_response) ||
-      /<style[\s>]/i.test(response.agent_response)
+      /<!DOCTYPE/i.test(safeAgentResponse) ||
+      /<html[\s>]/i.test(safeAgentResponse) ||
+      /<body[\s>]/i.test(safeAgentResponse) ||
+      /<table[\s>]/i.test(safeAgentResponse) ||
+      /<style[\s>]/i.test(safeAgentResponse)
     );
     const isSocial = isSocialMediaContent();
     const isContentRepurposer = response.agent_name === 'content_repurposer';
@@ -151,21 +154,21 @@ export default function StreamingAgentMessage({
        !response.agent_status); // Also stream when status is undefined
 
     setShouldStream(shouldStreamContent);
-  }, [response.agent_response, response.agent_status, response.agent_name, enableStreaming]);
+  }, [safeAgentResponse, response.agent_status, response.agent_name, enableStreaming]);
 
   // Determine content to stream: if buttons present, stream only text part
   const contentToStream = React.useMemo(() => {
     if (!shouldStream) return '';
 
-    const hasButtons = hasInteractiveButtons(response.agent_response);
+    const hasButtons = hasInteractiveButtons(safeAgentResponse);
     if (hasButtons) {
       // Stream only the text content (buttons will render separately)
-      return extractTextContent(response.agent_response);
+      return extractTextContent(safeAgentResponse);
     }
 
     // Stream full content
-    return response.agent_response;
-  }, [shouldStream, response.agent_response]);
+    return safeAgentResponse;
+  }, [shouldStream, safeAgentResponse]);
 
   // Use streaming hook for text content
   const { streamedText, isStreaming } = useStreamingText(
@@ -183,9 +186,9 @@ export default function StreamingAgentMessage({
     if (shouldStream) {
       setDisplayContent(streamedText);
     } else {
-      setDisplayContent(response.agent_response);
+      setDisplayContent(safeAgentResponse);
     }
-  }, [shouldStream, streamedText, response.agent_response]);
+  }, [shouldStream, streamedText, safeAgentResponse]);
 
   // Render different content types based on agent_status and content type
   const renderContent = () => {
@@ -219,11 +222,11 @@ export default function StreamingAgentMessage({
         // Check if content is a full HTML document (not just simple inline formatting)
         // Only use HTMLPreview for actual HTML documents with structural tags
         const isFullHtmlDocument = (
-          /<!DOCTYPE/i.test(response.agent_response) ||
-          /<html[\s>]/i.test(response.agent_response) ||
-          /<body[\s>]/i.test(response.agent_response) ||
-          /<table[\s>]/i.test(response.agent_response) ||
-          /<style[\s>]/i.test(response.agent_response)
+          /<!DOCTYPE/i.test(safeAgentResponse) ||
+          /<html[\s>]/i.test(safeAgentResponse) ||
+          /<body[\s>]/i.test(safeAgentResponse) ||
+          /<table[\s>]/i.test(safeAgentResponse) ||
+          /<style[\s>]/i.test(safeAgentResponse)
         );
 
         if (isFullHtmlDocument) {
@@ -231,7 +234,7 @@ export default function StreamingAgentMessage({
         }
 
         // Check if content has interactive buttons
-        const hasButtons = hasInteractiveButtons(response.agent_response);
+        const hasButtons = hasInteractiveButtons(safeAgentResponse);
 
         // For content with interactive buttons - use InteractiveMessageButtons
         // Pass full content for button parsing + streaming text for display
@@ -239,7 +242,7 @@ export default function StreamingAgentMessage({
           return (
             <div className="bg-gray-100 rounded-lg px-4 py-2">
               <InteractiveMessageButtons
-                content={response.agent_response}
+                content={safeAgentResponse}
                 streamingText={displayContent}
                 onButtonClick={onButtonClick}
                 isStreaming={isStreaming}

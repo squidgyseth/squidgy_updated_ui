@@ -27,6 +27,7 @@ export interface N8nResponse {
   timestamp_of_call_made: string;
   request_id: string;
   agent_response: string; // Can be plain text or HTML
+  response?: string; // Fallback response field when JSON parsing fails
   agent_status: 'Ready' | 'Waiting' | 'Nothing';
   // Conversation state for multi-turn agents (newsletter_multi)
   state?: {

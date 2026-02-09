@@ -34,19 +34,22 @@ export function useStreamingText(
     options: UseStreamingTextOptions = {}
 ): UseStreamingTextResult {
     const { speed = 15, onComplete, autoStart = true } = options;
+    
+    // Ensure text is always a string to prevent undefined errors
+    const safeText = text ?? '';
 
     const [streamedText, setStreamedText] = useState('');
     const [isStreaming, setIsStreaming] = useState(false);
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const indexRef = useRef(0);
-    const textRef = useRef(text);
+    const textRef = useRef(safeText);
     const onCompleteRef = useRef(onComplete);
 
     // Update refs when dependencies change
     useEffect(() => {
-        textRef.current = text;
-    }, [text]);
+        textRef.current = safeText;
+    }, [safeText]);
 
     useEffect(() => {
         onCompleteRef.current = onComplete;
@@ -97,7 +100,7 @@ export function useStreamingText(
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [text, speed, autoStart]); // restart if text or speed changes
+    }, [safeText, speed, autoStart]); // restart if text or speed changes
 
     return {
         streamedText,
