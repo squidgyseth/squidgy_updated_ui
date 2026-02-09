@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-02-09T10:16:27.046Z
+// Generated on: 2026-02-09T13:14:12.218Z
 
 export interface AgentConfig {
   agent: {
@@ -119,7 +119,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "description": "Schedule and manage your social media posts across multiple platforms",
       "specialization": "Automated & Strategic",
       "tagline": "Schedule. Publish. Engage.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=social-scheduler",
+      "avatar": "/Squidgy AI Assistants Avatars/6.png",
       "pinned": true,
       "enabled": true,
       "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
@@ -1167,7 +1167,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "description": "Schedule and manage your social media posts across multiple platforms",
       "specialization": "Automated & Strategic",
       "tagline": "Schedule. Publish. Engage.",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=social-scheduler",
+      "avatar": "/Squidgy AI Assistants Avatars/6.png",
       "pinned": true,
       "enabled": true,
       "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
@@ -1424,7 +1424,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "description": "Schedule and manage your social media posts across multiple platforms",
         "specialization": "Automated & Strategic",
         "tagline": "Schedule. Publish. Engage.",
-        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=social-scheduler",
+        "avatar": "/Squidgy AI Assistants Avatars/6.png",
         "pinned": true,
         "enabled": true,
         "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",

@@ -5,7 +5,7 @@ agent:
   description: Schedule and manage your social media posts across multiple platforms
   specialization: "Automated & Strategic"
   tagline: "Schedule. Publish. Engage."
-  avatar: https://api.dicebear.com/7.x/avataaars/svg?seed=social-scheduler
+  avatar: /Squidgy AI Assistants Avatars/6.png
   pinned: true
   enabled: true
   initial_message: 'Hey! 👋 I''m your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let''s get started!'
