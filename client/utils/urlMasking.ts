@@ -79,8 +79,9 @@ const convertDollarImages = (text: string): string => {
     return createImagePlaceholder();
   });
   
-  // Clean up orphaned $$ or $
-  result = result.replace(/^\$\$?$/gm, '');
+  // Clean up orphaned $$ or $ (anywhere in text, not just line start)
+  result = result.replace(/\$\$+/g, '');
+  result = result.replace(/(?<!\S)\$(?!\S)/g, '');
   
   return result;
 };
@@ -208,6 +209,12 @@ export const maskStorageUrlsInText = (text: string): string => {
   result = convertMarkdownHorizontalRule(result);
   result = convertMarkdownBold(result);
   result = convertRawUrls(result);
+  
+  // Debug logging
+  if (text.includes('**') || text.includes('---') || text.includes('$$')) {
+    console.log('[maskStorageUrlsInText] Input:', text.substring(0, 100));
+    console.log('[maskStorageUrlsInText] Output:', result.substring(0, 100));
+  }
   
   // Clean up excessive whitespace (2+ newlines become 1)
   result = result.replace(/\n{2,}/g, '\n');

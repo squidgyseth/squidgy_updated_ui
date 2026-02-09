@@ -721,6 +721,7 @@ export default function N8nChatInterface({
   const cleanButtonPatterns = (content: string): string => {
     return content
       .replace(/\$([^$]+)\$/g, '')
+      .replace(/\$\$+/g, '') // Remove orphaned $$
       .replace(/\n\s*\n\s*\n/g, '\n\n')
       .trim();
   };
@@ -788,7 +789,8 @@ export default function N8nChatInterface({
       }
       introLines.push(line);
     }
-    return introLines.join('\n').trim();
+    // Clean up orphaned $$ patterns and trim
+    return introLines.join('\n').replace(/\$\$+/g, '').trim();
   };
 
   // Helper function to detect inline comma-separated options (e.g., "OPTION A, OPTION B, or OPTION C?")
@@ -1284,7 +1286,10 @@ export default function N8nChatInterface({
                             const cleanedContent = cleanButtonPatterns(message.content);
                             return (
                               <div className="bg-gray-100 rounded-lg px-4 py-3">
-                                <p className="text-text-primary whitespace-pre-wrap mb-3">{cleanedContent}</p>
+                                <LinkDetectingTextArea
+                                  content={cleanedContent}
+                                  className="text-text-primary mb-3"
+                                />
                                 <div className="space-y-2">
                                   {agents.map((agentName, idx) => (
                                     <button
@@ -1308,9 +1313,9 @@ export default function N8nChatInterface({
                           return (
                             <div className="bg-gray-100 rounded-lg px-4 py-3">
                               {introText && (
-                                <div 
+                                <LinkDetectingTextArea
+                                  content={introText}
                                   className="text-text-primary mb-3"
-                                  dangerouslySetInnerHTML={{ __html: maskStorageUrlsInText(introText) }}
                                 />
                               )}
                               <div className="space-y-2">

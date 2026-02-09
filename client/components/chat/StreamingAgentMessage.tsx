@@ -84,7 +84,8 @@ export default function StreamingAgentMessage({
       }
       introLines.push(line);
     }
-    return introLines.join('\n').trim();
+    // Clean up orphaned $$ patterns and trim
+    return introLines.join('\n').replace(/\$\$+/g, '').trim();
   };
 
   // Helper to extract text-only content (remove buttons) for streaming
@@ -311,9 +312,9 @@ export default function StreamingAgentMessage({
           return (
             <div className="bg-gray-100 rounded-lg px-4 py-3">
               {introText && (
-                <div 
+                <LinkDetectingTextArea
+                  content={introText}
                   className="text-text-primary mb-3"
-                  dangerouslySetInnerHTML={{ __html: maskStorageUrlsInText(introText) }}
                 />
               )}
               {isStreaming && (
