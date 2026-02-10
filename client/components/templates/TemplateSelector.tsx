@@ -20,7 +20,7 @@ interface TemplateSelectorProps {
   userId?: string;
 }
 
-const TEMPLATED_API_KEY = '766b3695-1bf1-4f6e-b759-34e7376a12be';
+const TEMPLATED_API_KEY = import.meta.env.VITE_TEMPLATED_API_KEY || '';
 const TEMPLATED_API_URL_LIST = 'https://api.templated.io/v1/templates';
 const TEMPLATED_API_URL_SINGLE = 'https://api.templated.io/v1/template';
 
