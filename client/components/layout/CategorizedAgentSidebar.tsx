@@ -47,7 +47,7 @@ export default function CategorizedAgentSidebar() {
     };
   }, []);
 
-  // Subscribe to Supabase Realtime for assistant_personalizations changes
+  // Subscribe to Supabase Realtime for agent refresh broadcasts from backend
   useEffect(() => {
     let channel: any = null;
 
@@ -65,9 +65,18 @@ export default function CategorizedAgentSidebar() {
 
         if (!profile?.user_id) return;
 
-        // Subscribe to changes in assistant_personalizations for this user
+        // Subscribe to broadcast channel for this user (backend sends refresh signals here)
         channel = supabase
-          .channel('agent-enablement-changes')
+          .channel(`agent-refresh-${profile.user_id}`)
+          .on(
+            'broadcast',
+            { event: 'refresh_sidebar' },
+            (payload) => {
+              console.log('🔄 Sidebar refresh signal received from backend:', payload);
+              // Refresh the sidebar when backend sends refresh signal
+              loadAgentsFromYAML();
+            }
+          )
           .on(
             'postgres_changes',
             {

@@ -140,6 +140,9 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
 
     // Step 2: Remove button format: $content$
     cleaned = cleaned.replace(/\$([^$]+)\$/g, '');
+    
+    // Step 2b: Remove orphaned $$ or $ (incomplete button patterns)
+    cleaned = cleaned.replace(/\$\$+/g, '');
 
     // Step 3: Restore $$IMG:url$$ patterns
     imgPatterns.forEach((pattern, index) => {
