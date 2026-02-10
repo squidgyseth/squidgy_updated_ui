@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, ChevronDown, Plus, Check, FileText } from 'lucide-react';
+import { Settings, Pin, PinOff, MessageSquare, Zap, Clock, ChevronRight, ChevronDown, Plus, Check, FileText, Palette, X } from 'lucide-react';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useUser } from '../../hooks/useUser';
 import ChatHistory from '../chat/ChatHistory';
 import PreviousContent from '../chat/PreviousContent';
 import PreviousSessions from '../chat/PreviousSessions';
 import { ChatHistoryService } from '../../services/chatHistoryService';
+import TemplateSelector from '../templates/TemplateSelector';
 
 interface AgentConfig {
   id: string;
@@ -148,6 +149,7 @@ export default function UniversalChatLayout({
   const [recentActions, setRecentActions] = useState<string[]>([]);
   const [isLoadingActions, setIsLoadingActions] = useState(true); // Only true on initial load
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
 
@@ -350,6 +352,19 @@ export default function UniversalChatLayout({
                 <Pin size={14} />
               </button>
             </div>
+
+            {/* View Templates Button - Only for social_media_agent */}
+            {agent.id === 'social_media_agent' && (
+              <div className="px-1 mt-2">
+                <button
+                  onClick={() => setIsTemplateModalOpen(true)}
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+                >
+                  <Palette size={14} />
+                  <span className="font-semibold text-[11px]">View Templates</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Scrollable Content */}
@@ -493,12 +508,50 @@ export default function UniversalChatLayout({
                 </div>
               )}
             </div>
-
-
-
           </div>
         </div>
       )}
+
+      {/* Template Selector Modal */}
+      <TemplateSelector
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        onSelectTemplate={(template) => {
+          console.log('Selected template:', template);
+          // TODO: Handle template selection
+        }}
+        userId={userId}
+      />
+
+      {/* Templated.io Embed - COMMENTED FOR FUTURE USE */}
+      {/* {isTemplateModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setIsTemplateModalOpen(false)}>
+          <div className="bg-white rounded-lg shadow-xl w-[95vw] h-[95vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <Palette className="w-5 h-5 text-purple-600" />
+                <h2 className="text-lg font-semibold text-gray-800">Create New Template</h2>
+              </div>
+              <button
+                onClick={() => setIsTemplateModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src="https://app.templated.io/editor?embed=25a602ca-dfcd-4b2e-b602-a222ca6fc318&tag=TheAiTeamTemplate"
+                width="100%"
+                height="100%"
+                allow="clipboard-write; clipboard-read"
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                title="Templated.io Editor"
+              />
+            </div>
+          </div>
+        </div>
+      )} */}
     </div>
   );
 }
