@@ -730,7 +730,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                                 
                                 {/* Dropdown menu */}
                                 {openMenuId === template.id && (
-                                  <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                  <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 max-h-64 overflow-y-auto">
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -1039,43 +1039,103 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
       {/* Custom Template Preview Modal */}
       {previewingTemplate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setPreviewingTemplate(null)}>
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800">{previewingTemplate.name}</h2>
-                <p className="text-sm text-gray-500">{previewingTemplate.width} × {previewingTemplate.height} px</p>
-              </div>
-              <button
-                onClick={() => setPreviewingTemplate(null)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-            
+          <div className="bg-white rounded-lg shadow-xl max-w-5xl max-h-[90vh] flex" onClick={(e) => e.stopPropagation()}>
             {/* Template Preview */}
-            <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-gray-50">
-              <div 
-                className="bg-white shadow-lg"
-                style={{ 
-                  aspectRatio: `${previewingTemplate.width} / ${previewingTemplate.height}`,
-                  maxWidth: '100%',
-                  maxHeight: '70vh'
-                }}
-              >
-                {previewingTemplate.thumbnail ? (
-                  <img
-                    src={previewingTemplate.thumbnail}
-                    alt={previewingTemplate.name}
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <p>No preview available</p>
-                  </div>
-                )}
+            <div className="flex-1 flex flex-col">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-800">{previewingTemplate.name}</h2>
+                  <p className="text-sm text-gray-500">{previewingTemplate.width} × {previewingTemplate.height} px</p>
+                </div>
+                <button
+                  onClick={() => setPreviewingTemplate(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
               </div>
+              
+              {/* Preview Image */}
+              <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-gray-50">
+                <div 
+                  className="bg-white shadow-lg"
+                  style={{ 
+                    aspectRatio: `${previewingTemplate.width} / ${previewingTemplate.height}`,
+                    maxWidth: '100%',
+                    maxHeight: '70vh'
+                  }}
+                >
+                  {previewingTemplate.thumbnail ? (
+                    <img
+                      src={previewingTemplate.thumbnail}
+                      alt={previewingTemplate.name}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <p>No preview available</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons Sidebar */}
+            <div className="w-48 border-l border-gray-200 p-4 flex flex-col gap-2 bg-gray-50">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Actions</h3>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewingTemplate(null);
+                  handleEditACopyClick(previewingTemplate, e);
+                }}
+                className="w-full px-3 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Edit a Copy
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewingTemplate(null);
+                  handleDuplicateClick(previewingTemplate, e);
+                }}
+                className="w-full px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Duplicate
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const template = previewingTemplate;
+                  setPreviewingTemplate(null);
+                  handleRenameClick(template, e);
+                }}
+                className="w-full px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Rename
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewingTemplate(null);
+                  handleEditClick(previewingTemplate, e);
+                }}
+                className="w-full px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const template = previewingTemplate;
+                  setPreviewingTemplate(null);
+                  handleDeleteClick(template, e);
+                }}
+                className="w-full px-3 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors mt-auto"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
