@@ -443,13 +443,25 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
     try {
       const templatesWithClones: TemplateWithClones[] = await Promise.all(
         templates.map(async (template) => {
-          const clones = await fetchTemplateClones(template.id);
-          const { hasAll, missing } = checkAspectRatioCoverage(template, clones);
+          // Fetch API clones
+          const apiClones = await fetchTemplateClones(template.id);
+          
+          // Also find templates with the same name but different dimensions
+          const nameVariations = templates.filter(t => 
+            t.id !== template.id && 
+            t.name === template.name &&
+            (t.width !== template.width || t.height !== template.height)
+          );
+          
+          // Combine API clones and name variations
+          const allVariations = [...apiClones, ...nameVariations];
+          
+          const { hasAll, missing } = checkAspectRatioCoverage(template, allVariations);
           
           return {
             ...template,
-            clones,
-            cloneCount: clones.length,
+            clones: allVariations,
+            cloneCount: allVariations.length,
             hasAllAspectRatios: hasAll,
             missingAspectRatios: missing
           };
