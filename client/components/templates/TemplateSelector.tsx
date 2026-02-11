@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Loader2, Palette, Plus, Trash2, MoreVertical } from 'lucide-react';
+import { X, Search, Loader2, Palette, Plus, Trash2, Info } from 'lucide-react';
 
 interface Template {
   id: string;
@@ -680,11 +680,17 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
 
               {/* Custom Templates Section */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Your Custom Templates
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span>Your Custom Templates</span>
                   {filteredUserTemplates.length > 0 && (
-                    <span className="ml-2 text-sm text-gray-500">({filteredUserTemplates.length})</span>
+                    <span className="text-sm text-gray-500">({filteredUserTemplates.length})</span>
                   )}
+                  <div className="group relative">
+                    <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                    <div className="absolute left-0 top-6 hidden group-hover:block w-64 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-50">
+                      Template thumbnails don't always update immediately, but your changes have been saved.
+                    </div>
+                  </div>
                 </h2>
                 {filteredUserTemplates.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">No custom templates found</p>
@@ -715,85 +721,6 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                                   <p className="text-xs">No preview</p>
                                 </div>
                               )}
-                              
-                              {/* Three-dot menu button */}
-                              <div className="absolute top-2 right-2">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenMenuId(openMenuId === template.id ? null : template.id);
-                                  }}
-                                  className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
-                                >
-                                  <MoreVertical className="w-4 h-4 text-gray-700" />
-                                </button>
-                                
-                                {/* Dropdown menu */}
-                                {openMenuId === template.id && (
-                                  <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 max-h-64 overflow-y-auto">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenMenuId(null);
-                                        setPreviewingTemplate(template);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                    >
-                                      Preview
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenMenuId(null);
-                                        handleEditACopyClick(template, e);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                    >
-                                      Edit a Copy
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenMenuId(null);
-                                        handleDuplicateClick(template, e);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                    >
-                                      Duplicate
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenMenuId(null);
-                                        handleRenameClick(template, e);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                    >
-                                      Rename
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenMenuId(null);
-                                        handleEditClick(template, e);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                    >
-                                      Edit
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenMenuId(null);
-                                        handleDeleteClick(template, e);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors"
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
                             </div>
                           </div>
                           <div>
