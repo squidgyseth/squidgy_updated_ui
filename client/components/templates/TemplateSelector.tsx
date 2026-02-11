@@ -730,7 +730,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                                 
                                 {/* Dropdown menu */}
                                 {openMenuId === template.id && (
-                                  <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 max-h-64 overflow-y-auto">
+                                  <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 max-h-64 overflow-y-auto">
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
