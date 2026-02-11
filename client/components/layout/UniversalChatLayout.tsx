@@ -7,7 +7,6 @@ import ChatHistory from '../chat/ChatHistory';
 import PreviousContent from '../chat/PreviousContent';
 import PreviousSessions from '../chat/PreviousSessions';
 import { ChatHistoryService } from '../../services/chatHistoryService';
-import TemplateSelector from '../templates/TemplateSelector';
 
 interface AgentConfig {
   id: string;
@@ -357,7 +356,7 @@ export default function UniversalChatLayout({
             {agent.id === 'social_media_agent' && (
               <div className="px-1 mt-2">
                 <button
-                  onClick={() => setIsTemplateModalOpen(true)}
+                  onClick={() => navigate('/templates-settings')}
                   className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
                 >
                   <Palette size={14} />
@@ -512,16 +511,7 @@ export default function UniversalChatLayout({
         </div>
       )}
 
-      {/* Template Selector Modal */}
-      <TemplateSelector
-        isOpen={isTemplateModalOpen}
-        onClose={() => setIsTemplateModalOpen(false)}
-        onSelectTemplate={(template) => {
-          console.log('Selected template:', template);
-          // TODO: Handle template selection
-        }}
-        userId={userId}
-      />
+      {/* Template Selector Modal - Removed, now available in Templates Settings page */}
 
       {/* Templated.io Embed - COMMENTED FOR FUTURE USE */}
       {/* {isTemplateModalOpen && (

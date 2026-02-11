@@ -25,6 +25,7 @@ export function SettingsLayout({ children, title }: SettingsLayoutProps) {
     if (path.includes('/team-settings')) return 'Team';
     if (path.includes('/personalisation-settings')) return 'Personalisation';
     if (path.includes('/integrations-settings')) return 'Integrations';
+    if (path.includes('/templates-settings')) return 'Templates';
     if (path.includes('/billing-settings')) return 'Billing & Subscription';
     return 'Settings';
   };
@@ -172,6 +173,22 @@ export function SettingsLayout({ children, title }: SettingsLayoutProps) {
                       <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     Integrations
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/templates-settings')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors ${isActivePage('Templates')
+                      ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                      : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7 3H5C3.89543 3 3 3.89543 3 5V7C3 8.10457 3.89543 9 5 9H7C8.10457 9 9 8.10457 9 7V5C9 3.89543 8.10457 3 7 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M19 3H17C15.8954 3 15 3.89543 15 5V7C15 8.10457 15.8954 9 17 9H19C20.1046 9 21 8.10457 21 7V5C21 3.89543 20.1046 3 19 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M7 15H5C3.89543 15 3 15.8954 3 17V19C3 20.1046 3.89543 21 5 21H7C8.10457 21 9 20.1046 9 19V17C9 15.8954 8.10457 15 7 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M19 15H17C15.8954 15 15 15.8954 15 17V19C15 20.1046 15.8954 21 17 21H19C20.1046 21 21 20.1046 21 19V17C21 15.8954 20.1046 15 19 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Templates
                   </button>
 
                   {/* 

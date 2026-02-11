@@ -385,27 +385,16 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
     // Generic templates don't do anything on click - only the Customise button works
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-xl w-[95vw] h-[95vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-        {/* Modal Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-gray-800">Select a Template</h2>
-            <span className="text-sm text-gray-500">Browse your own collection of templates</span>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
+    <div className="w-full h-full flex flex-col">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Templates</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage your social media templates</p>
+      </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-200">
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
           <div className="flex relative">
             <button
               onClick={() => handleTabSwitch('generic')}
@@ -673,7 +662,6 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
             )
           )}
         </div>
-      </div>
 
       {/* Templated.io Editor Modal - Edit Existing Template */}
       {editingTemplateId && (
