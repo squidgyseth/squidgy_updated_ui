@@ -44,7 +44,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
     if (isOpen) {
       fetchTemplates();
     }
-  }, [isOpen, genericPage, userPage]);
+  }, [isOpen, genericPage, userPage, userId]);
 
   // Listen for messages from Templated.io iframe
   useEffect(() => {
