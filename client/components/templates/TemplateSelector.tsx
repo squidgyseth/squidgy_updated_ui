@@ -263,6 +263,33 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
     template.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Group custom templates by first word of name
+  const groupCustomTemplates = (templates: TemplateWithClones[]): TemplateGroup[] => {
+    const groups: { [key: string]: TemplateWithClones[] } = {};
+    
+    templates.forEach(template => {
+      // Extract first word only
+      const nameParts = template.name.split(/[-\s]/);
+      const groupName = nameParts[0];
+      
+      if (!groups[groupName]) {
+        groups[groupName] = [];
+      }
+      groups[groupName].push(template);
+    });
+    
+    // Convert to array and sort by group name
+    return Object.entries(groups)
+      .map(([name, templates]) => ({
+        name,
+        templates,
+        thumbnail: templates[0]?.thumbnail
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  const userTemplateGroups = groupCustomTemplates(filteredUserTemplatesWithClones);
+
   // Group templates by first word(s) of name
   const groupTemplates = (templates: Template[]): TemplateGroup[] => {
     const groups: { [key: string]: Template[] } = {};
@@ -915,59 +942,55 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
                     </div>
                   </div>
                 </h2>
-                {filteredUserTemplatesWithClones.length === 0 ? (
+                {userTemplateGroups.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">No custom templates found</p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                    {filteredUserTemplatesWithClones.map((template) => {
+                    {userTemplateGroups.map((group) => {
+                      const firstTemplate = group.templates[0] as TemplateWithClones;
                       return (
                         <div
-                          key={template.id}
+                          key={group.name}
                           className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all border border-gray-200"
                         >
-                          {/* Template Thumbnail */}
-                          <div 
-                            className="cursor-pointer"
-                            onClick={() => setPreviewingTemplate(template)}
+                          {/* Group Thumbnail */}
+                          <div
+                            className="w-full h-48 bg-gray-100 flex items-center justify-center relative overflow-hidden rounded-t-lg cursor-pointer"
+                            onClick={() => setPreviewingTemplate(firstTemplate)}
+                            style={{ backgroundColor: firstTemplate.background || '#f3f4f6' }}
                           >
-                            <div
-                              className="w-full h-48 bg-gray-100 flex items-center justify-center relative overflow-hidden rounded-t-lg"
-                              style={{ backgroundColor: template.background || '#f3f4f6' }}
-                            >
-                              {template.thumbnail ? (
-                                <img
-                                  src={template.thumbnail}
-                                  alt={template.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="text-gray-400 text-center p-4">
-                                  <p className="text-xs">No preview</p>
-                                </div>
-                              )}
-                              {/* Clone count badge */}
-                              {template.cloneCount > 0 && (
-                                <div className="absolute top-2 right-2 bg-purple-600 text-white text-xs px-2 py-1 rounded">
-                                  {template.cloneCount + 1} sizes
-                                </div>
-                              )}
+                            {group.thumbnail ? (
+                              <img
+                                src={group.thumbnail}
+                                alt={group.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="text-gray-400 text-center p-4">
+                                <Palette className="w-12 h-12 mx-auto mb-2" />
+                                <p className="text-xs">No preview</p>
+                              </div>
+                            )}
+                            {/* Template count badge */}
+                            <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                              {group.templates.length} template{group.templates.length !== 1 ? 's' : ''}
                             </div>
                           </div>
                           
-                          {/* Template Info */}
+                          {/* Group Info */}
                           <div className="p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <h3 className="font-semibold text-sm text-gray-900 truncate flex-1">
-                                {template.name}
+                              <h3 className="font-semibold text-base text-gray-900 flex-1">
+                                {group.name}
                               </h3>
                               {/* Toggle Switch */}
                               <label className="relative inline-flex items-center cursor-pointer ml-2">
                                 <input
                                   type="checkbox"
-                                  checked={enabledTemplates.includes(template.id)}
+                                  checked={enabledTemplates.includes(firstTemplate.id)}
                                   onChange={(e) => {
                                     e.stopPropagation();
-                                    handleToggleTemplate(template.id, e.target.checked);
+                                    handleToggleTemplate(firstTemplate.id, e.target.checked);
                                   }}
                                   className="sr-only peer"
                                 />
@@ -975,39 +998,17 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
                               </label>
                             </div>
                             <p className="text-xs text-gray-500 mb-3">
-                              {template.width} × {template.height} px
+                              {group.templates.length} variation{group.templates.length !== 1 ? 's' : ''}
                             </p>
                             
-                            {/* Aspect Ratio Status */}
-                            {template.hasAllAspectRatios ? (
-                              <div className="flex items-center gap-1 text-xs text-green-600 mb-2">
-                                <span className="font-semibold">✓</span>
-                                <span>All aspect ratios complete</span>
-                              </div>
-                            ) : (
-                              <div className="mb-2">
-                                <p className="text-xs text-orange-600 font-semibold mb-1">
-                                  Missing: {template.missingAspectRatios.map(r => r.name).join(', ')}
-                                </p>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    createMissingAspectRatioClones(template);
-                                  }}
-                                  disabled={cloning && cloningTemplateId === template.id}
-                                  className="w-full px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {cloning && cloningTemplateId === template.id ? (
-                                    <span className="flex items-center justify-center gap-1">
-                                      <Loader2 className="w-3 h-3 animate-spin" />
-                                      Creating...
-                                    </span>
-                                  ) : (
-                                    `Create ${template.missingAspectRatios.length} Missing Size${template.missingAspectRatios.length > 1 ? 's' : ''}`
-                                  )}
-                                </button>
-                              </div>
-                            )}
+                            {/* Preview Button */}
+                            <button
+                              onClick={() => setPreviewingTemplate(firstTemplate)}
+                              className="w-full px-3 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-1"
+                            >
+                              <Palette className="w-4 h-4" />
+                              Preview
+                            </button>
                           </div>
                         </div>
                       );
