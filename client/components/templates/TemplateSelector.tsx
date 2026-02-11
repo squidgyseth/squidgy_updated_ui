@@ -46,6 +46,9 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [renamingTemplate, setRenamingTemplate] = useState<Template | null>(null);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [previewingTemplate, setPreviewingTemplate] = useState<Template | null>(null);
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -384,6 +387,129 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
     fetchTemplates();
   };
 
+  const handleEditACopyClick = async (template: Template, event: React.MouseEvent) => {
+    event.stopPropagation();
+    
+    if (!userId) {
+      setError('User ID is required to edit a copy');
+      return;
+    }
+
+    setCloning(true);
+    setCloningTemplateId(template.id);
+    
+    try {
+      // Duplicate the template
+      const duplicatedTemplate = await duplicateTemplate(template.id);
+      
+      if (!duplicatedTemplate || !duplicatedTemplate.id) {
+        throw new Error('Failed to get duplicated template');
+      }
+
+      // Remove original tags
+      if (template.tags && template.tags.length > 0) {
+        await removeTagsFromTemplate(duplicatedTemplate.id, template.tags);
+      }
+
+      // Add userId tag
+      await addTagToTemplate(duplicatedTemplate.id, userId);
+
+      // Open in editor
+      setEditingTemplateId(duplicatedTemplate.id);
+
+      // Refresh templates in background
+      setTimeout(() => {
+        fetchTemplates();
+        setCloning(false);
+        setCloningTemplateId(null);
+      }, 1000);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to edit a copy');
+      console.error('Edit a copy error:', err);
+      setCloning(false);
+      setCloningTemplateId(null);
+    }
+  };
+
+  const handleDuplicateClick = async (template: Template, event: React.MouseEvent) => {
+    event.stopPropagation();
+    
+    if (!userId) {
+      setError('User ID is required to duplicate templates');
+      return;
+    }
+
+    setCloning(true);
+    setCloningTemplateId(template.id);
+    
+    try {
+      // Duplicate the template
+      const duplicatedTemplate = await duplicateTemplate(template.id);
+      
+      if (!duplicatedTemplate || !duplicatedTemplate.id) {
+        throw new Error('Failed to get duplicated template');
+      }
+
+      // Remove original tags
+      if (template.tags && template.tags.length > 0) {
+        await removeTagsFromTemplate(duplicatedTemplate.id, template.tags);
+      }
+
+      // Add userId tag
+      await addTagToTemplate(duplicatedTemplate.id, userId);
+
+      // Refresh templates to show the new duplicate
+      setTimeout(() => {
+        fetchTemplates();
+        setCloning(false);
+        setCloningTemplateId(null);
+      }, 1000);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to duplicate template');
+      console.error('Duplicate error:', err);
+      setCloning(false);
+      setCloningTemplateId(null);
+    }
+  };
+
+  const handleRenameClick = (template: Template, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setRenamingTemplate(template);
+    setNewTemplateName(template.name);
+  };
+
+  const handleRenameSubmit = async () => {
+    if (!renamingTemplate || !newTemplateName.trim()) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${TEMPLATED_API_URL_SINGLE}/${renamingTemplate.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${TEMPLATED_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: newTemplateName.trim()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to rename template: ${response.status}`);
+      }
+
+      // Close modal and refresh templates
+      setRenamingTemplate(null);
+      setNewTemplateName('');
+      fetchTemplates();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to rename template');
+      console.error('Rename error:', err);
+    }
+  };
 
   const deleteTemplate = async (templateId: string): Promise<void> => {
     try {
@@ -570,7 +696,10 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                           key={template.id}
                           className="group cursor-pointer relative"
                         >
-                          <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all mb-3">
+                          <div 
+                            className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all mb-3"
+                            onClick={() => setPreviewingTemplate(template)}
+                          >
                             <div
                               className="w-full h-48 bg-gray-100 flex items-center justify-center relative overflow-hidden"
                               style={{ backgroundColor: template.background || '#f3f4f6' }}
@@ -601,7 +730,47 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                                 
                                 {/* Dropdown menu */}
                                 {openMenuId === template.id && (
-                                  <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                  <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenMenuId(null);
+                                        setPreviewingTemplate(template);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                    >
+                                      Preview
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenMenuId(null);
+                                        handleEditACopyClick(template, e);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                    >
+                                      Edit a Copy
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenMenuId(null);
+                                        handleDuplicateClick(template, e);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                    >
+                                      Duplicate
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenMenuId(null);
+                                        handleRenameClick(template, e);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                    >
+                                      Rename
+                                    </button>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -825,6 +994,88 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
             <div className="text-center">
               <p className="text-lg font-semibold text-gray-900">Customising Template</p>
               <p className="text-sm text-gray-500 mt-1">Please wait while we prepare your template...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rename Template Modal */}
+      {renamingTemplate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setRenamingTemplate(null)}>
+          <div className="bg-white rounded-lg shadow-xl w-96 p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Rename Template</h3>
+            <input
+              type="text"
+              value={newTemplateName}
+              onChange={(e) => setNewTemplateName(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleRenameSubmit();
+                }
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-4"
+              placeholder="Enter new template name"
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setRenamingTemplate(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRenameSubmit}
+                disabled={!newTemplateName.trim()}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Rename
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Template Preview Modal */}
+      {previewingTemplate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setPreviewingTemplate(null)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800">{previewingTemplate.name}</h2>
+                <p className="text-sm text-gray-500">{previewingTemplate.width} × {previewingTemplate.height} px</p>
+              </div>
+              <button
+                onClick={() => setPreviewingTemplate(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            {/* Template Preview */}
+            <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-gray-50">
+              <div 
+                className="bg-white shadow-lg"
+                style={{ 
+                  aspectRatio: `${previewingTemplate.width} / ${previewingTemplate.height}`,
+                  maxWidth: '100%',
+                  maxHeight: '70vh'
+                }}
+              >
+                {previewingTemplate.thumbnail ? (
+                  <img
+                    src={previewingTemplate.thumbnail}
+                    alt={previewingTemplate.name}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <p>No preview available</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
