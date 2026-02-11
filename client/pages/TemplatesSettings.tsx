@@ -4,14 +4,17 @@ import { useUser } from '../hooks/useUser';
 import TemplateSelector from '../components/templates/TemplateSelector';
 
 export default function TemplatesSettings() {
-  const { userId } = useUser();
+  const { profile } = useUser();
+  
+  // Get businessId from profile's company_id
+  const businessId = profile?.company_id;
 
   return (
     <SettingsLayout title="Templates">
       <TemplateSelector
         isOpen={true}
         onClose={() => {}}
-        userId={userId}
+        businessId={businessId}
       />
     </SettingsLayout>
   );

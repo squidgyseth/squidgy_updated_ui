@@ -17,7 +17,7 @@ interface TemplateSelectorProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectTemplate?: (template: Template) => void;
-  userId?: string;
+  businessId?: string;
 }
 
 const TEMPLATED_API_KEY = import.meta.env.VITE_TEMPLATED_API_KEY || '';
@@ -30,7 +30,7 @@ interface TemplateGroup {
   thumbnail?: string;
 }
 
-export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, userId }: TemplateSelectorProps) {
+export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, businessId }: TemplateSelectorProps) {
   const [genericTemplates, setGenericTemplates] = useState<Template[]>([]);
   const [userTemplates, setUserTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,10 +51,10 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
   const [previewingTemplate, setPreviewingTemplate] = useState<Template | null>(null);
 
   useEffect(() => {
-    if (isOpen && userId) {
+    if (isOpen && businessId) {
       fetchTemplates();
     }
-  }, [isOpen, genericPage, userPage, userId]);
+  }, [isOpen, genericPage, userPage, businessId]);
 
   // Listen for messages from Templated.io iframe
   useEffect(() => {
@@ -87,15 +87,15 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
         const templateId = parsedData?.templateId;
         
         console.log('🎨 Template ID received:', templateId);
-        console.log('👤 User ID:', userId);
+        console.log('👤 Business ID:', businessId);
         
-        if (templateId && userId) {
-          console.log('✅ All conditions met - adding userId tag to template:', templateId);
+        if (templateId && businessId) {
+          console.log('✅ All conditions met - adding businessId tag to template:', templateId);
           
           try {
-            // Add userId tag to the newly created template immediately
-            await addTagToTemplate(templateId, userId);
-            console.log('✅ Successfully added userId tag to new template:', templateId);
+            // Add businessId tag to the newly created template immediately
+            await addTagToTemplate(templateId, businessId);
+            console.log('✅ Successfully added businessId tag to new template:', templateId);
             
             // Don't close the modal - let user continue editing
             // Just refresh templates in background so it appears in the list when they close
@@ -109,7 +109,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
         } else {
           console.log('⚠️ Missing required data:', {
             hasTemplateId: !!templateId,
-            hasUserId: !!userId
+            hasBusinessId: !!businessId
           });
         }
       }
@@ -117,10 +117,10 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [userId, isCreatingNew]);
+  }, [businessId, isCreatingNew]);
 
   const fetchTemplates = async () => {
-    console.log('🔄 fetchTemplates called with userId:', userId);
+    console.log('🔄 fetchTemplates called with businessId:', businessId);
     setLoading(true);
     setError(null);
 
@@ -157,11 +157,11 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
         setGenericTotalPages(genericPage + 1);
       }
 
-      // Fetch user's custom templates if userId is provided
-      if (userId) {
-        console.log('📥 Fetching user templates with userId:', userId);
+      // Fetch user's custom templates if businessId is provided
+      if (businessId) {
+        console.log('📥 Fetching user templates with businessId:', businessId);
         const userParams = new URLSearchParams({
-          tags: userId,
+          tags: businessId,
           limit: '25',
           page: userPage.toString()
         });
@@ -190,8 +190,8 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
           console.warn('⚠️ Failed to fetch user templates:', userResponse.status);
         }
       } else {
-        console.log('⚠️ No userId provided, skipping user templates fetch');
-        setUserTemplates([]); // Clear user templates if no userId
+        console.log('⚠️ No businessId provided, skipping user templates fetch');
+        setUserTemplates([]); // Clear user templates if no businessId
       }
     } catch (err) {
       console.error('Error fetching templates:', err);
@@ -309,8 +309,8 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
   const handleCustomiseClick = async (template: Template, event: React.MouseEvent) => {
     event.stopPropagation();
     
-    if (!userId) {
-      setError('User ID is required to customise templates');
+    if (!businessId) {
+      setError('Business ID is required to customise templates');
       return;
     }
 
@@ -333,10 +333,10 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
         console.log('Removed original tags from duplicated template');
       }
 
-      // Step 3: Add userId as a tag to the duplicated template
-      await addTagToTemplate(duplicatedTemplate.id, userId);
+      // Step 3: Add businessId as a tag to the duplicated template
+      await addTagToTemplate(duplicatedTemplate.id, businessId);
 
-      console.log('Added userId tag to duplicated template:', duplicatedTemplate.id);
+      console.log('Added businessId tag to duplicated template:', duplicatedTemplate.id);
 
       // Step 4: Open the duplicated template in the editor immediately
       setEditingTemplateId(duplicatedTemplate.id);
@@ -346,7 +346,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
         onSelectTemplate({
           ...template,
           id: duplicatedTemplate.id,
-          tags: [userId]
+          tags: [businessId]
         });
       }
 
@@ -390,8 +390,8 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
   const handleEditACopyClick = async (template: Template, event: React.MouseEvent) => {
     event.stopPropagation();
     
-    if (!userId) {
-      setError('User ID is required to edit a copy');
+    if (!businessId) {
+      setError('Business ID is required to edit a copy');
       return;
     }
 
@@ -411,8 +411,8 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
         await removeTagsFromTemplate(duplicatedTemplate.id, template.tags);
       }
 
-      // Add userId tag
-      await addTagToTemplate(duplicatedTemplate.id, userId);
+      // Add businessId tag
+      await addTagToTemplate(duplicatedTemplate.id, businessId);
 
       // Open in editor
       setEditingTemplateId(duplicatedTemplate.id);
@@ -435,8 +435,8 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
   const handleDuplicateClick = async (template: Template, event: React.MouseEvent) => {
     event.stopPropagation();
     
-    if (!userId) {
-      setError('User ID is required to duplicate templates');
+    if (!businessId) {
+      setError('Business ID is required to duplicate templates');
       return;
     }
 
@@ -456,8 +456,8 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
         await removeTagsFromTemplate(duplicatedTemplate.id, template.tags);
       }
 
-      // Add userId tag
-      await addTagToTemplate(duplicatedTemplate.id, userId);
+      // Add businessId tag
+      await addTagToTemplate(duplicatedTemplate.id, businessId);
 
       // Refresh templates to show the new duplicate
       setTimeout(() => {
