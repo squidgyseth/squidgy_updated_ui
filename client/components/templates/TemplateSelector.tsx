@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Loader2, Palette, Plus, Trash2, Info } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { useUser } from '../hooks/useUser';
 
 interface Template {
   id: string;
@@ -53,11 +51,9 @@ interface TemplateGroup {
 }
 
 export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, businessId }: TemplateSelectorProps) {
-  const { userId } = useUser();
   const [genericTemplates, setGenericTemplates] = useState<Template[]>([]);
   const [userTemplates, setUserTemplates] = useState<Template[]>([]);
   const [userTemplatesWithClones, setUserTemplatesWithClones] = useState<TemplateWithClones[]>([]);
-  const [enabledTemplates, setEnabledTemplates] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [previewGroup, setPreviewGroup] = useState<TemplateGroup | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,87 +76,6 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
       fetchTemplates();
     }
   }, [isOpen, genericPage, userPage, businessId]);
-
-  // Fetch enabled templates on load
-  useEffect(() => {
-    if (userId) {
-      fetchEnabledTemplates();
-    }
-  }, [userId]);
-
-  const fetchEnabledTemplates = async () => {
-    if (!userId) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('business_settings')
-        .select('enabled_templates')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) {
-        if (error.code !== 'PGRST116') { // PGRST116 = no rows returned
-          console.error('Error fetching enabled templates:', error);
-        }
-        return;
-      }
-
-      setEnabledTemplates(data?.enabled_templates || []);
-      console.log('📋 Loaded enabled templates:', data?.enabled_templates);
-    } catch (error) {
-      console.error('Error fetching enabled templates:', error);
-    }
-  };
-
-  const handleToggleTemplate = async (templateId: string, enabled: boolean) => {
-    if (!userId) {
-      setError('User ID is required to toggle templates');
-      return;
-    }
-
-    try {
-      let updatedTemplates: string[];
-      if (enabled) {
-        updatedTemplates = [...enabledTemplates, templateId];
-      } else {
-        updatedTemplates = enabledTemplates.filter(id => id !== templateId);
-      }
-
-      // Check if row exists
-      const { data: existing } = await supabase
-        .from('business_settings')
-        .select('id')
-        .eq('user_id', userId)
-        .single();
-
-      if (existing) {
-        // Update existing row
-        const { error } = await supabase
-          .from('business_settings')
-          .update({ enabled_templates: updatedTemplates })
-          .eq('user_id', userId);
-
-        if (error) throw error;
-      } else {
-        // Insert new row
-        const { error } = await supabase
-          .from('business_settings')
-          .insert({
-            user_id: userId,
-            enabled_templates: updatedTemplates
-          });
-
-        if (error) throw error;
-      }
-
-      // Update local state
-      setEnabledTemplates(updatedTemplates);
-      console.log(`✅ Template ${templateId} ${enabled ? 'enabled' : 'disabled'}`);
-    } catch (error) {
-      console.error('Error toggling template:', error);
-      setError('Failed to update template status');
-    }
-  };
 
   // Listen for messages from Templated.io iframe
   useEffect(() => {
@@ -1015,24 +930,9 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
                           
                           {/* Template Info */}
                           <div className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <h3 className="font-semibold text-sm text-gray-900 truncate flex-1">
-                                {template.name}
-                              </h3>
-                              {/* Toggle Switch */}
-                              <label className="relative inline-flex items-center cursor-pointer ml-2">
-                                <input
-                                  type="checkbox"
-                                  checked={enabledTemplates.includes(template.id)}
-                                  onChange={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleTemplate(template.id, e.target.checked);
-                                  }}
-                                  className="sr-only peer"
-                                />
-                                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
-                              </label>
-                            </div>
+                            <h3 className="font-semibold text-sm text-gray-900 truncate mb-1">
+                              {template.name}
+                            </h3>
                             <p className="text-xs text-gray-500 mb-3">
                               {template.width} × {template.height} px
                             </p>
