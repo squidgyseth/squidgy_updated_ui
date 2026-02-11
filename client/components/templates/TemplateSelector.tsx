@@ -110,11 +110,13 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
   }, [userId, isCreatingNew]);
 
   const fetchTemplates = async () => {
+    console.log('🔄 fetchTemplates called with userId:', userId);
     setLoading(true);
     setError(null);
 
     try {
       // Fetch generic templates with TheAiTeamTemplate tag
+      console.log('📥 Fetching generic templates...');
       const genericParams = new URLSearchParams({
         tags: 'TheAiTeamTemplate',
         limit: '25',
@@ -136,6 +138,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
       const genericData = await genericResponse.json();
       const genericTemplatesList = Array.isArray(genericData) ? genericData : (genericData.templates || []);
       setGenericTemplates(genericTemplatesList);
+      console.log('✅ Generic templates loaded:', genericTemplatesList.length);
       
       // Calculate total pages (assuming 25 per page)
       if (genericTemplatesList.length === 25) {
@@ -146,6 +149,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
 
       // Fetch user's custom templates if userId is provided
       if (userId) {
+        console.log('📥 Fetching user templates with userId:', userId);
         const userParams = new URLSearchParams({
           tags: userId,
           limit: '25',
@@ -164,6 +168,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
           const userData = await userResponse.json();
           const userTemplatesList = Array.isArray(userData) ? userData : (userData.templates || []);
           setUserTemplates(userTemplatesList);
+          console.log('✅ User templates loaded:', userTemplatesList.length);
           
           // Calculate total pages
           if (userTemplatesList.length === 25) {
@@ -171,7 +176,12 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
           } else {
             setUserTotalPages(userPage + 1);
           }
+        } else {
+          console.warn('⚠️ Failed to fetch user templates:', userResponse.status);
         }
+      } else {
+        console.log('⚠️ No userId provided, skipping user templates fetch');
+        setUserTemplates([]); // Clear user templates if no userId
       }
     } catch (err) {
       console.error('Error fetching templates:', err);
