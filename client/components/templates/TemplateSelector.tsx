@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Loader2, Palette, Plus, Trash2 } from 'lucide-react';
+import { X, Search, Loader2, Palette, Plus, Trash2, MoreVertical } from 'lucide-react';
 
 interface Template {
   id: string;
@@ -45,6 +45,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
   const [cloningTemplateId, setCloningTemplateId] = useState<string | null>(null);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -349,12 +350,14 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
       // Refresh user templates in background to show the new duplicate
       setTimeout(() => {
         fetchTemplates();
+        // Clear loading state after templates refresh
+        setCloning(false);
+        setCloningTemplateId(null);
       }, 1000);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to duplicate template');
       console.error('Duplicate error:', err);
-    } finally {
       setCloning(false);
       setCloningTemplateId(null);
     }
@@ -565,8 +568,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                       return (
                         <div
                           key={template.id}
-                          onClick={() => handleTemplateClick(template, false)}
-                          className="group cursor-pointer"
+                          className="group cursor-pointer relative"
                         >
                           <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all mb-3">
                             <div
@@ -584,6 +586,45 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                                   <p className="text-xs">No preview</p>
                                 </div>
                               )}
+                              
+                              {/* Three-dot menu button */}
+                              <div className="absolute top-2 right-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMenuId(openMenuId === template.id ? null : template.id);
+                                  }}
+                                  className="p-1.5 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                                >
+                                  <MoreVertical className="w-4 h-4 text-gray-700" />
+                                </button>
+                                
+                                {/* Dropdown menu */}
+                                {openMenuId === template.id && (
+                                  <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenMenuId(null);
+                                        handleEditClick(template, e);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenMenuId(null);
+                                        handleDeleteClick(template, e);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div>
@@ -593,21 +634,6 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                             <p className="text-xs text-gray-500">
                               {template.width} × {template.height} px
                             </p>
-                            <div className="mt-2 flex gap-2">
-                              <button
-                                onClick={(e) => handleEditClick(template, e)}
-                                className="flex-1 px-3 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors"
-                              >
-                                Customise
-                              </button>
-                              <button
-                                onClick={(e) => handleDeleteClick(template, e)}
-                                className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1"
-                                title="Delete template"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </div>
                           </div>
                         </div>
                       );
@@ -786,6 +812,19 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                 style={{ width: '100%', height: '100%', border: 'none' }}
                 title="Templated.io Editor"
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Loading Overlay for Customise Process */}
+      {cloning && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 shadow-xl flex flex-col items-center gap-4">
+            <Loader2 className="w-12 h-12 text-purple-600 animate-spin" />
+            <div className="text-center">
+              <p className="text-lg font-semibold text-gray-900">Customising Template</p>
+              <p className="text-sm text-gray-500 mt-1">Please wait while we prepare your template...</p>
             </div>
           </div>
         </div>
