@@ -1256,9 +1256,19 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
 
       {/* Custom Template Preview Modal - Show All Aspect Ratios */}
       {previewingTemplate && (() => {
-        // Find the template with clones data
-        const templateWithClones = userTemplatesWithClones.find(t => t.id === previewingTemplate.id);
-        const allSizes = templateWithClones ? [templateWithClones, ...templateWithClones.clones] : [previewingTemplate];
+        // Find all templates with the same name (grouped templates)
+        const allTemplatesWithSameName = userTemplatesWithClones.filter(t => 
+          t.name === previewingTemplate.name
+        );
+        
+        // Collect all unique templates (base templates + their clones)
+        const allSizesSet = new Set<Template>();
+        allTemplatesWithSameName.forEach(template => {
+          allSizesSet.add(template);
+          template.clones.forEach(clone => allSizesSet.add(clone));
+        });
+        
+        const allSizes = Array.from(allSizesSet);
         
         return (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setPreviewingTemplate(null)}>
@@ -1360,15 +1370,15 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
                 </div>
                 
                 {/* Show missing aspect ratios if any */}
-                {templateWithClones && !templateWithClones.hasAllAspectRatios && (
+                {allTemplatesWithSameName.length > 0 && !allTemplatesWithSameName[0].hasAllAspectRatios && (
                   <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                     <p className="text-sm font-semibold text-orange-800 mb-2">
-                      Missing Aspect Ratios: {templateWithClones.missingAspectRatios.map(r => r.name).join(', ')}
+                      Missing Aspect Ratios: {allTemplatesWithSameName[0].missingAspectRatios.map(r => r.name).join(', ')}
                     </p>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        createMissingAspectRatioClones(templateWithClones);
+                        createMissingAspectRatioClones(allTemplatesWithSameName[0]);
                       }}
                       disabled={cloning}
                       className="px-4 py-2 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1379,7 +1389,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
                           Creating Missing Sizes...
                         </span>
                       ) : (
-                        `Create ${templateWithClones.missingAspectRatios.length} Missing Size${templateWithClones.missingAspectRatios.length > 1 ? 's' : ''}`
+                        `Create ${allTemplatesWithSameName[0].missingAspectRatios.length} Missing Size${allTemplatesWithSameName[0].missingAspectRatios.length > 1 ? 's' : ''}`
                       )}
                     </button>
                   </div>
