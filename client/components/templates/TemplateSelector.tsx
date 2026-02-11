@@ -114,9 +114,10 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
     setError(null);
 
     try {
-      // Fetch all public templates (no tag filter)
+      // Fetch public templates with showeveryone tag
       console.log('📥 Fetching public templates...');
       const genericParams = new URLSearchParams({
+        tags: 'showeveryone',
         limit: '25',
         page: genericPage.toString()
       });
