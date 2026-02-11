@@ -697,7 +697,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                           className="group cursor-pointer relative"
                         >
                           <div 
-                            className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all mb-3"
+                            className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all mb-3"
                             onClick={() => setPreviewingTemplate(template)}
                           >
                             <div
