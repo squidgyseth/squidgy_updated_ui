@@ -344,7 +344,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
     }
   };
 
-  const updateTemplateDimensions = async (templateId: string, width: number, height: number): Promise<void> => {
+  const updateTemplateDimensions = async (templateId: string, width: number, height: number): Promise<Template> => {
     try {
       const response = await fetch(`${TEMPLATED_API_URL_SINGLE}/${templateId}`, {
         method: 'PUT',
@@ -356,8 +356,14 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to update template dimensions: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Failed to update template dimensions: ${response.status} - ${errorText}`);
       }
+
+      const updatedTemplate = await response.json();
+      console.log('✅ Template dimensions updated:', updatedTemplate);
+      console.log('   New dimensions:', updatedTemplate.width, 'x', updatedTemplate.height);
+      return updatedTemplate;
     } catch (err) {
       console.error('Error updating template dimensions:', err);
       throw err;
@@ -417,26 +423,36 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
       console.log(`Creating ${template.missingAspectRatios.length} missing clones for:`, template.name);
       
       for (const ratio of template.missingAspectRatios) {
-        console.log(`Creating clone with ${ratio.name} aspect ratio (${ratio.width}x${ratio.height})`);
+        console.log(`\n🔧 Creating clone with ${ratio.name} aspect ratio (${ratio.width}x${ratio.height})`);
         
         // Clone the template
         const clone = await cloneTemplate(template.id);
-        console.log('Clone created:', clone.id);
+        console.log('📋 Clone created:', clone.id);
+        console.log('   Initial dimensions:', clone.width, 'x', clone.height);
         
         // Update dimensions to the target aspect ratio
-        await updateTemplateDimensions(clone.id, ratio.width, ratio.height);
-        console.log(`Updated clone dimensions to ${ratio.width}x${ratio.height}`);
+        const updatedClone = await updateTemplateDimensions(clone.id, ratio.width, ratio.height);
+        
+        // Verify dimensions were updated correctly
+        if (updatedClone.width === ratio.width && updatedClone.height === ratio.height) {
+          console.log(`✅ Dimensions verified: ${updatedClone.width}x${updatedClone.height}`);
+        } else {
+          console.warn(`⚠️ Dimension mismatch! Expected ${ratio.width}x${ratio.height}, got ${updatedClone.width}x${updatedClone.height}`);
+        }
         
         // Add businessId tag to the clone
         if (businessId) {
           await addTagToTemplate(clone.id, businessId);
-          console.log('Added businessId tag to clone');
+          console.log('🏷️ Added businessId tag to clone');
         }
       }
 
-      console.log('✅ All missing aspect ratio clones created');
+      console.log('\n✅ All missing aspect ratio clones created');
       
-      // Refresh templates to show the new clones
+      // Wait a moment for API to finalize all changes
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Refresh templates to show the new clones with updated dimensions
       await fetchTemplates();
     } catch (err) {
       console.error('Error creating aspect ratio clones:', err);
