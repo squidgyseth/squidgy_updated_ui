@@ -695,7 +695,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
             
             {/* Templates Grid */}
             <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {previewGroup.templates.map((template) => {
                   const isCloning = cloning && cloningTemplateId === template.id;
                   return (
@@ -709,7 +709,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                           style={{ 
                             backgroundColor: template.background || '#f3f4f6',
                             aspectRatio: `${template.width} / ${template.height}`,
-                            maxHeight: '300px'
+                            maxHeight: '500px'
                           }}
                         >
                           {template.thumbnail ? (
@@ -740,6 +740,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
+                            setPreviewGroup(null); // Close preview modal
                             handleCustomiseClick(template, e);
                           }}
                           disabled={cloning}
