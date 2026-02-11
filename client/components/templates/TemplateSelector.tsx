@@ -41,7 +41,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
   const [isCreatingNew, setIsCreatingNew] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && userId) {
       fetchTemplates();
     }
   }, [isOpen, genericPage, userPage, userId]);
