@@ -24,10 +24,17 @@ const TEMPLATED_API_KEY = import.meta.env.VITE_TEMPLATED_API_KEY || '';
 const TEMPLATED_API_URL_LIST = 'https://api.templated.io/v1/templates';
 const TEMPLATED_API_URL_SINGLE = 'https://api.templated.io/v1/template';
 
+interface TemplateGroup {
+  name: string;
+  templates: Template[];
+  thumbnail?: string;
+}
+
 export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, userId }: TemplateSelectorProps) {
   const [genericTemplates, setGenericTemplates] = useState<Template[]>([]);
   const [userTemplates, setUserTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(false);
+  const [previewGroup, setPreviewGroup] = useState<TemplateGroup | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [genericPage, setGenericPage] = useState(0);
@@ -197,6 +204,38 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
   const filteredUserTemplates = userTemplates.filter(template =>
     template.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Group templates by first word(s) of name
+  const groupTemplates = (templates: Template[]): TemplateGroup[] => {
+    const groups: { [key: string]: Template[] } = {};
+    
+    templates.forEach(template => {
+      // Extract first word or first two words if it's a compound name
+      const nameParts = template.name.split(/[-\s]/);
+      let groupName = nameParts[0];
+      
+      // For compound names like "AiT Social", "Photo-Layer", etc.
+      if (nameParts.length > 1 && nameParts[1] && nameParts[1].length > 2) {
+        groupName = `${nameParts[0]} ${nameParts[1]}`;
+      }
+      
+      if (!groups[groupName]) {
+        groups[groupName] = [];
+      }
+      groups[groupName].push(template);
+    });
+    
+    // Convert to array and sort by group name
+    return Object.entries(groups)
+      .map(([name, templates]) => ({
+        name,
+        templates,
+        thumbnail: templates[0]?.thumbnail
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  const templateGroups = groupTemplates(filteredGenericTemplates);
 
   const hasTemplates = filteredGenericTemplates.length > 0 || filteredUserTemplates.length > 0;
 
@@ -444,7 +483,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Public Templates Section */}
+              {/* Public Templates Section - Grouped */}
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   Public Templates
@@ -452,80 +491,65 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                     <span className="ml-2 text-sm text-gray-500">({filteredGenericTemplates.length})</span>
                   )}
                 </h2>
-                {filteredGenericTemplates.length === 0 ? (
+                {templateGroups.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">No public templates found</p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {filteredGenericTemplates.map((template) => {
-                      const isCloning = cloning && cloningTemplateId === template.id;
-                      return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {templateGroups.map((group) => (
+                      <div
+                        key={group.name}
+                        className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-200"
+                      >
+                        {/* Group Thumbnail */}
                         <div
-                          key={template.id}
-                          className={`group ${isCloning ? 'opacity-50' : ''}`}
+                          className="w-full h-48 bg-gray-100 flex items-center justify-center relative overflow-hidden"
                         >
-                          <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all mb-3">
-                            <div
-                              className="w-full h-48 bg-gray-100 flex items-center justify-center relative overflow-hidden"
-                              style={{ backgroundColor: template.background || '#f3f4f6' }}
-                            >
-                              {template.thumbnail ? (
-                                <img
-                                  src={template.thumbnail}
-                                  alt={template.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="text-gray-400 text-center p-4">
-                                  <p className="text-xs">No preview</p>
-                                </div>
-                              )}
-                              {isCloning && (
-                                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                                  <Loader2 className="w-8 h-8 text-white animate-spin" />
-                                </div>
-                              )}
+                          {group.thumbnail ? (
+                            <img
+                              src={group.thumbnail}
+                              alt={group.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="text-gray-400 text-center p-4">
+                              <Palette className="w-12 h-12 mx-auto mb-2" />
+                              <p className="text-xs">No preview</p>
                             </div>
+                          )}
+                          {/* Template count badge */}
+                          <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                            {group.templates.length} template{group.templates.length !== 1 ? 's' : ''}
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-sm text-gray-900 truncate mb-1">
-                              {template.name}
-                            </h3>
-                            <p className="text-xs text-gray-500">
-                              {template.width} × {template.height} px
-                            </p>
+                        </div>
+                        
+                        {/* Group Info */}
+                        <div className="p-4">
+                          <h3 className="font-semibold text-base text-gray-900 mb-1">
+                            {group.name}
+                          </h3>
+                          <p className="text-xs text-gray-500 mb-3">
+                            {group.templates.length} layer{group.templates.length !== 1 ? 's' : ''}
+                          </p>
+                          
+                          {/* Action Buttons */}
+                          <div className="flex gap-2">
                             <button
-                              onClick={(e) => handleCustomiseClick(template, e)}
-                              disabled={cloning}
-                              className="mt-2 w-full px-3 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={() => setPreviewGroup(group)}
+                              className="flex-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
                             >
-                              {isCloning ? 'Customising...' : 'Customise'}
+                              <Palette className="w-4 h-4" />
+                              Preview
+                            </button>
+                            <button
+                              onClick={() => setPreviewGroup(group)}
+                              className="px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors"
+                            >
+                              Enable
                             </button>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {/* Pagination for Public Templates */}
-                {genericTotalPages > 1 && (
-                  <div className="mt-4 flex items-center justify-between">
-                    <button
-                      onClick={() => setGenericPage(Math.max(0, genericPage - 1))}
-                      disabled={genericPage === 0}
-                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
-                    <span className="text-sm text-gray-600">
-                      Page {genericPage + 1} of {genericTotalPages}
-                    </span>
-                    <button
-                      onClick={() => setGenericPage(genericPage + 1)}
-                      disabled={genericPage >= genericTotalPages - 1}
-                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -650,6 +674,85 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                 style={{ width: '100%', height: '100%', border: 'none' }}
                 title="Templated.io Editor"
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template Group Preview Modal */}
+      {previewGroup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setPreviewGroup(null)}>
+          <div className="bg-white rounded-lg shadow-xl w-[90vw] h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <Palette className="w-5 h-5 text-purple-600" />
+                <h2 className="text-lg font-semibold text-gray-800">{previewGroup.name}</h2>
+                <span className="text-sm text-gray-500">({previewGroup.templates.length} templates)</span>
+              </div>
+              <button
+                onClick={() => setPreviewGroup(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            {/* Templates Grid */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {previewGroup.templates.map((template) => {
+                  const isCloning = cloning && cloningTemplateId === template.id;
+                  return (
+                    <div
+                      key={template.id}
+                      className={`group ${isCloning ? 'opacity-50' : ''}`}
+                    >
+                      <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all mb-3 border border-gray-200">
+                        <div
+                          className="w-full h-48 bg-gray-100 flex items-center justify-center relative overflow-hidden"
+                          style={{ backgroundColor: template.background || '#f3f4f6' }}
+                        >
+                          {template.thumbnail ? (
+                            <img
+                              src={template.thumbnail}
+                              alt={template.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="text-gray-400 text-center p-4">
+                              <p className="text-xs">No preview</p>
+                            </div>
+                          )}
+                          {isCloning && (
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                              <Loader2 className="w-8 h-8 text-white animate-spin" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-sm text-gray-900 truncate mb-1">
+                          {template.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 mb-2">
+                          {template.width} × {template.height} px
+                        </p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCustomiseClick(template, e);
+                          }}
+                          disabled={cloning}
+                          className="w-full px-3 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isCloning ? 'Customising...' : 'Customise'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
