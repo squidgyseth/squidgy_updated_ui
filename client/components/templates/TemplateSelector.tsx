@@ -533,13 +533,6 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                             <p className="text-xs text-gray-500">
                               {template.width} × {template.height} px
                             </p>
-                            {template.tags && template.tags.length > 0 && (
-                              <div className="flex items-center gap-1 mt-1">
-                                <span className="text-xs text-gray-400">
-                                  🏷️ The AI Tea...
-                                </span>
-                              </div>
-                            )}
                             <button
                               onClick={(e) => handleCustomiseClick(template, e)}
                               disabled={cloning}
@@ -618,13 +611,6 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                             <p className="text-xs text-gray-500">
                               {template.width} × {template.height} px
                             </p>
-                            {template.tags && template.tags.length > 0 && (
-                              <div className="flex items-center gap-1 mt-1">
-                                <span className="text-xs text-gray-400">
-                                  🏷️ {template.tags[0].substring(0, 12)}...
-                                </span>
-                              </div>
-                            )}
                             <div className="mt-2 flex gap-2">
                               <button
                                 onClick={(e) => handleEditClick(template, e)}
