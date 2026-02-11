@@ -13,6 +13,26 @@ interface Template {
   sourceTemplateId?: string;
 }
 
+interface TemplateWithClones extends Template {
+  clones: Template[];
+  cloneCount: number;
+  hasAllAspectRatios: boolean;
+  missingAspectRatios: AspectRatio[];
+}
+
+interface AspectRatio {
+  name: string;
+  width: number;
+  height: number;
+}
+
+const ASPECT_RATIOS: AspectRatio[] = [
+  { name: 'Square', width: 1080, height: 1080 },
+  { name: 'Wide', width: 1920, height: 1080 },
+  { name: 'Tall', width: 1080, height: 1920 },
+  { name: 'Mid', width: 1080, height: 1350 }
+];
+
 interface TemplateSelectorProps {
   isOpen: boolean;
   onClose: () => void;
@@ -33,6 +53,7 @@ interface TemplateGroup {
 export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, businessId }: TemplateSelectorProps) {
   const [genericTemplates, setGenericTemplates] = useState<Template[]>([]);
   const [userTemplates, setUserTemplates] = useState<Template[]>([]);
+  const [userTemplatesWithClones, setUserTemplatesWithClones] = useState<TemplateWithClones[]>([]);
   const [loading, setLoading] = useState(false);
   const [previewGroup, setPreviewGroup] = useState<TemplateGroup | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -180,6 +201,9 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
           setUserTemplates(userTemplatesList);
           console.log('✅ User templates loaded:', userTemplatesList.length);
           
+          // Fetch clones for each template
+          await fetchClonesForTemplates(userTemplatesList);
+          
           // Calculate total pages
           if (userTemplatesList.length === 25) {
             setUserTotalPages(userPage + 2);
@@ -206,6 +230,10 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
   );
 
   const filteredUserTemplates = userTemplates.filter(template =>
+    template.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredUserTemplatesWithClones = userTemplatesWithClones.filter(template =>
     template.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -263,6 +291,159 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
     } catch (err) {
       console.error('Error duplicating template:', err);
       throw err;
+    }
+  };
+
+  const cloneTemplate = async (templateId: string): Promise<any> => {
+    try {
+      const response = await fetch(`${TEMPLATED_API_URL_SINGLE}/${templateId}/clone`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${TEMPLATED_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to clone template: ${response.status} - ${errorText}`);
+      }
+
+      const clonedTemplate = await response.json();
+      return clonedTemplate;
+    } catch (err) {
+      console.error('Error cloning template:', err);
+      throw err;
+    }
+  };
+
+  const fetchTemplateClones = async (sourceTemplateId: string): Promise<Template[]> => {
+    try {
+      const params = new URLSearchParams({
+        sourceTemplateId,
+        limit: '100'
+      });
+
+      const response = await fetch(`https://api.templated.io/v1/templates/clones?${params}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${TEMPLATED_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch clones: ${response.status}`);
+      }
+
+      const clones = await response.json();
+      return Array.isArray(clones) ? clones : [];
+    } catch (err) {
+      console.error('Error fetching template clones:', err);
+      return [];
+    }
+  };
+
+  const updateTemplateDimensions = async (templateId: string, width: number, height: number): Promise<void> => {
+    try {
+      const response = await fetch(`${TEMPLATED_API_URL_SINGLE}/${templateId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${TEMPLATED_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ width, height })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update template dimensions: ${response.status}`);
+      }
+    } catch (err) {
+      console.error('Error updating template dimensions:', err);
+      throw err;
+    }
+  };
+
+  const checkAspectRatioCoverage = (template: Template, clones: Template[]): { hasAll: boolean; missing: AspectRatio[] } => {
+    const allTemplates = [template, ...clones];
+    const missing: AspectRatio[] = [];
+
+    for (const ratio of ASPECT_RATIOS) {
+      const hasRatio = allTemplates.some(
+        t => t.width === ratio.width && t.height === ratio.height
+      );
+      if (!hasRatio) {
+        missing.push(ratio);
+      }
+    }
+
+    return { hasAll: missing.length === 0, missing };
+  };
+
+  const fetchClonesForTemplates = async (templates: Template[]): Promise<void> => {
+    try {
+      const templatesWithClones: TemplateWithClones[] = await Promise.all(
+        templates.map(async (template) => {
+          const clones = await fetchTemplateClones(template.id);
+          const { hasAll, missing } = checkAspectRatioCoverage(template, clones);
+          
+          return {
+            ...template,
+            clones,
+            cloneCount: clones.length,
+            hasAllAspectRatios: hasAll,
+            missingAspectRatios: missing
+          };
+        })
+      );
+
+      setUserTemplatesWithClones(templatesWithClones);
+      console.log('✅ Fetched clones for all templates:', templatesWithClones);
+    } catch (err) {
+      console.error('Error fetching clones for templates:', err);
+    }
+  };
+
+  const createMissingAspectRatioClones = async (template: TemplateWithClones): Promise<void> => {
+    if (template.missingAspectRatios.length === 0) {
+      console.log('No missing aspect ratios for template:', template.name);
+      return;
+    }
+
+    setCloning(true);
+    setCloningTemplateId(template.id);
+
+    try {
+      console.log(`Creating ${template.missingAspectRatios.length} missing clones for:`, template.name);
+      
+      for (const ratio of template.missingAspectRatios) {
+        console.log(`Creating clone with ${ratio.name} aspect ratio (${ratio.width}x${ratio.height})`);
+        
+        // Clone the template
+        const clone = await cloneTemplate(template.id);
+        console.log('Clone created:', clone.id);
+        
+        // Update dimensions to the target aspect ratio
+        await updateTemplateDimensions(clone.id, ratio.width, ratio.height);
+        console.log(`Updated clone dimensions to ${ratio.width}x${ratio.height}`);
+        
+        // Add businessId tag to the clone
+        if (businessId) {
+          await addTagToTemplate(clone.id, businessId);
+          console.log('Added businessId tag to clone');
+        }
+      }
+
+      console.log('✅ All missing aspect ratio clones created');
+      
+      // Refresh templates to show the new clones
+      await fetchTemplates();
+    } catch (err) {
+      console.error('Error creating aspect ratio clones:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create aspect ratio clones');
+    } finally {
+      setCloning(false);
+      setCloningTemplateId(null);
     }
   };
 
@@ -682,8 +863,8 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <span>Your Custom Templates</span>
-                  {filteredUserTemplates.length > 0 && (
-                    <span className="text-sm text-gray-500">({filteredUserTemplates.length})</span>
+                  {filteredUserTemplatesWithClones.length > 0 && (
+                    <span className="text-sm text-gray-500">({filteredUserTemplatesWithClones.length})</span>
                   )}
                   <div className="group relative">
                     <Info className="w-4 h-4 text-gray-400 cursor-help" />
@@ -692,22 +873,23 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
                     </div>
                   </div>
                 </h2>
-                {filteredUserTemplates.length === 0 ? (
+                {filteredUserTemplatesWithClones.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">No custom templates found</p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {filteredUserTemplates.map((template) => {
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {filteredUserTemplatesWithClones.map((template) => {
                       return (
                         <div
                           key={template.id}
-                          className="group cursor-pointer relative"
+                          className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all border border-gray-200"
                         >
+                          {/* Template Thumbnail */}
                           <div 
-                            className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all mb-3"
+                            className="cursor-pointer"
                             onClick={() => setPreviewingTemplate(template)}
                           >
                             <div
-                              className="w-full h-48 bg-gray-100 flex items-center justify-center relative overflow-hidden"
+                              className="w-full h-48 bg-gray-100 flex items-center justify-center relative overflow-hidden rounded-t-lg"
                               style={{ backgroundColor: template.background || '#f3f4f6' }}
                             >
                               {template.thumbnail ? (
@@ -721,15 +903,54 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
                                   <p className="text-xs">No preview</p>
                                 </div>
                               )}
+                              {/* Clone count badge */}
+                              {template.cloneCount > 0 && (
+                                <div className="absolute top-2 right-2 bg-purple-600 text-white text-xs px-2 py-1 rounded">
+                                  {template.cloneCount + 1} sizes
+                                </div>
+                              )}
                             </div>
                           </div>
-                          <div>
+                          
+                          {/* Template Info */}
+                          <div className="p-4">
                             <h3 className="font-semibold text-sm text-gray-900 truncate mb-1">
                               {template.name}
                             </h3>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 mb-3">
                               {template.width} × {template.height} px
                             </p>
+                            
+                            {/* Aspect Ratio Status */}
+                            {template.hasAllAspectRatios ? (
+                              <div className="flex items-center gap-1 text-xs text-green-600 mb-2">
+                                <span className="font-semibold">✓</span>
+                                <span>All aspect ratios complete</span>
+                              </div>
+                            ) : (
+                              <div className="mb-2">
+                                <p className="text-xs text-orange-600 font-semibold mb-1">
+                                  Missing: {template.missingAspectRatios.map(r => r.name).join(', ')}
+                                </p>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    createMissingAspectRatioClones(template);
+                                  }}
+                                  disabled={cloning && cloningTemplateId === template.id}
+                                  className="w-full px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {cloning && cloningTemplateId === template.id ? (
+                                    <span className="flex items-center justify-center gap-1">
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      Creating...
+                                    </span>
+                                  ) : (
+                                    `Create ${template.missingAspectRatios.length} Missing Size${template.missingAspectRatios.length > 1 ? 's' : ''}`
+                                  )}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -963,17 +1184,20 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
         </div>
       )}
 
-      {/* Custom Template Preview Modal */}
-      {previewingTemplate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setPreviewingTemplate(null)}>
-          <div className="bg-white rounded-lg shadow-xl max-w-5xl max-h-[90vh] flex" onClick={(e) => e.stopPropagation()}>
-            {/* Template Preview */}
-            <div className="flex-1 flex flex-col">
+      {/* Custom Template Preview Modal - Show All Aspect Ratios */}
+      {previewingTemplate && (() => {
+        // Find the template with clones data
+        const templateWithClones = userTemplatesWithClones.find(t => t.id === previewingTemplate.id);
+        const allSizes = templateWithClones ? [templateWithClones, ...templateWithClones.clones] : [previewingTemplate];
+        
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setPreviewingTemplate(null)}>
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
               {/* Modal Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-800">{previewingTemplate.name}</h2>
-                  <p className="text-sm text-gray-500">{previewingTemplate.width} × {previewingTemplate.height} px</p>
+                  <p className="text-sm text-gray-500">{allSizes.length} size{allSizes.length > 1 ? 's' : ''} available</p>
                 </div>
                 <button
                   onClick={() => setPreviewingTemplate(null)}
@@ -983,90 +1207,102 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
                 </button>
               </div>
               
-              {/* Preview Image */}
-              <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-gray-50">
-                <div 
-                  className="bg-white shadow-lg"
-                  style={{ 
-                    aspectRatio: `${previewingTemplate.width} / ${previewingTemplate.height}`,
-                    maxWidth: '100%',
-                    maxHeight: '70vh'
-                  }}
-                >
-                  {previewingTemplate.thumbnail ? (
-                    <img
-                      src={previewingTemplate.thumbnail}
-                      alt={previewingTemplate.name}
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      <p>No preview available</p>
-                    </div>
-                  )}
+              {/* All Aspect Ratios Grid */}
+              <div className="flex-1 overflow-auto p-6 bg-gray-50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {allSizes.map((template) => {
+                    const aspectRatio = ASPECT_RATIOS.find(r => r.width === template.width && r.height === template.height);
+                    const isCloning = cloning && cloningTemplateId === template.id;
+                    
+                    return (
+                      <div
+                        key={template.id}
+                        className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-200"
+                      >
+                        <div
+                          className="w-full bg-gray-100 flex items-center justify-center relative overflow-hidden"
+                          style={{ 
+                            backgroundColor: template.background || '#f3f4f6',
+                            aspectRatio: `${template.width} / ${template.height}`,
+                            maxHeight: '300px'
+                          }}
+                        >
+                          {template.thumbnail ? (
+                            <img
+                              src={template.thumbnail}
+                              alt={template.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="text-gray-400 text-center p-4">
+                              <p className="text-xs">No preview</p>
+                            </div>
+                          )}
+                          {isCloning && (
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                              <Loader2 className="w-8 h-8 text-white animate-spin" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-semibold text-sm text-gray-900">
+                              {aspectRatio ? aspectRatio.name : 'Custom'}
+                            </h3>
+                            {template.isClone && (
+                              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Clone</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mb-2">
+                            {template.width} × {template.height} px
+                          </p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewingTemplate(null);
+                              handleEditClick(template, e);
+                            }}
+                            disabled={cloning}
+                            className="w-full px-3 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isCloning ? 'Opening...' : 'Edit'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
+                
+                {/* Show missing aspect ratios if any */}
+                {templateWithClones && !templateWithClones.hasAllAspectRatios && (
+                  <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-sm font-semibold text-orange-800 mb-2">
+                      Missing Aspect Ratios: {templateWithClones.missingAspectRatios.map(r => r.name).join(', ')}
+                    </p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        createMissingAspectRatioClones(templateWithClones);
+                      }}
+                      disabled={cloning}
+                      className="px-4 py-2 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {cloning ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Creating Missing Sizes...
+                        </span>
+                      ) : (
+                        `Create ${templateWithClones.missingAspectRatios.length} Missing Size${templateWithClones.missingAspectRatios.length > 1 ? 's' : ''}`
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Action Buttons Sidebar */}
-            <div className="w-48 border-l border-gray-200 p-4 flex flex-col gap-2 bg-gray-50">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">Actions</h3>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPreviewingTemplate(null);
-                  handleEditACopyClick(previewingTemplate, e);
-                }}
-                className="w-full px-3 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Edit a Copy
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPreviewingTemplate(null);
-                  handleDuplicateClick(previewingTemplate, e);
-                }}
-                className="w-full px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Duplicate
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const template = previewingTemplate;
-                  setPreviewingTemplate(null);
-                  handleRenameClick(template, e);
-                }}
-                className="w-full px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Rename
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPreviewingTemplate(null);
-                  handleEditClick(previewingTemplate, e);
-                }}
-                className="w-full px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Edit
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const template = previewingTemplate;
-                  setPreviewingTemplate(null);
-                  handleDeleteClick(template, e);
-                }}
-                className="w-full px-3 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors mt-auto"
-              >
-                Delete
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
