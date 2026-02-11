@@ -133,7 +133,46 @@ export default function BusinessSettings() {
           if (data.emergency_numbers && Array.isArray(data.emergency_numbers)) {
             setEmergencyNumbers(data.emergency_numbers.length > 0 ? data.emergency_numbers : ['']);
           }
-        } else {
+        } else if (error) {
+          // Auto-create business_settings if not found
+          console.warn('⚠️ No business_settings found - Creating default record...');
+          try {
+            const { data: newData, error: createError } = await supabase
+              .from('business_settings')
+              .insert({
+                user_id: profile.user_id,
+                business_email: profile.email || '',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .select('*')
+              .single();
+
+            if (newData) {
+              console.log('✅ Auto-created business_settings with ID:', newData.id);
+              setBusinessId(newData.id);
+              setSettings({
+                companyName: '-',
+                industry: '',
+                teamSize: 'manual',
+                businessEmail: newData.business_email || '',
+                phoneNumber: '',
+                emergencyNumber: '',
+                country: 'US',
+                addressMethod: 'manual',
+                address: '',
+                city: '',
+                state: '',
+                postalCode: '',
+                companyLogo: ''
+              });
+              setEmergencyNumbers(['']);
+            } else {
+              console.error('❌ Failed to create business_settings:', createError);
+            }
+          } catch (createErr) {
+            console.error('❌ Error creating business_settings:', createErr);
+          }
         }
       } catch (error) {
         console.error('Error loading business settings:', error);

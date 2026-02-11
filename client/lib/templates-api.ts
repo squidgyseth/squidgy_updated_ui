@@ -89,11 +89,38 @@ class TemplatesApiService {
         .single();
 
       if (businessError || !businessSettings?.id) {
-        console.error('❌ No business_settings found for user_id:', profile.user_id);
-        return {
-          businessId: null,
-          error: { message: 'Business setup required', code: 'BUSINESS_NOT_FOUND' }
-        };
+        console.warn('⚠️ No business_settings found for user_id:', profile.user_id, '- Creating default record...');
+        
+        // Auto-create business_settings with default values
+        try {
+          const { data: newBusinessSettings, error: createError } = await supabase
+            .from('business_settings')
+            .insert({
+              user_id: profile.user_id,
+              business_email: profile.email,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select('id')
+            .single();
+
+          if (createError || !newBusinessSettings?.id) {
+            console.error('❌ Failed to create business_settings:', createError);
+            return {
+              businessId: null,
+              error: { message: 'Failed to create business settings', code: 'CREATE_FAILED' }
+            };
+          }
+
+          console.log('✅ Auto-created business_settings with ID:', newBusinessSettings.id);
+          return { businessId: newBusinessSettings.id, error: null };
+        } catch (createErr: any) {
+          console.error('❌ Error creating business_settings:', createErr);
+          return {
+            businessId: null,
+            error: { message: 'Failed to create business settings', code: 'CREATE_ERROR' }
+          };
+        }
       }
 
       return { businessId: businessSettings.id, error: null };
