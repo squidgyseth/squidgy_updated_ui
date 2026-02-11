@@ -1269,20 +1269,36 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, bu
                               <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Clone</span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 mb-2">
+                          <p className="text-xs text-gray-500 mb-3">
                             {template.width} × {template.height} px
                           </p>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPreviewingTemplate(null);
-                              handleEditClick(template, e);
-                            }}
-                            disabled={cloning}
-                            className="w-full px-3 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {isCloning ? 'Opening...' : 'Edit'}
-                          </button>
+                          
+                          {/* Action buttons */}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewingTemplate(null);
+                                handleEditClick(template, e);
+                              }}
+                              disabled={cloning}
+                              className="flex-1 px-3 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isCloning ? 'Opening...' : 'Edit'}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(`Delete this ${aspectRatio ? aspectRatio.name : 'custom'} size (${template.width}×${template.height})?`)) {
+                                  handleDeleteClick(template, e);
+                                }
+                              }}
+                              disabled={cloning}
+                              className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
