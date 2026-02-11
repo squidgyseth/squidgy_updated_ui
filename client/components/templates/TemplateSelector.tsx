@@ -30,7 +30,6 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'generic' | 'custom'>('generic');
   const [genericPage, setGenericPage] = useState(0);
   const [userPage, setUserPage] = useState(0);
   const [genericTotalPages, setGenericTotalPages] = useState(1);
@@ -115,10 +114,9 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
     setError(null);
 
     try {
-      // Fetch generic templates with TheAiTeamTemplate tag
-      console.log('📥 Fetching generic templates...');
+      // Fetch all public templates (no tag filter)
+      console.log('📥 Fetching public templates...');
       const genericParams = new URLSearchParams({
-        tags: 'TheAiTeamTemplate',
         limit: '25',
         page: genericPage.toString()
       });
@@ -308,7 +306,6 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
       // Refresh user templates to show the new duplicate
       setTimeout(() => {
         fetchTemplates();
-        setActiveTab('custom'); // Switch to custom tab to show the new template
       }, 1000);
 
     } catch (err) {
@@ -341,11 +338,6 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
     fetchTemplates();
   };
 
-  const handleTabSwitch = (tab: 'generic' | 'custom') => {
-    setActiveTab(tab);
-    // Refresh templates when switching tabs
-    fetchTemplates();
-  };
 
   const deleteTemplate = async (templateId: string): Promise<void> => {
     try {
@@ -403,54 +395,16 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
         <p className="text-sm text-gray-500 mt-1">Manage your social media templates</p>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-          <div className="flex relative">
-            <button
-              onClick={() => handleTabSwitch('generic')}
-              className={`flex-1 px-6 py-3 text-sm font-semibold transition-colors ${
-                activeTab === 'generic'
-                  ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-              }`}
-            >
-              Generic Templates
-              {filteredGenericTemplates.length > 0 && (
-                <span className="ml-2 text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full">
-                  {filteredGenericTemplates.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => handleTabSwitch('custom')}
-              className={`flex-1 px-6 py-3 text-sm font-semibold transition-colors ${
-                activeTab === 'custom'
-                  ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-              }`}
-            >
-              Your Custom Templates
-              {filteredUserTemplates.length > 0 && (
-                <span className="ml-2 text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full">
-                  {filteredUserTemplates.length}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Create New Template Button - Only show on Custom Templates tab */}
-        {activeTab === 'custom' && (
-          <div className="p-4 border-b border-gray-200">
-            <button
-              onClick={handleCreateNewTemplate}
-              className="w-full px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Create New Template
-            </button>
-          </div>
-        )}
+      {/* Create New Template Button */}
+      <div className="p-4 border-b border-gray-200">
+        <button
+          onClick={handleCreateNewTemplate}
+          className="w-full px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Create New Template
+        </button>
+      </div>
 
         {/* Search Bar */}
         <div className="p-4 border-b border-gray-200">
@@ -487,14 +441,19 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                 </button>
               </div>
             </div>
-          ) : activeTab === 'generic' ? (
-            filteredGenericTemplates.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-gray-500">No generic templates found</p>
-              </div>
-            ) : (
-              <div className="flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto">
+          ) : (
+            <div className="space-y-8">
+              {/* Public Templates Section */}
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Public Templates
+                  {filteredGenericTemplates.length > 0 && (
+                    <span className="ml-2 text-sm text-gray-500">({filteredGenericTemplates.length})</span>
+                  )}
+                </h2>
+                {filteredGenericTemplates.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">No public templates found</p>
+                ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filteredGenericTemplates.map((template) => {
                       const isCloning = cloning && cloningTemplateId === template.id;
@@ -545,10 +504,10 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                       );
                     })}
                   </div>
-                </div>
-                {/* Pagination for Generic Templates */}
+                )}
+                {/* Pagination for Public Templates */}
                 {genericTotalPages > 1 && (
-                  <div className="border-t border-gray-200 p-4 flex items-center justify-between">
+                  <div className="mt-4 flex items-center justify-between">
                     <button
                       onClick={() => setGenericPage(Math.max(0, genericPage - 1))}
                       disabled={genericPage === 0}
@@ -569,15 +528,18 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                   </div>
                 )}
               </div>
-            )
-          ) : (
-            filteredUserTemplates.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-gray-500">No custom templates found</p>
-              </div>
-            ) : (
-              <div className="flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto">
+
+              {/* Custom Templates Section */}
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Your Custom Templates
+                  {filteredUserTemplates.length > 0 && (
+                    <span className="ml-2 text-sm text-gray-500">({filteredUserTemplates.length})</span>
+                  )}
+                </h2>
+                {filteredUserTemplates.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">No custom templates found</p>
+                ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filteredUserTemplates.map((template) => {
                       return (
@@ -631,10 +593,10 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                       );
                     })}
                   </div>
-                </div>
-                {/* Pagination for User Templates */}
+                )}
+                {/* Pagination for Custom Templates */}
                 {userTotalPages > 1 && (
-                  <div className="border-t border-gray-200 p-4 flex items-center justify-between">
+                  <div className="mt-4 flex items-center justify-between">
                     <button
                       onClick={() => setUserPage(Math.max(0, userPage - 1))}
                       disabled={userPage === 0}
@@ -655,7 +617,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                   </div>
                 )}
               </div>
-            )
+            </div>
           )}
         </div>
 
