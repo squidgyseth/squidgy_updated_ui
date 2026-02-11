@@ -334,7 +334,10 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
 
       console.log('Added userId tag to duplicated template:', duplicatedTemplate.id);
 
-      // Step 4: Notify parent component with the duplicated template
+      // Step 4: Open the duplicated template in the editor immediately
+      setEditingTemplateId(duplicatedTemplate.id);
+      
+      // Step 5: Notify parent component with the duplicated template
       if (onSelectTemplate) {
         onSelectTemplate({
           ...template,
@@ -343,7 +346,7 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
         });
       }
 
-      // Refresh user templates to show the new duplicate
+      // Refresh user templates in background to show the new duplicate
       setTimeout(() => {
         fetchTemplates();
       }, 1000);
@@ -532,21 +535,13 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                           </p>
                           
                           {/* Action Buttons */}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setPreviewGroup(group)}
-                              className="flex-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
-                            >
-                              <Palette className="w-4 h-4" />
-                              Preview
-                            </button>
-                            <button
-                              onClick={() => setPreviewGroup(group)}
-                              className="px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors"
-                            >
-                              Enable
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => setPreviewGroup(group)}
+                            className="w-full px-3 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-1"
+                          >
+                            <Palette className="w-4 h-4" />
+                            Preview
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -710,8 +705,12 @@ export default function TemplateSelector({ isOpen, onClose, onSelectTemplate, us
                     >
                       <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all mb-3 border border-gray-200">
                         <div
-                          className="w-full h-48 bg-gray-100 flex items-center justify-center relative overflow-hidden"
-                          style={{ backgroundColor: template.background || '#f3f4f6' }}
+                          className="w-full bg-gray-100 flex items-center justify-center relative overflow-hidden"
+                          style={{ 
+                            backgroundColor: template.background || '#f3f4f6',
+                            aspectRatio: `${template.width} / ${template.height}`,
+                            maxHeight: '300px'
+                          }}
                         >
                           {template.thumbnail ? (
                             <img
