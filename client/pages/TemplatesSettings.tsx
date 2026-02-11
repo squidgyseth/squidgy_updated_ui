@@ -4,14 +4,14 @@ import { useUser } from '../hooks/useUser';
 import TemplateSelector from '../components/templates/TemplateSelector';
 
 export default function TemplatesSettings() {
-  const { user } = useUser();
+  const { userId } = useUser();
 
   return (
     <SettingsLayout title="Templates">
       <TemplateSelector
         isOpen={true}
         onClose={() => {}}
-        userId={user?.id}
+        userId={userId}
       />
     </SettingsLayout>
   );
