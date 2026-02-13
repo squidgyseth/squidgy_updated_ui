@@ -771,10 +771,16 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
       setSavingBusiness(true);
       const userId = user.user_id || user.id;
       
+      // Convert empty strings to null to satisfy database check constraints
+      const cleanedData: Record<string, any> = {};
+      Object.entries(businessData).forEach(([key, value]) => {
+        cleanedData[key] = value === '' ? null : value;
+      });
+      
       const { error } = await supabase
         .from('business_settings')
         .update({
-          ...businessData,
+          ...cleanedData,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', userId);
@@ -1189,7 +1195,12 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                 </div>
               ) : businessSettings && Object.keys(businessSettings).length > 0 ? (
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4">Business Information</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-gray-900">Business Information</h3>
+                    {businessSettings.id && (
+                      <span className="text-xs text-gray-400">ID: {businessSettings.id}</span>
+                    )}
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {Object.entries(businessData).map(([key, value]) => (
                       <div key={key} className="flex flex-col gap-1">
