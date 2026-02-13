@@ -570,10 +570,22 @@ interface EditUserModalProps {
 
 function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   const [activeTab, setActiveTab] = useState<'profile' | 'business' | 'ghl' | 'assistant'>('profile');
+  const [isTabTransitioning, setIsTabTransitioning] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loadingBusiness, setLoadingBusiness] = useState(false);
   const [loadingGhl, setLoadingGhl] = useState(false);
   const [loadingAssistant, setLoadingAssistant] = useState(false);
+
+  const handleTabChange = (tab: 'profile' | 'business' | 'ghl' | 'assistant') => {
+    if (tab === activeTab) return;
+    setIsTabTransitioning(true);
+    // Small delay before switching tab to ensure spinner is visible
+    setTimeout(() => {
+      setActiveTab(tab);
+      // Keep spinner visible while data loads
+      setTimeout(() => setIsTabTransitioning(false), 400);
+    }, 100);
+  };
   
   // Editable profile fields - initialize with all user fields
   const [profileData, setProfileData] = useState<Record<string, any>>(() => {
@@ -586,11 +598,15 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
     return data;
   });
   
-  // Business settings
+  // Business settings - editable
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
+  const [businessData, setBusinessData] = useState<Record<string, any>>({});
+  const [savingBusiness, setSavingBusiness] = useState(false);
   
-  // GHL Subaccounts
+  // GHL Subaccounts - editable (first subaccount only for simplicity)
   const [ghlSubaccounts, setGhlSubaccounts] = useState<Record<string, any>[] | null>(null);
+  const [ghlData, setGhlData] = useState<Record<string, any>>({});
+  const [savingGhl, setSavingGhl] = useState(false);
   
   // Assistant Personalizations - now stores array of all user's personalizations
   const [assistantPersonalizations, setAssistantPersonalizations] = useState<Record<string, any>[] | null>(null);
@@ -613,7 +629,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   
   // Timestamp fields (shown as read-only info, not editable)
   const timestampFields = [
-    'terms_accepted_at', 'terms_read_at', 'last_login_at', 'email_confirmed_at', 
+    'terms_accepted_at', 'terms_read_at', 'last_login_at', 
     'onboarding_completed_at', 'consent_timestamp', 'terms_viewed_timestamp', 
     'privacy_viewed_timestamp'
   ];
@@ -626,10 +642,10 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   };
   
   // Boolean fields that have associated timestamp fields (auto-update when toggled)
+  // Note: email_confirmed_at doesn't exist in profiles table, so email_confirmed is excluded
   const booleanTimestampPairs: Record<string, string> = {
     terms_accepted: 'terms_accepted_at',
     terms_read: 'terms_read_at',
-    email_confirmed: 'email_confirmed_at',
     onboarding_completed: 'onboarding_completed_at',
     ai_processing_consent: 'consent_timestamp',
     marketing_consent: 'consent_timestamp',
@@ -649,6 +665,23 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
     }
   }, [activeTab]);
 
+  // Auto-refresh GHL status when automation is running
+  useEffect(() => {
+    if (activeTab !== 'ghl' || !ghlSubaccounts || ghlSubaccounts.length === 0) return;
+    
+    const ghl = ghlSubaccounts[0];
+    const automationStatus = ghl?.automation_status;
+    
+    // Poll every 5 seconds if automation is running
+    if (automationStatus === 'running' || automationStatus === 'pit_running' || automationStatus === 'creating') {
+      const interval = setInterval(() => {
+        loadGhlSubaccounts();
+      }, 5000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [activeTab, ghlSubaccounts]);
+
   const loadBusinessSettings = async () => {
     try {
       setLoadingBusiness(true);
@@ -662,6 +695,16 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
         console.error('Error loading business settings:', error);
       }
       setBusinessSettings(data || {});
+      // Initialize editable business data
+      if (data) {
+        const editableData: Record<string, any> = {};
+        Object.entries(data).forEach(([key, value]) => {
+          if (!['id', 'user_id', 'created_at', 'updated_at'].includes(key)) {
+            editableData[key] = value ?? '';
+          }
+        });
+        setBusinessData(editableData);
+      }
     } catch (err) {
       console.error('Error loading business settings:', err);
       setBusinessSettings({});
@@ -682,11 +725,83 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
         console.error('Error loading GHL subaccounts:', error);
       }
       setGhlSubaccounts(data || []);
+      // Initialize editable GHL data (first subaccount)
+      if (data && data.length > 0) {
+        const editableData: Record<string, any> = {};
+        Object.entries(data[0]).forEach(([key, value]) => {
+          const hiddenGhlFields = [
+              'id', 'firm_user_id', 'created_at', 'updated_at',
+              'agent_id', 'business_phone', 'business_city', 'business_country',
+              'business_state', 'business_address', 'business_timezone',
+              'business_postal_code', 'business_website', 'soma_ghl_email', 'soma_ghl_password',
+              'soma_ghl_user_id', 'firm_id'
+            ];
+            if (!hiddenGhlFields.includes(key)) {
+              editableData[key] = value ?? '';
+            }
+        });
+        setGhlData(editableData);
+      }
     } catch (err) {
       console.error('Error loading GHL subaccounts:', err);
       setGhlSubaccounts([]);
     } finally {
       setLoadingGhl(false);
+    }
+  };
+
+  const handleSaveBusiness = async () => {
+    try {
+      setSavingBusiness(true);
+      const userId = user.user_id || user.id;
+      
+      const { error } = await supabase
+        .from('business_settings')
+        .update({
+          ...businessData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+      
+      toast.success('Business settings saved');
+      setBusinessSettings(prev => ({ ...prev, ...businessData }));
+    } catch (err: any) {
+      console.error('Error saving business settings:', err);
+      toast.error(err.message || 'Failed to save business settings');
+    } finally {
+      setSavingBusiness(false);
+    }
+  };
+
+  const handleSaveGhl = async () => {
+    try {
+      setSavingGhl(true);
+      const userId = user.user_id || user.id;
+      
+      if (!ghlSubaccounts || ghlSubaccounts.length === 0) {
+        toast.error('No GHL subaccount to update');
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('ghl_subaccounts')
+        .update({
+          ...ghlData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ghlSubaccounts[0].id);
+      
+      if (error) throw error;
+      
+      toast.success('GHL settings saved');
+      setGhlSubaccounts(prev => prev ? [{ ...prev[0], ...ghlData }, ...prev.slice(1)] : null);
+    } catch (err: any) {
+      console.error('Error saving GHL settings:', err);
+      toast.error(err.message || 'Failed to save GHL settings');
+    } finally {
+      setSavingGhl(false);
     }
   };
 
@@ -799,7 +914,8 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
       
       // Notify backend to refresh user view
       try {
-        await fetch('/api/agents/notify-enablement', {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+        await fetch(`${backendUrl}/api/agents/notify-enablement`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -888,7 +1004,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
         {/* Tabs */}
         <div className="flex border-b border-gray-200">
           <button
-            onClick={() => setActiveTab('profile')}
+            onClick={() => handleTabChange('profile')}
             className={`flex-1 px-4 py-3 text-xs font-medium transition-colors ${
               activeTab === 'profile'
                 ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50'
@@ -899,7 +1015,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
             Profile
           </button>
           <button
-            onClick={() => setActiveTab('business')}
+            onClick={() => handleTabChange('business')}
             className={`flex-1 px-4 py-3 text-xs font-medium transition-colors ${
               activeTab === 'business'
                 ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50'
@@ -910,7 +1026,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
             Business
           </button>
           <button
-            onClick={() => setActiveTab('ghl')}
+            onClick={() => handleTabChange('ghl')}
             className={`flex-1 px-4 py-3 text-xs font-medium transition-colors ${
               activeTab === 'ghl'
                 ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50'
@@ -921,7 +1037,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
             GHL
           </button>
           <button
-            onClick={() => setActiveTab('assistant')}
+            onClick={() => handleTabChange('assistant')}
             className={`flex-1 px-4 py-3 text-xs font-medium transition-colors ${
               activeTab === 'assistant'
                 ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50'
@@ -933,8 +1049,12 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          {activeTab === 'profile' ? (
+        <div className="flex-1 overflow-y-auto p-6 min-h-[400px]">
+          {isTabTransitioning ? (
+            <div className="flex justify-center items-center h-full min-h-[350px]">
+              <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : activeTab === 'profile' ? (
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Regular Editable Fields (non-boolean) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1055,16 +1175,27 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-gray-900 mb-4">Business Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {Object.entries(businessSettings)
-                      .filter(([key]) => !['id', 'user_id', 'created_at', 'updated_at'].includes(key))
-                      .map(([key, value]) => (
-                        <div key={key} className="flex justify-between py-2 px-3 bg-gray-50 rounded-lg">
-                          <span className="text-sm text-gray-500">{formatFieldName(key)}</span>
-                          <span className="text-sm font-medium text-gray-900 text-right max-w-[60%] truncate">
-                            {formatFieldValue(value)}
-                          </span>
-                        </div>
-                      ))}
+                    {Object.entries(businessData).map(([key, value]) => (
+                      <div key={key} className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-500">{formatFieldName(key)}</label>
+                        <input
+                          type="text"
+                          value={typeof value === 'object' ? JSON.stringify(value) : (value ?? '')}
+                          onChange={(e) => setBusinessData(prev => ({ ...prev, [key]: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-end pt-4 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={handleSaveBusiness}
+                      disabled={savingBusiness}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {savingBusiness ? 'Saving...' : 'Save Business Settings'}
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -1082,23 +1213,141 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                 </div>
               ) : ghlSubaccounts && ghlSubaccounts.length > 0 ? (
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4">GHL Subaccounts ({ghlSubaccounts.length})</h3>
-                  {ghlSubaccounts.map((account, index) => (
-                    <div key={account.id || index} className="bg-gray-50 rounded-lg p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {Object.entries(account)
-                          .filter(([key]) => !['id', 'user_id', 'created_at', 'updated_at'].includes(key))
-                          .map(([key, value]) => (
-                            <div key={key} className="flex justify-between py-1.5 px-2">
-                              <span className="text-xs text-gray-500">{formatFieldName(key)}</span>
-                              <span className="text-xs font-medium text-gray-900 text-right max-w-[60%] truncate">
-                                {formatFieldValue(value)}
+                  {(() => {
+                    const ghl = ghlSubaccounts[0];
+                    const creationStatus = ghl.creation_status || 'unknown';
+                    const automationStatus = ghl.automation_status || 'unknown';
+                    
+                    const getStatusColor = (status: string) => {
+                      if (status === 'created' || status === 'completed' || status === 'ready') return 'bg-green-100 text-green-800';
+                      if (status === 'failed' || status === 'pit_failed' || status === 'token_capture_failed') return 'bg-red-100 text-red-800';
+                      if (status === 'pending' || status === 'not_started') return 'bg-gray-100 text-gray-800';
+                      if (status === 'creating' || status === 'running' || status === 'pit_running') return 'bg-blue-100 text-blue-800';
+                      return 'bg-yellow-100 text-yellow-800';
+                    };
+                    
+                    const getStatusIcon = (status: string) => {
+                      if (status === 'created' || status === 'completed' || status === 'ready') return '✅';
+                      if (status === 'failed' || status === 'pit_failed' || status === 'token_capture_failed') return '❌';
+                      if (status === 'pending' || status === 'not_started') return '⏳';
+                      if (status === 'creating' || status === 'running' || status === 'pit_running') return '🔄';
+                      return '⚠️';
+                    };
+                    
+                    return (
+                      <>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-4">GHL Subaccount Status</h3>
+                        
+                        {/* Status Overview */}
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="text-xs text-gray-500 mb-1">Creation Status</p>
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(creationStatus)}`}>
+                              {getStatusIcon(creationStatus)} {creationStatus.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="text-xs text-gray-500 mb-1">Automation Status</p>
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(automationStatus)}`}>
+                              {getStatusIcon(automationStatus)} {automationStatus.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Progress Steps */}
+                        <div className="border rounded-lg p-4 mb-4">
+                          <p className="text-xs font-medium text-gray-700 mb-3">Setup Progress</p>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className={creationStatus !== 'pending' ? 'text-green-500' : 'text-gray-300'}>
+                                {creationStatus !== 'pending' ? '✓' : '○'}
                               </span>
+                              <span className="text-sm text-gray-600">GHL Subaccount Created</span>
                             </div>
-                          ))}
-                      </div>
-                    </div>
-                  ))}
+                            <div className="flex items-center gap-2">
+                              <span className={ghl.ghl_location_id ? 'text-green-500' : 'text-gray-300'}>
+                                {ghl.ghl_location_id ? '✓' : '○'}
+                              </span>
+                              <span className="text-sm text-gray-600">Location ID Assigned</span>
+                              {ghl.ghl_location_id && <span className="text-xs text-gray-400 ml-auto">{ghl.ghl_location_id}</span>}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={ghl.firebase_token ? 'text-green-500' : 'text-gray-300'}>
+                                {ghl.firebase_token ? '✓' : '○'}
+                              </span>
+                              <span className="text-sm text-gray-600">Firebase Token Captured</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={automationStatus === 'completed' || automationStatus === 'ready' ? 'text-green-500' : 'text-gray-300'}>
+                                {automationStatus === 'completed' || automationStatus === 'ready' ? '✓' : '○'}
+                              </span>
+                              <span className="text-sm text-gray-600">Automation Complete</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Error Display - only show if status indicates failure */}
+                        {(ghl.creation_error || ghl.automation_error) && 
+                         (creationStatus === 'failed' || automationStatus === 'failed' || automationStatus === 'pit_failed' || automationStatus === 'token_capture_failed') && (
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                            <p className="text-xs font-medium text-red-800 mb-1">Error Details</p>
+                            <p className="text-sm text-red-700">{ghl.creation_error || ghl.automation_error}</p>
+                          </div>
+                        )}
+                        
+                        {/* Key Info */}
+                        <div className="border rounded-lg p-4">
+                          <p className="text-xs font-medium text-gray-700 mb-3">Account Details</p>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="text-gray-500">Subaccount Name</div>
+                            <div className="text-gray-900 font-medium">{ghl.subaccount_name || '-'}</div>
+                            <div className="text-gray-500">Location ID</div>
+                            <div className="text-gray-900 font-medium truncate">{ghl.ghl_location_id || '-'}</div>
+                            <div className="text-gray-500">Company ID</div>
+                            <div className="text-gray-900 font-medium truncate">{ghl.ghl_company_id || '-'}</div>
+                            <div className="text-gray-500">Created At</div>
+                            <div className="text-gray-900 font-medium">
+                              {ghl.subaccount_created_at ? new Date(ghl.subaccount_created_at).toLocaleDateString() : '-'}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Retry Button for Failed Status */}
+                        {(creationStatus === 'failed' || automationStatus === 'failed' || automationStatus === 'pit_failed' || automationStatus === 'token_capture_failed') && (
+                          <div className="flex justify-end pt-4 border-t border-gray-200">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  setSavingGhl(true);
+                                  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+                                  const response = await fetch(`${backendUrl}/api/ghl/retry-automation`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ firm_user_id: user.user_id || user.id })
+                                  });
+                                  if (response.ok) {
+                                    toast.success('Automation retry triggered');
+                                    loadGhlSubaccounts();
+                                  } else {
+                                    toast.error('Failed to retry automation');
+                                  }
+                                } catch (err) {
+                                  toast.error('Failed to retry automation');
+                                } finally {
+                                  setSavingGhl(false);
+                                }
+                              }}
+                              disabled={savingGhl}
+                              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                            >
+                              {savingGhl ? 'Retrying...' : 'Retry Automation'}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-500">
@@ -1172,7 +1421,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                               onClick={() => handleToggleAgent(
                                 agentId, 
                                 agentName || agentId,
-                                !!userPersonalization
+                                isEnabled
                               )}
                               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                                 isEnabled ? 'bg-purple-600' : 'bg-gray-300'
