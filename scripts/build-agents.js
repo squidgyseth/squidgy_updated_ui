@@ -73,7 +73,7 @@ async function upsertAgentsToSupabase(agents) {
     tagline: agent.agent.tagline || null,
     webhook_url: agent.n8n?.webhook_url || null,
     avatar_url: agent.agent.avatar || null,
-    is_enabled: true,
+    is_enabled: agent.agent.enabled !== false, // Read from YAML, default true
     is_default: agent.agent.id === 'personal_assistant',
     display_order: agent.agent.pinned ? index : index + 100
   }));
@@ -100,6 +100,7 @@ async function upsertAgentsToSupabase(agents) {
             tagline: record.tagline,
             webhook_url: record.webhook_url,
             avatar_url: record.avatar_url,
+            is_enabled: record.is_enabled,
             is_default: record.is_default,
             display_order: record.display_order,
             updated_at: new Date().toISOString()
