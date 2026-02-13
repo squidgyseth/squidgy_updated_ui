@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCompanyBranding } from "../hooks/useCompanyBranding";
 import { useUser } from "../hooks/useUser";
+import { useAdmin } from "../hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,8 @@ import {
   BarChart3,
   Calendar,
   Zap,
-  MessageSquare
+  MessageSquare,
+  Shield
 } from "lucide-react";
 
 export default function Index() {
@@ -48,6 +50,7 @@ export default function Index() {
   const navigate = useNavigate();
   const { companyName, isLoading } = useCompanyBranding();
   const { user, userId, profile } = useUser();
+  const { isAdmin } = useAdmin();
 
   // Check if we should show onboarding modal - SIMPLE LOGIC
   useEffect(() => {
@@ -165,6 +168,18 @@ export default function Index() {
             </div>
 
             <div className="flex items-center gap-4">
+              {isAdmin && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-10 w-10 rounded-full hover:bg-purple-100"
+                  onClick={() => navigate('/admin')}
+                  title="Admin Dashboard"
+                >
+                  <Shield className="w-6 h-6 text-purple-600" />
+                </Button>
+              )}
+              
               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
                 <Search className="w-6 h-6 text-gray-500" />
               </Button>

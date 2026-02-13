@@ -83,6 +83,13 @@ import MobileChats from "./pages/mobile/chats";
 // New Onboarding
 import NewOnboarding from "./pages/new_onboarding";
 
+// Admin Pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminSettings from "./pages/admin/AdminSettings";
+import AdminActivity from "./pages/admin/AdminActivity";
+import { AdminRoute } from "./components/AdminRoute";
+
 const queryClient = new QueryClient();
 
 // Component to handle auth redirects
@@ -145,7 +152,7 @@ const App = () => (
         <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthHandler />
           <GlobalNotificationBell />
           <Routes>
@@ -376,6 +383,28 @@ const App = () => (
             <ProtectedRoute>
               <NewOnboarding />
             </ProtectedRoute>
+          } />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } />
+          <Route path="/admin/users" element={
+            <AdminRoute>
+              <AdminUsers />
+            </AdminRoute>
+          } />
+          <Route path="/admin/settings" element={
+            <AdminRoute>
+              <AdminSettings />
+            </AdminRoute>
+          } />
+          <Route path="/admin/activity" element={
+            <AdminRoute>
+              <AdminActivity />
+            </AdminRoute>
           } />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
