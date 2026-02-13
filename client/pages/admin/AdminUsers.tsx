@@ -685,11 +685,27 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   const loadBusinessSettings = async () => {
     try {
       setLoadingBusiness(true);
-      const { data, error } = await supabase
+      const userId = user.user_id || user.id;
+      
+      let { data, error } = await supabase
         .from('business_settings')
         .select('*')
-        .eq('user_id', user.user_id || user.id)
+        .eq('user_id', userId)
         .single();
+      
+      // If no record exists (PGRST116 = no rows), silently create one
+      if (error && error.code === 'PGRST116') {
+        const { data: newData, error: insertError } = await supabase
+          .from('business_settings')
+          .insert({ user_id: userId })
+          .select()
+          .single();
+        
+        if (!insertError && newData) {
+          data = newData;
+          error = null;
+        }
+      }
       
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading business settings:', error);
