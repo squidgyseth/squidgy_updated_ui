@@ -10,6 +10,7 @@ import {
   Trash2, Edit2, X, Check, ArrowLeft, Filter, ArrowUpDown, Building2, Bot
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ALL_AGENTS, AgentConfig } from '../../data/agents';
 
 interface UserProfile {
   id: string;
@@ -591,8 +592,11 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   // GHL Subaccounts
   const [ghlSubaccounts, setGhlSubaccounts] = useState<Record<string, any>[] | null>(null);
   
-  // Assistant Personalizations
-  const [assistantPersonalizations, setAssistantPersonalizations] = useState<Record<string, any> | null>(null);
+  // Assistant Personalizations - now stores array of all user's personalizations
+  const [assistantPersonalizations, setAssistantPersonalizations] = useState<Record<string, any>[] | null>(null);
+  
+  // All available agents in the system
+  const [allAgents, setAllAgents] = useState<Record<string, any>[] | null>(null);
 
   // Fields that should not be editable (shown as disabled inputs)
   const readOnlyFields = ['email', 'company_id', 'ghl_record_id'];
@@ -689,21 +693,128 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   const loadAssistantPersonalizations = async () => {
     try {
       setLoadingAssistant(true);
-      const { data, error } = await supabase
+      
+      // Use frontend agent definitions as source of truth (not the agents table)
+      // ALL_AGENTS is imported from client/data/agents.ts
+      const frontendAgents = ALL_AGENTS.map(config => ({
+        id: config.agent.id,
+        name: config.agent.name,
+        description: config.agent.description,
+        emoji: config.agent.emoji,
+        category: config.agent.category,
+        enabled: config.agent.enabled // personal_assistant has enabled: true
+      }));
+      
+      // Load user's personalizations from Supabase
+      const { data: personalizationsData, error: personalizationsError } = await supabase
         .from('assistant_personalizations')
         .select('*')
-        .eq('user_id', user.user_id || user.id)
-        .single();
+        .eq('user_id', user.user_id || user.id);
       
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading assistant personalizations:', error);
+      if (personalizationsError && personalizationsError.code !== 'PGRST116') {
+        console.error('Error loading assistant personalizations:', personalizationsError);
       }
-      setAssistantPersonalizations(data || {});
+      
+      setAllAgents(frontendAgents);
+      setAssistantPersonalizations(personalizationsData || []);
     } catch (err) {
-      console.error('Error loading assistant personalizations:', err);
-      setAssistantPersonalizations({});
+      console.error('Error loading assistant data:', err);
+      setAllAgents([]);
+      setAssistantPersonalizations([]);
     } finally {
       setLoadingAssistant(false);
+    }
+  };
+
+  const handleToggleAgent = async (agentId: string, agentName: string, currentlyEnabled: boolean) => {
+    try {
+      const userId = user.user_id || user.id;
+      
+      if (currentlyEnabled) {
+        // Disable - set is_enabled to false (don't delete, to preserve personalization data)
+        const { error } = await supabase
+          .from('assistant_personalizations')
+          .update({ 
+            is_enabled: false,
+            last_updated: new Date().toISOString()
+          })
+          .eq('user_id', userId)
+          .eq('assistant_id', agentId);
+        
+        if (error) throw error;
+        
+        // Update local state
+        setAssistantPersonalizations(prev => 
+          (prev || []).map(p => 
+            p.assistant_id === agentId ? { ...p, is_enabled: false } : p
+          )
+        );
+        toast.success(`${agentName} disabled for this user`);
+      } else {
+        // Check if record exists
+        const { data: existing } = await supabase
+          .from('assistant_personalizations')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('assistant_id', agentId)
+          .single();
+        
+        if (existing) {
+          // Update existing record
+          const { error } = await supabase
+            .from('assistant_personalizations')
+            .update({ 
+              is_enabled: true,
+              last_updated: new Date().toISOString()
+            })
+            .eq('user_id', userId)
+            .eq('assistant_id', agentId);
+          
+          if (error) throw error;
+          
+          setAssistantPersonalizations(prev => 
+            (prev || []).map(p => 
+              p.assistant_id === agentId ? { ...p, is_enabled: true } : p
+            )
+          );
+        } else {
+          // Create new personalization record
+          const { data, error } = await supabase
+            .from('assistant_personalizations')
+            .insert({
+              user_id: userId,
+              assistant_id: agentId,
+              is_enabled: true,
+              last_updated: new Date().toISOString()
+            })
+            .select()
+            .single();
+          
+          if (error) throw error;
+          
+          setAssistantPersonalizations(prev => [...(prev || []), data]);
+        }
+        toast.success(`${agentName} enabled for this user`);
+      }
+      
+      // Notify backend to refresh user view
+      try {
+        await fetch('/api/agents/notify-enablement', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userId,
+            agent_id: agentId,
+            enabled: !currentlyEnabled
+          })
+        });
+      } catch (notifyErr) {
+        console.error('Failed to notify backend:', notifyErr);
+        // Don't show error to user - the main action succeeded
+      }
+    } catch (err: any) {
+      console.error('Error toggling agent:', err);
+      toast.error(err.message || 'Failed to update agent');
     }
   };
 
@@ -1002,26 +1113,111 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                 <div className="flex justify-center py-12">
                   <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-              ) : assistantPersonalizations && Object.keys(assistantPersonalizations).length > 0 ? (
+              ) : allAgents && allAgents.length > 0 ? (
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4">Assistant Personalizations</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {Object.entries(assistantPersonalizations)
-                      .filter(([key]) => !['id', 'user_id', 'created_at', 'updated_at'].includes(key))
-                      .map(([key, value]) => (
-                        <div key={key} className="flex justify-between py-2 px-3 bg-gray-50 rounded-lg">
-                          <span className="text-sm text-gray-500">{formatFieldName(key)}</span>
-                          <span className="text-sm font-medium text-gray-900 text-right max-w-[60%] truncate">
-                            {formatFieldValue(value)}
-                          </span>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                    Available Agents ({allAgents.length})
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Toggle agents to enable or disable them for this user
+                  </p>
+                  <div className="space-y-2">
+                    {allAgents.map((agent) => {
+                      const agentId = agent.id;
+                      const agentName = agent.name || '';
+                      // Only personal_assistant is always enabled - not other agents with enabled:true
+                      const isPersonalAssistant = agentId === 'personal_assistant';
+                      // Match by agent ID (source of truth from agents.ts)
+                      const userPersonalization = (assistantPersonalizations || []).find(
+                        p => p.assistant_id === agentId
+                      );
+                      // Check is_enabled field - must be explicitly true (matching sidebar logic)
+                      const isEnabled = isPersonalAssistant || (userPersonalization?.is_enabled === true);
+                      
+                      return (
+                        <div 
+                          key={agentId} 
+                          className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
+                            isEnabled 
+                              ? 'bg-purple-50 border-purple-200' 
+                              : 'bg-gray-50 border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              isEnabled ? 'bg-purple-100' : 'bg-gray-200'
+                            }`}>
+                              <Bot className={`w-5 h-5 ${isEnabled ? 'text-purple-600' : 'text-gray-400'}`} />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {agent.emoji && <span className="mr-1">{agent.emoji}</span>}
+                                {agentName || formatFieldName(agentId)}
+                                {isPersonalAssistant && (
+                                  <span className="ml-2 text-xs text-purple-600 font-normal">(Default)</span>
+                                )}
+                              </p>
+                              <p className="text-xs text-gray-400">{agent.category}</p>
+                              {agent.description && (
+                                <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                                  {agent.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {isPersonalAssistant ? (
+                            <span className="text-xs text-gray-400 italic">Always enabled</span>
+                          ) : (
+                            <button
+                              onClick={() => handleToggleAgent(
+                                agentId, 
+                                agentName || agentId,
+                                !!userPersonalization
+                              )}
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                isEnabled ? 'bg-purple-600' : 'bg-gray-300'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                  isEnabled ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                              />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Show personalization details for enabled agents */}
+                  {(assistantPersonalizations || []).length > 0 && (
+                    <div className="border-t border-gray-200 pt-4 mt-6">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-3">Enabled Agent Details</h4>
+                      {(assistantPersonalizations || []).map((personalization, index) => (
+                        <div key={personalization.id || index} className="mb-4 p-3 bg-gray-50 rounded-lg">
+                          <p className="text-xs font-medium text-purple-600 mb-2">
+                            {personalization.assistant_id}
+                          </p>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            {Object.entries(personalization)
+                              .filter(([key]) => !['id', 'user_id', 'assistant_id', 'created_at', 'updated_at'].includes(key))
+                              .map(([key, value]) => (
+                                <div key={key} className="flex justify-between">
+                                  <span className="text-gray-500">{formatFieldName(key)}</span>
+                                  <span className="font-medium text-gray-700">{formatFieldValue(value)}</span>
+                                </div>
+                              ))}
+                          </div>
                         </div>
                       ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-500">
                   <Bot className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>No assistant personalizations found for this user</p>
+                  <p>No agents available in the system</p>
                 </div>
               )}
             </div>

@@ -23,29 +23,26 @@ async function upsertAgentsToSupabase(agents) {
   const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
+    console.log('⚠️ Supabase credentials not found, skipping database sync');
     return;
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Transform agents to personal_assistant_config format
-  // Include ALL agents (including personal_assistant)
-  const records = agents.map(agent => ({
+  // ============================================
+  // SYNC TO personal_assistant_config TABLE
+  // ============================================
+  const configRecords = agents.map(agent => ({
     config_type: 'assistants',
     code: agent.agent.id,
     display_name: agent.agent.name,
     emoji: agent.agent.emoji || '🤖',
     description: agent.agent.description || null,
     category: agent.agent.category || 'General',
-    is_enabled: agent.agent.enabled === true  // Sync enabled status from YAML
+    is_enabled: agent.agent.enabled === true
   }));
 
-  const enabledCount = records.filter(r => r.is_enabled).length;
-  const disabledCount = records.filter(r => !r.is_enabled).length;
-
-
-  // Upsert each record (based on config_type + code unique constraint)
-  for (const record of records) {
+  for (const record of configRecords) {
     try {
       const { error } = await supabase
         .from('personal_assistant_config')
@@ -53,15 +50,85 @@ async function upsertAgentsToSupabase(agents) {
           onConflict: 'config_type,code',
           ignoreDuplicates: false
         });
-
       if (error) {
-      } else {
-        const status = record.is_enabled ? '✅' : '⬚';
+        console.error(`❌ Error syncing ${record.code} to personal_assistant_config:`, error.message);
       }
     } catch (err) {
+      console.error(`❌ Error syncing ${record.code}:`, err.message);
     }
   }
 
+  // ============================================
+  // SYNC TO agents TABLE (for n8n/Personal Assistant)
+  // ============================================
+  console.log('📦 Syncing agents to agents table...');
+  
+  const agentRecords = agents.map((agent, index) => ({
+    agent_id: agent.agent.id,
+    name: agent.agent.name,
+    description: agent.agent.description || null,
+    category: agent.agent.category?.toUpperCase() || 'GENERAL',
+    emoji: agent.agent.emoji || '🤖',
+    specialization: agent.agent.specialization || null,
+    tagline: agent.agent.tagline || null,
+    webhook_url: agent.n8n?.webhook_url || null,
+    avatar_url: agent.agent.avatar || null,
+    is_enabled: true,
+    is_default: agent.agent.id === 'personal_assistant',
+    display_order: agent.agent.pinned ? index : index + 100
+  }));
+
+  for (const record of agentRecords) {
+    try {
+      // Check if agent exists
+      const { data: existing } = await supabase
+        .from('agents')
+        .select('id')
+        .eq('agent_id', record.agent_id)
+        .single();
+
+      if (existing) {
+        // Update existing agent
+        const { error } = await supabase
+          .from('agents')
+          .update({
+            name: record.name,
+            description: record.description,
+            category: record.category,
+            emoji: record.emoji,
+            specialization: record.specialization,
+            tagline: record.tagline,
+            webhook_url: record.webhook_url,
+            avatar_url: record.avatar_url,
+            is_default: record.is_default,
+            display_order: record.display_order,
+            updated_at: new Date().toISOString()
+          })
+          .eq('agent_id', record.agent_id);
+
+        if (error) {
+          console.error(`❌ Error updating ${record.agent_id} in agents table:`, error.message);
+        } else {
+          console.log(`  ✅ Updated: ${record.agent_id}`);
+        }
+      } else {
+        // Insert new agent
+        const { error } = await supabase
+          .from('agents')
+          .insert(record);
+
+        if (error) {
+          console.error(`❌ Error inserting ${record.agent_id} in agents table:`, error.message);
+        } else {
+          console.log(`  ✅ Inserted: ${record.agent_id}`);
+        }
+      }
+    } catch (err) {
+      console.error(`❌ Error syncing ${record.agent_id} to agents table:`, err.message);
+    }
+  }
+
+  console.log(`✅ Synced ${agentRecords.length} agents to database`);
 }
 
 /**
