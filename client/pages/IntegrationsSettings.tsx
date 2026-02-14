@@ -815,146 +815,108 @@ export default function IntegrationsSettings() {
     });
   };
 
-  const handleSlackOAuth = async () => {
+  const handleSlackOAuth = () => {
     if (!firmUserId || !locationId) {
       toast.error('Missing user or location information');
       return;
     }
 
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    // Slack app client ID (get from environment or hardcode your Slack app client ID)
+    const slackClientId = import.meta.env.VITE_SLACK_CLIENT_ID || '394243081714.4376892619942';
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-      // Call backend to get Slack OAuth configuration
-      const response = await fetch(`${backendUrl}/api/slack/get-oauth-config`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firm_user_id: firmUserId,
-          location_id: locationId
-        })
-      });
+    // Slack bot scopes
+    const botScopes = [
+      'channels:manage', 'channels:read', 'channels:join',
+      'chat:write', 'chat:write.customize', 'chat:write.public',
+      'commands', 'files:write',
+      'im:read', 'im:write',
+      'mpim:read', 'mpim:write',
+      'team:read',
+      'users.profile:read', 'users:read', 'users:read.email',
+      'workflow.steps:execute'
+    ].join(',');
 
-      const data = await response.json();
+    // Slack user scopes
+    const userScopes = [
+      'channels:history', 'channels:read', 'channels:write',
+      'chat:write',
+      'emoji:read',
+      'files:read', 'files:write',
+      'groups:history', 'groups:read', 'groups:write',
+      'im:read', 'im:write',
+      'mpim:read', 'mpim:write',
+      'reactions:read', 'reminders:write',
+      'search:read', 'stars:read',
+      'team:read',
+      'users.profile:write', 'users:read', 'users:read.email'
+    ].join(',');
 
-      if (data.success && data.client_id) {
-        // Slack bot scopes
-        const botScopes = [
-          'channels:manage', 'channels:read', 'channels:join',
-          'chat:write', 'chat:write.customize', 'chat:write.public',
-          'commands', 'files:write',
-          'im:read', 'im:write',
-          'mpim:read', 'mpim:write',
-          'team:read',
-          'users.profile:read', 'users:read', 'users:read.email',
-          'workflow.steps:execute'
-        ].join(',');
+    const state = encodeURIComponent(JSON.stringify({
+      locationId: locationId,
+      userId: firmUserId,
+      type: 'slack',
+      source: 'squidgy_integrations'
+    }));
 
-        // Slack user scopes
-        const userScopes = [
-          'channels:history', 'channels:read', 'channels:write',
-          'chat:write',
-          'emoji:read',
-          'files:read', 'files:write',
-          'groups:history', 'groups:read', 'groups:write',
-          'im:read', 'im:write',
-          'mpim:read', 'mpim:write',
-          'reactions:read', 'reminders:write',
-          'search:read', 'stars:read',
-          'team:read',
-          'users.profile:write', 'users:read', 'users:read.email'
-        ].join(',');
+    const redirectUri = `${backendUrl}/api/slack/oauth-callback`;
 
-        const state = JSON.stringify({
-          locationId: locationId,
-          userId: firmUserId,
-          type: 'slack',
-          source: 'squidgy_integrations'
-        });
+    const oauthParams = new URLSearchParams({
+      client_id: slackClientId,
+      scope: botScopes,
+      user_scope: userScopes,
+      redirect_uri: redirectUri,
+      state: state
+    });
 
-        const redirectUri = data.redirect_uri || `${backendUrl}/api/slack/oauth-callback`;
-
-        const oauthParams = new URLSearchParams({
-          client_id: data.client_id,
-          scope: botScopes,
-          user_scope: userScopes,
-          redirect_uri: redirectUri,
-          state: state
-        });
-
-        const slackOAuthUrl = `https://slack.com/oauth/v2/authorize?${oauthParams.toString()}`;
-        window.open(slackOAuthUrl, 'slack-oauth', 'width=600,height=700');
-      } else {
-        throw new Error(data.message || 'Failed to get Slack OAuth configuration');
-      }
-    } catch (error: any) {
-      console.error('❌ Slack OAuth error:', error);
-      toast.error(error.message || 'Failed to initiate Slack OAuth');
-    }
+    const slackOAuthUrl = `https://slack.com/oauth/v2/authorize?${oauthParams.toString()}`;
+    window.open(slackOAuthUrl, 'slack-oauth', 'width=600,height=700');
   };
 
-  const handleTeamsOAuth = async () => {
+  const handleTeamsOAuth = () => {
     if (!firmUserId || !locationId) {
       toast.error('Missing user or location information');
       return;
     }
 
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    // Microsoft Teams app client ID (get from environment or Azure AD app registration)
+    const teamsClientId = import.meta.env.VITE_TEAMS_CLIENT_ID || 'YOUR_TEAMS_CLIENT_ID';
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-      // Call backend to get Teams OAuth configuration
-      const response = await fetch(`${backendUrl}/api/teams/get-oauth-config`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firm_user_id: firmUserId,
-          location_id: locationId
-        })
-      });
+    // Microsoft Teams/Graph API scopes
+    const scopes = [
+      'openid',
+      'profile',
+      'email',
+      'offline_access',
+      'User.Read',
+      'Team.ReadBasic.All',
+      'Channel.ReadBasic.All',
+      'ChannelMessage.Send',
+      'Chat.ReadWrite',
+      'ChatMessage.Send'
+    ].join(' ');
 
-      const data = await response.json();
+    const state = encodeURIComponent(JSON.stringify({
+      locationId: locationId,
+      userId: firmUserId,
+      type: 'teams',
+      source: 'squidgy_integrations'
+    }));
 
-      if (data.success && data.client_id) {
-        // Microsoft Teams/Graph API scopes
-        const scopes = [
-          'openid',
-          'profile',
-          'email',
-          'offline_access',
-          'User.Read',
-          'Team.ReadBasic.All',
-          'Channel.ReadBasic.All',
-          'ChannelMessage.Send',
-          'Chat.ReadWrite',
-          'ChatMessage.Send'
-        ].join(' ');
+    const redirectUri = `${backendUrl}/api/teams/oauth-callback`;
 
-        const state = JSON.stringify({
-          locationId: locationId,
-          userId: firmUserId,
-          type: 'teams',
-          source: 'squidgy_integrations'
-        });
+    const oauthParams = new URLSearchParams({
+      client_id: teamsClientId,
+      response_type: 'code',
+      redirect_uri: redirectUri,
+      response_mode: 'query',
+      scope: scopes,
+      state: state
+    });
 
-        const redirectUri = data.redirect_uri || `${backendUrl}/api/teams/oauth-callback`;
-
-        const oauthParams = new URLSearchParams({
-          client_id: data.client_id,
-          response_type: 'code',
-          redirect_uri: redirectUri,
-          response_mode: 'query',
-          scope: scopes,
-          state: state
-        });
-
-        const teamsOAuthUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${oauthParams.toString()}`;
-        window.open(teamsOAuthUrl, 'teams-oauth', 'width=600,height=700');
-      } else {
-        throw new Error(data.message || 'Failed to get Teams OAuth configuration');
-      }
-    } catch (error: any) {
-      console.error('❌ Teams OAuth error:', error);
-      toast.error(error.message || 'Failed to initiate Teams OAuth');
-    }
+    const teamsOAuthUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${oauthParams.toString()}`;
+    window.open(teamsOAuthUrl, 'teams-oauth', 'width=600,height=700');
   };
 
   const generateFacebookOAuthUrl = async () => {
