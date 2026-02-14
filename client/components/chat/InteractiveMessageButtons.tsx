@@ -38,7 +38,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
     const images: ImagePreview[] = [];
     let index = 1;
 
-    // Pattern 1: Markdown images ![Image X - Description](url) or ![alt](url)
+    // Pattern 1: Standard markdown images ![alt](url)
     const markdownImgPattern = /!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g;
     let match;
     while ((match = markdownImgPattern.exec(text)) !== null) {
@@ -50,11 +50,25 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
       if (!numMatch) index++;
     }
 
-    // Pattern 2: Legacy $$IMG:url$$ format (fallback)
+    // Pattern 2: Non-standard markdown ![url] (URL inside brackets) - what the agent returns
+    const nonStandardPattern = /!\[(https?:\/\/[^\]]+)\]/g;
+    while ((match = nonStandardPattern.exec(text)) !== null) {
+      // Only add if not already added from standard pattern
+      const url = match[1].trim();
+      if (!images.find(img => img.url === url)) {
+        images.push({ url, index });
+        index++;
+      }
+    }
+
+    // Pattern 3: Legacy $$IMG:url$$ format (fallback)
     const legacyImgPattern = /\$\$IMG:(https?:\/\/[^$]+)\$\$/g;
     while ((match = legacyImgPattern.exec(text)) !== null) {
-      images.push({ url: match[1].trim(), index });
-      index++;
+      const url = match[1].trim();
+      if (!images.find(img => img.url === url)) {
+        images.push({ url, index });
+        index++;
+      }
     }
 
     return images;
@@ -117,23 +131,38 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
   };
 
   // Remove button patterns from content to show clean text
-  // KEEP $$IMG:url$$ patterns - they render as inline images at their exact position
+  // KEEP image patterns (markdown and legacy) - carousel will render them
   const cleanContent = (text: string): string => {
     let cleaned = text;
 
-    // Step 1: Temporarily replace $IMG:url$ and $$IMG:url$$ with placeholders to protect them
+    // Step 1: Temporarily replace all image patterns with placeholders to protect them
     const imgPatterns: string[] = [];
-    // Double dollar pattern
+
+    // Standard markdown images ![alt](url)
+    cleaned = cleaned.replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g, (match) => {
+      imgPatterns.push(match);
+      return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
+    });
+
+    // Non-standard markdown ![url]
+    cleaned = cleaned.replace(/!\[(https?:\/\/[^\]]+)\]/g, (match) => {
+      imgPatterns.push(match);
+      return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
+    });
+
+    // Double dollar pattern $$IMG:url$$
     cleaned = cleaned.replace(/\$\$IMG:(https?:\/\/[^$\s]*?)\$\$/g, (match) => {
       imgPatterns.push(match);
       return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
     });
-    // Single dollar pattern
+
+    // Single dollar pattern $IMG:url$
     cleaned = cleaned.replace(/\$IMG:(https?:\/\/[^$\s]*?)\$/g, (match) => {
       imgPatterns.push(match);
       return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
     });
-    // Incomplete patterns (during streaming) - also protect these
+
+    // Incomplete patterns (during streaming)
     cleaned = cleaned.replace(/\$\$?IMG:(?:https?:\/\/[^\s]*)?/g, (match) => {
       imgPatterns.push(match);
       return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
@@ -141,14 +170,18 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
 
     // Step 2: Remove button format: $content$
     cleaned = cleaned.replace(/\$([^$]+)\$/g, '');
-    
+
     // Step 2b: Remove orphaned $$ or $ (incomplete button patterns)
     cleaned = cleaned.replace(/\$\$+/g, '');
 
-    // Step 3: Restore $$IMG:url$$ patterns
+    // Step 3: Restore all image patterns
     imgPatterns.forEach((pattern, index) => {
       cleaned = cleaned.replace(`__IMG_PLACEHOLDER_${index}__`, pattern);
     });
+
+    // Step 4: Remove markdown image patterns from text (they'll be shown in carousel)
+    cleaned = cleaned.replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g, '');
+    cleaned = cleaned.replace(/!\[(https?:\/\/[^\]]+)\]/g, '');
 
     // Remove stray empty list bullets that often remain after stripping $buttons$
     // e.g. lines that are only '-', '•', or '*' (optionally with whitespace)
@@ -156,7 +189,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
       .split('\n')
       .filter((line) => !/^\s*[-*•]\s*$/.test(line))
       .join('\n');
-    
+
     // Clean up extra whitespace and empty lines
     return cleaned
       .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace triple+ newlines with double
