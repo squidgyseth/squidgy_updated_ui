@@ -2217,7 +2217,7 @@ export default function IntegrationsSettings() {
                   <div>
                     <h3 className="font-semibold text-lg text-gray-900">Microsoft Teams</h3>
                     <p className="text-sm text-gray-500 mt-1">
-                      Connect Microsoft Teams for workspace collaboration
+                      Connect your Microsoft Teams account for workspace collaboration and team communication
                     </p>
                     {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length > 0 && (
                       <div className="mt-3 space-y-2">
@@ -2287,7 +2287,7 @@ export default function IntegrationsSettings() {
                   <div>
                     <h3 className="font-semibold text-lg text-gray-900">Slack</h3>
                     <p className="text-sm text-gray-500 mt-1">
-                      Connect Slack workspaces for team collaboration
+                      Connect your Slack account for workspace collaboration and team communication
                     </p>
                     {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length > 0 && (
                       <div className="mt-3 space-y-2">
