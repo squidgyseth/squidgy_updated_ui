@@ -2198,6 +2198,441 @@ export default function IntegrationsSettings() {
           </div>
         </div>
 
+        {/* Workspace Integrations Section */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Workspace Integrations</h2>
+          <p className="text-sm text-gray-500 mb-6">Connect your team collaboration and communication tools</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Microsoft Teams Integration */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img
+                      src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg"
+                      alt="Microsoft Teams"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">Microsoft Teams</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect Microsoft Teams for workspace collaboration
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length} Team{connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).map((account) => (
+                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('teams', account.name)}
+                                alt={account.name}
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
+                                <p className="text-xs text-gray-500">Teams Workspace</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                      onClick={() => handleSocialMediaConnect('teams')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Team'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length > 0 && (
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('teams');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Slack Integration */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                    <img
+                      src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg"
+                      alt="Slack"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">Slack</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect Slack workspaces for team collaboration
+                    </p>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length} Workspace{connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).map((account) => (
+                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('slack', account.name)}
+                                alt={account.name}
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
+                                <p className="text-xs text-gray-500">Slack Workspace</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                      onClick={() => handleSocialMediaConnect('slack')}
+                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                    >
+                      {socialMediaLoading ? 'Loading...' : 'Add New Workspace'}
+                    </Button>
+                    {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length > 0 && (
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('slack');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Show modal for Teams if Teams is selected */}
+            {showSocialMediaPages && socialMediaPlatform === 'teams' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Microsoft Teams Workspaces</CardTitle>
+                      <CardDescription>Select Teams workspaces to connect</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowSocialMediaPages(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {socialMediaLoading ? (
+                    <div className="text-center py-8">
+                      <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
+                      <p className="text-sm text-gray-600">Loading Teams workspaces...</p>
+                    </div>
+                  ) : socialMediaPages.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-gray-600">No Teams workspaces found. Please complete OAuth first.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {socialMediaPages.map((workspace) => (
+                        <div
+                          key={workspace.id}
+                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-start gap-3 flex-1">
+                            <img
+                              src={workspace.avatar || getPlaceholderAvatar('teams', workspace.name)}
+                              alt={workspace.name}
+                              className="w-12 h-12 rounded-full"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900">{workspace.name}</p>
+                              <p className="text-xs text-gray-500 mt-1">ID: {workspace.id}</p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => connectSocialMediaPage(workspace)}
+                            disabled={socialMediaLoading}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            Connect
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Show manage modal for Teams */}
+            {showManageModal && managePlatform === 'teams' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Manage Microsoft Teams Integrations</CardTitle>
+                      <CardDescription>View and manage all connected Teams workspaces</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowManageModal(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {connectedSocialMediaAccounts
+                      .filter(a => a.platform === 'teams' && !a.deleted)
+                      .map((account) => {
+                        const isExpired = account.isExpired || false;
+                        const expireDate = account.expire ? new Date(account.expire) : null;
+                        const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+
+                        return (
+                          <div
+                            key={account.id}
+                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                          >
+                            <div className="flex items-start gap-3 flex-1">
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('teams', account.name)}
+                                alt={account.name}
+                                className="w-12 h-12 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-medium text-gray-900">{account.name}</p>
+                                  {isExpired ? (
+                                    <Badge variant="destructive" className="text-xs">
+                                      Expired
+                                    </Badge>
+                                  ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
+                                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                      Expires in {daysUntilExpire} days
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="default" className="bg-green-500 text-xs">
+                                      Active
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                                {expireDate && (
+                                  <p className="text-xs text-gray-400">
+                                    Expires: {expireDate.toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => deleteSocialMediaAccount(account)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Show modal for Slack if Slack is selected */}
+            {showSocialMediaPages && socialMediaPlatform === 'slack' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Slack Workspaces</CardTitle>
+                      <CardDescription>Select Slack workspaces to connect</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowSocialMediaPages(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {socialMediaLoading ? (
+                    <div className="text-center py-8">
+                      <RefreshCw className="w-8 h-8 text-purple-600 animate-spin mx-auto mb-3" />
+                      <p className="text-sm text-gray-600">Loading Slack workspaces...</p>
+                    </div>
+                  ) : socialMediaPages.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-gray-600">No Slack workspaces found. Please complete OAuth first.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {socialMediaPages.map((workspace) => (
+                        <div
+                          key={workspace.id}
+                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-start gap-3 flex-1">
+                            <img
+                              src={workspace.avatar || getPlaceholderAvatar('slack', workspace.name)}
+                              alt={workspace.name}
+                              className="w-12 h-12 rounded-full"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900">{workspace.name}</p>
+                              <p className="text-xs text-gray-500 mt-1">ID: {workspace.id}</p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => connectSocialMediaPage(workspace)}
+                            disabled={socialMediaLoading}
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                          >
+                            Connect
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Show manage modal for Slack */}
+            {showManageModal && managePlatform === 'slack' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Manage Slack Integrations</CardTitle>
+                      <CardDescription>View and manage all connected Slack workspaces</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowManageModal(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {connectedSocialMediaAccounts
+                      .filter(a => a.platform === 'slack' && !a.deleted)
+                      .map((account) => {
+                        const isExpired = account.isExpired || false;
+                        const expireDate = account.expire ? new Date(account.expire) : null;
+                        const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+
+                        return (
+                          <div
+                            key={account.id}
+                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                          >
+                            <div className="flex items-start gap-3 flex-1">
+                              <img
+                                src={account.avatar || getPlaceholderAvatar('slack', account.name)}
+                                alt={account.name}
+                                className="w-12 h-12 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-medium text-gray-900">{account.name}</p>
+                                  {isExpired ? (
+                                    <Badge variant="destructive" className="text-xs">
+                                      Expired
+                                    </Badge>
+                                  ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
+                                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                      Expires in {daysUntilExpire} days
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="default" className="bg-green-500 text-xs">
+                                      Active
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
+                                {expireDate && (
+                                  <p className="text-xs text-gray-400">
+                                    Expires: {expireDate.toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => deleteSocialMediaAccount(account)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+
         {/* Social Media Integrations Section */}
         <div className="mt-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Social Media Integrations</h2>
@@ -3685,434 +4120,6 @@ export default function IntegrationsSettings() {
                   })}
               </div>
             </CardContent>
-              </Card>
-            )}
-
-            {/* Microsoft Teams Integration */}
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="text-center space-y-4">
-                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
-                    <img
-                      src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg"
-                      alt="Microsoft Teams"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-gray-900">Microsoft Teams</h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Connect Microsoft Teams for workspace collaboration
-                    </p>
-                    {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        <Badge variant="default" className="bg-green-500">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length} Team{connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length !== 1 ? 's' : ''} Connected
-                        </Badge>
-                        <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).map((account) => (
-                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                              <img
-                                src={account.avatar || getPlaceholderAvatar('teams', account.name)}
-                                alt={account.name}
-                                className="w-8 h-8 rounded-full"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
-                                <p className="text-xs text-gray-500">Teams Workspace</p>
-                              </div>
-                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                      onClick={() => handleSocialMediaConnect('teams')}
-                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
-                    >
-                      {socialMediaLoading ? 'Loading...' : 'Add New Team'}
-                    </Button>
-                    {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length > 0 && (
-                      <Button
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => {
-                          setManagePlatform('teams');
-                          setShowManageModal(true);
-                        }}
-                      >
-                        Manage
-                      </Button>
-                    )}
-                  </div>
-                  {!loading && (!locationId || !ghlUserId) && (
-                    <p className="text-xs text-red-500">
-                      Please set up a GHL subaccount first
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Show modal for Teams if Teams is selected */}
-            {showSocialMediaPages && socialMediaPlatform === 'teams' && (
-              <Card className="col-span-full">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Microsoft Teams Workspaces</CardTitle>
-                      <CardDescription>Select Teams workspaces to connect</CardDescription>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowSocialMediaPages(false)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {socialMediaLoading ? (
-                    <div className="text-center py-8">
-                      <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
-                      <p className="text-sm text-gray-600">Loading Teams workspaces...</p>
-                    </div>
-                  ) : socialMediaPages.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-gray-600">No Teams workspaces found. Please complete OAuth first.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {socialMediaPages.map((workspace) => (
-                        <div
-                          key={workspace.id}
-                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                        >
-                          <div className="flex items-start gap-3 flex-1">
-                            <img
-                              src={workspace.avatar || getPlaceholderAvatar('teams', workspace.name)}
-                              alt={workspace.name}
-                              className="w-12 h-12 rounded-full"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900">{workspace.name}</p>
-                              <p className="text-xs text-gray-500 mt-1">ID: {workspace.id}</p>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => connectSocialMediaPage(workspace)}
-                            disabled={socialMediaLoading}
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                          >
-                            Connect
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Show manage modal for Teams */}
-            {showManageModal && managePlatform === 'teams' && (
-              <Card className="col-span-full">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Manage Microsoft Teams Integrations</CardTitle>
-                      <CardDescription>View and manage all connected Teams workspaces</CardDescription>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowManageModal(false)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {connectedSocialMediaAccounts
-                      .filter(a => a.platform === 'teams' && !a.deleted)
-                      .map((account) => {
-                        const isExpired = account.isExpired || false;
-                        const expireDate = account.expire ? new Date(account.expire) : null;
-                        const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
-
-                        return (
-                          <div
-                            key={account.id}
-                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                          >
-                            <div className="flex items-start gap-3 flex-1">
-                              <img
-                                src={account.avatar || getPlaceholderAvatar('teams', account.name)}
-                                alt={account.name}
-                                className="w-12 h-12 rounded-full"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <p className="font-medium text-gray-900">{account.name}</p>
-                                  {isExpired ? (
-                                    <Badge variant="destructive" className="text-xs">
-                                      Expired
-                                    </Badge>
-                                  ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
-                                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
-                                      Expires in {daysUntilExpire} days
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="default" className="bg-green-500 text-xs">
-                                      Active
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
-                                {expireDate && (
-                                  <p className="text-xs text-gray-400">
-                                    Expires: {expireDate.toLocaleDateString()}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => deleteSocialMediaAccount(account)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Slack Integration */}
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="text-center space-y-4">
-                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
-                    <img
-                      src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg"
-                      alt="Slack"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-gray-900">Slack</h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Connect Slack workspaces for team collaboration
-                    </p>
-                    {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        <Badge variant="default" className="bg-green-500">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length} Workspace{connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length !== 1 ? 's' : ''} Connected
-                        </Badge>
-                        <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).map((account) => (
-                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                              <img
-                                src={account.avatar || getPlaceholderAvatar('slack', account.name)}
-                                alt={account.name}
-                                className="w-8 h-8 rounded-full"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
-                                <p className="text-xs text-gray-500">Slack Workspace</p>
-                              </div>
-                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                      onClick={() => handleSocialMediaConnect('slack')}
-                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
-                    >
-                      {socialMediaLoading ? 'Loading...' : 'Add New Workspace'}
-                    </Button>
-                    {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length > 0 && (
-                      <Button
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => {
-                          setManagePlatform('slack');
-                          setShowManageModal(true);
-                        }}
-                      >
-                        Manage
-                      </Button>
-                    )}
-                  </div>
-                  {!loading && (!locationId || !ghlUserId) && (
-                    <p className="text-xs text-red-500">
-                      Please set up a GHL subaccount first
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Show modal for Slack if Slack is selected */}
-            {showSocialMediaPages && socialMediaPlatform === 'slack' && (
-              <Card className="col-span-full">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Slack Workspaces</CardTitle>
-                      <CardDescription>Select Slack workspaces to connect</CardDescription>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowSocialMediaPages(false)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {socialMediaLoading ? (
-                    <div className="text-center py-8">
-                      <RefreshCw className="w-8 h-8 text-purple-600 animate-spin mx-auto mb-3" />
-                      <p className="text-sm text-gray-600">Loading Slack workspaces...</p>
-                    </div>
-                  ) : socialMediaPages.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-gray-600">No Slack workspaces found. Please complete OAuth first.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {socialMediaPages.map((workspace) => (
-                        <div
-                          key={workspace.id}
-                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                        >
-                          <div className="flex items-start gap-3 flex-1">
-                            <img
-                              src={workspace.avatar || getPlaceholderAvatar('slack', workspace.name)}
-                              alt={workspace.name}
-                              className="w-12 h-12 rounded-full"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900">{workspace.name}</p>
-                              <p className="text-xs text-gray-500 mt-1">ID: {workspace.id}</p>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => connectSocialMediaPage(workspace)}
-                            disabled={socialMediaLoading}
-                            className="bg-purple-600 hover:bg-purple-700 text-white"
-                          >
-                            Connect
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Show manage modal for Slack */}
-            {showManageModal && managePlatform === 'slack' && (
-              <Card className="col-span-full">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Manage Slack Integrations</CardTitle>
-                      <CardDescription>View and manage all connected Slack workspaces</CardDescription>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowManageModal(false)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {connectedSocialMediaAccounts
-                      .filter(a => a.platform === 'slack' && !a.deleted)
-                      .map((account) => {
-                        const isExpired = account.isExpired || false;
-                        const expireDate = account.expire ? new Date(account.expire) : null;
-                        const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
-
-                        return (
-                          <div
-                            key={account.id}
-                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                          >
-                            <div className="flex items-start gap-3 flex-1">
-                              <img
-                                src={account.avatar || getPlaceholderAvatar('slack', account.name)}
-                                alt={account.name}
-                                className="w-12 h-12 rounded-full"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <p className="font-medium text-gray-900">{account.name}</p>
-                                  {isExpired ? (
-                                    <Badge variant="destructive" className="text-xs">
-                                      Expired
-                                    </Badge>
-                                  ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
-                                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
-                                      Expires in {daysUntilExpire} days
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="default" className="bg-green-500 text-xs">
-                                      Active
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
-                                {expireDate && (
-                                  <p className="text-xs text-gray-400">
-                                    Expires: {expireDate.toLocaleDateString()}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => deleteSocialMediaAccount(account)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </CardContent>
               </Card>
             )}
 
