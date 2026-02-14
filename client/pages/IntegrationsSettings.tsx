@@ -859,14 +859,17 @@ export default function IntegrationsSettings() {
       source: 'squidgy_integrations'
     }));
 
-    const redirectUri = `${backendUrl}/api/slack/oauth-callback`;
+    // Use GHL's configured redirect URI (already set up in Slack app settings)
+    const redirectUri = 'https://services.leadconnectorhq.com/appengine/slack/oauth-connect';
 
     const oauthParams = new URLSearchParams({
       client_id: slackClientId,
       scope: botScopes,
       user_scope: userScopes,
       redirect_uri: redirectUri,
-      state: state
+      state: state,
+      granular_bot_scope: '1',
+      single_channel: '0'
     });
 
     const slackOAuthUrl = `https://slack.com/oauth/v2/authorize?${oauthParams.toString()}`;
