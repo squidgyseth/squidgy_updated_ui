@@ -2246,10 +2246,15 @@ export default function IntegrationsSettings() {
                   <div className="flex gap-2">
                     <Button
                       className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                      onClick={() => handleSocialMediaConnect('teams')}
-                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                      onClick={() => {
+                        if (locationId && ghlUserId) {
+                          const oauthUrl = `https://backend.leadconnectorhq.com/integrations/oauth/start?locationId=${locationId}&userId=${ghlUserId}&type=teams`;
+                          window.open(oauthUrl, 'teams-oauth', 'width=600,height=700');
+                        }
+                      }}
+                      disabled={loading || !locationId || !ghlUserId}
                     >
-                      {socialMediaLoading ? 'Loading...' : 'Add New Team'}
+                      {loading ? 'Loading...' : 'Add New Team'}
                     </Button>
                     {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length > 0 && (
                       <Button
@@ -2316,10 +2321,15 @@ export default function IntegrationsSettings() {
                   <div className="flex gap-2">
                     <Button
                       className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                      onClick={() => handleSocialMediaConnect('slack')}
-                      disabled={loading || !locationId || !ghlUserId || socialMediaLoading}
+                      onClick={() => {
+                        if (locationId && ghlUserId) {
+                          const oauthUrl = `https://backend.leadconnectorhq.com/integrations/oauth/start?locationId=${locationId}&userId=${ghlUserId}&type=slack`;
+                          window.open(oauthUrl, 'slack-oauth', 'width=600,height=700');
+                        }
+                      }}
+                      disabled={loading || !locationId || !ghlUserId}
                     >
-                      {socialMediaLoading ? 'Loading...' : 'Add New Workspace'}
+                      {loading ? 'Loading...' : 'Add New Workspace'}
                     </Button>
                     {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length > 0 && (
                       <Button
