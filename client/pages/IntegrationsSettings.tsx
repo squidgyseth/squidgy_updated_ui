@@ -873,7 +873,20 @@ export default function IntegrationsSettings() {
     });
 
     const slackOAuthUrl = `https://slack.com/oauth/v2/authorize?${oauthParams.toString()}`;
-    window.open(slackOAuthUrl, 'slack-oauth', 'width=600,height=700');
+    const popup = window.open(slackOAuthUrl, 'slack-oauth', 'width=600,height=700');
+
+    // Monitor popup closure to refresh accounts
+    if (popup) {
+      const checkPopup = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkPopup);
+          // Refresh connected accounts after OAuth completes
+          setTimeout(() => {
+            fetchConnectedSocialMediaAccounts();
+          }, 2000); // Wait 2 seconds for GHL to process the connection
+        }
+      }, 1000); // Check every second
+    }
   };
 
   const handleTeamsOAuth = () => {
@@ -919,7 +932,20 @@ export default function IntegrationsSettings() {
     });
 
     const teamsOAuthUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${oauthParams.toString()}`;
-    window.open(teamsOAuthUrl, 'teams-oauth', 'width=600,height=700');
+    const popup = window.open(teamsOAuthUrl, 'teams-oauth', 'width=600,height=700');
+
+    // Monitor popup closure to refresh accounts
+    if (popup) {
+      const checkPopup = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkPopup);
+          // Refresh connected accounts after OAuth completes
+          setTimeout(() => {
+            fetchConnectedSocialMediaAccounts();
+          }, 2000); // Wait 2 seconds for GHL to process the connection
+        }
+      }, 1000); // Check every second
+    }
   };
 
   const generateFacebookOAuthUrl = async () => {
@@ -1541,7 +1567,6 @@ export default function IntegrationsSettings() {
     }
 
     try {
-
       // Call GHL's accounts endpoint directly to get all connected accounts
       const accountsEndpoint = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
 
@@ -1574,6 +1599,13 @@ export default function IntegrationsSettings() {
           }));
 
         setConnectedSocialMediaAccounts(allAccounts);
+
+        // Log for debugging
+        console.log('📊 Connected social media accounts:', allAccounts);
+        const slackAccounts = allAccounts.filter(a => a.platform === 'slack');
+        const teamsAccounts = allAccounts.filter(a => a.platform === 'teams');
+        console.log('🟣 Slack accounts:', slackAccounts);
+        console.log('🔵 Teams accounts:', teamsAccounts);
       } else {
         setConnectedSocialMediaAccounts([]);
       }
