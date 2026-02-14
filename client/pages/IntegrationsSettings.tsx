@@ -86,6 +86,11 @@ export default function IntegrationsSettings() {
   const [showManageModal, setShowManageModal] = useState(false);
   const [managePlatform, setManagePlatform] = useState<'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky' | 'teams' | 'slack'>('facebook');
 
+  // Workspace Integration states (Slack, Teams)
+  const [slackIntegrations, setSlackIntegrations] = useState<any[]>([]);
+  const [teamsIntegrations, setTeamsIntegrations] = useState<any[]>([]);
+  const [workspaceLoading, setWorkspaceLoading] = useState(false);
+
   // Templates states
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -174,6 +179,8 @@ export default function IntegrationsSettings() {
     // Auto-fetch connected social media accounts when tokens are available
     if (locationId && firebaseToken && accessToken) {
       fetchConnectedSocialMediaAccounts();
+      fetchSlackIntegrations();
+      fetchTeamsIntegrations();
     }
   }, [locationId, firebaseToken, accessToken]);
 
@@ -875,14 +882,14 @@ export default function IntegrationsSettings() {
     const slackOAuthUrl = `https://slack.com/oauth/v2/authorize?${oauthParams.toString()}`;
     const popup = window.open(slackOAuthUrl, 'slack-oauth', 'width=600,height=700');
 
-    // Monitor popup closure to refresh accounts
+    // Monitor popup closure to refresh Slack integrations
     if (popup) {
       const checkPopup = setInterval(() => {
         if (popup.closed) {
           clearInterval(checkPopup);
-          // Refresh connected accounts after OAuth completes
+          // Refresh Slack integrations after OAuth completes
           setTimeout(() => {
-            fetchConnectedSocialMediaAccounts();
+            fetchSlackIntegrations();
           }, 2000); // Wait 2 seconds for GHL to process the connection
         }
       }, 1000); // Check every second
@@ -934,14 +941,14 @@ export default function IntegrationsSettings() {
     const teamsOAuthUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${oauthParams.toString()}`;
     const popup = window.open(teamsOAuthUrl, 'teams-oauth', 'width=600,height=700');
 
-    // Monitor popup closure to refresh accounts
+    // Monitor popup closure to refresh Teams integrations
     if (popup) {
       const checkPopup = setInterval(() => {
         if (popup.closed) {
           clearInterval(checkPopup);
-          // Refresh connected accounts after OAuth completes
+          // Refresh Teams integrations after OAuth completes
           setTimeout(() => {
-            fetchConnectedSocialMediaAccounts();
+            fetchTeamsIntegrations();
           }, 2000); // Wait 2 seconds for GHL to process the connection
         }
       }, 1000); // Check every second
@@ -1558,6 +1565,83 @@ export default function IntegrationsSettings() {
     } catch (error: any) {
       console.error(`❌ Error starting ${platform} OAuth:`, error);
       toast.error(error.message || `Failed to start ${platform} OAuth`);
+    }
+  };
+
+  const fetchSlackIntegrations = async () => {
+    if (!locationId || !firebaseToken || !accessToken) {
+      return;
+    }
+
+    try {
+      const slackEndpoint = `https://api.leadconnectorhq.com/slack/${locationId}/integrations`;
+
+      const response = await fetch(slackEndpoint, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'channel': 'APP'
+        }
+      });
+
+      if (!response.ok) {
+        console.error('❌ Slack API error:', response.status);
+        setSlackIntegrations([]);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.integrations && Array.isArray(data.integrations)) {
+        setSlackIntegrations(data.integrations);
+        console.log('🟣 Slack integrations loaded:', data.integrations);
+      } else {
+        setSlackIntegrations([]);
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching Slack integrations:', error);
+      setSlackIntegrations([]);
+    }
+  };
+
+  const fetchTeamsIntegrations = async () => {
+    if (!locationId || !firebaseToken || !accessToken) {
+      return;
+    }
+
+    try {
+      // Try Teams endpoint (similar structure to Slack)
+      const teamsEndpoint = `https://api.leadconnectorhq.com/teams/${locationId}/integrations`;
+
+      const response = await fetch(teamsEndpoint, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'channel': 'APP'
+        }
+      });
+
+      if (!response.ok) {
+        console.error('❌ Teams API error:', response.status);
+        setTeamsIntegrations([]);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.integrations && Array.isArray(data.integrations)) {
+        setTeamsIntegrations(data.integrations);
+        console.log('🔵 Teams integrations loaded:', data.integrations);
+      } else {
+        setTeamsIntegrations([]);
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching Teams integrations:', error);
+      setTeamsIntegrations([]);
     }
   };
 
@@ -2358,21 +2442,21 @@ export default function IntegrationsSettings() {
                     <p className="text-sm text-gray-500 mt-1">
                       Connect your Microsoft Teams account for workspace collaboration and team communication
                     </p>
-                    {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length > 0 && (
+                    {teamsIntegrations.length > 0 && (
                       <div className="mt-3 space-y-2">
                         <Badge variant="default" className="bg-green-500">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length} Team{connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                          {teamsIntegrations.length} Team{teamsIntegrations.length !== 1 ? 's' : ''} Connected
                         </Badge>
                         <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).map((account) => (
-                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                          {teamsIntegrations.map((integration) => (
+                            <div key={integration.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
                               <img
-                                src={account.avatar || getPlaceholderAvatar('teams', account.name)}
-                                alt={account.name}
+                                src={getPlaceholderAvatar('teams', integration.name)}
+                                alt={integration.name}
                                 className="w-8 h-8 rounded-full"
                               />
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
+                                <p className="text-xs font-medium text-gray-900 truncate">{integration.name}</p>
                                 <p className="text-xs text-gray-500">Teams Workspace</p>
                               </div>
                               <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
@@ -2390,7 +2474,7 @@ export default function IntegrationsSettings() {
                     >
                       {loading ? 'Loading...' : 'Add New Team'}
                     </Button>
-                    {connectedSocialMediaAccounts.filter(a => a.platform === 'teams' && !a.deleted).length > 0 && (
+                    {teamsIntegrations.length > 0 && (
                       <Button
                         variant="outline"
                         className="flex-1"
@@ -2428,21 +2512,21 @@ export default function IntegrationsSettings() {
                     <p className="text-sm text-gray-500 mt-1">
                       Connect your Slack account for workspace collaboration and team communication
                     </p>
-                    {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length > 0 && (
+                    {slackIntegrations.length > 0 && (
                       <div className="mt-3 space-y-2">
                         <Badge variant="default" className="bg-green-500">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length} Workspace{connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length !== 1 ? 's' : ''} Connected
+                          {slackIntegrations.length} Workspace{slackIntegrations.length !== 1 ? 's' : ''} Connected
                         </Badge>
                         <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).map((account) => (
-                            <div key={account.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                          {slackIntegrations.map((integration) => (
+                            <div key={integration.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
                               <img
-                                src={account.avatar || getPlaceholderAvatar('slack', account.name)}
-                                alt={account.name}
+                                src={getPlaceholderAvatar('slack', integration.name)}
+                                alt={integration.name}
                                 className="w-8 h-8 rounded-full"
                               />
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-gray-900 truncate">{account.name}</p>
+                                <p className="text-xs font-medium text-gray-900 truncate">{integration.name}</p>
                                 <p className="text-xs text-gray-500">Slack Workspace</p>
                               </div>
                               <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
@@ -2460,7 +2544,7 @@ export default function IntegrationsSettings() {
                     >
                       {loading ? 'Loading...' : 'Add New Workspace'}
                     </Button>
-                    {connectedSocialMediaAccounts.filter(a => a.platform === 'slack' && !a.deleted).length > 0 && (
+                    {slackIntegrations.length > 0 && (
                       <Button
                         variant="outline"
                         className="flex-1"
@@ -2564,63 +2648,52 @@ export default function IntegrationsSettings() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {connectedSocialMediaAccounts
-                      .filter(a => a.platform === 'teams' && !a.deleted)
-                      .map((account) => {
-                        const isExpired = account.isExpired || false;
-                        const expireDate = account.expire ? new Date(account.expire) : null;
-                        const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                    {teamsIntegrations.map((integration) => {
+                      const dateAdded = integration.dateAdded ? new Date(integration.dateAdded) : null;
 
-                        return (
-                          <div
-                            key={account.id}
-                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                          >
-                            <div className="flex items-start gap-3 flex-1">
-                              <img
-                                src={account.avatar || getPlaceholderAvatar('teams', account.name)}
-                                alt={account.name}
-                                className="w-12 h-12 rounded-full"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <p className="font-medium text-gray-900">{account.name}</p>
-                                  {isExpired ? (
-                                    <Badge variant="destructive" className="text-xs">
-                                      Expired
-                                    </Badge>
-                                  ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
-                                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
-                                      Expires in {daysUntilExpire} days
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="default" className="bg-green-500 text-xs">
-                                      Active
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
-                                {expireDate && (
-                                  <p className="text-xs text-gray-400">
-                                    Expires: {expireDate.toLocaleDateString()}
-                                  </p>
-                                )}
+                      return (
+                        <div
+                          key={integration.id}
+                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-start gap-3 flex-1">
+                            <img
+                              src={getPlaceholderAvatar('teams', integration.name)}
+                              alt={integration.name}
+                              className="w-12 h-12 rounded-full"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-medium text-gray-900">{integration.name}</p>
+                                <Badge variant="default" className="bg-green-500 text-xs">
+                                  Active
+                                </Badge>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => deleteSocialMediaAccount(account)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                              <p className="text-xs text-gray-500 mb-2">ID: {integration.id}</p>
+                              {dateAdded && (
+                                <p className="text-xs text-gray-400">
+                                  Added: {dateAdded.toLocaleDateString()}
+                                </p>
+                              )}
                             </div>
                           </div>
-                        );
-                      })}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => {
+                                // TODO: Implement Teams-specific delete
+                                toast.error('Delete functionality for Teams coming soon');
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
@@ -2708,63 +2781,52 @@ export default function IntegrationsSettings() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {connectedSocialMediaAccounts
-                      .filter(a => a.platform === 'slack' && !a.deleted)
-                      .map((account) => {
-                        const isExpired = account.isExpired || false;
-                        const expireDate = account.expire ? new Date(account.expire) : null;
-                        const daysUntilExpire = expireDate ? Math.ceil((expireDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                    {slackIntegrations.map((integration) => {
+                      const dateAdded = integration.dateAdded ? new Date(integration.dateAdded) : null;
 
-                        return (
-                          <div
-                            key={account.id}
-                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                          >
-                            <div className="flex items-start gap-3 flex-1">
-                              <img
-                                src={account.avatar || getPlaceholderAvatar('slack', account.name)}
-                                alt={account.name}
-                                className="w-12 h-12 rounded-full"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <p className="font-medium text-gray-900">{account.name}</p>
-                                  {isExpired ? (
-                                    <Badge variant="destructive" className="text-xs">
-                                      Expired
-                                    </Badge>
-                                  ) : daysUntilExpire !== null && daysUntilExpire < 30 ? (
-                                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
-                                      Expires in {daysUntilExpire} days
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="default" className="bg-green-500 text-xs">
-                                      Active
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-500 mb-2">ID: {account.id}</p>
-                                {expireDate && (
-                                  <p className="text-xs text-gray-400">
-                                    Expires: {expireDate.toLocaleDateString()}
-                                  </p>
-                                )}
+                      return (
+                        <div
+                          key={integration.id}
+                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-start gap-3 flex-1">
+                            <img
+                              src={getPlaceholderAvatar('slack', integration.name)}
+                              alt={integration.name}
+                              className="w-12 h-12 rounded-full"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-medium text-gray-900">{integration.name}</p>
+                                <Badge variant="default" className="bg-green-500 text-xs">
+                                  Active
+                                </Badge>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => deleteSocialMediaAccount(account)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                              <p className="text-xs text-gray-500 mb-2">ID: {integration.id}</p>
+                              {dateAdded && (
+                                <p className="text-xs text-gray-400">
+                                  Added: {dateAdded.toLocaleDateString()}
+                                </p>
+                              )}
                             </div>
                           </div>
-                        );
-                      })}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => {
+                                // TODO: Implement Slack-specific delete
+                                toast.error('Delete functionality for Slack coming soon');
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
