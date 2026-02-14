@@ -3694,7 +3694,7 @@ export default function IntegrationsSettings() {
                 <div className="text-center space-y-4">
                   <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
                     <img
-                      src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Microsoft_Office_Teams_%282018%E2%80%93present%29.svg"
+                      src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg"
                       alt="Microsoft Teams"
                       className="w-full h-full object-contain"
                     />
