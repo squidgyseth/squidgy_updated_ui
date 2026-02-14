@@ -9,19 +9,14 @@ interface ImageCarouselProps {
 export default function ImageCarousel({ images, className = '' }: ImageCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Debug logging
-  console.log('📸 ImageCarousel rendering with images:', images);
-
   if (!images || images.length === 0) {
-    console.log('⚠️ ImageCarousel: No images provided');
     return null;
   }
 
   // Single image - show with counter badge but no navigation controls
   if (images.length === 1) {
-    console.log('📸 Rendering single image:', images[0]);
     return (
-      <div className={`relative rounded-lg overflow-hidden bg-gray-100 border-4 border-purple-500 ${className}`}>
+      <div className={`relative rounded-lg overflow-hidden bg-gray-100 ${className}`}>
         <img
           src={images[0].url}
           alt={images[0].alt || `Image ${images[0].index}`}

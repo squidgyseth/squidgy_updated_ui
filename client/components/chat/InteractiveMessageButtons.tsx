@@ -202,11 +202,6 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
   // Use streamingText if provided, otherwise clean the content
   const textContent = streamingText || cleanContent(content);
 
-  // Debug logging
-  if (imagePreviews.length > 0) {
-    console.log('🖼️ Images detected:', imagePreviews.length, imagePreviews);
-  }
-
 
   // Check if a button corresponds to an image (e.g., "Image 1", "Select Image 1", "Image 2")
   const getImageForButton = (buttonText: string): string | undefined => {
@@ -334,19 +329,14 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
 
       {/* Display image carousel if there are images */}
       {imagePreviews.length > 0 && (
-        <div className="carousel-wrapper" style={{ border: '2px solid red', padding: '10px', margin: '10px 0' }}>
-          <div style={{ background: '#fff3cd', padding: '8px', marginBottom: '8px', borderRadius: '4px', fontSize: '12px' }}>
-            🎯 DEBUG: Carousel rendering with {imagePreviews.length} image(s)
-          </div>
-          <ImageCarousel
-            images={imagePreviews.map(img => ({
-              url: img.url,
-              index: img.index,
-              alt: `Post preview ${img.index}`
-            }))}
-            className="my-4"
-          />
-        </div>
+        <ImageCarousel
+          images={imagePreviews.map(img => ({
+            url: img.url,
+            index: img.index,
+            alt: `Post preview ${img.index}`
+          }))}
+          className="my-4"
+        />
       )}
 
       {/* Display interactive buttons - only after streaming completes, with staggered animation */}
