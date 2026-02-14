@@ -13,7 +13,7 @@ export default function ImageCarousel({ images, className = '' }: ImageCarouselP
     return null;
   }
 
-  // Single image - no carousel needed
+  // Single image - show with counter badge but no navigation controls
   if (images.length === 1) {
     return (
       <div className={`relative rounded-lg overflow-hidden bg-gray-100 ${className}`}>
@@ -25,6 +25,10 @@ export default function ImageCarousel({ images, className = '' }: ImageCarouselP
             (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f0f0f0" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3EImage unavailable%3C/text%3E%3C/svg%3E';
           }}
         />
+        {/* Image Counter Badge - Always show even for single images */}
+        <div className="absolute top-4 right-4 bg-black bg-opacity-60 text-white px-3 py-1 rounded-full text-sm font-medium">
+          1 / 1
+        </div>
       </div>
     );
   }

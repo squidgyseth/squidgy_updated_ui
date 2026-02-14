@@ -202,6 +202,11 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
   // Use streamingText if provided, otherwise clean the content
   const textContent = streamingText || cleanContent(content);
 
+  // Debug logging
+  if (imagePreviews.length > 0) {
+    console.log('🖼️ Images detected:', imagePreviews.length, imagePreviews);
+  }
+
 
   // Check if a button corresponds to an image (e.g., "Image 1", "Select Image 1", "Image 2")
   const getImageForButton = (buttonText: string): string | undefined => {
