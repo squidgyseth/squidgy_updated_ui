@@ -3,6 +3,7 @@ import { googleCalendarService } from '../../lib/googleCalendar';
 import { toast } from 'sonner';
 import AgentMappingService from '../../services/agentMappingService';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
+import ImageCarousel from './ImageCarousel';
 
 interface InteractiveMessageButtonsProps {
   content: string;
@@ -293,38 +294,33 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
         />
       )}
 
+      {/* Display image carousel if there are images */}
+      {imagePreviews.length > 0 && (
+        <ImageCarousel
+          images={imagePreviews.map(img => ({
+            url: img.url,
+            index: img.index,
+            alt: `Post preview ${img.index}`
+          }))}
+          className="my-4"
+        />
+      )}
+
       {/* Display interactive buttons - only after streaming completes, with staggered animation */}
       {buttonOptions.length > 0 && !isStreaming && (
         <div className="space-y-2 mt-4">
           {buttonOptions.map((option, index) => {
-            const imageUrl = getImageForButton(option.text);
-
             return (
               <button
                 key={index}
                 onClick={() => handleButtonClick(option)}
-                className={`w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all text-left group opacity-0 animate-fade-in-up ${
-                  imageUrl ? 'flex-col sm:flex-row' : ''
-                }`}
+                className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all text-left group opacity-0 animate-fade-in-up"
                 style={{
                   animationDelay: `${index * 150}ms`,
                   animationFillMode: 'forwards'
                 }}
               >
-                {/* Show image thumbnail if this is an image selection button */}
-                {imageUrl && (
-                  <div className="w-full sm:w-24 h-20 sm:h-16 flex-shrink-0 rounded overflow-hidden bg-gray-200">
-                    <img
-                      src={`${imageUrl}?w=200&h=150&fit=crop`}
-                      alt={option.description || option.text}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
-                {option.emoji && !imageUrl && <span className="text-lg flex-shrink-0">{option.emoji}</span>}
+                {option.emoji && <span className="text-lg flex-shrink-0">{option.emoji}</span>}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-gray-900 group-hover:text-purple-700">
