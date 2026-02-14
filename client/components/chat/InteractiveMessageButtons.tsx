@@ -334,14 +334,19 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
 
       {/* Display image carousel if there are images */}
       {imagePreviews.length > 0 && (
-        <ImageCarousel
-          images={imagePreviews.map(img => ({
-            url: img.url,
-            index: img.index,
-            alt: `Post preview ${img.index}`
-          }))}
-          className="my-4"
-        />
+        <div className="carousel-wrapper" style={{ border: '2px solid red', padding: '10px', margin: '10px 0' }}>
+          <div style={{ background: '#fff3cd', padding: '8px', marginBottom: '8px', borderRadius: '4px', fontSize: '12px' }}>
+            🎯 DEBUG: Carousel rendering with {imagePreviews.length} image(s)
+          </div>
+          <ImageCarousel
+            images={imagePreviews.map(img => ({
+              url: img.url,
+              index: img.index,
+              alt: `Post preview ${img.index}`
+            }))}
+            className="my-4"
+          />
+        </div>
       )}
 
       {/* Display interactive buttons - only after streaming completes, with staggered animation */}
