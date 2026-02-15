@@ -2414,10 +2414,113 @@ export default function IntegrationsSettings() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Slack Integration */}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg"
+                    alt="Slack"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-900">Slack</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Connect Slack workspaces for team collaboration
+                  </p>
+                  {slackIntegrations.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <Badge variant="default" className="bg-green-500">
+                        {slackIntegrations.length} Workspace{slackIntegrations.length !== 1 ? 's' : ''} Connected
+                      </Badge>
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {slackIntegrations.map((integration) => (
+                          <div key={integration.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                            <img
+                              src={getPlaceholderAvatar('slack', integration.name)}
+                              alt={integration.name}
+                              className="w-8 h-8 rounded-full"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-gray-900 truncate">{integration.name}</p>
+                              <p className="text-xs text-gray-500">Slack Workspace</p>
+                            </div>
+                            <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  onClick={handleSlackOAuth}
+                  disabled={loading || !locationId || !firmUserId}
+                >
+                  {loading ? 'Loading...' : slackIntegrations.length > 0 ? 'Add Another Workspace' : 'Connect Workspace'}
+                </Button>
+                {slackIntegrations.length > 0 && (
+                  <Button
+                    variant="outline"
+                    className="w-full mt-2"
+                    onClick={() => {
+                      setManagePlatform('slack');
+                      setShowManageModal(true);
+                    }}
+                  >
+                    Manage Workspaces
+                  </Button>
+                )}
+                {!loading && (!locationId || !ghlUserId) && (
+                  <p className="text-xs text-red-500">
+                    Please set up a GHL subaccount first
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Microsoft Teams Integration - Coming Soon */}
+          <Card className="relative opacity-60 cursor-not-allowed">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="absolute top-4 right-4">
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
+                    Coming Soon
+                  </Badge>
+                </div>
+                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 grayscale">
+                  <img
+                    src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg"
+                    alt="Microsoft Teams"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-500">Microsoft Teams</h3>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Connect Microsoft Teams for collaboration
+                  </p>
+                </div>
+                <Button
+                  className="w-full bg-gray-300 text-gray-500 cursor-not-allowed"
+                  disabled
+                >
+                  Coming Soon
+                </Button>
+                <p className="text-xs text-gray-400">
+                  Microsoft Teams integration will be available soon
+                </p>
+              </div>
+            </CardContent>
+          </Card>
           </div>
         </div>
 
-        {/* Integrations Section */}
+        {/* Social Media Integrations Section */}
         <div className="mt-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Integrations</h2>
           <div className="relative">
@@ -2431,114 +2534,6 @@ export default function IntegrationsSettings() {
               </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-            {/* Slack Integration */}
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="text-center space-y-4">
-                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
-                    <img
-                      src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg"
-                      alt="Slack"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-gray-900">Slack</h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Connect Slack workspaces for team collaboration
-                    </p>
-                    {slackIntegrations.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        <Badge variant="default" className="bg-green-500">
-                          {slackIntegrations.length} Workspace{slackIntegrations.length !== 1 ? 's' : ''} Connected
-                        </Badge>
-                        <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {slackIntegrations.map((integration) => (
-                            <div key={integration.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                              <img
-                                src={getPlaceholderAvatar('slack', integration.name)}
-                                alt={integration.name}
-                                className="w-8 h-8 rounded-full"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-gray-900 truncate">{integration.name}</p>
-                                <p className="text-xs text-gray-500">Slack Workspace</p>
-                              </div>
-                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                      onClick={handleSlackOAuth}
-                      disabled={loading || !locationId || !firmUserId}
-                    >
-                      {loading ? 'Loading...' : 'Connect Workspace'}
-                    </Button>
-                    {slackIntegrations.length > 0 && (
-                      <Button
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => {
-                          setManagePlatform('slack');
-                          setShowManageModal(true);
-                        }}
-                      >
-                        Manage
-                      </Button>
-                    )}
-                  </div>
-                  {!loading && (!locationId || !ghlUserId) && (
-                    <p className="text-xs text-red-500">
-                      Please set up a GHL subaccount first
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Microsoft Teams Integration - Coming Soon */}
-            <Card className="relative opacity-60 cursor-not-allowed">
-              <CardContent className="pt-6">
-                <div className="text-center space-y-4">
-                  <div className="absolute top-4 right-4">
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
-                      Coming Soon
-                    </Badge>
-                  </div>
-                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 grayscale">
-                    <img
-                      src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg"
-                      alt="Microsoft Teams"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-gray-500">Microsoft Teams</h3>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Connect Microsoft Teams for collaboration
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      className="flex-1 bg-gray-300 text-gray-500 cursor-not-allowed"
-                      disabled
-                    >
-                      Coming Soon
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    Microsoft Teams integration will be available soon
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Facebook Social Media Posting */}
             <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="pt-6">
