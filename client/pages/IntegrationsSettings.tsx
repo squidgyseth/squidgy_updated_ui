@@ -2465,18 +2465,11 @@ export default function IntegrationsSettings() {
               </CardContent>
             </Card>
 
-            {/* Slack Integration - Coming Soon */}
-            <Card className="relative opacity-60 cursor-not-allowed">
+            {/* Slack Integration */}
+            <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="pt-6">
                 <div className="text-center space-y-4">
-                  {/* Coming Soon Badge */}
-                  <div className="absolute top-4 right-4">
-                    <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-300">
-                      Coming Soon
-                    </Badge>
-                  </div>
-
-                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 grayscale">
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
                     <img
                       src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg"
                       alt="Slack"
@@ -2484,22 +2477,60 @@ export default function IntegrationsSettings() {
                     />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg text-gray-500">Slack</h3>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <h3 className="font-semibold text-lg text-gray-900">Slack</h3>
+                    <p className="text-sm text-gray-500 mt-1">
                       Connect your Slack account for workspace collaboration and team communication
                     </p>
+                    {slackIntegrations.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <Badge variant="default" className="bg-green-500">
+                          {slackIntegrations.length} Workspace{slackIntegrations.length !== 1 ? 's' : ''} Connected
+                        </Badge>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {slackIntegrations.map((integration) => (
+                            <div key={integration.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img
+                                src={getPlaceholderAvatar('slack', integration.name)}
+                                alt={integration.name}
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{integration.name}</p>
+                                <p className="text-xs text-gray-500">Slack Workspace</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      className="flex-1 bg-gray-300 text-gray-500 cursor-not-allowed"
-                      disabled
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                      onClick={handleSlackOAuth}
+                      disabled={loading || !locationId || !firmUserId}
                     >
-                      Coming Soon
+                      {loading ? 'Loading...' : 'Add New Workspace'}
                     </Button>
+                    {slackIntegrations.length > 0 && (
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setManagePlatform('slack');
+                          setShowManageModal(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    )}
                   </div>
-                  <p className="text-xs text-gray-400">
-                    Slack integration will be available soon
-                  </p>
+                  {!loading && (!locationId || !ghlUserId) && (
+                    <p className="text-xs text-red-500">
+                      Please set up a GHL subaccount first
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
