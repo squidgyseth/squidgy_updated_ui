@@ -2035,6 +2035,48 @@ export default function IntegrationsSettings() {
     }
   };
 
+  const disconnectSlackWorkspace = async (integration: any) => {
+    if (!firmUserId) {
+      toast.error('Missing user information');
+      return;
+    }
+
+    // Confirm disconnection
+    if (!window.confirm(`Are you sure you want to disconnect "${integration.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      const response = await fetch(`${backendUrl}/api/social/slack/disconnect-workspace`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          agent_id: 'SOL',
+          integration_id: integration.id
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to disconnect workspace');
+      }
+
+      toast.success(`Successfully disconnected ${integration.name}`);
+
+      // Refresh the Slack integrations list
+      fetchSlackIntegrations();
+
+    } catch (error: any) {
+      console.error('❌ Error disconnecting Slack workspace:', error);
+      toast.error(error.message || 'Failed to disconnect workspace');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
       'created': { label: 'Active', variant: 'default' },
@@ -2978,6 +3020,74 @@ export default function IntegrationsSettings() {
                           </div>
                         );
                       })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Show manage modal for Slack workspaces */}
+            {showManageModal && managePlatform === 'slack' && (
+              <Card className="col-span-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Manage Slack Workspaces</CardTitle>
+                      <CardDescription>View and manage all connected workspaces</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowManageModal(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {slackIntegrations.map((integration) => {
+                      const dateAdded = integration.dateAdded ? new Date(integration.dateAdded) : null;
+
+                      return (
+                        <div
+                          key={integration.id}
+                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-start gap-3 flex-1">
+                            <img
+                              src={getPlaceholderAvatar('slack', integration.name)}
+                              alt={integration.name}
+                              className="w-12 h-12 rounded-full"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-medium text-gray-900">{integration.name}</p>
+                                <Badge variant="default" className="bg-green-500 text-xs">
+                                  Active
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-gray-500 mb-2">ID: {integration.id}</p>
+                              {dateAdded && (
+                                <p className="text-xs text-gray-400">
+                                  Connected: {dateAdded.toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => disconnectSlackWorkspace(integration)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
