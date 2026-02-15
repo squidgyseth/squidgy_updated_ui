@@ -2524,7 +2524,12 @@ export default function IntegrationsSettings() {
 
         {/* Social Media Integrations Section */}
         <div className="mt-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Integrations</h2>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Social Media Integrations</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Connect your social media accounts for posting and ads management
+            </p>
+          </div>
           <div className="relative">
             {(refreshingToken || pollingForToken) && (
               <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
