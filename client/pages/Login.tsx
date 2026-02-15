@@ -322,11 +322,9 @@ export default function Login() {
       </div>
 
       {/* Right Side - Carousel */}
-      <div className={`flex-1 flex flex-col min-h-[100vh] md:min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] ${
-        carouselStates[currentSlide].type === 'game' ? 'p-4' : 'p-6 md:p-12 justify-between'
-      }`}>
+      <div className="flex-1 flex flex-col min-h-[100vh] md:min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] p-6 md:p-12 justify-between">
         {/* Carousel Indicators */}
-        <div className={`flex justify-center gap-2 ${carouselStates[currentSlide].type === 'game' ? 'mb-4' : 'mb-8'}`}>
+        <div className="flex justify-center gap-2 mb-8">
           {carouselStates.map((_, index) => (
             <button
               key={index}
@@ -341,13 +339,14 @@ export default function Login() {
         </div>
 
         {/* Main Content */}
-        <div className={`flex-1 flex flex-col items-center ${
-          carouselStates[currentSlide].type === 'game' ? '' : 'justify-center text-center'
-        }`}>
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
           {carouselStates[currentSlide].type === 'game' ? (
-            /* Game Slide - Full size iframe with next slide peek */
-            <div className="w-full h-full flex flex-col gap-4">
-              <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl">
+            /* Game Slide - Centered and contained */
+            <div className="w-full max-w-3xl mx-auto">
+              <h2 className="text-4xl font-bold text-white mb-6 leading-[45px] font-['Open_Sans']">
+                {carouselStates[currentSlide].title}
+              </h2>
+              <div className="w-full aspect-[16/10] rounded-2xl overflow-hidden shadow-2xl">
                 <iframe
                   src={GAME_URL}
                   className="w-full h-full border-0"
@@ -355,21 +354,6 @@ export default function Login() {
                   allow="autoplay; fullscreen"
                   sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
                 />
-              </div>
-              {/* Navigation buttons */}
-              <div className="flex justify-center gap-4">
-                <button
-                  onClick={prevSlide}
-                  className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-                >
-                  <ChevronLeft size={20} strokeWidth={1.67} />
-                </button>
-                <button
-                  onClick={nextSlide}
-                  className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-                >
-                  <ChevronRight size={20} strokeWidth={1.67} />
-                </button>
               </div>
             </div>
           ) : (
@@ -393,47 +377,45 @@ export default function Login() {
           )}
         </div>
 
-        {/* Navigation and Trust Indicators - Hidden for game slide */}
-        {carouselStates[currentSlide].type !== 'game' && (
-          <div>
-            {/* Navigation Controls */}
-            <div className="flex justify-center gap-4 mb-8">
-              <button
-                onClick={prevSlide}
-                className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-              >
-                <ChevronLeft size={20} strokeWidth={1.67} />
-              </button>
-              <button
-                onClick={nextSlide}
-                className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-              >
-                <ChevronRight size={20} strokeWidth={1.67} />
-              </button>
-            </div>
+        {/* Navigation and Trust Indicators */}
+        <div>
+          {/* Navigation Controls */}
+          <div className="flex justify-center gap-4 mb-8">
+            <button
+              onClick={prevSlide}
+              className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+            >
+              <ChevronLeft size={20} strokeWidth={1.67} />
+            </button>
+            <button
+              onClick={nextSlide}
+              className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+            >
+              <ChevronRight size={20} strokeWidth={1.67} />
+            </button>
+          </div>
 
-            {/* Trust Indicators */}
-            <div>
-              <p className="text-center text-white/80 text-[15px] mb-4 font-['Open_Sans']">
-                Trusted by teams worldwide
-              </p>
-              <div className="flex justify-center items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#05DF72]"></div>
-                  <span className="text-white text-[14px] font-['Open_Sans']">99.9% Uptime</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#51A2FF]"></div>
-                  <span className="text-white text-[14px] font-['Open_Sans']">Secure & private</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#C27AFF]"></div>
-                  <span className="text-white text-[14px] font-['Open_Sans']">24/7 Support</span>
-                </div>
+          {/* Trust Indicators */}
+          <div>
+            <p className="text-center text-white/80 text-[15px] mb-4 font-['Open_Sans']">
+              Trusted by teams worldwide
+            </p>
+            <div className="flex justify-center items-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-[#05DF72]"></div>
+                <span className="text-white text-[14px] font-['Open_Sans']">99.9% Uptime</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-[#51A2FF]"></div>
+                <span className="text-white text-[14px] font-['Open_Sans']">Secure & private</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-[#C27AFF]"></div>
+                <span className="text-white text-[14px] font-['Open_Sans']">24/7 Support</span>
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
     </div>

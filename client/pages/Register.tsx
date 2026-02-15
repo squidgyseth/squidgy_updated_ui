@@ -456,9 +456,7 @@ export default function Register() {
       </div>
 
       {/* Right Side - Carousel */}
-      <div className={`flex-1 flex flex-col min-h-[100vh] md:min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] ${
-        carouselStates[currentSlide].type === 'game' ? 'p-4' : 'p-6 md:p-12 justify-between'
-      }`}>
+      <div className="flex-1 flex flex-col min-h-[100vh] md:min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] p-6 md:p-12 justify-between">
         {/* Carousel Indicators */}
         <div className="flex justify-center gap-2 mb-8">
           {carouselStates.map((_, index) => (
@@ -466,8 +464,8 @@ export default function Register() {
               key={index}
               onClick={() => goToSlide(index)}
               className={`h-2 rounded-full transition-all ${
-                currentSlide === index 
-                  ? "w-8 bg-white" 
+                currentSlide === index
+                  ? "w-8 bg-white"
                   : "w-2 bg-white/50"
               }`}
             />
@@ -475,37 +473,25 @@ export default function Register() {
         </div>
 
         {/* Main Content */}
-        {carouselStates[currentSlide].type === 'game' ? (
-          /* Game Slide - Full size iframe with next slide peek */
-          <div className="w-full h-full flex flex-col gap-4">
-            <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl">
-              <iframe
-                src={GAME_URL}
-                className="w-full h-full border-0"
-                title="Squidgy Game"
-                allow="autoplay; fullscreen"
-                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
-              />
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          {carouselStates[currentSlide].type === 'game' ? (
+            /* Game Slide - Centered and contained */
+            <div className="w-full max-w-3xl mx-auto">
+              <h2 className="text-4xl font-bold text-white mb-6 leading-[45px] font-['Open_Sans']">
+                {carouselStates[currentSlide].title}
+              </h2>
+              <div className="w-full aspect-[16/10] rounded-2xl overflow-hidden shadow-2xl">
+                <iframe
+                  src={GAME_URL}
+                  className="w-full h-full border-0"
+                  title="Squidgy Game"
+                  allow="autoplay; fullscreen"
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+                />
+              </div>
             </div>
-            {/* Navigation buttons */}
-            <div className="flex justify-center gap-4">
-              <button
-                onClick={prevSlide}
-                className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-              >
-                <ChevronLeft size={20} strokeWidth={1.67} />
-              </button>
-              <button
-                onClick={nextSlide}
-                className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-              >
-                <ChevronRight size={20} strokeWidth={1.67} />
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* Content Slide */
-          <div className="flex-1 flex flex-col justify-center items-center text-center">
+          ) : (
+            /* Content Slide */
             <div className="relative mb-12">
               {/* Icon Container */}
               <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-6">
@@ -522,11 +508,10 @@ export default function Register() {
                 </p>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Navigation and Trust Indicators - Hidden for game slide */}
-        {carouselStates[currentSlide].type !== 'game' && (
+        {/* Navigation and Trust Indicators */}
         <div>
           {/* Navigation Controls */}
           <div className="flex justify-center gap-4 mb-8">
@@ -565,7 +550,6 @@ export default function Register() {
             </div>
           </div>
         </div>
-        )}
       </div>
 
       {/* Beta User Agreement Modal */}
