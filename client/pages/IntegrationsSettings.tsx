@@ -822,75 +822,60 @@ export default function IntegrationsSettings() {
     });
   };
 
-  const handleSlackOAuth = () => {
+  const handleSlackOAuth = async () => {
     if (!firmUserId || !locationId) {
       toast.error('Missing user or location information');
       return;
     }
 
-    // Slack app client ID (get from environment or hardcode your Slack app client ID)
-    const slackClientId = import.meta.env.VITE_SLACK_CLIENT_ID || '394243081714.4376892619942';
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    console.log('🔵 Starting Slack OAuth with firmUserId:', firmUserId);
 
-    // Slack bot scopes
-    const botScopes = [
-      'channels:manage', 'channels:read', 'channels:join',
-      'chat:write', 'chat:write.customize', 'chat:write.public',
-      'commands', 'files:write',
-      'im:read', 'im:write',
-      'mpim:read', 'mpim:write',
-      'team:read',
-      'users.profile:read', 'users:read', 'users:read.email',
-      'workflow.steps:execute'
-    ].join(',');
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-    // Slack user scopes
-    const userScopes = [
-      'channels:history', 'channels:read', 'channels:write',
-      'chat:write',
-      'emoji:read',
-      'files:read', 'files:write',
-      'groups:history', 'groups:read', 'groups:write',
-      'im:read', 'im:write',
-      'mpim:read', 'mpim:write',
-      'reactions:read', 'reminders:write',
-      'search:read', 'stars:read',
-      'team:read',
-      'users.profile:write', 'users:read', 'users:read.email'
-    ].join(',');
+      // Call backend to get OAuth URL (same pattern as Facebook/Instagram)
+      const response = await fetch(`${backendUrl}/api/social/slack/start-oauth`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          agent_id: 'SOL'
+        })
+      });
 
-    // Generate random string for state (like GHL does)
-    const randomString = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    // Format: locationId,randomString (matching GHL's format)
-    const state = encodeURIComponent(`${locationId},${randomString}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to generate Slack OAuth URL');
+      }
 
-    // Use GHL's configured redirect URI (already set up in Slack app settings)
-    const redirectUri = 'https://services.leadconnectorhq.com/appengine/slack/oauth-connect';
+      const data = await response.json();
 
-    const oauthParams = new URLSearchParams({
-      client_id: slackClientId,
-      scope: botScopes,
-      user_scope: userScopes,
-      redirect_uri: redirectUri,
-      state: state,
-      granular_bot_scope: '1',
-      single_channel: '0'
-    });
+      if (!data.success || !data.oauth_url) {
+        throw new Error('Invalid response from server');
+      }
 
-    const slackOAuthUrl = `https://slack.com/oauth/v2/authorize?${oauthParams.toString()}`;
-    const popup = window.open(slackOAuthUrl, 'slack-oauth', 'width=600,height=700');
+      console.log('🔵 Slack OAuth URL received:', data.oauth_url);
 
-    // Monitor popup closure to refresh Slack integrations
-    if (popup) {
-      const checkPopup = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(checkPopup);
-          // Refresh Slack integrations after OAuth completes
-          setTimeout(() => {
-            fetchSlackIntegrations();
-          }, 2000); // Wait 2 seconds for GHL to process the connection
-        }
-      }, 1000); // Check every second
+      // Open OAuth URL in popup window
+      const popup = window.open(data.oauth_url, 'slack-oauth', 'width=600,height=700');
+
+      // Monitor popup closure to refresh Slack integrations
+      if (popup) {
+        const checkPopup = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkPopup);
+            // Refresh Slack integrations after OAuth completes
+            setTimeout(() => {
+              fetchSlackIntegrations();
+            }, 2000); // Wait 2 seconds for GHL to process the connection
+          }
+        }, 1000); // Check every second
+      }
+    } catch (error: any) {
+      console.error('❌ Error starting Slack OAuth:', error);
+      toast.error(error.message || 'Failed to start Slack OAuth');
     }
   };
 
