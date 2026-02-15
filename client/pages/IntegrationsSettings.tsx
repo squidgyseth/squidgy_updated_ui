@@ -859,12 +859,10 @@ export default function IntegrationsSettings() {
       'users.profile:write', 'users:read', 'users:read.email'
     ].join(',');
 
-    const state = encodeURIComponent(JSON.stringify({
-      locationId: locationId,
-      userId: firmUserId,
-      type: 'slack',
-      source: 'squidgy_integrations'
-    }));
+    // Generate random string for state (like GHL does)
+    const randomString = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    // Format: locationId,randomString (matching GHL's format)
+    const state = encodeURIComponent(`${locationId},${randomString}`);
 
     // Use GHL's configured redirect URI (already set up in Slack app settings)
     const redirectUri = 'https://services.leadconnectorhq.com/appengine/slack/oauth-connect';
@@ -920,12 +918,10 @@ export default function IntegrationsSettings() {
       'ChatMessage.Send'
     ].join(' ');
 
-    const state = encodeURIComponent(JSON.stringify({
-      locationId: locationId,
-      userId: firmUserId,
-      type: 'teams',
-      source: 'squidgy_integrations'
-    }));
+    // Generate random string for state (like GHL does)
+    const randomString = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    // Format: locationId,randomString (matching GHL's format)
+    const state = encodeURIComponent(`${locationId},${randomString}`);
 
     const redirectUri = `${backendUrl}/api/teams/oauth-callback`;
 
@@ -2421,49 +2417,20 @@ export default function IntegrationsSettings() {
           </div>
         </div>
 
-        {/* Workspace Integrations Section */}
+        {/* Integrations Section */}
         <div className="mt-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Workspace Integrations</h2>
-          <p className="text-sm text-gray-500 mb-6">Connect your team collaboration and communication tools</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Microsoft Teams Integration - Coming Soon */}
-            <Card className="relative opacity-60 cursor-not-allowed">
-              <CardContent className="pt-6">
-                <div className="text-center space-y-4">
-                  {/* Coming Soon Badge */}
-                  <div className="absolute top-4 right-4">
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
-                      Coming Soon
-                    </Badge>
-                  </div>
-
-                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 grayscale">
-                    <img
-                      src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg"
-                      alt="Microsoft Teams"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-gray-500">Microsoft Teams</h3>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Connect your Microsoft Teams account for workspace collaboration and team communication
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      className="flex-1 bg-gray-300 text-gray-500 cursor-not-allowed"
-                      disabled
-                    >
-                      Coming Soon
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    Microsoft Teams integration will be available soon
-                  </p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Integrations</h2>
+          <div className="relative">
+            {(refreshingToken || pollingForToken) && (
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
+                <div className="text-center">
+                  <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
+                  <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
+                  <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
             {/* Slack Integration */}
             <Card className="hover:shadow-lg transition-shadow">
@@ -2479,7 +2446,7 @@ export default function IntegrationsSettings() {
                   <div>
                     <h3 className="font-semibold text-lg text-gray-900">Slack</h3>
                     <p className="text-sm text-gray-500 mt-1">
-                      Connect your Slack account for workspace collaboration and team communication
+                      Connect Slack workspaces for team collaboration
                     </p>
                     {slackIntegrations.length > 0 && (
                       <div className="mt-3 space-y-2">
@@ -2511,7 +2478,7 @@ export default function IntegrationsSettings() {
                       onClick={handleSlackOAuth}
                       disabled={loading || !locationId || !firmUserId}
                     >
-                      {loading ? 'Loading...' : 'Add New Workspace'}
+                      {loading ? 'Loading...' : 'Connect Workspace'}
                     </Button>
                     {slackIntegrations.length > 0 && (
                       <Button
@@ -2535,288 +2502,43 @@ export default function IntegrationsSettings() {
               </CardContent>
             </Card>
 
-            {/* Show modal for Teams if Teams is selected */}
-            {showSocialMediaPages && socialMediaPlatform === 'teams' && (
-              <Card className="col-span-full">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Microsoft Teams Workspaces</CardTitle>
-                      <CardDescription>Select Teams workspaces to connect</CardDescription>
-                    </div>
+            {/* Microsoft Teams Integration - Coming Soon */}
+            <Card className="relative opacity-60 cursor-not-allowed">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="absolute top-4 right-4">
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
+                      Coming Soon
+                    </Badge>
+                  </div>
+                  <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 grayscale">
+                    <img
+                      src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg"
+                      alt="Microsoft Teams"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-500">Microsoft Teams</h3>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Connect Microsoft Teams for collaboration
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowSocialMediaPages(false)}
+                      className="flex-1 bg-gray-300 text-gray-500 cursor-not-allowed"
+                      disabled
                     >
-                      <X className="w-4 h-4" />
+                      Coming Soon
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {socialMediaLoading ? (
-                    <div className="text-center py-8">
-                      <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
-                      <p className="text-sm text-gray-600">Loading Teams workspaces...</p>
-                    </div>
-                  ) : socialMediaPages.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-gray-600">No Teams workspaces found. Please complete OAuth first.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {socialMediaPages.map((workspace) => (
-                        <div
-                          key={workspace.id}
-                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                        >
-                          <div className="flex items-start gap-3 flex-1">
-                            <img
-                              src={workspace.avatar || getPlaceholderAvatar('teams', workspace.name)}
-                              alt={workspace.name}
-                              className="w-12 h-12 rounded-full"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900">{workspace.name}</p>
-                              <p className="text-xs text-gray-500 mt-1">ID: {workspace.id}</p>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => connectSocialMediaPage(workspace)}
-                            disabled={socialMediaLoading}
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                          >
-                            Connect
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Show manage modal for Teams */}
-            {showManageModal && managePlatform === 'teams' && (
-              <Card className="col-span-full">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Manage Microsoft Teams Integrations</CardTitle>
-                      <CardDescription>View and manage all connected Teams workspaces</CardDescription>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowManageModal(false)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {teamsIntegrations.map((integration) => {
-                      const dateAdded = integration.dateAdded ? new Date(integration.dateAdded) : null;
-
-                      return (
-                        <div
-                          key={integration.id}
-                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                        >
-                          <div className="flex items-start gap-3 flex-1">
-                            <img
-                              src={getPlaceholderAvatar('teams', integration.name)}
-                              alt={integration.name}
-                              className="w-12 h-12 rounded-full"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <p className="font-medium text-gray-900">{integration.name}</p>
-                                <Badge variant="default" className="bg-green-500 text-xs">
-                                  Active
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-gray-500 mb-2">ID: {integration.id}</p>
-                              {dateAdded && (
-                                <p className="text-xs text-gray-400">
-                                  Added: {dateAdded.toLocaleDateString()}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => {
-                                // TODO: Implement Teams-specific delete
-                                toast.error('Delete functionality for Teams coming soon');
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Show modal for Slack if Slack is selected */}
-            {showSocialMediaPages && socialMediaPlatform === 'slack' && (
-              <Card className="col-span-full">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Slack Workspaces</CardTitle>
-                      <CardDescription>Select Slack workspaces to connect</CardDescription>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowSocialMediaPages(false)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {socialMediaLoading ? (
-                    <div className="text-center py-8">
-                      <RefreshCw className="w-8 h-8 text-purple-600 animate-spin mx-auto mb-3" />
-                      <p className="text-sm text-gray-600">Loading Slack workspaces...</p>
-                    </div>
-                  ) : socialMediaPages.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-gray-600">No Slack workspaces found. Please complete OAuth first.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {socialMediaPages.map((workspace) => (
-                        <div
-                          key={workspace.id}
-                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                        >
-                          <div className="flex items-start gap-3 flex-1">
-                            <img
-                              src={workspace.avatar || getPlaceholderAvatar('slack', workspace.name)}
-                              alt={workspace.name}
-                              className="w-12 h-12 rounded-full"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900">{workspace.name}</p>
-                              <p className="text-xs text-gray-500 mt-1">ID: {workspace.id}</p>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => connectSocialMediaPage(workspace)}
-                            disabled={socialMediaLoading}
-                            className="bg-purple-600 hover:bg-purple-700 text-white"
-                          >
-                            Connect
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Show manage modal for Slack */}
-            {showManageModal && managePlatform === 'slack' && (
-              <Card className="col-span-full">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Manage Slack Integrations</CardTitle>
-                      <CardDescription>View and manage all connected Slack workspaces</CardDescription>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowManageModal(false)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {slackIntegrations.map((integration) => {
-                      const dateAdded = integration.dateAdded ? new Date(integration.dateAdded) : null;
-
-                      return (
-                        <div
-                          key={integration.id}
-                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                        >
-                          <div className="flex items-start gap-3 flex-1">
-                            <img
-                              src={getPlaceholderAvatar('slack', integration.name)}
-                              alt={integration.name}
-                              className="w-12 h-12 rounded-full"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <p className="font-medium text-gray-900">{integration.name}</p>
-                                <Badge variant="default" className="bg-green-500 text-xs">
-                                  Active
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-gray-500 mb-2">ID: {integration.id}</p>
-                              {dateAdded && (
-                                <p className="text-xs text-gray-400">
-                                  Added: {dateAdded.toLocaleDateString()}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => {
-                                // TODO: Implement Slack-specific delete
-                                toast.error('Delete functionality for Slack coming soon');
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
-
-        {/* Social Media Integrations Section */}
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Social Media Integrations</h2>
-          <div className="relative">
-            {(refreshingToken || pollingForToken) && (
-              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
-                <div className="text-center">
-                  <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
-                  <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
-                  <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
+                  <p className="text-xs text-gray-400">
+                    Microsoft Teams integration will be available soon
+                  </p>
                 </div>
-              </div>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              </CardContent>
+            </Card>
+
             {/* Facebook Social Media Posting */}
             <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="pt-6">
