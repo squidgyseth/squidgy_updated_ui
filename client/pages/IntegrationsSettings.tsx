@@ -363,8 +363,8 @@ export default function IntegrationsSettings() {
       } catch (error) {
         console.error('❌ Error polling for token:', error);
       }
-    }, 5000); // Poll every 5 seconds
-    
+    }, 60000); // Poll every 1 minute
+
     // Stop polling after 5 minutes to prevent infinite polling
     setTimeout(() => {
       clearInterval(pollInterval);
@@ -2121,6 +2121,7 @@ export default function IntegrationsSettings() {
                 <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
                 <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
                 <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
+                <p className="text-xs text-gray-400 mt-1">This may take up to 2 minutes</p>
               </div>
             </div>
           )}
@@ -2659,6 +2660,7 @@ export default function IntegrationsSettings() {
                   <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
                   <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
                   <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
+                  <p className="text-xs text-gray-400 mt-1">This may take up to 2 minutes</p>
                 </div>
               </div>
             )}
