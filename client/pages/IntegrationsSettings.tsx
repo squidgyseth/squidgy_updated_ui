@@ -861,17 +861,34 @@ export default function IntegrationsSettings() {
       // Open OAuth URL in popup window
       const popup = window.open(data.oauth_url, 'slack-oauth', 'width=600,height=700');
 
-      // Monitor popup closure to refresh Slack integrations
+      // Monitor popup and auto-close when reaching GHL's success page
       if (popup) {
         const checkPopup = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(checkPopup);
-            // Refresh Slack integrations after OAuth completes
-            setTimeout(() => {
-              fetchSlackIntegrations();
-            }, 2000); // Wait 2 seconds for GHL to process the connection
+          try {
+            // Try to detect if popup reached GHL's success page and auto-close
+            if (popup.location.href.includes('app.gohighlevel.com') ||
+                popup.location.href.includes('app.onetoo.com')) {
+              console.log('🔵 OAuth completed, auto-closing popup');
+              popup.close();
+              clearInterval(checkPopup);
+              // Refresh Slack integrations after OAuth completes
+              setTimeout(() => {
+                fetchSlackIntegrations();
+              }, 2000); // Wait 2 seconds for GHL to process the connection
+            }
+          } catch (e) {
+            // Cross-origin restriction - can't read popup.location
+            // Just check if popup is closed manually by user
+            if (popup.closed) {
+              clearInterval(checkPopup);
+              console.log('🔵 Popup closed, refreshing Slack integrations');
+              // Refresh Slack integrations after OAuth completes
+              setTimeout(() => {
+                fetchSlackIntegrations();
+              }, 2000); // Wait 2 seconds for GHL to process the connection
+            }
           }
-        }, 1000); // Check every second
+        }, 500); // Check every 500ms for faster detection
       }
     } catch (error: any) {
       console.error('❌ Error starting Slack OAuth:', error);
