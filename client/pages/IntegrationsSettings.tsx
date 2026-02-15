@@ -176,13 +176,16 @@ export default function IntegrationsSettings() {
   }, [locationId, firebaseToken, accessToken, refreshingToken]);
 
   useEffect(() => {
-    // Auto-fetch connected social media accounts when tokens are available
+    // Auto-fetch connected social media accounts and integrations when tokens are available
     if (locationId && firebaseToken && accessToken) {
       fetchConnectedSocialMediaAccounts();
+    }
+    // Slack and Teams use backend endpoints with firmUserId
+    if (firmUserId) {
       fetchSlackIntegrations();
       fetchTeamsIntegrations();
     }
-  }, [locationId, firebaseToken, accessToken]);
+  }, [locationId, firebaseToken, accessToken, firmUserId]);
 
   // Real-time polling for social media account updates
   useEffect(() => {
@@ -861,34 +864,39 @@ export default function IntegrationsSettings() {
       // Open OAuth URL in popup window
       const popup = window.open(data.oauth_url, 'slack-oauth', 'width=600,height=700');
 
-      // Monitor popup and auto-close when reaching GHL's success page
+      // Monitor popup and auto-close after OAuth completes
       if (popup) {
+        let oauthCompleted = false;
+
+        // Auto-close popup after 15 seconds (gives time for OAuth + GHL processing)
+        const autoCloseTimeout = setTimeout(() => {
+          if (popup && !popup.closed) {
+            console.log('🔵 Auto-closing popup after OAuth timeout');
+            popup.close();
+            oauthCompleted = true;
+            // Refresh Slack integrations after OAuth completes
+            setTimeout(() => {
+              fetchSlackIntegrations();
+            }, 2000);
+          }
+        }, 15000); // 15 seconds should be enough for OAuth flow
+
+        // Also check if user closes popup manually
         const checkPopup = setInterval(() => {
-          try {
-            // Try to detect if popup reached GHL's success page and auto-close
-            if (popup.location.href.includes('app.gohighlevel.com') ||
-                popup.location.href.includes('app.onetoo.com')) {
-              console.log('🔵 OAuth completed, auto-closing popup');
-              popup.close();
-              clearInterval(checkPopup);
-              // Refresh Slack integrations after OAuth completes
-              setTimeout(() => {
-                fetchSlackIntegrations();
-              }, 2000); // Wait 2 seconds for GHL to process the connection
-            }
-          } catch (e) {
-            // Cross-origin restriction - can't read popup.location
-            // Just check if popup is closed manually by user
-            if (popup.closed) {
-              clearInterval(checkPopup);
+          if (popup.closed) {
+            clearInterval(checkPopup);
+            clearTimeout(autoCloseTimeout);
+
+            if (!oauthCompleted) {
               console.log('🔵 Popup closed, refreshing Slack integrations');
+              oauthCompleted = true;
               // Refresh Slack integrations after OAuth completes
               setTimeout(() => {
                 fetchSlackIntegrations();
-              }, 2000); // Wait 2 seconds for GHL to process the connection
+              }, 2000);
             }
           }
-        }, 500); // Check every 500ms for faster detection
+        }, 500);
       }
     } catch (error: any) {
       console.error('❌ Error starting Slack OAuth:', error);
@@ -1567,21 +1575,24 @@ export default function IntegrationsSettings() {
   };
 
   const fetchSlackIntegrations = async () => {
-    if (!locationId || !firebaseToken || !accessToken) {
+    if (!firmUserId) {
+      console.log('⚠️ Skipping Slack fetch: missing firmUserId');
       return;
     }
 
     try {
-      const slackEndpoint = `https://api.leadconnectorhq.com/slack/${locationId}/integrations`;
+      console.log('🔵 Fetching Slack integrations for firmUserId:', firmUserId);
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-      const response = await fetch(slackEndpoint, {
-        method: 'GET',
+      const response = await fetch(`${backendUrl}/api/social/slack/connected-workspaces`, {
+        method: 'POST',
         headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'Authorization': `Bearer ${accessToken}`,
-          'token-id': firebaseToken,
-          'channel': 'APP'
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          agent_id: 'SOL'
+        })
       });
 
       if (!response.ok) {
@@ -1592,11 +1603,12 @@ export default function IntegrationsSettings() {
 
       const data = await response.json();
 
-      if (data.integrations && Array.isArray(data.integrations)) {
+      if (data.success && data.integrations && Array.isArray(data.integrations)) {
         setSlackIntegrations(data.integrations);
-        console.log('🟣 Slack integrations loaded:', data.integrations);
+        console.log('🟣 Slack integrations loaded:', data.integrations.length, 'workspace(s)');
       } else {
         setSlackIntegrations([]);
+        console.log('🟣 No Slack integrations found');
       }
     } catch (error: any) {
       console.error('❌ Error fetching Slack integrations:', error);
@@ -2561,6 +2573,74 @@ export default function IntegrationsSettings() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Show manage modal for Slack workspaces */}
+          {showManageModal && managePlatform === 'slack' && (
+            <Card className="col-span-full">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Manage Slack Workspaces</CardTitle>
+                    <CardDescription>View and manage all connected workspaces</CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowManageModal(false)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {slackIntegrations.map((integration) => {
+                    const dateAdded = integration.dateAdded ? new Date(integration.dateAdded) : null;
+
+                    return (
+                      <div
+                        key={integration.id}
+                        className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-start gap-3 flex-1">
+                          <img
+                            src={getPlaceholderAvatar('slack', integration.name)}
+                            alt={integration.name}
+                            className="w-12 h-12 rounded-full"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-gray-900">{integration.name}</p>
+                              <Badge variant="default" className="bg-green-500 text-xs">
+                                Active
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-gray-500 mb-2">ID: {integration.id}</p>
+                            {dateAdded && (
+                              <p className="text-xs text-gray-400">
+                                Connected: {dateAdded.toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => disconnectSlackWorkspace(integration)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
           </div>
         </div>
 
@@ -3020,74 +3100,6 @@ export default function IntegrationsSettings() {
                           </div>
                         );
                       })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Show manage modal for Slack workspaces */}
-            {showManageModal && managePlatform === 'slack' && (
-              <Card className="col-span-full">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Manage Slack Workspaces</CardTitle>
-                      <CardDescription>View and manage all connected workspaces</CardDescription>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowManageModal(false)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {slackIntegrations.map((integration) => {
-                      const dateAdded = integration.dateAdded ? new Date(integration.dateAdded) : null;
-
-                      return (
-                        <div
-                          key={integration.id}
-                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                        >
-                          <div className="flex items-start gap-3 flex-1">
-                            <img
-                              src={getPlaceholderAvatar('slack', integration.name)}
-                              alt={integration.name}
-                              className="w-12 h-12 rounded-full"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <p className="font-medium text-gray-900">{integration.name}</p>
-                                <Badge variant="default" className="bg-green-500 text-xs">
-                                  Active
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-gray-500 mb-2">ID: {integration.id}</p>
-                              {dateAdded && (
-                                <p className="text-xs text-gray-400">
-                                  Connected: {dateAdded.toLocaleDateString()}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => disconnectSlackWorkspace(integration)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                          </div>
-                        </div>
-                      );
-                    })}
                   </div>
                 </CardContent>
               </Card>
