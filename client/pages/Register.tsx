@@ -116,14 +116,6 @@ export default function Register() {
     }
   ];
 
-  // Auto-advance carousel
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % carouselStates.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [carouselStates.length]);
-
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % carouselStates.length);
   };
