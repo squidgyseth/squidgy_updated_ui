@@ -443,23 +443,6 @@ function BetaAgreementContent() {
           <li><strong>You agree to receive communications from us regarding the Service</strong></li>
         </ul>
 
-        <div className="mt-6 p-4 bg-white border border-gray-300 rounded">
-          <p className="text-sm text-gray-700 mb-3">To complete registration, you must confirm your acceptance by checking the boxes on the registration form:</p>
-          <div className="space-y-2 text-sm">
-            <div className="flex items-start gap-2">
-              <div className="mt-0.5 w-4 h-4 border-2 border-gray-400 rounded flex items-center justify-center text-gray-400">☐</div>
-              <span>I have read and agree to the Beta User Agreement and Privacy Policy</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="mt-0.5 w-4 h-4 border-2 border-gray-400 rounded flex items-center justify-center text-gray-400">☐</div>
-              <span>I consent to my content being processed by AI services as described in the Agreement</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="mt-0.5 w-4 h-4 border-2 border-gray-400 rounded flex items-center justify-center text-gray-400">☐</div>
-              <span>I'd like to receive marketing communications and product updates (optional)</span>
-            </div>
-          </div>
-        </div>
 
         <div className="mt-6 pt-6 border-t border-gray-300">
           <p className="text-sm text-gray-600">
