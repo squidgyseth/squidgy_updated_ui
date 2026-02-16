@@ -511,44 +511,20 @@ export default function Register() {
           )}
         </div>
 
-        {/* Navigation and Trust Indicators */}
-        <div>
-          {/* Navigation Controls */}
-          <div className="flex justify-center gap-4 mb-8">
-            <button
-              onClick={prevSlide}
-              className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-            >
-              <ChevronLeft size={20} strokeWidth={1.67} />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-            >
-              <ChevronRight size={20} strokeWidth={1.67} />
-            </button>
-          </div>
-
-          {/* Trust Indicators */}
-          <div>
-            <p className="text-center text-white/80 text-[15px] mb-4 font-['Open_Sans']">
-              Trusted by teams worldwide
-            </p>
-            <div className="flex justify-center items-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#05DF72]"></div>
-                <span className="text-white text-[14px] font-['Open_Sans']">99.9% Uptime</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#51A2FF]"></div>
-                <span className="text-white text-[14px] font-['Open_Sans']">Secure & private</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#C27AFF]"></div>
-                <span className="text-white text-[14px] font-['Open_Sans']">24/7 Support</span>
-              </div>
-            </div>
-          </div>
+        {/* Navigation Controls */}
+        <div className="flex justify-center gap-4 pb-4">
+          <button
+            onClick={prevSlide}
+            className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+          >
+            <ChevronLeft size={20} strokeWidth={1.67} />
+          </button>
+          <button
+            onClick={nextSlide}
+            className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+          >
+            <ChevronRight size={20} strokeWidth={1.67} />
+          </button>
         </div>
       </div>
 
