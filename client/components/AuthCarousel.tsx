@@ -121,7 +121,7 @@ export default function AuthCarousel() {
                 className="w-full h-full border-0"
                 title="Squidgy Game"
                 allow="autoplay; fullscreen; clipboard-write"
-                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals"
               />
             </div>
           </div>
