@@ -7,7 +7,7 @@ import { useAdmin } from '../../hooks/useAdmin';
 import { supabase } from '../../lib/supabase';
 import { 
   Users, Search, ChevronLeft, ChevronRight, Shield, ShieldOff, 
-  Trash2, Edit2, X, Check, ArrowLeft, Filter, ArrowUpDown, Building2, Bot
+  Trash2, Edit2, X, Check, ArrowLeft, Filter, ArrowUpDown, Building2, Bot, Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ALL_AGENTS, AgentConfig } from '../../data/agents';
@@ -1129,17 +1129,21 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {profileFields
                         .filter(([key]) => booleanFields.includes(key))
-                        .map(([key]) => (
-                          <label key={key} className="flex items-center gap-2 cursor-pointer text-sm">
-                            <input
-                              type="checkbox"
-                              checked={Boolean(profileData[key])}
-                              onChange={(e) => handleFieldChange(key, e.target.checked)}
-                              className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                            />
-                            <span className="text-gray-700">{formatFieldName(key)}</span>
-                          </label>
-                        ))}
+                        .map(([key]) => {
+                          const isEditable = key === 'notifications_enabled' || key === 'email_confirmed';
+                          return (
+                            <label key={key} className={`flex items-center gap-2 text-sm ${isEditable ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
+                              <input
+                                type="checkbox"
+                                checked={Boolean(profileData[key])}
+                                onChange={isEditable ? (e) => handleFieldChange(key, e.target.checked) : undefined}
+                                disabled={!isEditable}
+                                className={`w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 ${isEditable ? '' : 'cursor-not-allowed opacity-60'}`}
+                              />
+                              <span className={isEditable ? 'text-gray-700' : 'text-gray-500'}>{formatFieldName(key)}</span>
+                            </label>
+                          );
+                        })}
                     </div>
                   </div>
                 </div>
@@ -1198,7 +1202,20 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-gray-900">Business Information</h3>
                     {businessSettings.id && (
-                      <span className="text-xs text-gray-400">ID: {businessSettings.id}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400">Business ID: {businessSettings.id}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(businessSettings.id || '');
+                            toast.success('Business ID copied');
+                          }}
+                          className="p-1 hover:bg-gray-100 rounded transition-colors"
+                          title="Copy Business ID"
+                        >
+                          <Copy className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                        </button>
+                      </div>
                     )}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
