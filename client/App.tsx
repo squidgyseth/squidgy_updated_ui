@@ -88,6 +88,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminActivity from "./pages/admin/AdminActivity";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import { AdminRoute } from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
@@ -404,6 +405,11 @@ const App = () => (
           <Route path="/admin/activity" element={
             <AdminRoute>
               <AdminActivity />
+            </AdminRoute>
+          } />
+          <Route path="/admin/analytics" element={
+            <AdminRoute>
+              <AdminAnalytics />
             </AdminRoute>
           } />
           

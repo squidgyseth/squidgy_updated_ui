@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
 import { useAdmin } from '../../hooks/useAdmin';
 import { supabase } from '../../lib/supabase';
-import { Users, MessageSquare, Bot, TrendingUp, Settings, Activity, Shield } from 'lucide-react';
+import { Users, MessageSquare, Bot, TrendingUp, Settings, Activity, Shield, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PlatformStats {
@@ -131,6 +131,13 @@ export default function AdminDashboard() {
       icon: Users,
       link: '/admin/users',
       color: 'bg-blue-100 text-blue-600',
+    },
+    {
+      title: 'User Analytics',
+      description: 'View PostHog analytics dashboard',
+      icon: BarChart3,
+      link: '/admin/analytics',
+      color: 'bg-indigo-100 text-indigo-600',
     },
     {
       title: 'Platform Settings',
