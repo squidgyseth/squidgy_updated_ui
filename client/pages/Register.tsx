@@ -476,11 +476,11 @@ export default function Register() {
         <div className="flex-1 flex flex-col items-center justify-center text-center">
           {carouselStates[currentSlide].type === 'game' ? (
             /* Game Slide - Fill available space */
-            <div className="w-full h-full flex flex-col px-4 md:px-8">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 md:mb-6 leading-tight font-['Open_Sans']">
+            <div className="w-full h-full flex flex-col px-4 md:px-8 pt-4">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8 leading-tight font-['Open_Sans']">
                 {carouselStates[currentSlide].title}
               </h2>
-              <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl">
+              <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl mb-6">
                 <iframe
                   src={GAME_URL}
                   className="w-full h-full border-0"
