@@ -343,10 +343,10 @@ export default function Login() {
           {carouselStates[currentSlide].type === 'game' ? (
             /* Game Slide - Fill available space */
             <div className="w-full h-full flex flex-col px-4 md:px-8 pt-4">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 leading-tight font-['Open_Sans']">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8 leading-tight font-['Open_Sans']">
                 {carouselStates[currentSlide].title}
               </h2>
-              <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl">
+              <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl mb-6">
                 <iframe
                   src={GAME_URL}
                   className="w-full h-full border-0"
@@ -378,7 +378,7 @@ export default function Login() {
         </div>
 
         {/* Navigation Controls */}
-        <div className="flex justify-center gap-4 pt-6 pb-8">
+        <div className="flex justify-center gap-4 pb-4">
           <button
             onClick={prevSlide}
             className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
