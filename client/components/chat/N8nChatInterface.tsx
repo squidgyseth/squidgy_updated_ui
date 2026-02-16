@@ -6,6 +6,7 @@ import HTMLPreview from './HTMLPreview';
 import SocialMediaPreview from './SocialMediaPreview';
 import EnableContentRepurposerButton from './EnableContentRepurposerButton';
 import FileMessage from './FileMessage';
+import ChatMessageBubble from './ChatMessageBubble';
 import { sendToN8nWorkflowStreaming, generateRequestId, generateSessionId } from '../../lib/n8nService';
 import { ChatHistoryService } from '../../services/chatHistoryService';
 import { FileUploadService } from '../../services/fileUploadService';
