@@ -120,7 +120,7 @@ export default function AuthCarousel() {
                 src={GAME_URL}
                 className="w-full h-full border-0"
                 title="Squidgy Game"
-                allow="autoplay; fullscreen"
+                allow="autoplay; fullscreen; clipboard-write"
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
               />
             </div>
