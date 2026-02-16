@@ -199,7 +199,16 @@ export default function Register() {
       }
     } catch (error: any) {
       console.error('❌ REGISTER: Error during signup:', error);
-      toast.error(error.message || 'Registration failed');
+      
+      // If email already exists, redirect to forgot password
+      if (error.message?.includes('already exists')) {
+        toast.error('An account with this email already exists. Redirecting to password reset...');
+        setTimeout(() => {
+          navigate('/forgot-password', { state: { email } });
+        }, 1500);
+      } else {
+        toast.error(error.message || 'Registration failed');
+      }
     } finally {
       setLoading(false);
     }

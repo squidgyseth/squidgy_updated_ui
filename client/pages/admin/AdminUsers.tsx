@@ -8,7 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { 
   Users, Search, ChevronLeft, ChevronRight, Shield, ShieldOff, 
   Trash2, Edit2, X, Check, ArrowLeft, Filter, ArrowUpDown, Building2, Bot, Copy,
-  MessageSquare, Clock, User as UserIcon, History, Hash
+  MessageSquare, Clock, User as UserIcon, History, Hash, Mail, KeyRound, Send
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ALL_AGENTS, AgentConfig } from '../../data/agents';
@@ -74,6 +74,9 @@ export default function AdminUsers() {
   const [filterRole, setFilterRole] = useState<FilterRole>('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('');
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Auth email verification status (from Supabase auth table)
+  const [authEmailStatus, setAuthEmailStatus] = useState<Record<string, boolean>>({});
 
   const loadUsers = useCallback(async () => {
     if (!userId) return;
@@ -121,6 +124,26 @@ export default function AdminUsers() {
     }
   }, [userId, page, pageSize, search, sortField, sortOrder, filterRole, filterStatus]);
 
+  // Load auth email verification status from Supabase auth table
+  const loadAuthEmailStatus = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_all_users_email_verified');
+      if (error) {
+        console.error('Error loading auth email status:', error);
+        return;
+      }
+      if (data && data.length > 0) {
+        const statusMap: Record<string, boolean> = {};
+        data.forEach((row: { user_id: string; auth_email_confirmed: boolean }) => {
+          statusMap[row.user_id] = row.auth_email_confirmed;
+        });
+        setAuthEmailStatus(statusMap);
+      }
+    } catch (error) {
+      console.error('Error loading auth email status:', error);
+    }
+  }, []);
+
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
       navigate('/dashboard');
@@ -129,8 +152,9 @@ export default function AdminUsers() {
 
     if (userId && isAdmin) {
       loadUsers();
+      loadAuthEmailStatus();
     }
-  }, [userId, isAdmin, adminLoading, navigate, loadUsers]);
+  }, [userId, isAdmin, adminLoading, navigate, loadUsers, loadAuthEmailStatus]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -380,7 +404,10 @@ export default function AdminUsers() {
                     Status
                   </th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email Verified
+                    Profile Verified
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Auth Verified
                   </th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Created
@@ -393,7 +420,7 @@ export default function AdminUsers() {
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex justify-center">
                         <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
                       </div>
@@ -401,7 +428,7 @@ export default function AdminUsers() {
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                       No users found
                     </td>
                   </tr>
@@ -445,13 +472,32 @@ export default function AdminUsers() {
                         {user.email_confirmed ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
                             <Check className="w-3 h-3" />
-                            Verified
+                            Yes
                           </span>
                         ) : (
                           <span className="inline-flex px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
-                            Pending
+                            No
                           </span>
                         )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {(() => {
+                          const authStatus = authEmailStatus[user.id] ?? authEmailStatus[user.user_id];
+                          return authStatus === true ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                              <Check className="w-3 h-3" />
+                              Yes
+                            </span>
+                          ) : authStatus === false ? (
+                            <span className="inline-flex px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
+                              No
+                            </span>
+                          ) : (
+                            <span className="inline-flex px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
+                              -
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {user.created_at
@@ -1188,6 +1234,53 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                 </div>
               )}
               
+              {/* Email Actions Section */}
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Email Actions</h3>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+                          redirectTo: `${window.location.origin}/reset-password`
+                        });
+                        if (error) throw error;
+                        toast.success(`Password reset email sent to ${user.email}`);
+                      } catch (error: any) {
+                        toast.error(error.message || 'Failed to send password reset email');
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                    Send Password Reset
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const { error } = await supabase.auth.signInWithOtp({
+                          email: user.email,
+                          options: {
+                            shouldCreateUser: false
+                          }
+                        });
+                        if (error) throw error;
+                        toast.success(`Magic link sent to ${user.email}`);
+                      } catch (error: any) {
+                        console.error('Magic link error:', error);
+                        toast.error(error.message || 'Failed to send magic link');
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    <Mail className="w-4 h-4" />
+                    Send Magic Link
+                  </button>
+                </div>
+              </div>
+
               {/* Timestamp Info Section (Read-only) - Compact */}
               {profileFields.some(([key]) => timestampFields.includes(key)) && (
                 <div className="border-t border-gray-200 pt-6">
