@@ -108,19 +108,21 @@ const AuthHandler = () => {
       const refreshToken = urlParams.get('refresh_token');
 
 
-      // Only redirect if we're on the root path with auth parameters
-      if (location.pathname === '/' && (code || accessToken) && !error) {
+      // Handle auth parameters on root path or login page
+      if ((location.pathname === '/' || location.pathname === '/login') && (code || accessToken || type) && !error) {
         
         if (type === 'recovery') {
           // Password reset flow
           navigate('/reset-password' + location.search, { replace: true });
         } else if (type === 'signup') {
-          // Signup confirmation flow
-          navigate('/login' + location.search, { replace: true });
+          // Email verification confirmation flow
+          sessionStorage.setItem('email_verified', 'true');
+          navigate('/login', { replace: true });
         } else if (code || accessToken) {
-          // Generic auth callback - could be either, check for password reset indicators
-          // If no specific type, default to login page
-          navigate('/login' + location.search, { replace: true });
+          // Generic auth callback - could be email verification or magic link
+          // Set flag in case it's email verification
+          sessionStorage.setItem('email_verified', 'true');
+          navigate('/login', { replace: true });
         }
       }
       

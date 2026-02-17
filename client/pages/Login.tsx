@@ -49,16 +49,31 @@ export default function Login() {
   const handleResendVerification = async () => {
     setSendingVerification(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      // Use resend with type 'signup' to resend the actual email verification link
+      // This marks email_confirmed_at in auth.users when clicked
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
         email: email.toLowerCase(),
         options: {
-          shouldCreateUser: false,
           emailRedirectTo: `${import.meta.env.VITE_FRONTEND_URL}/login`
         }
       });
       
       if (error) {
-        toast.error('Failed to send verification email. Please try again.');
+        // If resend fails (e.g., user already confirmed), try magic link as fallback
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: email.toLowerCase(),
+          options: {
+            shouldCreateUser: false,
+            emailRedirectTo: `${import.meta.env.VITE_FRONTEND_URL}/login`
+          }
+        });
+        
+        if (otpError) {
+          toast.error('Failed to send verification email. Please try again.');
+        } else {
+          toast.success('Verification email sent! Please check your inbox.');
+        }
       } else {
         toast.success('Verification email sent! Please check your inbox.');
       }
