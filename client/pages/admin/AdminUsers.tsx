@@ -404,10 +404,7 @@ export default function AdminUsers() {
                     Status
                   </th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Profile Verified
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Auth Verified
+                    Email Verified
                   </th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Created
@@ -420,7 +417,7 @@ export default function AdminUsers() {
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="flex justify-center">
                         <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
                       </div>
@@ -428,7 +425,7 @@ export default function AdminUsers() {
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                       No users found
                     </td>
                   </tr>
@@ -469,28 +466,16 @@ export default function AdminUsers() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        {user.email_confirmed ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                            <Check className="w-3 h-3" />
-                            Yes
-                          </span>
-                        ) : (
-                          <span className="inline-flex px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
-                            No
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
                         {(() => {
                           const authStatus = authEmailStatus[user.id] ?? authEmailStatus[user.user_id];
                           return authStatus === true ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
                               <Check className="w-3 h-3" />
-                              Yes
+                              Verified
                             </span>
                           ) : authStatus === false ? (
                             <span className="inline-flex px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
-                              No
+                              Pending
                             </span>
                           ) : (
                             <span className="inline-flex px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
@@ -707,7 +692,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   
   // Fields that are boolean (shown as checkboxes)
   const booleanFields = [
-    'is_deleted', 'email_confirmed', 'terms_accepted', 'terms_read', 'onboarding_completed',
+    'is_deleted', 'terms_accepted', 'terms_read', 'onboarding_completed',
     'ai_processing_consent', 'marketing_consent', 'terms_viewed', 'terms_scrolled_to_bottom',
     'privacy_scrolled_to_bottom', 'privacy_viewed', 'notifications_enabled'
   ];
@@ -727,7 +712,6 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   };
   
   // Boolean fields that have associated timestamp fields (auto-update when toggled)
-  // Note: email_confirmed_at doesn't exist in profiles table, so email_confirmed is excluded
   const booleanTimestampPairs: Record<string, string> = {
     terms_accepted: 'terms_accepted_at',
     terms_read: 'terms_read_at',
@@ -1215,7 +1199,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                       {profileFields
                         .filter(([key]) => booleanFields.includes(key))
                         .map(([key]) => {
-                          const isEditable = key === 'notifications_enabled' || key === 'email_confirmed';
+                          const isEditable = key === 'notifications_enabled';
                           return (
                             <label key={key} className={`flex items-center gap-2 text-sm ${isEditable ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
                               <input

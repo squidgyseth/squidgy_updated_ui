@@ -305,26 +305,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
               } catch (profileError) {
               }
               
-              // If this is an email confirmation and we have a profile, update email_confirmed using direct API
-              if (isEmailConfirmation && userProfile) {
-                try {
-                  
-                  const updateResult = await profilesApi.updateById(userProfile.id, { 
-                    email_confirmed: true,
-                    updated_at: new Date().toISOString()
-                  });
-                  
-                  if (updateResult.error) {
-                    console.error('❌ USER_PROVIDER: Failed to update email_confirmed:', updateResult.error);
-                  } else {
-                    // Update the local profile object
-                    userProfile = { ...userProfile, email_confirmed: true };
-                  }
-                } catch (confirmError) {
-                  console.error('❌ USER_PROVIDER: Error updating email confirmation:', confirmError);
-                }
-              }
-              
               setIsAuthenticated(true);
               setUser(authUser);
               setProfile(userProfile);

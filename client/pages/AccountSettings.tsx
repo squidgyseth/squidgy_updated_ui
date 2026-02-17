@@ -178,7 +178,6 @@ export default function AccountSettings() {
         // Set defaults for new profiles
         company_id: profile?.company_id || crypto.randomUUID(),
         role: profile?.role || 'member',
-        email_confirmed: profile?.email_confirmed || true,
         created_at: profile?.created_at || new Date().toISOString()
       };
       
