@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from './useUser';
-import { supabase } from '../lib/supabase';
+import { profilesApi } from '../lib/supabase-api';
 
 interface UseAdminReturn {
   isAdmin: boolean;
@@ -28,19 +28,18 @@ export const useAdmin = (): UseAdminReturn => {
       setIsLoading(true);
       setError(null);
       
-      // Check admin status directly from Supabase profiles table
-      const { data, error: supabaseError } = await supabase
-        .from('profiles')
-        .select('is_super_admin')
-        .eq('user_id', userId)
-        .single();
+      // Check admin status using profilesApi to avoid 406 errors from .single()
+      const { data, error: apiError } = await profilesApi.getByUserId(userId);
       
-      if (supabaseError) {
-        console.error('Error checking admin status:', supabaseError);
-        setError(supabaseError.message);
+      if (apiError) {
+        console.error('Error checking admin status:', apiError);
+        setError(apiError.message);
         setIsAdmin(false);
+      } else if (data) {
+        setIsAdmin(data.is_super_admin === true);
       } else {
-        setIsAdmin(data?.is_super_admin === true);
+        // No profile found
+        setIsAdmin(false);
       }
     } catch (err: any) {
       console.error('Error checking admin status:', err);
