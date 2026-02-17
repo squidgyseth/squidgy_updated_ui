@@ -99,28 +99,46 @@ const AuthHandler = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const handleAuthRedirect = () => {
+    const handleAuthRedirect = async () => {
+      // Check both query params and hash fragment (Supabase uses hash for tokens)
       const urlParams = new URLSearchParams(location.search);
+      const hashParams = new URLSearchParams(location.hash.replace('#', ''));
+      
       const code = urlParams.get('code');
-      const error = urlParams.get('error');
-      const type = urlParams.get('type');
-      const accessToken = urlParams.get('access_token');
-      const refreshToken = urlParams.get('refresh_token');
-
+      const error = urlParams.get('error') || hashParams.get('error');
+      const type = urlParams.get('type') || hashParams.get('type');
+      const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token') || hashParams.get('refresh_token');
 
       // Handle auth parameters on root path or login page
       if ((location.pathname === '/' || location.pathname === '/login') && (code || accessToken || type) && !error) {
         
+        // If we have tokens in hash, let Supabase process them first
+        if (accessToken && refreshToken) {
+          try {
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            
+            if (!sessionError) {
+              // Session set successfully - email is now verified
+              sessionStorage.setItem('email_verified', 'true');
+            }
+          } catch (e) {
+            console.error('Failed to set session from tokens:', e);
+          }
+        }
+        
         if (type === 'recovery') {
           // Password reset flow
-          navigate('/reset-password' + location.search, { replace: true });
-        } else if (type === 'signup') {
+          navigate('/reset-password', { replace: true });
+        } else if (type === 'signup' || accessToken) {
           // Email verification confirmation flow
           sessionStorage.setItem('email_verified', 'true');
           navigate('/login', { replace: true });
-        } else if (code || accessToken) {
-          // Generic auth callback - could be email verification or magic link
-          // Set flag in case it's email verification
+        } else if (code) {
+          // Code-based auth callback
           sessionStorage.setItem('email_verified', 'true');
           navigate('/login', { replace: true });
         }
@@ -131,6 +149,10 @@ const AuthHandler = () => {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
           navigate('/reset-password', { replace: true });
+        }
+        // Also handle successful sign in from email verification
+        if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+          sessionStorage.setItem('email_verified', 'true');
         }
       });
 
