@@ -49,7 +49,7 @@ export default function Index() {
   const [enabledAgentIds, setEnabledAgentIds] = useState<string[]>([]);
   const navigate = useNavigate();
   const { companyName, isLoading } = useCompanyBranding();
-  const { user, userId, profile } = useUser();
+  const { user, userId, profile, isReady } = useUser();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
   // Check if we should show onboarding modal - SIMPLE LOGIC
@@ -103,7 +103,8 @@ export default function Index() {
   // Fetch enabled agents from assistant_personalizations
   useEffect(() => {
     const fetchEnabledAgents = async () => {
-      if (!userId) return;
+      // Wait for auth to be ready before fetching agents
+      if (!isReady || !userId) return;
 
       try {
         const { data, error } = await supabase
@@ -125,7 +126,7 @@ export default function Index() {
     };
 
     fetchEnabledAgents();
-  }, [userId]);
+  }, [userId, isReady]);
 
   const desktopLayout = (
     <div className="h-screen overflow-y-auto bg-white">
