@@ -369,14 +369,10 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   }, []);
 
   const setUserId = (newUserId: string) => {
-    console.trace('🚨 Call stack for setUserId:');
-    
     // Don't update if it's the same user ID to prevent unnecessary re-renders
     if (newUserId === userId) {
       return;
     }
-    
-    // Log the setUserId call for debugging
     
     setUserIdState(newUserId);
     localStorage.setItem('squidgy_user_id', newUserId);
