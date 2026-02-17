@@ -32,15 +32,32 @@ export default function Login() {
 
   // Modal state for Terms/Privacy
 
-  // Check if user arrived after email confirmation
+  // Check if user arrived after email confirmation or is already logged in
   useEffect(() => {
-    const emailVerified = sessionStorage.getItem('email_verified');
+    const checkAuthState = async () => {
+      const emailVerified = sessionStorage.getItem('email_verified');
+      
+      if (emailVerified === 'true') {
+        sessionStorage.removeItem('email_verified');
+        toast.success('Email verified successfully!');
+        
+        // Check if user is already logged in from verification
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          // User is already logged in from verification link
+          const loggedInUserId = session.user.id;
+          setUserId(loggedInUserId);
+          
+          // Route to appropriate page
+          const routeDecision = await onboardingRouter.determineLoginRoute(loggedInUserId);
+          navigate(routeDecision.redirectPath, { replace: true });
+          return;
+        }
+      }
+    };
     
-    if (emailVerified === 'true') {
-      sessionStorage.removeItem('email_verified');
-      toast.success('Email verified successfully!');
-    }
-  }, []);
+    checkAuthState();
+  }, [navigate, setUserId]);
 
   const handleGoogleLogin = () => {
     // TODO: Implement Google OAuth
