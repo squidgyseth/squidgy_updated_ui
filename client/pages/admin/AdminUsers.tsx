@@ -8,7 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { 
   Users, Search, ChevronLeft, ChevronRight, Shield, ShieldOff, 
   Trash2, Edit2, X, Check, ArrowLeft, Filter, ArrowUpDown, Building2, Bot, Copy,
-  MessageSquare, Clock, User as UserIcon, History, Hash, Mail, KeyRound, Send
+  MessageSquare, Clock, User as UserIcon, History, Hash, Mail, KeyRound, Send, BarChart3
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ALL_AGENTS, AgentConfig } from '../../data/agents';
@@ -65,6 +65,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [chatHistoryUser, setChatHistoryUser] = useState<UserProfile | null>(null);
+  const [activityUser, setActivityUser] = useState<UserProfile | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   
   // Filtering & Sorting
@@ -520,6 +521,13 @@ export default function AdminUsers() {
                             <History className="w-4 h-4" />
                           </button>
                           <button
+                            onClick={() => setActivityUser(user)}
+                            className="p-2 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors"
+                            title="View PostHog activity"
+                          >
+                            <BarChart3 className="w-4 h-4" />
+                          </button>
+                          <button
                             onClick={() => setEditingUser(user)}
                             className="p-2 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
                             title="Edit user"
@@ -605,6 +613,14 @@ export default function AdminUsers() {
           user={editingUser}
           onClose={() => setEditingUser(null)}
           onSave={(updates) => handleUpdateUser(editingUser, updates)}
+        />
+      )}
+
+      {/* PostHog Activity Modal */}
+      {activityUser && (
+        <PostHogActivityModal
+          user={activityUser}
+          onClose={() => setActivityUser(null)}
         />
       )}
     </div>
@@ -1911,6 +1927,246 @@ function ChatHistoryModal({ user, onClose }: ChatHistoryModalProps) {
             <div className="text-center py-12 text-gray-500">
               <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
               <p>No chat history found for this user</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// PostHog Activity Modal Component
+interface PostHogActivityModalProps {
+  user: UserProfile;
+  onClose: () => void;
+}
+
+function PostHogActivityModal({ user, onClose }: PostHogActivityModalProps) {
+  const [loading, setLoading] = useState(true);
+  const [activityData, setActivityData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+
+  useEffect(() => {
+    const fetchActivity = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch(
+          `${BACKEND_URL}/api/admin/analytics/user-activity?email=${encodeURIComponent(user.email)}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch user activity');
+        }
+
+        const data = await response.json();
+        console.log('📊 PostHog activity data received:', data);
+        console.log('🆔 Person ID:', data.person_id);
+        setActivityData(data);
+      } catch (err: any) {
+        console.error('Error fetching PostHog activity:', err);
+        setError(err.message || 'Failed to load activity data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivity();
+  }, [user.email]);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <BarChart3 className="w-6 h-6 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">User Activity</h2>
+              <p className="text-sm text-gray-500">{user.email}</p>
+              {activityData?.person_id && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-gray-400 font-mono">
+                    PostHog ID: {activityData.person_id}
+                  </span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(activityData.person_id);
+                      toast.success('PostHog ID copied!');
+                    }}
+                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    title="Copy PostHog ID"
+                  >
+                    <Copy className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading activity data...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to Load Activity</h3>
+              <p className="text-gray-500 mb-4">{error}</p>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          ) : activityData ? (
+            <div className="space-y-6">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-blue-600 font-medium">Total Events</p>
+                      <p className="text-2xl font-bold text-blue-900 mt-1">
+                        {activityData.total_events || 0}
+                      </p>
+                    </div>
+                    <BarChart3 className="w-8 h-8 text-blue-600 opacity-50" />
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-purple-600 font-medium">Sessions</p>
+                      <p className="text-2xl font-bold text-purple-900 mt-1">
+                        {activityData.session_count || 0}
+                      </p>
+                    </div>
+                    <Clock className="w-8 h-8 text-purple-600 opacity-50" />
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-green-600 font-medium">Last Seen</p>
+                      <p className="text-sm font-semibold text-green-900 mt-1">
+                        {activityData.last_seen 
+                          ? new Date(activityData.last_seen).toLocaleDateString()
+                          : 'Never'}
+                      </p>
+                    </div>
+                    <UserIcon className="w-8 h-8 text-green-600 opacity-50" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Events */}
+              {activityData.recent_events && activityData.recent_events.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Events</h3>
+                  <div className="space-y-2">
+                    {activityData.recent_events.map((event: any, index: number) => {
+                      // Extract session recording URL from properties
+                      const sessionId = event.properties?.$session_id;
+                      const recordingUrl = sessionId 
+                        ? `https://us.posthog.com/replay/${sessionId}`
+                        : null;
+                      
+                      return (
+                        <div
+                          key={index}
+                          className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3">
+                                <span className="font-medium text-gray-900">{event.event}</span>
+                                {recordingUrl && (
+                                  <a
+                                    href={recordingUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Watch Recording
+                                  </a>
+                                )}
+                              </div>
+                              {event.properties?.current_url && (
+                                <div className="mt-1 text-xs text-gray-500 truncate max-w-md">
+                                  {event.properties.current_url}
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500 whitespace-nowrap ml-4">
+                              {event.timestamp 
+                                ? new Date(event.timestamp).toLocaleString()
+                                : 'Unknown'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* View in PostHog Link */}
+              <div className="border-t border-gray-200 pt-4">
+                {activityData.person_id ? (
+                  <a
+                    href={`https://eu.posthog.com/project/95299/persons/${activityData.person_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium"
+                  >
+                    View full details in PostHog
+                    <ArrowLeft className="w-4 h-4 rotate-180" />
+                  </a>
+                ) : (
+                  <a
+                    href={`https://eu.posthog.com/persons?q=${encodeURIComponent(user.email)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium"
+                  >
+                    View full details in PostHog
+                    <ArrowLeft className="w-4 h-4 rotate-180" />
+                  </a>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <p>No activity data available</p>
             </div>
           )}
         </div>
