@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Mail, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { signIn } from '../lib/api';
+import { supabase } from '../lib/supabase';
 import { useUser } from "@/hooks/useUser";
 import { onboardingRouter } from "@/services/onboardingRouter";
 import { linkScoresToUser, getGameHistory } from '@/services/anonymousPlayer';
@@ -26,6 +27,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showVerificationPanel, setShowVerificationPanel] = useState(false);
+  const [sendingVerification, setSendingVerification] = useState(false);
 
   // Modal state for Terms/Privacy
 
@@ -43,6 +46,35 @@ export default function Login() {
     // TODO: Implement Google OAuth
   };
 
+  const handleResendVerification = async () => {
+    setSendingVerification(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.toLowerCase(),
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${import.meta.env.VITE_FRONTEND_URL}/login`
+        }
+      });
+      
+      if (error) {
+        toast.error('Failed to send verification email. Please try again.');
+      } else {
+        toast.success('Verification email sent! Please check your inbox.');
+      }
+    } catch (error) {
+      toast.error('Failed to send verification email. Please try again.');
+    } finally {
+      setSendingVerification(false);
+    }
+  };
+
+  const handleChangeEmail = () => {
+    setShowVerificationPanel(false);
+    setEmail("");
+    setPassword("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -52,7 +84,7 @@ export default function Login() {
       const response = await signIn({ email, password });
       
       if (response.needsEmailConfirmation) {
-        toast.info('Please check your email and confirm your account before signing in.');
+        setShowVerificationPanel(true);
         return;
       }
       
@@ -121,117 +153,161 @@ export default function Login() {
             />
           </div>
 
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-center text-[#101828] mb-2 font-['Open_Sans']">
-              Welcome back
-            </h1>
-            <p className="text-[15px] text-center text-[#4A5565] font-['Open_Sans']">
-              Sign in to your Squidgy account
-            </p>
-          </div>
+          {/* Verification Panel - shown when email not verified */}
+          {showVerificationPanel ? (
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-8 h-8 text-[#5E17EB]" />
+                </div>
+                <h2 className="text-xl font-bold text-[#101828] mb-2 font-['Open_Sans']">
+                  Email Verification Required
+                </h2>
+                <p className="text-[15px] text-[#4A5565] font-['Open_Sans']">
+                  Your email <span className="font-semibold">{email}</span> hasn't been verified yet.
+                </p>
+              </div>
 
-          {/* Google Sign In */}
-          <button
-            type="button"
-            disabled
-            className="w-full flex items-center justify-center gap-3 px-[17px] py-[13px] border border-[#E5E7EB] rounded-[10px] mb-3 bg-gray-100 cursor-not-allowed opacity-60"
-          >
-            <GoogleIcon />
-            <span className="text-[15px] text-[#9CA3AF] font-['Open_Sans']">Continue with Google</span>
-          </button>
-
-          {/* Divider */}
-          <div className="relative my-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#D1D5DC]"></div>
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-white px-2 text-[13px] text-[#6A7282] font-['Open_Sans']">
-                or login using email
-              </span>
-            </div>
-          </div>
-
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Field */}
-            <div>
-              <label className="block text-[14px] text-[#364153] mb-1 font-['Open_Sans']">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                className="w-full px-[13px] py-4 border border-[#D1D5DC] rounded-[10px] text-[15px] placeholder:text-[rgba(10,10,10,0.5)] font-['Open_Sans'] focus:outline-none focus:ring-2 focus:ring-[#5E17EB] focus:border-transparent"
-                required
-              />
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <label className="block text-[14px] text-[#364153] mb-1 font-['Open_Sans']">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full px-[13px] py-4 pr-12 border border-[#D1D5DC] rounded-[10px] text-[15px] placeholder:text-[rgba(10,10,10,0.5)] font-['Open_Sans'] focus:outline-none focus:ring-2 focus:ring-[#5E17EB] focus:border-transparent"
-                  required
-                />
+              <div className="space-y-3">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#99A1AF]"
+                  onClick={handleResendVerification}
+                  disabled={sendingVerification}
+                  className="w-full px-4 py-3 rounded-[10px] bg-gradient-to-r from-[#FB252A] to-[#6017E8] text-white font-bold text-[15px] font-['Open_Sans'] hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {showPassword ? (
-                    <EyeOff size={20} />
-                  ) : (
-                    <Eye size={20} />
-                  )}
+                  <Mail size={18} />
+                  {sendingVerification ? "Sending..." : "Resend Verification Email"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleChangeEmail}
+                  className="w-full px-4 py-3 rounded-[10px] border border-[#D1D5DC] text-[#364153] font-bold text-[15px] font-['Open_Sans'] hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <ArrowLeft size={18} />
+                  Use a Different Email
                 </button>
               </div>
-            </div>
 
-            {/* Forgot Password */}
-            <div className="flex justify-end">
+              <p className="text-[13px] text-center text-[#6A7282] font-['Open_Sans']">
+                Didn't receive the email? Check your spam folder or try resending.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Header */}
+              <div className="mb-8">
+                <h1 className="text-2xl font-bold text-center text-[#101828] mb-2 font-['Open_Sans']">
+                  Welcome back
+                </h1>
+                <p className="text-[15px] text-center text-[#4A5565] font-['Open_Sans']">
+                  Sign in to your Squidgy account
+                </p>
+              </div>
+
+              {/* Google Sign In */}
               <button
                 type="button"
-                onClick={() => navigate('/forgot-password')}
-                className="text-[13px] font-bold text-[#5E17EB] font-['Open_Sans'] hover:underline"
+                disabled
+                className="w-full flex items-center justify-center gap-3 px-[17px] py-[13px] border border-[#E5E7EB] rounded-[10px] mb-3 bg-gray-100 cursor-not-allowed opacity-60"
               >
-                Forgot Password?
+                <GoogleIcon />
+                <span className="text-[15px] text-[#9CA3AF] font-['Open_Sans']">Continue with Google</span>
               </button>
-            </div>
 
-            {/* Login Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full px-4 py-3 rounded-[10px] bg-gradient-to-r from-[#FB252A] to-[#6017E8] text-white font-bold text-[15px] font-['Open_Sans'] hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              {loading ? "Signing in..." : "Login"}
-            </button>
-          </form>
+              {/* Divider */}
+              <div className="relative my-5">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#D1D5DC]"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-white px-2 text-[13px] text-[#6A7282] font-['Open_Sans']">
+                    or login using email
+                  </span>
+                </div>
+              </div>
 
-          {/* Sign Up Link */}
-          <div className="text-center mt-6">
-            <span className="text-[14px] text-[#4A5565] font-['Open_Sans']">Don't have account? </span>
-            <button
-              onClick={() => navigate('/register')}
-              className="text-[14px] font-bold text-[#5E17EB] font-['Open_Sans'] hover:underline"
-            >
-              Sign Up
-            </button>
-          </div>
+              {/* Login Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Email Field */}
+                <div>
+                  <label className="block text-[14px] text-[#364153] mb-1 font-['Open_Sans']">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="w-full px-[13px] py-4 border border-[#D1D5DC] rounded-[10px] text-[15px] placeholder:text-[rgba(10,10,10,0.5)] font-['Open_Sans'] focus:outline-none focus:ring-2 focus:ring-[#5E17EB] focus:border-transparent"
+                    required
+                  />
+                </div>
 
-          {/* Terms and Privacy - Reusable Component */}
-          <AuthFooterLinks />
+                {/* Password Field */}
+                <div>
+                  <label className="block text-[14px] text-[#364153] mb-1 font-['Open_Sans']">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className="w-full px-[13px] py-4 pr-12 border border-[#D1D5DC] rounded-[10px] text-[15px] placeholder:text-[rgba(10,10,10,0.5)] font-['Open_Sans'] focus:outline-none focus:ring-2 focus:ring-[#5E17EB] focus:border-transparent"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#99A1AF]"
+                    >
+                      {showPassword ? (
+                        <EyeOff size={20} />
+                      ) : (
+                        <Eye size={20} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Forgot Password */}
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="text-[13px] font-bold text-[#5E17EB] font-['Open_Sans'] hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+
+                {/* Login Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full px-4 py-3 rounded-[10px] bg-gradient-to-r from-[#FB252A] to-[#6017E8] text-white font-bold text-[15px] font-['Open_Sans'] hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {loading ? "Signing in..." : "Login"}
+                </button>
+              </form>
+
+              {/* Sign Up Link */}
+              <div className="text-center mt-6">
+                <span className="text-[14px] text-[#4A5565] font-['Open_Sans']">Don't have account? </span>
+                <button
+                  onClick={() => navigate('/register')}
+                  className="text-[14px] font-bold text-[#5E17EB] font-['Open_Sans'] hover:underline"
+                >
+                  Sign Up
+                </button>
+              </div>
+
+              {/* Terms and Privacy - Reusable Component */}
+              <AuthFooterLinks />
+            </>
+          )}
         </div>
       </div>
 

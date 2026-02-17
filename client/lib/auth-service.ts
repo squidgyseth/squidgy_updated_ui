@@ -500,7 +500,12 @@ export class AuthService {
           throw new Error('Invalid email or password');
         }
         if (authError.message.includes('Email not confirmed')) {
-          throw new Error('Please check your email and click the confirmation link to verify your account before signing in.');
+          // Return needsEmailConfirmation flag instead of throwing error
+          // This allows Login.tsx to show a helpful verification panel
+          return {
+            user: null,
+            needsEmailConfirmation: true
+          };
         }
         if (authError.message.includes('rate limit') || 
             authError.message.includes('too many requests') ||
