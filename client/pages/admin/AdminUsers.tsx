@@ -22,7 +22,6 @@ interface UserProfile {
   full_name?: string;
   role?: string;
   is_super_admin?: boolean;
-  is_deleted?: boolean;
   created_at?: string;
   updated_at?: string;
   phone_number?: string;
@@ -102,11 +101,7 @@ export default function AdminUsers() {
       }
       
       // Add status filter
-      if (filterStatus === 'active') {
-        query = query.or('is_deleted.is.null,is_deleted.eq.false');
-      } else if (filterStatus === 'deleted') {
-        query = query.eq('is_deleted', true);
-      } else if (filterStatus === 'admin') {
+      if (filterStatus === 'admin') {
         query = query.eq('is_super_admin', true);
       }
       
@@ -202,17 +197,28 @@ export default function AdminUsers() {
 
   const handleDeleteUser = async (targetUserId: string) => {
     try {
-      // Soft delete - set is_deleted flag
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_deleted: true })
-        .eq('user_id', targetUserId);
+      // Hard delete - call backend API to remove user from all tables
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://squidgy-backend.onrender.com';
+      const response = await fetch(`${backendUrl}/admin/delete-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: targetUserId,
+          admin_user_id: userId
+        })
+      });
       
-      if (error) throw error;
+      const result = await response.json();
       
-      await logAdminAction('user_deleted', targetUserId);
+      if (!response.ok) {
+        throw new Error(result.detail || 'Failed to delete user');
+      }
       
-      toast.success('User deleted successfully');
+      await logAdminAction('user_hard_deleted', targetUserId);
+      
+      toast.success('User permanently deleted');
       setDeleteConfirm(null);
       loadUsers();
     } catch (error: any) {
@@ -455,15 +461,9 @@ export default function AdminUsers() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {user.is_deleted ? (
-                          <span className="inline-flex px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
-                            Deleted
-                          </span>
-                        ) : (
-                          <span className="inline-flex px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                            Active
-                          </span>
-                        )}
+                        <span className="inline-flex px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                          Active
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         {(() => {
@@ -692,7 +692,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   
   // Fields that are boolean (shown as checkboxes)
   const booleanFields = [
-    'is_deleted', 'terms_accepted', 'terms_read', 'onboarding_completed',
+    'terms_accepted', 'terms_read', 'onboarding_completed',
     'ai_processing_consent', 'marketing_consent', 'terms_viewed', 'terms_scrolled_to_bottom',
     'privacy_scrolled_to_bottom', 'privacy_viewed', 'notifications_enabled'
   ];
