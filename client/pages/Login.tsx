@@ -36,6 +36,37 @@ export default function Login() {
   // Check if user arrived after email confirmation or is already logged in
   useEffect(() => {
     const checkAuthState = async () => {
+      // Check for tokens in hash (from magic link with implicit flow)
+      const hashParams = new URLSearchParams(location.hash.replace('#', ''));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      
+      // If we have tokens in hash, set the session
+      if (accessToken && refreshToken) {
+        try {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          if (!error && data.session) {
+            // Clear hash
+            window.history.replaceState(null, '', '/login');
+            toast.success('Email verified and logged in successfully!');
+            
+            const loggedInUserId = data.session.user.id;
+            setUserId(loggedInUserId);
+            
+            // Route to appropriate page
+            const routeDecision = await onboardingRouter.determineLoginRoute(loggedInUserId);
+            navigate(routeDecision.redirectPath, { replace: true });
+            return;
+          }
+        } catch (e) {
+          console.error('Failed to set session from hash tokens:', e);
+        }
+      }
+      
       // Check for verified query param (from email verification link redirect)
       const urlParams = new URLSearchParams(location.search);
       const verifiedParam = urlParams.get('verified');
@@ -62,10 +93,20 @@ export default function Login() {
           return;
         }
       }
+      
+      // Also check if user is already logged in (e.g., from a previous session)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const loggedInUserId = session.user.id;
+        setUserId(loggedInUserId);
+        
+        const routeDecision = await onboardingRouter.determineLoginRoute(loggedInUserId);
+        navigate(routeDecision.redirectPath, { replace: true });
+      }
     };
     
     checkAuthState();
-  }, [navigate, setUserId, location.search]);
+  }, [navigate, setUserId, location.search, location.hash]);
 
   const handleGoogleLogin = () => {
     // TODO: Implement Google OAuth

@@ -21,7 +21,7 @@ export const supabase = createClient(finalUrl, finalKey, {
     detectSessionInUrl: true,   // ✅ Handle auth redirects from OAuth providers
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     storageKey: 'supabase.auth.token',
-    flowType: 'pkce'
+    flowType: 'implicit'        // Use implicit flow for magic links (PKCE has issues with email verification)
   },
   realtime: {
     headers: {
