@@ -74,30 +74,34 @@ export default function Login() {
   const handleResendVerification = async () => {
     setSendingVerification(true);
     try {
-      // Use resend with type 'signup' to send proper email verification link
-      // This marks email_confirmed_at in auth.users when clicked
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
+      // Note: supabase.auth.resend({ type: 'signup' }) has a known bug with PKCE flow
+      // where the resent email token doesn't work properly.
+      // Workaround: Use signInWithOtp which sends a magic link that:
+      // 1. Logs the user in directly (bypassing password)
+      // 2. Sets email_confirmed_at when the link is clicked
+      const { error } = await supabase.auth.signInWithOtp({
         email: email.toLowerCase(),
         options: {
-          emailRedirectTo: `${import.meta.env.VITE_FRONTEND_URL}/login?verified=true`
+          shouldCreateUser: false,
+          emailRedirectTo: `${import.meta.env.VITE_FRONTEND_URL}/login`
         }
       });
       
       if (error) {
-        console.error('Resend verification error:', error);
-        // Show specific error message
+        console.error('Send magic link error:', error);
         if (error.message?.includes('rate limit')) {
           toast.error('Please wait a few minutes before requesting another email.');
+        } else if (error.message?.includes('User not found') || error.message?.includes('user_not_found') || error.message?.includes('Signups not allowed')) {
+          toast.error('No account found with this email. Please sign up first.');
         } else {
-          toast.error('Failed to send verification email. Please try again.');
+          toast.error(`Failed to send email: ${error.message}`);
         }
       } else {
-        toast.success('Verification email sent! Please check your inbox and click the link to verify.');
+        toast.success('Login link sent! Click the link in your email to verify and sign in.');
       }
     } catch (error) {
       console.error('Send verification error:', error);
-      toast.error('Failed to send verification email. Please try again.');
+      toast.error('Failed to send email. Please try again.');
     } finally {
       setSendingVerification(false);
     }
@@ -210,7 +214,7 @@ export default function Login() {
                   className="w-full px-4 py-3 rounded-[10px] bg-gradient-to-r from-[#FB252A] to-[#6017E8] text-white font-bold text-[15px] font-['Open_Sans'] hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <Mail size={18} />
-                  {sendingVerification ? "Sending..." : "Resend Verification Email"}
+                  {sendingVerification ? "Sending..." : "Send Login Link"}
                 </button>
 
                 <button

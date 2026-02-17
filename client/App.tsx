@@ -100,6 +100,18 @@ const AuthHandler = () => {
 
   useEffect(() => {
     const handleAuthRedirect = async () => {
+      // First, let Supabase process any auth tokens in the URL
+      // This is important for email verification links
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session?.user?.email_confirmed_at) {
+          // User's email is confirmed and they have a session
+          sessionStorage.setItem('email_verified', 'true');
+        }
+      } catch (e) {
+        console.error('Error getting session:', e);
+      }
+
       // Check both query params and hash fragment (Supabase uses hash for tokens)
       const urlParams = new URLSearchParams(location.search);
       const hashParams = new URLSearchParams(location.hash.replace('#', ''));
@@ -138,9 +150,16 @@ const AuthHandler = () => {
           // Password reset flow
           navigate('/reset-password', { replace: true });
         } else if (type === 'signup') {
-          // Email verification confirmation - mark as verified
+          // Email verification confirmation
+          // The tokens in the URL have already been processed by Supabase
+          // which sets email_confirmed_at in auth.users
           sessionStorage.setItem('email_verified', 'true');
-          // Clear URL params
+          // Clear URL params and redirect to login
+          window.history.replaceState(null, '', '/login');
+          navigate('/login', { replace: true });
+        } else if (type === 'email_change') {
+          // Email change confirmation
+          sessionStorage.setItem('email_verified', 'true');
           window.history.replaceState(null, '', '/login');
           navigate('/login', { replace: true });
         } else if (code) {
