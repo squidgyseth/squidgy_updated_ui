@@ -1445,7 +1445,21 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                                 {ghl.ghl_location_id ? '✓' : '○'}
                               </span>
                               <span className="text-sm text-gray-600">Location ID Assigned</span>
-                              {ghl.ghl_location_id && <span className="text-xs text-gray-400 ml-auto">{ghl.ghl_location_id}</span>}
+                              {ghl.ghl_location_id && (
+                                <div className="flex items-center gap-1 ml-auto">
+                                  <span className="text-xs text-gray-400">{ghl.ghl_location_id}</span>
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(ghl.ghl_location_id);
+                                      toast.success('Location ID copied!');
+                                    }}
+                                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                    title="Copy Location ID"
+                                  >
+                                    <Copy className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                                  </button>
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               <span className={ghl.firebase_token ? 'text-green-500' : 'text-gray-300'}>
