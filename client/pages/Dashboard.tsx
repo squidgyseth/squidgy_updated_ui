@@ -105,13 +105,11 @@ export default function Index() {
     const fetchEnabledAgents = async () => {
       // Wait for auth to be ready and profile to be loaded
       if (!isReady || !profile?.user_id) {
-        console.log('⏳ Dashboard: Waiting for auth - isReady:', isReady, 'profile.user_id:', profile?.user_id);
         return;
       }
 
       // Use profile.user_id which is the correct user_id from profiles table
       const profileUserId = profile.user_id;
-      console.log('🔍 Dashboard: Fetching enabled agents for profile.user_id:', profileUserId);
 
       try {
         const { data, error } = await supabase
@@ -121,16 +119,14 @@ export default function Index() {
           .eq('is_enabled', true);
 
         if (error) {
-          console.error('❌ Dashboard: Error fetching enabled agents:', error);
+          console.error('Dashboard: Error fetching enabled agents:', error);
           return;
         }
 
         const agentIds = data?.map((row: { assistant_id: string }) => row.assistant_id) || [];
-        console.log('✅ Dashboard: Enabled agents fetched:', agentIds);
-        console.log('📊 Dashboard: Total enabled agents count:', agentIds.length);
         setEnabledAgentIds(agentIds);
       } catch (error) {
-        console.error('❌ Dashboard: Error in fetchEnabledAgents:', error);
+        console.error('Dashboard: Error in fetchEnabledAgents:', error);
       }
     };
 

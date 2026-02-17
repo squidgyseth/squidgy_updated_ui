@@ -3,6 +3,7 @@ import { authService } from '../lib/auth-service';
 import { supabase } from '../lib/supabase';
 import { sessionManager } from '../lib/session-manager';
 import { profilesApi } from '../lib/supabase-api';
+import { posthogService } from '../lib/posthog-service';
 
 // Generate a unique session ID
 const generateSessionId = (): string => {
@@ -116,17 +117,25 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           
           setIsAuthenticated(true);
           setUser({ id: devUserId, email: devUserEmail });
-          setProfile(profileData || { 
+          const finalProfile = profileData || { 
             id: devUserId,
             user_id: finalUserId, 
             email: devUserEmail,
             full_name: 'Development User',
             profile_avatar_url: ''
-          });
+          };
+          setProfile(finalProfile);
           setUserIdState(finalUserId);
           setSessionIdState(`session_${finalUserId}`);
           setAgentIdState(`agent_${finalUserId}`);
           localStorage.setItem('squidgy_user_id', finalUserId);
+          
+          // Identify user in PostHog with correct profile.user_id (dev mode)
+          posthogService.identifyUser(
+            finalUserId,
+            devUserEmail,
+            finalProfile.full_name
+          );
           
           // Start session monitoring even in dev mode
           sessionManager.startSessionMonitoring();
@@ -213,6 +222,13 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           
           const currentAgentId = `agent_${currentUserId}`;
           setAgentIdState(currentAgentId);
+          
+          // Identify user in PostHog with correct profile.user_id
+          posthogService.identifyUser(
+            currentUserId,
+            authResult.user.email,
+            finalProfile?.full_name
+          );
           
           // Start session monitoring
           sessionManager.startSessionMonitoring();
@@ -343,6 +359,13 @@ export const UserProvider = ({ children }: UserProviderProps) => {
               const currentAgentId = `agent_${currentUserId}`;
               setAgentIdState(currentAgentId);
               
+              // Identify user in PostHog with correct profile.user_id
+              posthogService.identifyUser(
+                currentUserId,
+                authUser.email,
+                finalProfile?.full_name
+              );
+              
             } catch (error) {
               console.error('Error handling auth state change:', error);
             }
@@ -353,6 +376,9 @@ export const UserProvider = ({ children }: UserProviderProps) => {
             setUserIdState('');
             setAgentIdState('');
             localStorage.removeItem('squidgy_user_id');
+            
+            // Reset PostHog identity on logout
+            posthogService.reset();
           }
         });
         subscription = data.subscription;
@@ -408,6 +434,9 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     
     // Stop session monitoring
     sessionManager.stopSessionMonitoring();
+    
+    // Reset PostHog identity
+    posthogService.reset();
     
     setUserIdState('');
     setSessionIdState('');
