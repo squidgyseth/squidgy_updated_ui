@@ -180,19 +180,21 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           
           setIsAuthenticated(true);
           setUser(authResult.user);
-          setProfile(authResult.profile);
           
           // Get the correct user_id from profiles table using email
           let currentUserId = authResult.profile?.user_id;
+          let finalProfile = authResult.profile;
           
-          // ALWAYS do email lookup to get correct user_id from profiles table using direct API
+          // ALWAYS do email lookup to get correct user_id and full profile from profiles table
           if (authResult.user.email) {
             try {
               const profileResult = await profilesApi.getByEmail(authResult.user.email);
               
               
-              if (profileResult.data?.user_id) {
-                currentUserId = profileResult.data.user_id;
+              if (profileResult.data) {
+                currentUserId = profileResult.data.user_id || authResult.user.id;
+                // Use the fresh profile data which includes is_super_admin
+                finalProfile = profileResult.data;
               } else {
                 currentUserId = authResult.user.id;
               }
@@ -204,6 +206,8 @@ export const UserProvider = ({ children }: UserProviderProps) => {
             currentUserId = currentUserId || authResult.user.id;
           }
           
+          // Set profile with fresh data that includes is_super_admin
+          setProfile(finalProfile);
           setUserIdState(currentUserId);
           localStorage.setItem('squidgy_user_id', currentUserId);
           
@@ -307,17 +311,19 @@ export const UserProvider = ({ children }: UserProviderProps) => {
               
               setIsAuthenticated(true);
               setUser(authUser);
-              setProfile(userProfile);
               
-              // ALWAYS do email lookup to get correct user_id 
+              // ALWAYS do email lookup to get correct user_id and full profile with is_super_admin
               let currentUserId = userProfile?.user_id;
+              let finalProfile = userProfile;
               
               if (authUser?.email) {
                 try {
                   const { data: profileData } = await profilesApi.getByEmail(authUser.email);
                   
-                  if (profileData?.user_id) {
-                    currentUserId = profileData.user_id;
+                  if (profileData) {
+                    currentUserId = profileData.user_id || authUser.id;
+                    // Use the fresh profile data which includes is_super_admin
+                    finalProfile = profileData;
                   } else {
                     currentUserId = authUser.id;
                   }
@@ -329,6 +335,8 @@ export const UserProvider = ({ children }: UserProviderProps) => {
                 currentUserId = currentUserId || authUser.id;
               }
               
+              // Set profile with fresh data that includes is_super_admin
+              setProfile(finalProfile);
               setUserIdState(currentUserId);
               localStorage.setItem('squidgy_user_id', currentUserId);
               

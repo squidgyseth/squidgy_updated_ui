@@ -1,4 +1,5 @@
 // useAdmin hook - Check and manage admin status
+// Uses profile from useUser to avoid duplicate API calls
 
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from './useUser';
@@ -12,7 +13,7 @@ interface UseAdminReturn {
 }
 
 export const useAdmin = (): UseAdminReturn => {
-  const { userId, isAuthenticated, isReady } = useUser();
+  const { userId, isAuthenticated, isReady, profile } = useUser();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +29,14 @@ export const useAdmin = (): UseAdminReturn => {
       setIsLoading(true);
       setError(null);
       
-      // Check admin status using profilesApi to avoid 406 errors from .single()
+      // First check if profile from useUser has is_super_admin
+      if (profile && typeof profile.is_super_admin !== 'undefined') {
+        setIsAdmin(profile.is_super_admin === true);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Fallback: fetch profile using profilesApi if not available from useUser
       const { data, error: apiError } = await profilesApi.getByUserId(userId);
       
       if (apiError) {
@@ -48,16 +56,28 @@ export const useAdmin = (): UseAdminReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, isAuthenticated]);
+  }, [userId, isAuthenticated, profile]);
+
+  // React to profile changes from useUser - this is the key fix
+  // When profile loads with is_super_admin, update admin status immediately
+  useEffect(() => {
+    if (profile && typeof profile.is_super_admin !== 'undefined') {
+      setIsAdmin(profile.is_super_admin === true);
+      setIsLoading(false);
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (isReady && isAuthenticated && userId) {
-      checkAdminStatus();
+      // Only fetch if profile doesn't have is_super_admin yet
+      if (!profile || typeof profile.is_super_admin === 'undefined') {
+        checkAdminStatus();
+      }
     } else if (isReady && !isAuthenticated) {
       setIsAdmin(false);
       setIsLoading(false);
     }
-  }, [isReady, isAuthenticated, userId, checkAdminStatus]);
+  }, [isReady, isAuthenticated, userId, profile, checkAdminStatus]);
 
   return {
     isAdmin,
