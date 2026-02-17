@@ -103,14 +103,21 @@ export default function Index() {
   // Fetch enabled agents from assistant_personalizations
   useEffect(() => {
     const fetchEnabledAgents = async () => {
-      // Wait for auth to be ready before fetching agents
-      if (!isReady || !userId) return;
+      // Wait for auth to be ready and profile to be loaded
+      if (!isReady || !profile?.user_id) {
+        console.log('⏳ Dashboard: Waiting for auth - isReady:', isReady, 'profile.user_id:', profile?.user_id);
+        return;
+      }
+
+      // Use profile.user_id which is the correct user_id from profiles table
+      const profileUserId = profile.user_id;
+      console.log('🔍 Dashboard: Fetching enabled agents for profile.user_id:', profileUserId);
 
       try {
         const { data, error } = await supabase
           .from('assistant_personalizations')
           .select('assistant_id')
-          .eq('user_id', userId)
+          .eq('user_id', profileUserId)
           .eq('is_enabled', true);
 
         if (error) {
@@ -119,6 +126,8 @@ export default function Index() {
         }
 
         const agentIds = data?.map((row: { assistant_id: string }) => row.assistant_id) || [];
+        console.log('✅ Dashboard: Enabled agents fetched:', agentIds);
+        console.log('📊 Dashboard: Total enabled agents count:', agentIds.length);
         setEnabledAgentIds(agentIds);
       } catch (error) {
         console.error('❌ Dashboard: Error in fetchEnabledAgents:', error);
@@ -126,7 +135,7 @@ export default function Index() {
     };
 
     fetchEnabledAgents();
-  }, [userId, isReady]);
+  }, [profile?.user_id, isReady]);
 
   const desktopLayout = (
     <div className="h-screen overflow-y-auto bg-white">
