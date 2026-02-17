@@ -50,8 +50,9 @@ export default function Login() {
           });
           
           if (!error && data.session) {
-            // Clear hash
+            // Clear hash and sessionStorage to prevent duplicate toasts
             window.history.replaceState(null, '', '/login');
+            sessionStorage.removeItem('email_verified');
             toast.success('Email verified and logged in successfully!');
             
             const loggedInUserId = data.session.user.id;
@@ -67,34 +68,7 @@ export default function Login() {
         }
       }
       
-      // Check for verified query param (from email verification link redirect)
-      const urlParams = new URLSearchParams(location.search);
-      const verifiedParam = urlParams.get('verified');
-      const emailVerified = sessionStorage.getItem('email_verified');
-      
-      if (verifiedParam === 'true' || emailVerified === 'true') {
-        sessionStorage.removeItem('email_verified');
-        // Clear the query param from URL
-        if (verifiedParam) {
-          window.history.replaceState(null, '', '/login');
-        }
-        toast.success('Email verified successfully! Please login with your password.');
-        
-        // Check if user is already logged in from verification
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          // User is already logged in from verification link
-          const loggedInUserId = session.user.id;
-          setUserId(loggedInUserId);
-          
-          // Route to appropriate page
-          const routeDecision = await onboardingRouter.determineLoginRoute(loggedInUserId);
-          navigate(routeDecision.redirectPath, { replace: true });
-          return;
-        }
-      }
-      
-      // Also check if user is already logged in (e.g., from a previous session)
+      // Check if user is already logged in (e.g., from a previous session or magic link)
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const loggedInUserId = session.user.id;
@@ -106,7 +80,7 @@ export default function Login() {
     };
     
     checkAuthState();
-  }, [navigate, setUserId, location.search, location.hash]);
+  }, [navigate, setUserId, location.hash]);
 
   const handleGoogleLogin = () => {
     // TODO: Implement Google OAuth
