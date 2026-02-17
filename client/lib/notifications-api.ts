@@ -144,13 +144,24 @@ class NotificationsService {
       this.reconnectAttempts = 0;
       this.lastHeartbeat = Date.now();
       
-      // Send initial connection message
+      // Send initial connection message only if WebSocket is in OPEN state
       const connectionMessage = {
         type: 'connection',
         userId,
         sessionId,
       };
-      this.ws?.send(JSON.stringify(connectionMessage));
+      
+      // Check readyState before sending to avoid "Still in CONNECTING state" error
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify(connectionMessage));
+      } else {
+        // If not open yet, wait a bit and try again
+        setTimeout(() => {
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify(connectionMessage));
+          }
+        }, 100);
+      }
       
       // Start heartbeat monitoring
       this.startHeartbeat();

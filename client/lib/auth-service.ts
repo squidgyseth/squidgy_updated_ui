@@ -695,7 +695,10 @@ export class AuthService {
       }
 
     } catch (error: any) {
-      console.error('Get current user error:', error);
+      // Don't log AuthSessionMissingError as it's expected when not logged in
+      if (error.name !== 'AuthSessionMissingError') {
+        console.error('Get current user error:', error);
+      }
       return { user: null, profile: null };
     }
   }
