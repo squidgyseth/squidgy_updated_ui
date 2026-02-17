@@ -113,17 +113,21 @@ const AuthHandler = () => {
       // Handle auth parameters on root path or login page
       if ((location.pathname === '/' || location.pathname === '/login') && (code || accessToken || type) && !error) {
         
-        // If we have tokens in hash, let Supabase process them first
+        // If we have tokens in hash, try to establish session
         if (accessToken && refreshToken) {
           try {
-            const { error: sessionError } = await supabase.auth.setSession({
+            const { data, error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken
             });
             
-            if (!sessionError) {
-              // Session set successfully - email is now verified
+            if (!sessionError && data.session) {
+              // Session set successfully - user is now logged in
               sessionStorage.setItem('email_verified', 'true');
+              // Clear hash to prevent re-processing
+              window.history.replaceState(null, '', location.pathname);
+              navigate('/login', { replace: true });
+              return;
             }
           } catch (e) {
             console.error('Failed to set session from tokens:', e);
@@ -133,24 +137,34 @@ const AuthHandler = () => {
         if (type === 'recovery') {
           // Password reset flow
           navigate('/reset-password', { replace: true });
-        } else if (type === 'signup' || accessToken) {
-          // Email verification confirmation flow
+        } else if (type === 'signup') {
+          // Email verification confirmation - mark as verified
           sessionStorage.setItem('email_verified', 'true');
+          // Clear URL params
+          window.history.replaceState(null, '', '/login');
           navigate('/login', { replace: true });
         } else if (code) {
-          // Code-based auth callback
+          // Code-based auth callback - exchange code for session
+          try {
+            const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            if (!exchangeError && data.session) {
+              sessionStorage.setItem('email_verified', 'true');
+            }
+          } catch (e) {
+            console.error('Failed to exchange code for session:', e);
+          }
           sessionStorage.setItem('email_verified', 'true');
+          window.history.replaceState(null, '', '/login');
           navigate('/login', { replace: true });
         }
       }
       
       // Listen for PASSWORD_RECOVERY event from Supabase to handle password reset
-      // This is the only reliable way to detect password reset vs email verification
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
           navigate('/reset-password', { replace: true });
         }
-        // Also handle successful sign in from email verification
+        // Handle successful sign in from email verification
         if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
           sessionStorage.setItem('email_verified', 'true');
         }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { signIn } from '../lib/api';
@@ -22,6 +22,7 @@ const GoogleIcon = () => (
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setUserId, userId } = useUser();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,11 +36,18 @@ export default function Login() {
   // Check if user arrived after email confirmation or is already logged in
   useEffect(() => {
     const checkAuthState = async () => {
+      // Check for verified query param (from email verification link redirect)
+      const urlParams = new URLSearchParams(location.search);
+      const verifiedParam = urlParams.get('verified');
       const emailVerified = sessionStorage.getItem('email_verified');
       
-      if (emailVerified === 'true') {
+      if (verifiedParam === 'true' || emailVerified === 'true') {
         sessionStorage.removeItem('email_verified');
-        toast.success('Email verified successfully!');
+        // Clear the query param from URL
+        if (verifiedParam) {
+          window.history.replaceState(null, '', '/login');
+        }
+        toast.success('Email verified successfully! Please login with your password.');
         
         // Check if user is already logged in from verification
         const { data: { session } } = await supabase.auth.getSession();
@@ -57,7 +65,7 @@ export default function Login() {
     };
     
     checkAuthState();
-  }, [navigate, setUserId]);
+  }, [navigate, setUserId, location.search]);
 
   const handleGoogleLogin = () => {
     // TODO: Implement Google OAuth
@@ -66,35 +74,29 @@ export default function Login() {
   const handleResendVerification = async () => {
     setSendingVerification(true);
     try {
-      // Use resend with type 'signup' to resend the actual email verification link
+      // Use resend with type 'signup' to send proper email verification link
       // This marks email_confirmed_at in auth.users when clicked
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email.toLowerCase(),
         options: {
-          emailRedirectTo: `${import.meta.env.VITE_FRONTEND_URL}/login`
+          emailRedirectTo: `${import.meta.env.VITE_FRONTEND_URL}/login?verified=true`
         }
       });
       
       if (error) {
-        // If resend fails (e.g., user already confirmed), try magic link as fallback
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: email.toLowerCase(),
-          options: {
-            shouldCreateUser: false,
-            emailRedirectTo: `${import.meta.env.VITE_FRONTEND_URL}/login`
-          }
-        });
-        
-        if (otpError) {
-          toast.error('Failed to send verification email. Please try again.');
+        console.error('Resend verification error:', error);
+        // Show specific error message
+        if (error.message?.includes('rate limit')) {
+          toast.error('Please wait a few minutes before requesting another email.');
         } else {
-          toast.success('Verification email sent! Please check your inbox.');
+          toast.error('Failed to send verification email. Please try again.');
         }
       } else {
-        toast.success('Verification email sent! Please check your inbox.');
+        toast.success('Verification email sent! Please check your inbox and click the link to verify.');
       }
     } catch (error) {
+      console.error('Send verification error:', error);
       toast.error('Failed to send verification email. Please try again.');
     } finally {
       setSendingVerification(false);
