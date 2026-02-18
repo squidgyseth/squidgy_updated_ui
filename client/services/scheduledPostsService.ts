@@ -1,0 +1,159 @@
+/**
+ * Scheduled Posts Service
+ * Fetches scheduled/pending posts from GHL social media posting API
+ */
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+export interface ScheduledPost {
+  id: string;
+  content?: string;
+  caption?: string;
+  media?: string[];
+  mediaUrls?: string[];
+  platform?: string;
+  platforms?: string[];
+  status: string;
+  scheduledAt?: string;
+  scheduled_at?: string;
+  scheduledDate?: string;
+  createdAt?: string;
+  created_at?: string;
+  accountId?: string;
+  accountName?: string;
+}
+
+export interface ScheduledPostsResponse {
+  success: boolean;
+  posts: ScheduledPost[];
+  total_count: number;
+  scheduled_count?: number;
+  published_count?: number;
+  error?: string;
+}
+
+class ScheduledPostsService {
+  private static instance: ScheduledPostsService;
+
+  private constructor() {}
+
+  static getInstance(): ScheduledPostsService {
+    if (!ScheduledPostsService.instance) {
+      ScheduledPostsService.instance = new ScheduledPostsService();
+    }
+    return ScheduledPostsService.instance;
+  }
+
+  /**
+   * Fetch scheduled posts for a user
+   */
+  async getScheduledPosts(firmUserId: string, agentId: string = 'SOL'): Promise<ScheduledPostsResponse> {
+    const url = `${BACKEND_URL}/api/social/scheduled/posts/${firmUserId}?agent_id=${agentId}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          posts: [],
+          total_count: 0,
+          error: errorData.detail || `HTTP ${response.status}: ${response.statusText}`
+        };
+      }
+
+      const data = await response.json();
+      return {
+        success: data.success ?? true,
+        posts: data.posts || [],
+        total_count: data.total_count || 0,
+        scheduled_count: data.scheduled_count,
+        published_count: data.published_count
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        posts: [],
+        total_count: 0,
+        error: error.message || 'Failed to fetch posts'
+      };
+    }
+  }
+
+  /**
+   * Format scheduled date for display
+   */
+  formatScheduledDate(post: ScheduledPost): string {
+    const dateStr = post.scheduledAt || post.scheduled_at || post.scheduledDate;
+    if (!dateStr) return 'Not scheduled';
+
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateStr;
+    }
+  }
+
+  /**
+   * Get platform display name
+   */
+  getPlatformName(post: ScheduledPost): string {
+    const platform = post.platform || (post.platforms && post.platforms[0]);
+    if (!platform) return 'Unknown';
+
+    const platformMap: Record<string, string> = {
+      'facebook': 'Facebook',
+      'instagram': 'Instagram',
+      'linkedin': 'LinkedIn',
+      'twitter': 'Twitter',
+      'tiktok': 'TikTok',
+      'youtube': 'YouTube'
+    };
+
+    return platformMap[platform.toLowerCase()] || platform;
+  }
+
+  /**
+   * Get post content preview (truncated)
+   */
+  getContentPreview(post: ScheduledPost, maxLength: number = 100): string {
+    // GHL uses 'summary' field for post content
+    const content = (post as any).summary || post.content || post.caption || '';
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
+  }
+
+  /**
+   * Get post status display
+   */
+  getStatusDisplay(post: ScheduledPost): { label: string; color: string } {
+    const status = post.status?.toLowerCase() || '';
+    switch (status) {
+      case 'published':
+        return { label: 'Published', color: 'text-green-600' };
+      case 'scheduled':
+        return { label: 'Scheduled', color: 'text-orange-500' };
+      case 'pending':
+        return { label: 'Pending', color: 'text-yellow-500' };
+      case 'draft':
+        return { label: 'Draft', color: 'text-gray-500' };
+      case 'failed':
+        return { label: 'Failed', color: 'text-red-500' };
+      default:
+        return { label: status || 'Unknown', color: 'text-gray-400' };
+    }
+  }
+}
+
+export default ScheduledPostsService.getInstance();

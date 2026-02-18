@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Share2, ExternalLink, Calendar } from 'lucide-react';
+import { FileText, Share2, ExternalLink, Calendar, Clock } from 'lucide-react';
 import ChatHistoryService, { 
   NewsletterHistory, 
   SocialContentHistory 
 } from '../../services/chatHistoryService';
 import { useUser } from '../../hooks/useUser';
+import ScheduledContent from './ScheduledContent';
 
 interface PreviousContentProps {
   className?: string;
@@ -18,7 +19,7 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
   const [loading, setLoading] = useState(true);
 
   // Only show Previous Content for agents that generate newsletters or social content
-  const shouldShowPreviousContent = agentId === 'newsletter' || agentId === 'content_repurposer' || !agentId;
+  const shouldShowPreviousContent = agentId === 'newsletter' || agentId === 'content_repurposer' || agentId === 'social_media_agent' || !agentId;
 
   useEffect(() => {
     if (shouldShowPreviousContent) {
@@ -154,6 +155,24 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
     );
   }
 
+  // For social_media_agent, don't show empty state - just show scheduled content
+  if (agentId === 'social_media_agent') {
+    return (
+      <div className={`previous-content-container ${className}`}>
+        <div className="space-y-4 p-4">
+          {/* Social Media Posts - Only for social_media_agent */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-4 h-4 text-orange-500" />
+              <h4 className="text-sm font-semibold text-gray-700">Social Media Posts</h4>
+            </div>
+            <ScheduledContent agentId={agentId} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (newsletters.length === 0 && socialContent.length === 0) {
     return (
       <div className={`previous-content-empty ${className}`}>
@@ -236,6 +255,17 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
                 </div>
               </div>
             </button>
+          </div>
+        )}
+
+        {/* Scheduled Content - Only for social_media_agent */}
+        {agentId === 'social_media_agent' && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-4 h-4 text-orange-500" />
+              <h4 className="text-sm font-semibold text-gray-700">Scheduled Content</h4>
+            </div>
+            <ScheduledContent agentId={agentId} />
           </div>
         )}
       </div>
