@@ -20,8 +20,166 @@ const PlatformIcon: React.FC<{ platform: string; size?: number; className?: stri
   return <Clock size={size} className={`text-gray-500 ${className}`} />;
 };
 
+// Edit post modal
+const EditPostModal: React.FC<{ 
+  post: any; 
+  onClose: () => void; 
+  onSave: (postId: string, summary: string, scheduleDate: string, accountIds: string[]) => Promise<void>; 
+  isSaving: boolean;
+  userId: string;
+}> = ({ post, onClose, onSave, isSaving, userId }) => {
+  const [summary, setSummary] = useState(post.summary || '');
+  const [scheduleDate, setScheduleDate] = useState(() => {
+    const date = post.scheduleDate || post.displayDate || '';
+    if (date) {
+      const d = new Date(date);
+      return d.toISOString().slice(0, 16);
+    }
+    return '';
+  });
+  const [accounts, setAccounts] = useState<{ id: string; platform: string }[]>([]);
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(post.accountIds || []);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
+
+  useEffect(() => {
+    const loadAccounts = async () => {
+      const result = await scheduledPostsService.getAccounts(userId);
+      if (result.success) {
+        setAccounts(result.accounts);
+      }
+      setLoadingAccounts(false);
+    };
+    loadAccounts();
+  }, [userId]);
+
+  const handleSave = () => {
+    onSave(post._id || post.id, summary, new Date(scheduleDate).toISOString(), selectedAccountIds);
+  };
+
+  const toggleAccount = (accountId: string) => {
+    setSelectedAccountIds(prev => 
+      prev.includes(accountId) 
+        ? prev.filter(id => id !== accountId)
+        : [...prev, accountId]
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="bg-purple-600 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+          <div className="flex items-center gap-2 text-white">
+            <Pencil size={18} />
+            <span className="font-semibold text-sm">Edit Post</span>
+          </div>
+          <button onClick={onClose} className="text-white/80 hover:text-white">
+            <X size={18} />
+          </button>
+        </div>
+        
+        {/* Form */}
+        <div className="p-4 space-y-4">
+          {/* Content */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Post Content</label>
+            <textarea
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              rows={6}
+              placeholder="Enter your post content..."
+            />
+          </div>
+          
+          {/* Schedule Date */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Schedule Date & Time</label>
+            <input
+              type="datetime-local"
+              value={scheduleDate}
+              onChange={(e) => setScheduleDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+          
+          {/* Account Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Post to Accounts</label>
+            {loadingAccounts ? (
+              <div className="flex items-center gap-2 text-gray-500 text-sm">
+                <RefreshCw size={14} className="animate-spin" />
+                Loading accounts...
+              </div>
+            ) : accounts.length > 0 ? (
+              <div className="space-y-2">
+                {accounts.map(account => (
+                  <label 
+                    key={account.id} 
+                    className="flex items-center gap-3 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedAccountIds.includes(account.id)}
+                      onChange={() => toggleAccount(account.id)}
+                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                    />
+                    <PlatformIcon platform={account.platform} size={16} />
+                    <span className="text-sm text-gray-700 capitalize">{account.platform}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No connected accounts found</p>
+            )}
+          </div>
+          
+          {/* Media preview (read-only) */}
+          {post.media && post.media.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Media (cannot be changed)</label>
+              <div className="w-20 h-20 rounded overflow-hidden bg-gray-100">
+                <img 
+                  src={post.media[0]?.url} 
+                  alt="Post media" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Footer */}
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2">
+          <button
+            onClick={onClose}
+            disabled={isSaving}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving || !summary.trim() || selectedAccountIds.length === 0}
+            className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isSaving ? (
+              <>
+                <RefreshCw size={14} className="animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save Changes'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Platform-specific post preview modal
-const PostPreviewModal: React.FC<{ post: any; onClose: () => void; onDelete: (postId: string) => Promise<void>; isDeleting: boolean }> = ({ post, onClose, onDelete, isDeleting }) => {
+const PostPreviewModal: React.FC<{ post: any; onClose: () => void; onDelete: (postId: string) => Promise<void>; onEdit: () => void; isDeleting: boolean }> = ({ post, onClose, onDelete, onEdit, isDeleting }) => {
   const platform = post.platform?.toLowerCase() || 'facebook';
   const content = post.summary || '';
   const media = post.media || [];
@@ -132,7 +290,7 @@ const PostPreviewModal: React.FC<{ post: any; onClose: () => void; onDelete: (po
           {post.status?.toLowerCase() !== 'published' && (
             <div className="flex items-center gap-2">
               <button 
-                onClick={(e) => { e.stopPropagation(); alert('Edit functionality coming soon'); }}
+                onClick={(e) => { e.stopPropagation(); onEdit(); }}
                 className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors"
                 disabled={isDeleting}
               >
@@ -169,6 +327,8 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [filter, setFilter] = useState<'scheduled' | 'published'>('scheduled');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editingPost, setEditingPost] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Only show for social_media_agent
   const shouldShow = agentId === 'social_media_agent';
@@ -261,6 +421,33 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
       alert(err.message || 'Failed to delete post');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleEditPost = async (postId: string, summary: string, scheduleDate: string, accountIds: string[]) => {
+    if (!userId || !postId) return;
+    
+    setIsSaving(true);
+    try {
+      const result = await scheduledPostsService.editPost(postId, userId, { summary, schedule_date: scheduleDate, account_ids: accountIds }, 'SOL');
+      
+      if (result.success) {
+        // Update the post in local state
+        setScheduledPosts(prev => prev.map(p => {
+          if ((p as any)._id === postId || p.id === postId) {
+            return { ...p, summary, scheduleDate, displayDate: scheduleDate, accountIds };
+          }
+          return p;
+        }));
+        setEditingPost(null);
+        setSelectedPost(null);
+      } else {
+        alert(result.error || 'Failed to edit post');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to edit post');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -439,12 +626,24 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
       </div>
       
       {/* Post preview modal */}
-      {selectedPost && (
+      {selectedPost && !editingPost && (
         <PostPreviewModal 
           post={selectedPost} 
           onClose={() => setSelectedPost(null)} 
           onDelete={handleDeletePost}
+          onEdit={() => setEditingPost(selectedPost)}
           isDeleting={isDeleting}
+        />
+      )}
+      
+      {/* Edit post modal */}
+      {editingPost && userId && (
+        <EditPostModal
+          post={editingPost}
+          onClose={() => setEditingPost(null)}
+          onSave={handleEditPost}
+          isSaving={isSaving}
+          userId={userId}
         />
       )}
     </div>

@@ -187,6 +187,69 @@ class ScheduledPostsService {
       };
     }
   }
+
+  /**
+   * Get connected social media accounts
+   */
+  async getAccounts(firmUserId: string, agentId: string = 'SOL'): Promise<{ success: boolean; accounts: { id: string; platform: string }[]; error?: string }> {
+    const url = `${BACKEND_URL}/api/social/scheduled/accounts/${firmUserId}?agent_id=${agentId}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        return { success: false, accounts: [], error: 'Failed to fetch accounts' };
+      }
+
+      const data = await response.json();
+      return { success: true, accounts: data.accounts || [] };
+    } catch (error: any) {
+      return { success: false, accounts: [], error: error.message };
+    }
+  }
+
+  /**
+   * Edit a scheduled post
+   */
+  async editPost(
+    postId: string, 
+    firmUserId: string, 
+    updates: { summary?: string; schedule_date?: string; media?: any[]; account_ids?: string[] },
+    agentId: string = 'SOL'
+  ): Promise<{ success: boolean; error?: string }> {
+    const url = `${BACKEND_URL}/api/social/scheduled/posts/${postId}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          post_id: postId,
+          agent_id: agentId,
+          ...updates
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error: errorData.detail || `HTTP ${response.status}: ${response.statusText}`
+        };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to edit post'
+      };
+    }
+  }
 }
 
 export default ScheduledPostsService.getInstance();
