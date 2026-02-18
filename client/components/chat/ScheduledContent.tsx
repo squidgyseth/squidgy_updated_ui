@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Clock, Calendar, RefreshCw, Facebook, Instagram, Linkedin, Twitter, X, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
 import scheduledPostsService, { ScheduledPost } from '../../services/scheduledPostsService';
 import { useUser } from '../../hooks/useUser';
+import { supabase } from '../../lib/supabase';
 
 interface ScheduledContentProps {
   className?: string;
@@ -179,6 +180,32 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
       loadScheduledPosts();
     }
   }, [userId, agentId, shouldShow]);
+
+  // Listen for content refresh broadcasts from backend
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`content-refresh-${userId}`)
+      .on(
+        'broadcast',
+        { event: 'refresh_content' },
+        (payload) => {
+          console.log('🔄 Content refresh signal received:', payload);
+          // Refresh posts when backend sends refresh signal
+          if (payload.payload?.content_type === 'social_posts' || payload.payload?.agent_id === agentId) {
+            loadScheduledPosts();
+          }
+        }
+      )
+      .subscribe((status: string) => {
+        console.log('📡 Content refresh subscription status:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, agentId]);
 
   const loadScheduledPosts = async () => {
     if (!userId) return;
