@@ -85,11 +85,15 @@ class ScheduledPostsService {
   }
 
   /**
-   * Format scheduled date for display
+   * Format date for display - handles GHL date fields
    */
-  formatScheduledDate(post: ScheduledPost): string {
-    const dateStr = post.scheduledAt || post.scheduled_at || post.scheduledDate;
-    if (!dateStr) return 'Not scheduled';
+  formatPostDate(post: ScheduledPost): string {
+    // GHL uses publishedAt for published posts, scheduleDate for scheduled
+    const dateStr = (post as any).publishedAt || (post as any).scheduleDate || 
+                    (post as any).displayDate || (post as any).createdAt ||
+                    post.scheduledAt || post.scheduled_at || post.scheduledDate;
+    
+    if (!dateStr) return '';
 
     try {
       const date = new Date(dateStr);
@@ -101,7 +105,7 @@ class ScheduledPostsService {
         minute: '2-digit'
       });
     } catch {
-      return dateStr;
+      return '';
     }
   }
 
