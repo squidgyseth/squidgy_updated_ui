@@ -159,16 +159,7 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
   if (agentId === 'social_media_agent') {
     return (
       <div className={`previous-content-container ${className}`}>
-        <div className="space-y-4 p-4">
-          {/* Social Media Posts - Only for social_media_agent */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Clock className="w-4 h-4 text-orange-500" />
-              <h4 className="text-sm font-semibold text-gray-700">Social Media Posts</h4>
-            </div>
-            <ScheduledContent agentId={agentId} />
-          </div>
-        </div>
+        <ScheduledContent agentId={agentId} />
       </div>
     );
   }

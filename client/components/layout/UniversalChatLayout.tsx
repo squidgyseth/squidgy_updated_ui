@@ -148,7 +148,7 @@ export default function UniversalChatLayout({
   const [recentActions, setRecentActions] = useState<string[]>([]);
   const [isLoadingActions, setIsLoadingActions] = useState(true); // Only true on initial load
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-  const [openSection, setOpenSection] = useState<string | null>(null);
+  const [openSection, setOpenSection] = useState<string | null>(agent.id === 'social_media_agent' ? 'content' : 'activity');
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
 
   const toggleSection = (sectionId: string) => {
@@ -454,27 +454,30 @@ export default function UniversalChatLayout({
 
             {/* Recent Activity Section */}
             <div className="pt-0.5">
-              <div className="flex items-center justify-between pointer-events-none group px-1">
+              <div className="flex items-center justify-between cursor-pointer group px-1" onClick={() => toggleSection('activity')}>
                 <div className="flex items-center gap-2">
                   <Clock size={14} className="text-purple-600" />
                   <h3 className="text-[11px] font-bold text-gray-800">Recent Activity</h3>
                 </div>
+                <ChevronRight size={12} className={`text-purple-300 group-hover:text-purple-600 transition-transform ${openSection === 'activity' ? 'rotate-90' : ''}`} />
               </div>
 
-              <div className="mt-2 pl-2 space-y-1.5">
-                {isLoadingActions ? (
-                  <p className="text-[9px] text-gray-500 pl-1">Loading activity...</p>
-                ) : recentActions.length > 0 ? (
-                  recentActions.map((action, index) => (
-                    <div key={index} className="flex items-start gap-1.5">
-                      <div className="w-1 h-1 rounded-full mt-1 flex-shrink-0 bg-green-500"></div>
-                      <p className="text-[9px] text-gray-700 font-medium line-clamp-1">{action}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-[9px] text-gray-400 pl-1">No recent activity.</p>
-                )}
-              </div>
+              {openSection === 'activity' && (
+                <div className="mt-2 pl-2 space-y-1.5 animate-in slide-in-from-top-1 duration-200">
+                  {isLoadingActions ? (
+                    <p className="text-[9px] text-gray-500 pl-1">Loading activity...</p>
+                  ) : recentActions.length > 0 ? (
+                    recentActions.map((action, index) => (
+                      <div key={index} className="flex items-start gap-1.5">
+                        <div className="w-1 h-1 rounded-full mt-1 flex-shrink-0 bg-green-500"></div>
+                        <p className="text-[9px] text-gray-700 font-medium line-clamp-1">{action}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-[9px] text-gray-400 pl-1">No recent activity.</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Generated Content Section */}
