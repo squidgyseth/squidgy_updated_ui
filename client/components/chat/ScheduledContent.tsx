@@ -21,7 +21,7 @@ const PlatformIcon: React.FC<{ platform: string; size?: number; className?: stri
 };
 
 // Platform-specific post preview modal
-const PostPreviewModal: React.FC<{ post: any; onClose: () => void }> = ({ post, onClose }) => {
+const PostPreviewModal: React.FC<{ post: any; onClose: () => void; onDelete: (postId: string) => Promise<void>; isDeleting: boolean }> = ({ post, onClose, onDelete, isDeleting }) => {
   const platform = post.platform?.toLowerCase() || 'facebook';
   const content = post.summary || '';
   const media = post.media || [];
@@ -134,16 +134,22 @@ const PostPreviewModal: React.FC<{ post: any; onClose: () => void }> = ({ post, 
               <button 
                 onClick={(e) => { e.stopPropagation(); alert('Edit functionality coming soon'); }}
                 className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors"
+                disabled={isDeleting}
               >
                 <Pencil size={14} />
                 Edit
               </button>
               <button 
-                onClick={(e) => { e.stopPropagation(); alert('Remove functionality coming soon'); }}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-lg transition-colors"
+                onClick={(e) => { e.stopPropagation(); onDelete(post._id || post.id); }}
+                disabled={isDeleting}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Trash2 size={14} />
-                Remove
+                {isDeleting ? (
+                  <RefreshCw size={14} className="animate-spin" />
+                ) : (
+                  <Trash2 size={14} />
+                )}
+                {isDeleting ? 'Deleting...' : 'Remove'}
               </button>
             </div>
           )}
@@ -162,6 +168,7 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
   const [showAll, setShowAll] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [filter, setFilter] = useState<'scheduled' | 'published'>('scheduled');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Only show for social_media_agent
   const shouldShow = agentId === 'social_media_agent';
@@ -234,6 +241,27 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
     setRefreshing(true);
     await loadScheduledPosts();
     setRefreshing(false);
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    if (!userId || !postId) return;
+    
+    setIsDeleting(true);
+    try {
+      const result = await scheduledPostsService.deletePost(postId, userId, 'SOL');
+      
+      if (result.success) {
+        // Remove the post from local state
+        setScheduledPosts(prev => prev.filter(p => (p as any)._id !== postId && p.id !== postId));
+        setSelectedPost(null);
+      } else {
+        alert(result.error || 'Failed to delete post');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete post');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (!shouldShow) {
@@ -412,7 +440,12 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
       
       {/* Post preview modal */}
       {selectedPost && (
-        <PostPreviewModal post={selectedPost} onClose={() => setSelectedPost(null)} />
+        <PostPreviewModal 
+          post={selectedPost} 
+          onClose={() => setSelectedPost(null)} 
+          onDelete={handleDeletePost}
+          isDeleting={isDeleting}
+        />
       )}
     </div>
   );

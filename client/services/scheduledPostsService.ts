@@ -158,6 +158,35 @@ class ScheduledPostsService {
         return { label: status || 'Unknown', color: 'text-gray-400' };
     }
   }
+
+  /**
+   * Delete a scheduled post
+   */
+  async deletePost(postId: string, firmUserId: string, agentId: string = 'SOL'): Promise<{ success: boolean; error?: string }> {
+    const url = `${BACKEND_URL}/api/social/scheduled/posts/${postId}?firm_user_id=${firmUserId}&agent_id=${agentId}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error: errorData.detail || `HTTP ${response.status}: ${response.statusText}`
+        };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to delete post'
+      };
+    }
+  }
 }
 
 export default ScheduledPostsService.getInstance();

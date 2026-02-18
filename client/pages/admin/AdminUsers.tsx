@@ -1500,6 +1500,23 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                               {ghl.subaccount_created_at ? new Date(ghl.subaccount_created_at).toLocaleDateString() : '-'}
                             </div>
                           </div>
+                          
+                          {/* Open Dashboard Button */}
+                          {ghl.ghl_location_id && (
+                            <div className="flex justify-center mt-4 pt-4 border-t border-gray-200">
+                              <a
+                                href={`https://app.gohighlevel.com/v2/location/${ghl.ghl_location_id}/dashboard`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                              >
+                                Open Dashboard
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              </a>
+                            </div>
+                          )}
                         </div>
                         
                         {/* Retry Button for Failed Status */}
