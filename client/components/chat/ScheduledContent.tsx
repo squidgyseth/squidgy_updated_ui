@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, RefreshCw, Facebook, Instagram, Linkedin, Twitter, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, Calendar, RefreshCw, Facebook, Instagram, Linkedin, Twitter, X, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
 import scheduledPostsService, { ScheduledPost } from '../../services/scheduledPostsService';
 import { useUser } from '../../hooks/useUser';
 
@@ -120,12 +120,32 @@ const PostPreviewModal: React.FC<{ post: any; onClose: () => void }> = ({ post, 
         
         {/* Status footer - always visible */}
         <div className="px-3 py-2.5 bg-gray-50 border-t border-gray-200 sticky bottom-0">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <span className={`text-xs font-semibold ${scheduledPostsService.getStatusDisplay(post as ScheduledPost).color}`}>
               {scheduledPostsService.getStatusDisplay(post as ScheduledPost).label}
             </span>
             <span className="text-xs text-gray-500">{dateStr}</span>
           </div>
+          
+          {/* Action buttons - only show for non-published posts */}
+          {post.status?.toLowerCase() !== 'published' && (
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={(e) => { e.stopPropagation(); alert('Edit functionality coming soon'); }}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors"
+              >
+                <Pencil size={14} />
+                Edit
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); alert('Remove functionality coming soon'); }}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-lg transition-colors"
+              >
+                <Trash2 size={14} />
+                Remove
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -140,9 +160,19 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
   const [refreshing, setRefreshing] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [filter, setFilter] = useState<'scheduled' | 'published'>('scheduled');
 
   // Only show for social_media_agent
   const shouldShow = agentId === 'social_media_agent';
+  
+  // Filter posts based on selected filter
+  const filteredPosts = scheduledPosts.filter(post => {
+    const status = (post as any).status?.toLowerCase() || '';
+    if (filter === 'published') {
+      return status === 'published';
+    }
+    return status !== 'published'; // scheduled, pending, draft, queued, etc.
+  });
 
   useEffect(() => {
     if (shouldShow && userId) {
@@ -226,13 +256,33 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
 
   return (
     <div className={`scheduled-content-container ${className}`}>
-      {/* Header with refresh button */}
+      {/* Header with toggle and refresh */}
       <div className="flex items-center justify-between mb-2 px-1">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <Clock size={10} className="text-orange-500" />
-          <span className="text-[9px] font-medium text-gray-600">
-            Social Posts ({scheduledPosts.length})
-          </span>
+          {/* Toggle buttons */}
+          <div className="flex items-center bg-gray-100 rounded-full p-0.5">
+            <button
+              onClick={() => setFilter('scheduled')}
+              className={`px-2 py-0.5 text-[8px] font-medium rounded-full transition-colors ${
+                filter === 'scheduled' 
+                  ? 'bg-orange-500 text-white' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Scheduled ({scheduledPosts.filter(p => (p as any).status?.toLowerCase() !== 'published').length})
+            </button>
+            <button
+              onClick={() => setFilter('published')}
+              className={`px-2 py-0.5 text-[8px] font-medium rounded-full transition-colors ${
+                filter === 'published' 
+                  ? 'bg-green-500 text-white' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Published ({scheduledPosts.filter(p => (p as any).status?.toLowerCase() === 'published').length})
+            </button>
+          </div>
         </div>
         <button
           onClick={handleRefresh}
@@ -246,7 +296,7 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
 
       {/* Posts list */}
       <div className="space-y-2 max-h-[300px] overflow-y-auto">
-        {(showAll ? scheduledPosts : scheduledPosts.slice(0, 5)).map((post, index) => {
+        {(showAll ? filteredPosts : filteredPosts.slice(0, 5)).map((post, index) => {
           const postData = post as any;
           const hasMedia = postData.media && postData.media.length > 0;
           const mediaUrl = hasMedia ? postData.media[0]?.url : null;
@@ -304,7 +354,7 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
         })}
         
         {/* Show more/less button */}
-        {scheduledPosts.length > 5 && (
+        {filteredPosts.length > 5 && (
           <button
             onClick={() => setShowAll(!showAll)}
             className="w-full py-2 text-[11px] text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors flex items-center justify-center gap-1 font-medium"
@@ -317,10 +367,19 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
             ) : (
               <>
                 <ChevronDown size={14} />
-                +{scheduledPosts.length - 5} more posts
+                +{filteredPosts.length - 5} more posts
               </>
             )}
           </button>
+        )}
+        
+        {/* Empty state for filtered results */}
+        {filteredPosts.length === 0 && (
+          <div className="p-3 text-center">
+            <p className="text-[10px] text-gray-400">
+              No {filter} posts found
+            </p>
+          </div>
         )}
       </div>
       
