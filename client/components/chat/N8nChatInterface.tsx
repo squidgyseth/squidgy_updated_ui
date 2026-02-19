@@ -398,7 +398,8 @@ export default function N8nChatInterface({
     message: string,
     sender: 'User' | 'Agent',
     timestamp?: Date,
-    agentStatus?: string
+    agentStatus?: string,
+    executionId?: string | number
   ) => {
     try {
       const savedRecord = await chatHistoryService.saveMessage({
@@ -409,7 +410,8 @@ export default function N8nChatInterface({
         timestamp: (timestamp || new Date()).toISOString(),
         agent_name: agent.name,
         agent_id: agent.id,
-        agent_status: agentStatus
+        agent_status: agentStatus,
+        execution_id: executionId
       });
       return savedRecord;
     } catch (error) {
@@ -632,7 +634,8 @@ export default function N8nChatInterface({
           displayMessage,
           'Agent',
           messageTimestamp,
-          response.agent_status || 'Ready'  // Default to 'Ready' for streaming
+          response.agent_status || 'Ready',  // Default to 'Ready' for streaming
+          response.execution_id  // Pass execution_id from n8n response
         );
 
         // Update agentMessage with content_repurposer_history_id if available
