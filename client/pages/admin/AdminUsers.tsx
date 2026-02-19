@@ -652,6 +652,8 @@ interface AdminChatMessage {
   timestamp: string;
   agent_name?: string;
   agent_id?: string;
+  execution_id?: string | number;
+  workflow_id?: string;
 }
 
 function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
@@ -1703,7 +1705,7 @@ function ChatHistoryModal({ user, onClose }: ChatHistoryModalProps) {
       
       const { data, error } = await supabase
         .from('chat_history')
-        .select('session_id, agent_id, agent_name, timestamp, message, sender')
+        .select('session_id, agent_id, agent_name, timestamp, message, sender, execution_id, workflow_id')
         .eq('user_id', user.user_id)
         .order('timestamp', { ascending: false });
       
@@ -1797,7 +1799,9 @@ function ChatHistoryModal({ user, onClose }: ChatHistoryModalProps) {
         message: msg.message,
         timestamp: msg.timestamp,
         agent_name: msg.agent_name,
-        agent_id: msg.agent_id
+        agent_id: msg.agent_id,
+        execution_id: (msg as any).execution_id,
+        workflow_id: (msg as any).workflow_id
       }));
       
       setSessionMessages(mappedMessages);
@@ -1861,15 +1865,30 @@ function ChatHistoryModal({ user, onClose }: ChatHistoryModalProps) {
               ) : sessionMessages.length > 0 ? (
                 <div className="space-y-3 max-h-[500px] overflow-y-auto">
                   {sessionMessages.map((msg, index) => (
-                    <ChatMessageBubble
-                      key={msg.id || index}
-                      message={msg.message}
-                      sender={msg.sender === 'User' ? 'user' : 'agent'}
-                      timestamp={msg.timestamp}
-                      agentName={msg.agent_name || msg.sender}
-                      agentId={msg.agent_id}
-                      showAvatar={false}
-                    />
+                    <div key={msg.id || index} className="relative">
+                      <ChatMessageBubble
+                        message={msg.message}
+                        sender={msg.sender === 'User' ? 'user' : 'agent'}
+                        timestamp={msg.timestamp}
+                        agentName={msg.agent_name || msg.sender}
+                        agentId={msg.agent_id}
+                        showAvatar={false}
+                      />
+                      {msg.sender === 'Agent' && msg.execution_id && msg.workflow_id && (
+                        <a
+                          href={`https://n8n.theaiteam.uk/workflow/${msg.workflow_id}/executions/${msg.execution_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 mt-1 ml-12 text-xs text-purple-600 hover:text-purple-700 hover:underline"
+                          title="View n8n execution"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                          View Execution #{msg.execution_id}
+                        </a>
+                      )}
+                    </div>
                   ))}
                 </div>
               ) : (
