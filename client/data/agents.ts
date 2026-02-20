@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-02-20T14:17:33.748Z
+// Generated on: 2026-02-20T16:51:11.636Z
 
 export interface AgentConfig {
   agent: {
@@ -12,8 +12,8 @@ export interface AgentConfig {
     tagline?: string;
     avatar?: string;
     pinned?: boolean;
-    enabled?: boolean;  // Whether agent is enabled by default (personal_assistant always true)
-    uses_conversation_state?: boolean;  // Enables multi-turn conversation state persistence
+    enabled?: boolean;
+    uses_conversation_state?: boolean;
     initial_message?: string;
     sidebar_greeting?: string;
     capabilities?: string[];
@@ -308,7 +308,7 @@ export const ALL_AGENTS: AgentConfig[] = [
   },
   {
     "agent": {
-      "id": "social_media_agent",
+      "id": "social_media",
       "emoji": "📱",
       "name": "Sophia | Social Media Superhero",
       "category": "MARKETING",
@@ -731,9 +731,9 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "approach": "proactive"
     }
   },
-  "social_media_agent": {
+  "social_media": {
     "agent": {
-      "id": "social_media_agent",
+      "id": "social_media",
       "emoji": "📱",
       "name": "Sophia | Social Media Superhero",
       "category": "MARKETING",
@@ -1295,7 +1295,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     },
     {
       "agent": {
-        "id": "social_media_agent",
+        "id": "social_media",
         "emoji": "📱",
         "name": "Sophia | Social Media Superhero",
         "category": "MARKETING",
@@ -1526,7 +1526,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","newsletter_multi","personal_assistant","social_media_agent","social_media_scheduler","SOL"];
+export const AGENT_IDS: string[] = ["content_repurposer","newsletter_multi","personal_assistant","social_media","social_media_scheduler","SOL"];
 
 // Total count
 export const TOTAL_AGENTS = 6;

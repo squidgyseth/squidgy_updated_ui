@@ -263,7 +263,7 @@
     },
     {
       "agent": {
-        "id": "social_media_agent",
+        "id": "social_media",
         "emoji": "📱",
         "name": "Sophia | Social Media Superhero",
         "category": "MARKETING",
@@ -684,9 +684,9 @@
         "approach": "proactive"
       }
     },
-    "social_media_agent": {
+    "social_media": {
       "agent": {
-        "id": "social_media_agent",
+        "id": "social_media",
         "emoji": "📱",
         "name": "Sophia | Social Media Superhero",
         "category": "MARKETING",
@@ -1246,7 +1246,7 @@
       },
       {
         "agent": {
-          "id": "social_media_agent",
+          "id": "social_media",
           "emoji": "📱",
           "name": "Sophia | Social Media Superhero",
           "category": "MARKETING",
@@ -1477,6 +1477,6 @@
   },
   "meta": {
     "total": 6,
-    "buildTime": "2026-02-20T14:17:33.750Z"
+    "buildTime": "2026-02-20T16:51:11.638Z"
   }
 }
