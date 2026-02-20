@@ -138,27 +138,26 @@ async function upsertAgentsToSupabase(agents) {
  */
 async function buildAgents() {
   try {
-    const configDir = path.join(__dirname, '../agents/configs');
+    const agentsDir = path.join(__dirname, '../agents');
     const outputFile = path.join(__dirname, '../client/data/agents.ts');
     
     // Ensure output directory exists
     await fs.mkdir(path.dirname(outputFile), { recursive: true });
     
-    // Read all YAML files
-    const files = await fs.readdir(configDir);
-    const yamlFiles = files.filter(file => 
-      (file.endsWith('.yaml') || file.endsWith('.yml')) && 
-      !file.includes('template')
+    // Read all directories in the agents folder
+    const entries = await fs.readdir(agentsDir, { withFileTypes: true });
+    const agentFolders = entries.filter(entry => 
+      entry.isDirectory() && entry.name !== 'shared'
     );
     
     const agents = [];
     const agentMap = {};
     
-    // Parse each YAML file
-    for (const file of yamlFiles) {
+    // Parse config.yaml from each agent folder
+    for (const folder of agentFolders) {
       try {
-        const filePath = path.join(configDir, file);
-        const content = await fs.readFile(filePath, 'utf8');
+        const configPath = path.join(agentsDir, folder.name, 'config.yaml');
+        const content = await fs.readFile(configPath, 'utf8');
         const config = yaml.load(content);
         
         // Only include valid agent configs
@@ -167,6 +166,7 @@ async function buildAgents() {
           agentMap[config.agent.id] = config;
         }
       } catch (error) {
+        // Skip folders without config.yaml
       }
     }
     

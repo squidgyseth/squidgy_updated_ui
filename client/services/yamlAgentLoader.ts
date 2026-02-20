@@ -111,8 +111,8 @@ class YamlAgentLoader {
     }
 
     try {
-      // Fetch the YAML file directly from the original agents folder
-      const response = await fetch(`/agents/configs/${agentId}.yaml`);
+      // Fetch the YAML file from the agent's folder
+      const response = await fetch(`/agents/${agentId}/config.yaml`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch ${agentId}.yaml: ${response.status}`);

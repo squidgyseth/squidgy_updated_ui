@@ -60,91 +60,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         const { data: { session } } = await supabase.auth.getSession();
         const endSessionCheck = Date.now();
         
-        // Check if we're in development mode
-        const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                             !import.meta.env.VITE_SUPABASE_URL || 
-                             import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
-        
-        
-        if (isDevelopment) {
-          // Development mode - create or use existing dev user
-          let devUserId = localStorage.getItem('dev_user_id') || import.meta.env.VITE_DEV_USER_ID;
-          let devUserEmail = localStorage.getItem('dev_user_email') || import.meta.env.VITE_DEV_USER_EMAIL || 'dmacproject123@gmail.com';
-          
-          
-          if (!devUserId) {
-            devUserId = generateUserId();
-            localStorage.setItem('dev_user_id', devUserId);
-          }
-          
-          // Try to fetch profile from Supabase first using direct API
-          let profileData = null;
-          try {
-            
-            // First try by user ID
-            let result = await profilesApi.getById(devUserId);
-            profileData = result.data;
-              
-            if (!profileData) {
-              // If not found by ID, try by email
-              result = await profilesApi.getByEmail(devUserEmail);
-              profileData = result.data;
-            }
-            
-          } catch (error) {
-          }
-          
-          
-          // ALWAYS use user_id from profiles table in development mode
-          let finalUserId = profileData?.user_id;
-          
-          if (!finalUserId) {
-            try {
-              // Try to get the correct user_id by email lookup using direct API
-              const emailLookupResult = await profilesApi.getByEmail(devUserEmail);
-              
-              if (emailLookupResult.data?.user_id) {
-                finalUserId = emailLookupResult.data.user_id;
-              } else {
-                finalUserId = devUserId;
-              }
-            } catch (error) {
-              console.error('❌ USER_PROVIDER Dev: Email lookup failed:', error);
-              finalUserId = devUserId;
-            }
-          }
-          
-          
-          setIsAuthenticated(true);
-          setUser({ id: devUserId, email: devUserEmail });
-          const finalProfile = profileData || { 
-            id: devUserId,
-            user_id: finalUserId, 
-            email: devUserEmail,
-            full_name: 'Development User',
-            profile_avatar_url: ''
-          };
-          setProfile(finalProfile);
-          setUserIdState(finalUserId);
-          setSessionIdState(`session_${finalUserId}`);
-          setAgentIdState(`agent_${finalUserId}`);
-          localStorage.setItem('squidgy_user_id', finalUserId);
-          
-          // Identify user in PostHog with correct profile.user_id (dev mode)
-          posthogService.identifyUser(
-            finalUserId,
-            devUserEmail,
-            finalProfile.full_name
-          );
-          
-          // Start session monitoring even in dev mode
-          sessionManager.startSessionMonitoring();
-          
-          setIsReady(true);
-          return;
-        }
-        
-        // Production mode - check Supabase authentication with retry logic
+        // Check Supabase authentication with retry logic (same for dev and production)
         
         // If we already found a session, set authenticated immediately to prevent redirect
         if (session?.user) {
@@ -252,51 +168,20 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         setIsReady(true);
       } catch (error) {
         console.error('Failed to initialize user:', error);
-        
-        // In production, don't fallback to dev mode - set as unauthenticated
-        const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                             !import.meta.env.VITE_SUPABASE_URL || 
-                             import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
-        
-        if (isDevelopment) {
-          // Fallback to development mode only in dev environment
-          let devUserId = localStorage.getItem('dev_user_id') || import.meta.env.VITE_DEV_USER_ID;
-          let devUserEmail = localStorage.getItem('dev_user_email') || import.meta.env.VITE_DEV_USER_EMAIL || 'dmacproject123@gmail.com';
-          
-          if (!devUserId) {
-            devUserId = generateUserId();
-            localStorage.setItem('dev_user_id', devUserId);
-          }
-          
-          setIsAuthenticated(true);
-          setUser({ id: devUserId, email: devUserEmail });
-          setProfile({ user_id: devUserId, full_name: 'Development User' });
-          setUserIdState(devUserId);
-          localStorage.setItem('squidgy_user_id', devUserId);
-          
-          const currentAgentId = `agent_${devUserId}`;
-          setAgentIdState(currentAgentId);
-        } else {
-          // Production - set as unauthenticated
-          setIsAuthenticated(false);
-          setUser(null);
-          setProfile(null);
-        }
-        
+        // Set as unauthenticated on error
+        setIsAuthenticated(false);
+        setUser(null);
+        setProfile(null);
         setIsReady(true);
       }
     };
 
     initializeUser();
 
-    // Listen for auth state changes only in production mode
+    // Listen for auth state changes
     let subscription: any = null;
     
-    const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                         !import.meta.env.VITE_SUPABASE_URL || 
-                         import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
-        if (!isDevelopment) {
-      try {
+    try {
         const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
           
           if (event === 'SIGNED_IN' && session?.user) {
@@ -385,7 +270,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       } catch (error) {
         console.error('Error setting up auth listener:', error);
       }
-    }
 
     return () => {
       if (subscription) {
@@ -405,24 +289,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     
     const newAgentId = `agent_${newUserId}`;
     setAgentIdState(newAgentId);
-    
-    // Update authentication state for development users
-    const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                         !import.meta.env.VITE_SUPABASE_URL || 
-                         import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
-    
-    if (isDevelopment && newUserId) {
-      const devUserEmail = localStorage.getItem('dev_user_email') || import.meta.env.VITE_DEV_USER_EMAIL || 'dmacproject123@gmail.com';
-      const devUserName = localStorage.getItem('dev_user_name') || import.meta.env.VITE_DEV_USER_NAME || 'Development User';
-      const devUserAvatar = localStorage.getItem('dev_user_avatar') || '';
-      setIsAuthenticated(true);
-      setUser({ id: newUserId, email: devUserEmail });
-      setProfile({ 
-        user_id: newUserId, 
-        full_name: devUserName,
-        profile_avatar_url: devUserAvatar
-      });
-    }
   };
 
   const clearUser = async () => {
@@ -462,13 +328,10 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       // Try to fetch updated profile from database
       let { data } = await profilesApi.getById(userId);
         
-      if (!data) {
+      if (!data && user?.email) {
         // If not found by ID, try by email
-        const userEmail = user?.email || localStorage.getItem('dev_user_email');
-        if (userEmail) {
-          const result = await profilesApi.getByEmail(userEmail);
-          data = result.data;
-        }
+        const result = await profilesApi.getByEmail(user.email);
+        data = result.data;
       }
       
       if (data) {

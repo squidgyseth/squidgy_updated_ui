@@ -37,22 +37,21 @@ interface AgentConfig {
  */
 router.get('/list', async (req, res) => {
   try {
-    const configDir = path.join(__dirname, '../../agents/configs');
+    const agentsDir = path.join(__dirname, '../../agents');
     
-    // Read all YAML files in the configs directory
-    const files = await fs.readdir(configDir);
-    const yamlFiles = files.filter(file => file.endsWith('.yaml') || file.endsWith('.yml'));
+    // Read all directories in the agents folder
+    const entries = await fs.readdir(agentsDir, { withFileTypes: true });
+    const agentFolders = entries.filter(entry => 
+      entry.isDirectory() && entry.name !== 'shared'
+    );
     
     const agents: AgentConfig[] = [];
     
-    // Parse each YAML file
-    for (const file of yamlFiles) {
-      // Skip template files
-      if (file.includes('template')) continue;
-      
+    // Parse config.yaml from each agent folder
+    for (const folder of agentFolders) {
       try {
-        const filePath = path.join(configDir, file);
-        const content = await fs.readFile(filePath, 'utf8');
+        const configPath = path.join(agentsDir, folder.name, 'config.yaml');
+        const content = await fs.readFile(configPath, 'utf8');
         const config = yaml.load(content) as AgentConfig;
         
         // Only include valid agent configs
@@ -60,6 +59,7 @@ router.get('/list', async (req, res) => {
           agents.push(config);
         }
       } catch (error) {
+        // Skip folders without config.yaml
       }
     }
     
@@ -88,19 +88,18 @@ router.get('/list', async (req, res) => {
 router.get('/:agentId/config', async (req, res) => {
   try {
     const { agentId } = req.params;
-    const configDir = path.join(__dirname, '../../agents/configs');
+    const agentsDir = path.join(__dirname, '../../agents');
     
-    // Read all YAML files to find the matching agent
-    const files = await fs.readdir(configDir);
-    const yamlFiles = files.filter(file => file.endsWith('.yaml') || file.endsWith('.yml'));
+    // Read all directories in the agents folder
+    const entries = await fs.readdir(agentsDir, { withFileTypes: true });
+    const agentFolders = entries.filter(entry => 
+      entry.isDirectory() && entry.name !== 'shared'
+    );
     
-    for (const file of yamlFiles) {
-      // Skip template files
-      if (file.includes('template')) continue;
-      
+    for (const folder of agentFolders) {
       try {
-        const filePath = path.join(configDir, file);
-        const content = await fs.readFile(filePath, 'utf8');
+        const configPath = path.join(agentsDir, folder.name, 'config.yaml');
+        const content = await fs.readFile(configPath, 'utf8');
         const config = yaml.load(content) as AgentConfig;
         
         // Check if this is the requested agent
@@ -108,6 +107,7 @@ router.get('/:agentId/config', async (req, res) => {
           return res.json(config);
         }
       } catch (error) {
+        // Skip folders without config.yaml
       }
     }
     
@@ -124,22 +124,21 @@ router.get('/:agentId/config', async (req, res) => {
  */
 router.get('/categories', async (req, res) => {
   try {
-    const configDir = path.join(__dirname, '../../agents/configs');
+    const agentsDir = path.join(__dirname, '../../agents');
     
-    // Read all YAML files
-    const files = await fs.readdir(configDir);
-    const yamlFiles = files.filter(file => file.endsWith('.yaml') || file.endsWith('.yml'));
+    // Read all directories in the agents folder
+    const entries = await fs.readdir(agentsDir, { withFileTypes: true });
+    const agentFolders = entries.filter(entry => 
+      entry.isDirectory() && entry.name !== 'shared'
+    );
     
     const categories: Record<string, AgentConfig[]> = {};
     
-    // Parse each YAML file and group by category
-    for (const file of yamlFiles) {
-      // Skip template files
-      if (file.includes('template')) continue;
-      
+    // Parse config.yaml from each agent folder and group by category
+    for (const folder of agentFolders) {
       try {
-        const filePath = path.join(configDir, file);
-        const content = await fs.readFile(filePath, 'utf8');
+        const configPath = path.join(agentsDir, folder.name, 'config.yaml');
+        const content = await fs.readFile(configPath, 'utf8');
         const config = yaml.load(content) as AgentConfig;
         
         if (config && config.agent && config.agent.id) {

@@ -150,8 +150,6 @@ export default function CategorizedAgentSidebar() {
       const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
       const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
       
-      // Debug logging
-      
       // Always include Personal Assistant (pinned)
       enabledAgentIds.add('personal_assistant');
       
