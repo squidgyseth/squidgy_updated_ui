@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
 import { useAdmin } from '../../hooks/useAdmin';
 import { supabase } from '../../lib/supabase';
-import { Settings, ArrowLeft, Save, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Settings, ArrowLeft, Save, ToggleLeft, ToggleRight, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PlatformSetting {
@@ -15,14 +15,26 @@ interface PlatformSetting {
   updated_at?: string;
 }
 
+interface AgentRecord {
+  id: string;
+  agent_id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  emoji?: string;
+  is_enabled: boolean;
+}
+
 export default function AdminSettings() {
   const navigate = useNavigate();
   const { userId } = useUser();
   const { isAdmin, isLoading: adminLoading } = useAdmin();
   
   const [settings, setSettings] = useState<PlatformSetting[]>([]);
+  const [agents, setAgents] = useState<AgentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [savingAgent, setSavingAgent] = useState<string | null>(null);
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -32,6 +44,7 @@ export default function AdminSettings() {
 
     if (userId && isAdmin) {
       loadSettings();
+      loadAgents();
     }
   }, [userId, isAdmin, adminLoading, navigate]);
 
@@ -53,6 +66,47 @@ export default function AdminSettings() {
       setSettings([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAgents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('agents')
+        .select('id, agent_id, name, description, category, emoji, is_enabled')
+        .order('category')
+        .order('name');
+      
+      if (error) throw error;
+      
+      setAgents(data || []);
+    } catch (error: any) {
+      console.error('Error loading agents:', error);
+      setAgents([]);
+    }
+  };
+
+  const handleToggleAgent = async (agent: AgentRecord) => {
+    try {
+      setSavingAgent(agent.agent_id);
+      
+      const { error } = await supabase
+        .from('agents')
+        .update({ is_enabled: !agent.is_enabled })
+        .eq('agent_id', agent.agent_id);
+      
+      if (error) throw error;
+      
+      setAgents(agents.map(a => 
+        a.agent_id === agent.agent_id 
+          ? { ...a, is_enabled: !agent.is_enabled }
+          : a
+      ));
+      toast.success(`${agent.name} ${!agent.is_enabled ? 'enabled' : 'disabled'}`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update agent');
+    } finally {
+      setSavingAgent(null);
     }
   };
 
@@ -195,6 +249,59 @@ export default function AdminSettings() {
               </div>
             ))
           )}
+        </div>
+
+        {/* Agents Section */}
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Agent Management</h2>
+          <p className="text-sm text-gray-500 mb-4">Enable or disable agents platform-wide. Disabled agents won't be available for users to activate.</p>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 divide-y divide-gray-200">
+            {agents.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                No agents configured
+              </div>
+            ) : (
+              agents.map((agent) => (
+                <div key={agent.agent_id} className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        agent.is_enabled ? 'bg-purple-100' : 'bg-gray-100'
+                      }`}>
+                        {agent.emoji ? (
+                          <span className="text-xl">{agent.emoji}</span>
+                        ) : (
+                          <Bot className={`w-5 h-5 ${agent.is_enabled ? 'text-purple-600' : 'text-gray-400'}`} />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-900">{agent.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-purple-600 font-medium">{agent.category}</span>
+                          {agent.description && (
+                            <span className="text-xs text-gray-400">• {agent.description.slice(0, 50)}{agent.description.length > 50 ? '...' : ''}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleToggleAgent(agent)}
+                      disabled={savingAgent === agent.agent_id}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        agent.is_enabled ? 'bg-purple-600' : 'bg-gray-300'
+                      } ${savingAgent === agent.agent_id ? 'opacity-50' : ''}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          agent.is_enabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
