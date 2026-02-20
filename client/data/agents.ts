@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-02-20T13:28:58.233Z
+// Generated on: 2026-02-20T14:17:33.748Z
 
 export interface AgentConfig {
   agent: {
@@ -236,6 +236,73 @@ export const ALL_AGENTS: AgentConfig[] = [
     "personality": {
       "tone": "professional",
       "style": "helpful",
+      "approach": "proactive"
+    }
+  },
+  {
+    "agent": {
+      "id": "social_media_scheduler",
+      "name": "Social Media Scheduler",
+      "category": "MARKETING",
+      "description": "Schedule and manage your social media posts across multiple platforms",
+      "specialization": "Automated & Strategic",
+      "tagline": "Schedule. Publish. Engage.",
+      "avatar": "/Squidgy AI Assistants Avatars/6.png",
+      "pinned": false,
+      "enabled": false,
+      "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
+      "capabilities": [
+        "Schedule posts across multiple social media platforms",
+        "Create and manage content calendars",
+        "Optimize posting times for maximum engagement",
+        "Draft social media content with hashtags and captions",
+        "Track scheduled posts and publishing status",
+        "Analyze best times to post based on audience data",
+        "Manage social media campaigns and series",
+        "Cross-platform content adaptation"
+      ],
+      "recent_actions": [
+        "Scheduled 15 posts for next week's product launch",
+        "Optimized posting times based on engagement analytics",
+        "Created content calendar for Q1 campaign",
+        "Drafted Instagram captions with trending hashtags"
+      ]
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Social Media Dashboard",
+          "path": "social-media-scheduler-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "suggestion_buttons",
+        "calendar_integration"
+      ]
+    },
+    "suggestions": [
+      "Complete Setup",
+      "Schedule a post for tomorrow",
+      "Show my content calendar",
+      "What's the best time to post?",
+      "Draft a LinkedIn post",
+      "Create a posting schedule",
+      "Analyze my posting strategy"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_scheduler"
+    },
+    "personality": {
+      "tone": "professional",
+      "style": "strategic",
       "approach": "proactive"
     }
   },
@@ -780,6 +847,73 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       ]
     }
   },
+  "social_media_scheduler": {
+    "agent": {
+      "id": "social_media_scheduler",
+      "name": "Social Media Scheduler",
+      "category": "MARKETING",
+      "description": "Schedule and manage your social media posts across multiple platforms",
+      "specialization": "Automated & Strategic",
+      "tagline": "Schedule. Publish. Engage.",
+      "avatar": "/Squidgy AI Assistants Avatars/6.png",
+      "pinned": false,
+      "enabled": false,
+      "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
+      "capabilities": [
+        "Schedule posts across multiple social media platforms",
+        "Create and manage content calendars",
+        "Optimize posting times for maximum engagement",
+        "Draft social media content with hashtags and captions",
+        "Track scheduled posts and publishing status",
+        "Analyze best times to post based on audience data",
+        "Manage social media campaigns and series",
+        "Cross-platform content adaptation"
+      ],
+      "recent_actions": [
+        "Scheduled 15 posts for next week's product launch",
+        "Optimized posting times based on engagement analytics",
+        "Created content calendar for Q1 campaign",
+        "Drafted Instagram captions with trending hashtags"
+      ]
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Social Media Dashboard",
+          "path": "social-media-scheduler-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "suggestion_buttons",
+        "calendar_integration"
+      ]
+    },
+    "suggestions": [
+      "Complete Setup",
+      "Schedule a post for tomorrow",
+      "Show my content calendar",
+      "What's the best time to post?",
+      "Draft a LinkedIn post",
+      "Create a posting schedule",
+      "Analyze my posting strategy"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_scheduler"
+    },
+    "personality": {
+      "tone": "professional",
+      "style": "strategic",
+      "approach": "proactive"
+    }
+  },
   "SOL": {
     "agent": {
       "id": "SOL",
@@ -1094,6 +1228,73 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     },
     {
       "agent": {
+        "id": "social_media_scheduler",
+        "name": "Social Media Scheduler",
+        "category": "MARKETING",
+        "description": "Schedule and manage your social media posts across multiple platforms",
+        "specialization": "Automated & Strategic",
+        "tagline": "Schedule. Publish. Engage.",
+        "avatar": "/Squidgy AI Assistants Avatars/6.png",
+        "pinned": false,
+        "enabled": false,
+        "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
+        "capabilities": [
+          "Schedule posts across multiple social media platforms",
+          "Create and manage content calendars",
+          "Optimize posting times for maximum engagement",
+          "Draft social media content with hashtags and captions",
+          "Track scheduled posts and publishing status",
+          "Analyze best times to post based on audience data",
+          "Manage social media campaigns and series",
+          "Cross-platform content adaptation"
+        ],
+        "recent_actions": [
+          "Scheduled 15 posts for next week's product launch",
+          "Optimized posting times based on engagement analytics",
+          "Created content calendar for Q1 campaign",
+          "Drafted Instagram captions with trending hashtags"
+        ]
+      },
+      "ui_use": {
+        "page_type": "single_page",
+        "pages": [
+          {
+            "name": "Social Media Dashboard",
+            "path": "social-media-scheduler-dashboard",
+            "order": 1,
+            "validated": true
+          }
+        ]
+      },
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "suggestion_buttons",
+          "calendar_integration"
+        ]
+      },
+      "suggestions": [
+        "Complete Setup",
+        "Schedule a post for tomorrow",
+        "Show my content calendar",
+        "What's the best time to post?",
+        "Draft a LinkedIn post",
+        "Create a posting schedule",
+        "Analyze my posting strategy"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_scheduler"
+      },
+      "personality": {
+        "tone": "professional",
+        "style": "strategic",
+        "approach": "proactive"
+      }
+    },
+    {
+      "agent": {
         "id": "social_media_agent",
         "emoji": "📱",
         "name": "Sophia | Social Media Superhero",
@@ -1325,7 +1526,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["content_repurposer","newsletter_multi","personal_assistant","social_media_agent","SOL"];
+export const AGENT_IDS: string[] = ["content_repurposer","newsletter_multi","personal_assistant","social_media_agent","social_media_scheduler","SOL"];
 
 // Total count
-export const TOTAL_AGENTS = 5;
+export const TOTAL_AGENTS = 6;

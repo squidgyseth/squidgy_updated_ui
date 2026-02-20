@@ -130,6 +130,45 @@ async function upsertAgentsToSupabase(agents) {
   }
 
   console.log(`✅ Synced ${agentRecords.length} agents to database`);
+
+  // ============================================
+  // CLEANUP: Remove agents from DB that are not in YAML configs
+  // ============================================
+  const yamlAgentIds = agentRecords.map(r => r.agent_id);
+  
+  try {
+    // Get all agents from database
+    const { data: dbAgents, error: fetchError } = await supabase
+      .from('agents')
+      .select('agent_id');
+    
+    if (fetchError) {
+      console.error('❌ Error fetching agents for cleanup:', fetchError.message);
+    } else if (dbAgents) {
+      // Find agents in DB that are not in YAML configs
+      const orphanedAgents = dbAgents.filter(
+        dbAgent => !yamlAgentIds.includes(dbAgent.agent_id)
+      );
+      
+      if (orphanedAgents.length > 0) {
+        console.log('🧹 Cleaning up orphaned agents from database...');
+        for (const orphan of orphanedAgents) {
+          const { error: deleteError } = await supabase
+            .from('agents')
+            .delete()
+            .eq('agent_id', orphan.agent_id);
+          
+          if (deleteError) {
+            console.error(`  ❌ Error deleting ${orphan.agent_id}:`, deleteError.message);
+          } else {
+            console.log(`  🗑️  Deleted: ${orphan.agent_id}`);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('❌ Error during cleanup:', err.message);
+  }
 }
 
 /**
