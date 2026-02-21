@@ -67,13 +67,22 @@ class ReferralService {
       // Generate new code if doesn't exist
       const { data: userData } = await supabase.auth.getUser();
       const userEmail = userData?.user?.email || '';
-      const userName = userData?.user?.user_metadata?.full_name || userEmail.split('@')[0];
-      
-      // Generate code: First 3 letters of name + random 4 chars + year
-      const namePrefix = userName.substring(0, 3).toUpperCase();
-      const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase();
+
+      // Generate deterministic code (same email = same code)
+      // Format: SQUID + Email prefix + 5-char hash + year
+      const emailPrefix = userEmail.split('@')[0].substring(0, 3).toUpperCase();
+
+      // Generate deterministic hash from email
+      let hash = 0;
+      for (let i = 0; i < userEmail.length; i++) {
+        hash = ((hash << 5) - hash) + userEmail.charCodeAt(i);
+        hash = hash & hash; // Convert to 32bit integer
+      }
+
+      // Convert hash to base36 and take 5 characters (harder to guess)
+      const hashStr = Math.abs(hash).toString(36).toUpperCase().substring(0, 5).padEnd(5, '0');
       const year = new Date().getFullYear();
-      const code = `${namePrefix}${randomChars}${year}`;
+      const code = `SQUID${emailPrefix}${hashStr}${year}`;
       const link = `https://app.squidgy.ai/register?ref=${code}`;
 
       // Insert new code
