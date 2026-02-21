@@ -853,6 +853,45 @@ class ReferralService {
       subscription.unsubscribe();
     };
   }
+
+  // =====================================================
+  // REFERRAL CODE VALIDATION
+  // =====================================================
+
+  /**
+   * Validate a referral code
+   * Returns true if:
+   * - Code is "SQUIDWINS" (master code), OR
+   * - Code exists in referral_codes table and is active
+   */
+  async validateReferralCode(code: string): Promise<boolean> {
+    try {
+      // Trim and uppercase the code for comparison
+      const trimmedCode = code.trim().toUpperCase();
+
+      // Check if it's the master code
+      if (trimmedCode === 'SQUIDWINS') {
+        return true;
+      }
+
+      // Check if code exists in database
+      const { data, error } = await supabase
+        .from('referral_codes')
+        .select('code')
+        .eq('code', trimmedCode)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !data) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error validating referral code:', error);
+      return false;
+    }
+  }
 }
 
 export default ReferralService;

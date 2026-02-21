@@ -8,6 +8,7 @@ interface SignUpData {
   email: string;
   password: string;
   fullName: string;
+  referralCode?: string;
   termsAccepted?: boolean;
   aiProcessingConsent?: boolean;
   marketingConsent?: boolean;
@@ -242,9 +243,11 @@ export class AuthService {
             const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
             const url = `${supabaseUrl}/rest/v1/profiles`;
 
+            const userId = uuidv4();
+
             const profileData = {
               id: authData.user.id,
-              user_id: uuidv4(),
+              user_id: userId,
               company_id: uuidv4(), // Generate company_id for new user
               email: authData.user.email,
               full_name: userData.fullName.trim(),
@@ -262,6 +265,11 @@ export class AuthService {
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             };
+
+            // TODO: Track referral if referralCode was provided
+            // If userData.referralCode exists and is not "SQUIDWINS":
+            //   1. Look up the referrer's user_id from referral_codes table
+            //   2. Create entry in referrals table linking referrer to referee (userId)
 
             const response = await fetch(url, {
               method: 'POST',

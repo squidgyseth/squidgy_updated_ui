@@ -7,6 +7,7 @@ import BetaUserAgreementModal from '../components/BetaUserAgreementModal';
 import TermsModal from '../components/TermsModal';
 import AuthFooterLinks from '../components/AuthFooterLinks';
 import AuthCarousel from '../components/AuthCarousel';
+import ReferralService from '../services/referralService';
 
 // Google Icon from design
 const GoogleIcon = () => (
@@ -24,6 +25,7 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -68,6 +70,17 @@ export default function Register() {
       return;
     }
 
+    // Validate referral code if provided
+    if (referralCode.trim()) {
+      const referralService = ReferralService.getInstance();
+      const isValidCode = await referralService.validateReferralCode(referralCode);
+
+      if (!isValidCode) {
+        toast.error('Invalid referral code. Please check and try again.');
+        return;
+      }
+    }
+
     // Validate required consents
     if (!termsScrolledToBottom || !privacyScrolledToBottom) {
       toast.error('You must read through the entire Beta User Agreement and Privacy Policy before accepting');
@@ -91,6 +104,7 @@ export default function Register() {
         email,
         password,
         fullName,
+        referralCode: referralCode.trim() || undefined,
         termsAccepted,
         aiProcessingConsent: aiConsentAccepted,
         marketingConsent,
@@ -275,6 +289,26 @@ export default function Register() {
                   )}
                 </button>
               </div>
+            </div>
+
+            {/* Referral Code Field */}
+            <div>
+              <label htmlFor="referralCode" className="block text-[14px] text-[#364153] mb-1 font-['Open_Sans']">
+                Referral Code
+              </label>
+              <input
+                id="referralCode"
+                type="text"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                className="w-full px-[13px] py-4 border border-[#D1D5DC] rounded-[10px] text-[15px] placeholder:text-[rgba(10,10,10,0.5)] font-['Open_Sans'] focus:outline-none focus:ring-2 focus:ring-[#5E17EB] focus:border-transparent uppercase"
+                placeholder="Enter referral code"
+                required
+              />
+              <p className="mt-2 text-xs text-[#6A7282] font-['Open_Sans']">
+                💡 <span className="font-semibold">SQUIDWINS</span> is a master code that anyone can use for unlimited signups.
+                You can also use a personal referral code from a friend!
+              </p>
             </div>
 
             {/* Consent Checkboxes */}
