@@ -33,6 +33,4 @@ nova-realm/
 nova-realm_updated/
 
 # N8N workflows (contain API keys and secrets)
-n8n_workflows/
-.vercel
-.env*.local
+n8n_workflows/.bmad

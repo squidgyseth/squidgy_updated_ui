@@ -1,0 +1,79 @@
+{
+  "name": "Brandy - Brand Advisor (Simple Working)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "brandy",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        112
+      ],
+      "id": "webhook-node",
+      "name": "Webhook",
+      "webhookId": "brandy-webhook-simple"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.body;\nconst msg = (data.user_mssg || '').toLowerCase();\n\nlet conversationState = {};\ntry {\n  const rawState = data.state || data.conversation_state;\n  if (rawState) {\n    conversationState = typeof rawState === 'string' ? JSON.parse(rawState) : rawState;\n  }\n} catch(e) {\n  conversationState = {};\n}\n\nlet phase = conversationState.phase || 'assessment';\nlet wizardStep = conversationState.wizard_step || 0;\nlet wizardData = conversationState.wizard_data || {};\nlet resp = '';\nlet status = 'Waiting';\n\nif (phase === 'assessment') {\n  if (msg.includes('1') || msg.includes('scratch') || msg.includes('build')) {\n    phase = 'wizard';\n    wizardStep = 1;\n    resp = 'Perfect! Let us build your brand from scratch.\\n\\n**Question 1 of 6 - ATMOSPHERE**\\n\\nWhat is the overall vibe you want people to feel when they interact with your brand? Not how it looks, but how it FEELS.\\n\\nThink about the emotion, the energy, the mood. Are you warm and inviting? Bold and electric? Calm and grounding?';\n  } else if (msg.includes('2') || msg.includes('import')) {\n    phase = 'import';\n    resp = 'Great choice! Paste your brand docs, website copy, or any existing brand materials. I will extract what matters and build your brand profile from it.';\n  } else if (msg.includes('3') || msg.includes('chat')) {\n    phase = 'advisor';\n    resp = 'Cool, let us just chat! Ask me anything about branding - positioning, voice, visuals, messaging, hooks. What is on your mind?';\n  } else {\n    resp = 'Hey! I am Brandy. I help you build brands that actually sound like you.\\n\\nLet me check... looks like we have not defined your brand yet. Want to:\\n\\n1. **Build from scratch** - I will guide you through 6 quick questions\\n2. **Import existing** - Got brand docs? Paste them and I will extract what matters\\n3. **Just chat** - Ask me brand questions and we will figure it out as we go\\n\\nWhat works for you?';\n  }\n} else if (phase === 'wizard') {\n  if (wizardStep === 1) {\n    wizardData.atmosphere = data.user_mssg;\n    wizardStep = 2;\n    resp = 'Love that! I can feel it.\\n\\n**Question 2 of 6 - REBELLIOUS EDGE**\\n\\nWhat makes you different? What will you NOT compromise on?';\n  } else if (wizardStep === 2) {\n    wizardData.rebellious_edge = data.user_mssg;\n    wizardStep = 3;\n    resp = 'That is powerful.\\n\\n**Question 3 of 6 - ENEMY**\\n\\nWhat do you stand against? Not competitors - think industry BS, outdated practices, status quo.';\n  } else if (wizardStep === 3) {\n    wizardData.enemy_statement = data.user_mssg;\n    wizardStep = 4;\n    resp = 'YES. That clarity makes brands magnetic.\\n\\n**Question 4 of 6 - VISUALS**\\n\\nDescribe your visual vibe. Colors, energy, feel. Be unexpected.';\n  } else if (wizardStep === 4) {\n    wizardData.visual_direction = data.user_mssg;\n    wizardStep = 5;\n    resp = 'I can see it already.\\n\\n**Question 5 of 6 - HOOKS**\\n\\nHow do you grab attention? What makes people stop scrolling?';\n  } else if (wizardStep === 5) {\n    wizardData.hook_style = data.user_mssg;\n    wizardStep = 6;\n    resp = 'Great hook strategy.\\n\\n**Question 6 of 6 - MESSAGING**\\n\\nHow do you sound? Write like you talk. Show me your authentic voice.';\n  } else if (wizardStep === 6) {\n    wizardData.voice_messaging = data.user_mssg;\n    wizardStep = 7;\n    phase = 'summary';\n    status = 'Ready';\n    resp = '**YOUR BRAND FOUNDATION**\\n\\n- **Atmosphere:** ' + (wizardData.atmosphere || '') + '\\n- **Rebellious Edge:** ' + (wizardData.rebellious_edge || '') + '\\n- **Enemy:** ' + (wizardData.enemy_statement || '') + '\\n- **Visuals:** ' + (wizardData.visual_direction || '') + '\\n- **Hooks:** ' + (wizardData.hook_style || '') + '\\n- **Voice:** ' + (wizardData.voice_messaging || '') + '\\n\\nThat is your foundation! Want me to generate a full brand bible?';\n  }\n}\n\nconst state = {\n  phase: phase,\n  brand_exists: false,\n  wizard_step: wizardStep,\n  wizard_data: wizardData,\n  import_status: null\n};\n\nreturn [{\n  json: {\n    user_id: data.user_id,\n    session_id: data.session_id,\n    agent_name: 'brandy',\n    timestamp_of_call_made: new Date().toISOString(),\n    request_id: data.request_id,\n    agent_response: resp,\n    agent_status: status,\n    state: state\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        112
+      ],
+      "id": "format-node",
+      "name": "Format Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"user_id\": \"{{ $json.user_id }}\",\n  \"session_id\": \"{{ $json.session_id }}\",\n  \"agent_name\": \"{{ $json.agent_name }}\",\n  \"timestamp_of_call_made\": \"{{ $json.timestamp_of_call_made }}\",\n  \"request_id\": \"{{ $json.request_id }}\",\n  \"agent_response\": {{ JSON.stringify($json.agent_response) }},\n  \"agent_status\": \"{{ $json.agent_status }}\",\n  \"state\": {{ JSON.stringify($json.state) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        112
+      ],
+      "id": "respond-node",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}

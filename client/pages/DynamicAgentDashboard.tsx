@@ -166,7 +166,8 @@ export default function DynamicAgentDashboard() {
     tagline: agentConfig.agent.tagline || agentConfig.agent.description,
     avatar: agentConfig.agent.avatar,
     introMessage: generateIntroMessage(agentConfig.agent, location.state?.fromSidebar, hasWebsiteInfo),
-    suggestionButtons: agentConfig.suggestions || []
+    suggestionButtons: agentConfig.suggestions || [],
+    uses_conversation_state: agentConfig.agent.uses_conversation_state || false
   };
 
   return (

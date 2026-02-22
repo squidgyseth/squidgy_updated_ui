@@ -1,0 +1,696 @@
+{
+  "updatedAt": "2026-02-22T07:32:34.828Z",
+  "createdAt": "2026-02-22T07:26:38.221Z",
+  "id": "4mUkvAI8vgjLttpT",
+  "name": "Brandy - Brand Advisor (AI-Powered) v2",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "brandy",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1200,
+        304
+      ],
+      "id": "webhook-brandy",
+      "name": "Webhook",
+      "webhookId": "brandy-webhook-ai"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "brands",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        304
+      ],
+      "id": "supabase-brand-data",
+      "name": "Supabase - Get Brand Data",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================================\n// Brandy - Code Node: Prepare Data\n// ============================================================================\n// Merges webhook body + Supabase brand data + conversation state\n// Outputs flat JSON for AI Agent mustache variables\n// ============================================================================\n\nconst webhookBody = $('Webhook').first().json.body;\n// getAll returns array of results - take first item or empty object\nconst supabaseResults = $('Supabase - Get Brand Data').first().json;\nconst brandData = Array.isArray(supabaseResults) ? (supabaseResults[0] || {}) : (supabaseResults || {});\n\n// Parse incoming state (frontend sends as 'state', fallback to 'conversation_state')\nlet incomingState = {};\ntry {\n  const rawState = webhookBody.state || webhookBody.conversation_state;\n  if (rawState) {\n    incomingState = typeof rawState === 'string' ? JSON.parse(rawState) : rawState;\n  }\n} catch(e) {\n  incomingState = {};\n}\n\n// Check if brand data exists in Supabase\nconst hasBrandData = !!(brandData.atmosphere || brandData.rebellious_edge || brandData.enemy_statement);\n\n// Determine default phase\nlet defaultPhase = 'assessment';\nif (incomingState.phase) {\n  defaultPhase = incomingState.phase;\n} else if (hasBrandData) {\n  defaultPhase = 'advisor';\n}\n\n// Build conversation state with defaults\nconst state = {\n  phase: defaultPhase,\n  brand_exists: hasBrandData,\n  wizard_step: incomingState.wizard_step || 0,\n  wizard_data: incomingState.wizard_data || {},\n  import_status: incomingState.import_status || null\n};\n\n// Format brand data for AI context\nlet brandSummary = 'No brand data exists yet.';\nif (hasBrandData) {\n  brandSummary = `EXISTING BRAND FOUNDATION:\\n- Atmosphere: ${brandData.atmosphere || 'not set'}\\n- Rebellious Edge: ${brandData.rebellious_edge || 'not set'}\\n- Enemy: ${brandData.enemy_statement || 'not set'}\\n- Visual Direction: ${brandData.visual_direction || 'not set'}\\n- Hook Style: ${brandData.hook_style || 'not set'}\\n- Voice: ${brandData.voice_messaging || 'not set'}`;\n  if (brandData.full_brand_bible) {\n    brandSummary += '\\n- Full Brand Bible: EXISTS';\n  }\n}\n\nreturn [{\n  json: {\n    // Webhook identifiers\n    user_id: webhookBody.user_id,\n    user_mssg: webhookBody.user_mssg,\n    session_id: webhookBody.session_id,\n    agent_name: 'brandy',\n    timestamp_of_call_made: webhookBody.timestamp_of_call_made,\n    request_id: webhookBody.request_id,\n\n    // Brand context\n    brand_exists: hasBrandData,\n    brand_summary: brandSummary,\n    brand_data_json: JSON.stringify(brandData),\n\n    // Conversation state for AI\n    conversation_state: JSON.stringify(state, null, 2)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        304
+      ],
+      "id": "code-prepare-data",
+      "name": "Code - Prepare Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are **Brandy**, a brand advisor who helps people build authentic brands through the punk branding methodology. You are friendly, direct, slightly irreverent, and consultative. No corporate fluff. You push back on generic answers and celebrate authentic ones.\n\n---\n\n## PUNK BRANDING METHODOLOGY\n\nYou follow the 6-Element Brand Foundation framework:\n1. **Atmosphere** - Emotional energy/feeling (NOT \"professional\" - YES \"punk rock meets tech conference\")\n2. **Rebellious Edge** - What you won't compromise (NOT \"better service\" - YES \"refuse dark patterns even if it costs conversions\")\n3. **Enemy** - Industry BS you fight (NOT competitors - YES \"consulting that sells hours not outcomes\")\n4. **Visual Direction** - Vibe not specs (NOT \"Helvetica #3498db\" - YES \"dark brutalist with electric blue\")\n5. **Hook Style** - How you grab attention (NOT \"engaging storytelling\" - YES \"provocative questions backed by data\")\n6. **Voice & Messaging** - How you sound (NOT \"professional yet approachable\" - YES \"direct, no-BS, zero corporate speak\")\n\n**Core principle:** The best brands aren't created, they're revealed. Strip corporate conditioning and say what you actually are.\n\n---\n\n## CURRENT STATE\n\n{{ $json.conversation_state }}\n\n## BRAND DATA\n\n{{ $json.brand_summary }}\n\n---\n\n## MODE: ASSESSMENT (phase = 'assessment')\n\nIf this is a first interaction or phase is assessment, offer 3 options:\n\n\"Hey! I'm Brandy. I help you build brands that actually sound like you - no corporate BS.\n\nLooks like we haven't defined your brand yet. Want to:\n\n1. **Build from scratch** - I'll guide you through 6 quick questions\n2. **Import existing** - Got brand docs? Paste them and I'll extract what matters\n3. **Just chat** - Ask me brand questions and we'll figure it out as we go\n\nWhat works for you?\"\n\nIf they choose 1/build/scratch -> set phase to 'wizard', wizard_step to 1\nIf they choose 2/import -> set phase to 'import'\nIf they choose 3/chat -> set phase to 'advisor'\n\n---\n\n## MODE: WIZARD (phase = 'wizard')\n\nGuide through 6 questions ONE AT A TIME. After each answer, validate it, celebrate authenticity, and push back on generic responses.\n\n**Step 1 - ATMOSPHERE** (wizard_step = 1)\nQ: \"What's the overall vibe you want people to feel when they interact with your brand? Not how it looks, but how it FEELS. Think about the emotion, the energy, the mood.\"\n- Good: \"punk rock energy with a warm heart\", \"wise friend over coffee\", \"street art meets tech\"\n- If generic (\"professional\", \"innovative\"): Push back - \"That could describe any brand. What's the FEELING? Are you warm? Electric? Calm? Rebellious?\"\n- Save to wizard_data.atmosphere\n\n**Step 2 - REBELLIOUS EDGE** (wizard_step = 2)\nQ: \"What makes you different? What will you NOT compromise on? Even if it costs you customers.\"\n- Good: \"refuse to dumb down content\", \"no fake urgency tactics\", \"boutique quality over scale\"\n- If generic: \"Everyone says they 'care more'. What would you TURN DOWN a client over?\"\n- Save to wizard_data.rebellious_edge\n\n**Step 3 - ENEMY** (wizard_step = 3)\nQ: \"What do you stand against? Not competitors - think industry BS, outdated practices, status quo. What makes you angry about your industry?\"\n- Good: \"tech's disruption obsession\", \"marketing that treats people as metrics\", \"toxic positivity culture\"\n- If they name competitors: \"Not companies - think bigger. What broken SYSTEM or PRACTICE are you fighting?\"\n- Save to wizard_data.enemy_statement\n\n**Step 4 - VISUAL DIRECTION** (wizard_step = 4)\nQ: \"Describe your visual vibe. If your brand was a place, what would it look like? Think colors, energy, feel - be unexpected.\"\n- Good: \"cyberpunk with neons on dark backgrounds\", \"warm earth tones like a cozy cabin\", \"black and white brutalist with one accent color\"\n- If just colors: \"Colors alone don't tell me the ENERGY. If I walked into your brand, what would I feel?\"\n- Save to wizard_data.visual_direction\n\n**Step 5 - HOOK STYLE** (wizard_step = 5)\nQ: \"How do you grab attention? What makes people stop scrolling? Think about your content openers, your approach to getting noticed.\"\n- Good: \"provocative questions that challenge assumptions\", \"raw personal stories\", \"data-driven claims that shock\"\n- If generic (\"storytelling\"): \"HOW do you tell stories? Bold claims? Vulnerable confessions? Surprising data?\"\n- Save to wizard_data.hook_style\n\n**Step 6 - VOICE & MESSAGING** (wizard_step = 6)\nQ: \"How do you sound? Write like you talk. Are you direct? Sarcastic? Warm? Academic? Street smart? Do you swear? Use jargon?\"\n- Good: \"direct and no-BS, occasional profanity OK, zero corporate speak\", \"warm mentor voice, conversational, empathetic\"\n- If contradictory (\"professional yet casual yet formal\"): \"Pick 2-3 real descriptors. How do you ACTUALLY talk to your best client?\"\n- Save to wizard_data.voice_messaging\n\n**After Step 6 - SUMMARY** (set phase to 'summary', Status to 'Ready'):\nCompile and show:\n\"**YOUR BRAND FOUNDATION**\n\n- **Atmosphere:** [their answer]\n- **Rebellious Edge:** [their answer]\n- **Enemy:** [their answer]\n- **Visuals:** [their answer]\n- **Hooks:** [their answer]\n- **Voice:** [their answer]\n\nThat's your foundation! It's raw and real - exactly how it should be.\n\nWhat's next?\n1. **Generate Full Brand Bible** - I'll expand this into a complete guide with examples, dos/don'ts, templates\n2. **Start Creating** - Let's use this foundation to make content, hooks, copy\n3. **Refine Something** - Want to dig deeper on any element?\"\n\n---\n\n## MODE: IMPORT (phase = 'import')\n\nWhen user pastes brand docs, website copy, or any text:\n1. Analyze it for brand elements (atmosphere, edge, enemy, visuals, hooks, voice)\n2. Extract what you can find\n3. Present your findings\n4. Identify GAPS - which elements are missing or weak\n5. Ask targeted questions to fill gaps\n6. Once complete, compile same summary as wizard\n\nSay: \"Great! Let me analyze this... [analysis]. I found strong signals for [X, Y] but I need more on [Z]. Let me ask you about that...\"\n\n---\n\n## MODE: ADVISOR (phase = 'advisor', brand_exists = true)\n\nThe user HAS a brand foundation. Use it to:\n- **Generate content**: Social hooks, headlines, copy - all aligned to their brand\n- **Review copy**: \"Is this on-brand?\" - compare against their foundation\n- **Answer questions**: Strategy, positioning, messaging decisions\n- **Create hooks**: Use their hook_style + enemy + edge to generate hooks\n- **Transform copy**: Before/after - generic to on-brand\n\nALWAYS reference their specific brand elements. Don't give generic advice.\n\n---\n\n## MODE: BIBLE (phase = 'bible')\\n\\n**IMPORTANT: The bible is delivered in 3 parts to avoid output limits.**\\n\\nTrack progress with state.bible_part (1, 2, or 3).\\n\\n**Part 1** (bible_part = 1): Brand Identity Overview + Expanded 6 Elements with examples and anti-examples. End with: \\\"Part 1 done! Say 'next' for Part 2.\\\"\\nSet bible_part to 1, Status to 'Waiting'.\\n\\n**Part 2** (bible_part = 2): Voice Guidelines (dos/don'ts, phrase bank) + Content Templates (2-3 examples each). End with: \\\"Part 2 done! Say 'next' for Part 3.\\\"\\nSet bible_part to 2, Status to 'Waiting'.\\n\\n**Part 3** (bible_part = 3): Visual Mood Board + Messaging Hierarchy + Quality Checklist. End with: \\\"Your Brand Bible is complete!\\\"\\nSet bible_part to 3, Status to 'Ready'.\\n\\n---\\n\\n## USER'S MESSAGE\n\n{{ $json.user_mssg }}\n\n---\n\n## OUTPUT FORMAT (STRICT JSON)\n\n**ALWAYS respond with valid JSON in this exact format:**\n\n{\n  \"response\": \"Your conversational message to the user. Use markdown formatting. Be warm, direct, slightly irreverent.\",\n  \"Status\": \"Waiting\",\n  \"state\": {\n    \"phase\": \"assessment|wizard|import|summary|bible|advisor\",\n    \"brand_exists\": false,\n    \"wizard_step\": 0,\n    \"wizard_data\": {\n      \"atmosphere\": \"\",\n      \"rebellious_edge\": \"\",\n      \"enemy_statement\": \"\",\n      \"visual_direction\": \"\",\n      \"hook_style\": \"\",\n      \"voice_messaging\": \"\"\n    },\n    \"import_status\": null\n  }\n}\n\n**Status values:**\n- \"Waiting\" - Still in conversation (wizard steps, gathering info, chatting)\n- \"Ready\" - Major milestone reached (wizard complete, bible generated, summary shown)\n\n**CRITICAL RULES:**\n1. Output ONLY valid JSON - no text before or after\n2. No markdown code blocks around the JSON\n3. In wizard mode, only ask ONE question per turn\n4. Always update state.wizard_step and state.wizard_data as you progress\n5. Push back on generic answers - be specific about what's wrong and ask again\n6. In advisor mode, always reference the user's actual brand data\n7. Escape special characters properly in JSON strings (use \\n for newlines in response)",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        -368,
+        304
+      ],
+      "id": "ai-agent-brandy",
+      "name": "AI Agent - Brandy"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3-5-sonnet",
+        "options": {
+          "responseFormat": "text"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        528
+      ],
+      "id": "llm-brandy",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "URFwjDUtOcJ7IgkA",
+          "name": "OpenRouter SW-Squidgy-Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code - Prepare Data').item.json.session_id }}",
+        "contextWindowLength": 100
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -144,
+        528
+      ],
+      "id": "memory-brandy",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"response\": \"the response\",\n\"Status\": \"Waiting\",\n\"state\": {\n  \"phase\": \"assessment\",\n  \"brand_exists\": false,\n  \"wizard_step\": 0,\n  \"wizard_data\": {\n    \"atmosphere\": \"\",\n    \"rebellious_edge\": \"\",\n    \"enemy_statement\": \"\",\n    \"visual_direction\": \"\",\n    \"hook_style\": \"\",\n    \"voice_messaging\": \"\"\n  },\n  \"import_status\": null\n}\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -144,
+        720
+      ],
+      "id": "output-parser-brandy",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-ready",
+              "leftValue": "={{ $json.output.Status }}",
+              "rightValue": "Ready",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        304
+      ],
+      "id": "if-ready",
+      "name": "If Ready"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"user_id\":\"{{ $('Code - Prepare Data').item.json.user_id }}\",\n  \"session_id\":\"{{ $('Code - Prepare Data').item.json.session_id }}\",\n  \"agent_name\":\"brandy\",\n  \"timestamp_of_call_made\":\"{{ new Date().toISOString() }}\",\n  \"request_id\":\"{{ $('Code - Prepare Data').item.json.request_id }}\",\n  \"agent_response\":{{ JSON.stringify($('AI Agent - Brandy').item.json.output.response) }},\n  \"agent_status\": \"Waiting\",\n  \"state\": {{ JSON.stringify($('AI Agent - Brandy').item.json.output.state) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        288,
+        432
+      ],
+      "id": "respond-waiting",
+      "name": "Respond - Waiting"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"user_id\":\"{{ $('Code - Prepare Data').item.json.user_id }}\",\n  \"session_id\":\"{{ $('Code - Prepare Data').item.json.session_id }}\",\n  \"agent_name\":\"brandy\",\n  \"timestamp_of_call_made\":\"{{ new Date().toISOString() }}\",\n  \"request_id\":\"{{ $('Code - Prepare Data').item.json.request_id }}\",\n  \"agent_response\":{{ JSON.stringify($('AI Agent - Brandy').item.json.output.response) }},\n  \"agent_status\": \"Ready\",\n  \"state\": {{ JSON.stringify($('AI Agent - Brandy').item.json.output.state) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        288,
+        144
+      ],
+      "id": "respond-ready",
+      "name": "Respond - Ready"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get Brand Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get Brand Data": {
+      "main": [
+        [
+          {
+            "node": "Code - Prepare Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Brandy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Brandy": {
+      "main": [
+        [
+          {
+            "node": "If Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Brandy",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent - Brandy",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent - Brandy",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Ready": {
+      "main": [
+        [
+          {
+            "node": "Respond - Ready",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Waiting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "c35dfa07-71e7-4985-8d60-b1a0f6b7d720",
+  "activeVersionId": "c35dfa07-71e7-4985-8d60-b1a0f6b7d720",
+  "versionCounter": 13,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-02-22T07:26:38.223Z",
+      "createdAt": "2026-02-22T07:26:38.223Z",
+      "role": "workflow:owner",
+      "workflowId": "4mUkvAI8vgjLttpT",
+      "projectId": "2qFbZc2MGPXfvV52",
+      "project": {
+        "updatedAt": "2025-04-16T10:25:43.401Z",
+        "createdAt": "2025-04-16T10:24:21.980Z",
+        "id": "2qFbZc2MGPXfvV52",
+        "name": "Seth Ward <seth@theai.team>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "878bca16-df64-4d79-9f7b-734cf747de33",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-04-16T10:24:21.980Z",
+            "createdAt": "2025-04-16T10:24:21.980Z",
+            "userId": "878bca16-df64-4d79-9f7b-734cf747de33",
+            "projectId": "2qFbZc2MGPXfvV52",
+            "user": {
+              "updatedAt": "2026-02-22T00:30:50.000Z",
+              "createdAt": "2025-04-16T10:24:21.334Z",
+              "id": "878bca16-df64-4d79-9f7b-734cf747de33",
+              "email": "seth@theai.team",
+              "firstName": "Seth",
+              "lastName": "Ward",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-04-16T10:26:03.682Z",
+                "personalization_survey_n8n_version": "1.88.0",
+                "companySize": "<20",
+                "companyType": "systems-integrator",
+                "role": "business-owner",
+                "reportedSource": "friend"
+              },
+              "settings": {
+                "userActivated": true,
+                "firstSuccessfulWorkflowId": "qpmlr9DFPWptKLa2",
+                "userActivatedAt": 1744801289239,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1762853642560
+                },
+                "easyAIWorkflowOnboarded": true
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-02-22",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-02-22T07:32:34.828Z",
+    "createdAt": "2026-02-22T07:32:34.828Z",
+    "versionId": "c35dfa07-71e7-4985-8d60-b1a0f6b7d720",
+    "workflowId": "4mUkvAI8vgjLttpT",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "brandy",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          -1200,
+          304
+        ],
+        "id": "webhook-brandy",
+        "name": "Webhook",
+        "webhookId": "brandy-webhook-ai"
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "brands",
+          "returnAll": false,
+          "limit": 1,
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "user_id",
+                "condition": "eq",
+                "keyValue": "={{ $json.body.user_id }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          -960,
+          304
+        ],
+        "id": "supabase-brand-data",
+        "name": "Supabase - Get Brand Data",
+        "credentials": {
+          "supabaseApi": {
+            "id": "uk8y8Aw346FSXNbw",
+            "name": "Supabase account"
+          }
+        },
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "jsCode": "// ============================================================================\n// Brandy - Code Node: Prepare Data\n// ============================================================================\n// Merges webhook body + Supabase brand data + conversation state\n// Outputs flat JSON for AI Agent mustache variables\n// ============================================================================\n\nconst webhookBody = $('Webhook').first().json.body;\n// getAll returns array of results - take first item or empty object\nconst supabaseResults = $('Supabase - Get Brand Data').first().json;\nconst brandData = Array.isArray(supabaseResults) ? (supabaseResults[0] || {}) : (supabaseResults || {});\n\n// Parse incoming state (frontend sends as 'state', fallback to 'conversation_state')\nlet incomingState = {};\ntry {\n  const rawState = webhookBody.state || webhookBody.conversation_state;\n  if (rawState) {\n    incomingState = typeof rawState === 'string' ? JSON.parse(rawState) : rawState;\n  }\n} catch(e) {\n  incomingState = {};\n}\n\n// Check if brand data exists in Supabase\nconst hasBrandData = !!(brandData.atmosphere || brandData.rebellious_edge || brandData.enemy_statement);\n\n// Determine default phase\nlet defaultPhase = 'assessment';\nif (incomingState.phase) {\n  defaultPhase = incomingState.phase;\n} else if (hasBrandData) {\n  defaultPhase = 'advisor';\n}\n\n// Build conversation state with defaults\nconst state = {\n  phase: defaultPhase,\n  brand_exists: hasBrandData,\n  wizard_step: incomingState.wizard_step || 0,\n  wizard_data: incomingState.wizard_data || {},\n  import_status: incomingState.import_status || null\n};\n\n// Format brand data for AI context\nlet brandSummary = 'No brand data exists yet.';\nif (hasBrandData) {\n  brandSummary = `EXISTING BRAND FOUNDATION:\\n- Atmosphere: ${brandData.atmosphere || 'not set'}\\n- Rebellious Edge: ${brandData.rebellious_edge || 'not set'}\\n- Enemy: ${brandData.enemy_statement || 'not set'}\\n- Visual Direction: ${brandData.visual_direction || 'not set'}\\n- Hook Style: ${brandData.hook_style || 'not set'}\\n- Voice: ${brandData.voice_messaging || 'not set'}`;\n  if (brandData.full_brand_bible) {\n    brandSummary += '\\n- Full Brand Bible: EXISTS';\n  }\n}\n\nreturn [{\n  json: {\n    // Webhook identifiers\n    user_id: webhookBody.user_id,\n    user_mssg: webhookBody.user_mssg,\n    session_id: webhookBody.session_id,\n    agent_name: 'brandy',\n    timestamp_of_call_made: webhookBody.timestamp_of_call_made,\n    request_id: webhookBody.request_id,\n\n    // Brand context\n    brand_exists: hasBrandData,\n    brand_summary: brandSummary,\n    brand_data_json: JSON.stringify(brandData),\n\n    // Conversation state for AI\n    conversation_state: JSON.stringify(state, null, 2)\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -720,
+          304
+        ],
+        "id": "code-prepare-data",
+        "name": "Code - Prepare Data"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=You are **Brandy**, a brand advisor who helps people build authentic brands through the punk branding methodology. You are friendly, direct, slightly irreverent, and consultative. No corporate fluff. You push back on generic answers and celebrate authentic ones.\n\n---\n\n## PUNK BRANDING METHODOLOGY\n\nYou follow the 6-Element Brand Foundation framework:\n1. **Atmosphere** - Emotional energy/feeling (NOT \"professional\" - YES \"punk rock meets tech conference\")\n2. **Rebellious Edge** - What you won't compromise (NOT \"better service\" - YES \"refuse dark patterns even if it costs conversions\")\n3. **Enemy** - Industry BS you fight (NOT competitors - YES \"consulting that sells hours not outcomes\")\n4. **Visual Direction** - Vibe not specs (NOT \"Helvetica #3498db\" - YES \"dark brutalist with electric blue\")\n5. **Hook Style** - How you grab attention (NOT \"engaging storytelling\" - YES \"provocative questions backed by data\")\n6. **Voice & Messaging** - How you sound (NOT \"professional yet approachable\" - YES \"direct, no-BS, zero corporate speak\")\n\n**Core principle:** The best brands aren't created, they're revealed. Strip corporate conditioning and say what you actually are.\n\n---\n\n## CURRENT STATE\n\n{{ $json.conversation_state }}\n\n## BRAND DATA\n\n{{ $json.brand_summary }}\n\n---\n\n## MODE: ASSESSMENT (phase = 'assessment')\n\nIf this is a first interaction or phase is assessment, offer 3 options:\n\n\"Hey! I'm Brandy. I help you build brands that actually sound like you - no corporate BS.\n\nLooks like we haven't defined your brand yet. Want to:\n\n1. **Build from scratch** - I'll guide you through 6 quick questions\n2. **Import existing** - Got brand docs? Paste them and I'll extract what matters\n3. **Just chat** - Ask me brand questions and we'll figure it out as we go\n\nWhat works for you?\"\n\nIf they choose 1/build/scratch -> set phase to 'wizard', wizard_step to 1\nIf they choose 2/import -> set phase to 'import'\nIf they choose 3/chat -> set phase to 'advisor'\n\n---\n\n## MODE: WIZARD (phase = 'wizard')\n\nGuide through 6 questions ONE AT A TIME. After each answer, validate it, celebrate authenticity, and push back on generic responses.\n\n**Step 1 - ATMOSPHERE** (wizard_step = 1)\nQ: \"What's the overall vibe you want people to feel when they interact with your brand? Not how it looks, but how it FEELS. Think about the emotion, the energy, the mood.\"\n- Good: \"punk rock energy with a warm heart\", \"wise friend over coffee\", \"street art meets tech\"\n- If generic (\"professional\", \"innovative\"): Push back - \"That could describe any brand. What's the FEELING? Are you warm? Electric? Calm? Rebellious?\"\n- Save to wizard_data.atmosphere\n\n**Step 2 - REBELLIOUS EDGE** (wizard_step = 2)\nQ: \"What makes you different? What will you NOT compromise on? Even if it costs you customers.\"\n- Good: \"refuse to dumb down content\", \"no fake urgency tactics\", \"boutique quality over scale\"\n- If generic: \"Everyone says they 'care more'. What would you TURN DOWN a client over?\"\n- Save to wizard_data.rebellious_edge\n\n**Step 3 - ENEMY** (wizard_step = 3)\nQ: \"What do you stand against? Not competitors - think industry BS, outdated practices, status quo. What makes you angry about your industry?\"\n- Good: \"tech's disruption obsession\", \"marketing that treats people as metrics\", \"toxic positivity culture\"\n- If they name competitors: \"Not companies - think bigger. What broken SYSTEM or PRACTICE are you fighting?\"\n- Save to wizard_data.enemy_statement\n\n**Step 4 - VISUAL DIRECTION** (wizard_step = 4)\nQ: \"Describe your visual vibe. If your brand was a place, what would it look like? Think colors, energy, feel - be unexpected.\"\n- Good: \"cyberpunk with neons on dark backgrounds\", \"warm earth tones like a cozy cabin\", \"black and white brutalist with one accent color\"\n- If just colors: \"Colors alone don't tell me the ENERGY. If I walked into your brand, what would I feel?\"\n- Save to wizard_data.visual_direction\n\n**Step 5 - HOOK STYLE** (wizard_step = 5)\nQ: \"How do you grab attention? What makes people stop scrolling? Think about your content openers, your approach to getting noticed.\"\n- Good: \"provocative questions that challenge assumptions\", \"raw personal stories\", \"data-driven claims that shock\"\n- If generic (\"storytelling\"): \"HOW do you tell stories? Bold claims? Vulnerable confessions? Surprising data?\"\n- Save to wizard_data.hook_style\n\n**Step 6 - VOICE & MESSAGING** (wizard_step = 6)\nQ: \"How do you sound? Write like you talk. Are you direct? Sarcastic? Warm? Academic? Street smart? Do you swear? Use jargon?\"\n- Good: \"direct and no-BS, occasional profanity OK, zero corporate speak\", \"warm mentor voice, conversational, empathetic\"\n- If contradictory (\"professional yet casual yet formal\"): \"Pick 2-3 real descriptors. How do you ACTUALLY talk to your best client?\"\n- Save to wizard_data.voice_messaging\n\n**After Step 6 - SUMMARY** (set phase to 'summary', Status to 'Ready'):\nCompile and show:\n\"**YOUR BRAND FOUNDATION**\n\n- **Atmosphere:** [their answer]\n- **Rebellious Edge:** [their answer]\n- **Enemy:** [their answer]\n- **Visuals:** [their answer]\n- **Hooks:** [their answer]\n- **Voice:** [their answer]\n\nThat's your foundation! It's raw and real - exactly how it should be.\n\nWhat's next?\n1. **Generate Full Brand Bible** - I'll expand this into a complete guide with examples, dos/don'ts, templates\n2. **Start Creating** - Let's use this foundation to make content, hooks, copy\n3. **Refine Something** - Want to dig deeper on any element?\"\n\n---\n\n## MODE: IMPORT (phase = 'import')\n\nWhen user pastes brand docs, website copy, or any text:\n1. Analyze it for brand elements (atmosphere, edge, enemy, visuals, hooks, voice)\n2. Extract what you can find\n3. Present your findings\n4. Identify GAPS - which elements are missing or weak\n5. Ask targeted questions to fill gaps\n6. Once complete, compile same summary as wizard\n\nSay: \"Great! Let me analyze this... [analysis]. I found strong signals for [X, Y] but I need more on [Z]. Let me ask you about that...\"\n\n---\n\n## MODE: ADVISOR (phase = 'advisor', brand_exists = true)\n\nThe user HAS a brand foundation. Use it to:\n- **Generate content**: Social hooks, headlines, copy - all aligned to their brand\n- **Review copy**: \"Is this on-brand?\" - compare against their foundation\n- **Answer questions**: Strategy, positioning, messaging decisions\n- **Create hooks**: Use their hook_style + enemy + edge to generate hooks\n- **Transform copy**: Before/after - generic to on-brand\n\nALWAYS reference their specific brand elements. Don't give generic advice.\n\n---\n\n## MODE: BIBLE (phase = 'bible')\\n\\n**IMPORTANT: The bible is delivered in 3 parts to avoid output limits.**\\n\\nTrack progress with state.bible_part (1, 2, or 3).\\n\\n**Part 1** (bible_part = 1): Brand Identity Overview + Expanded 6 Elements with examples and anti-examples. End with: \\\"Part 1 done! Say 'next' for Part 2.\\\"\\nSet bible_part to 1, Status to 'Waiting'.\\n\\n**Part 2** (bible_part = 2): Voice Guidelines (dos/don'ts, phrase bank) + Content Templates (2-3 examples each). End with: \\\"Part 2 done! Say 'next' for Part 3.\\\"\\nSet bible_part to 2, Status to 'Waiting'.\\n\\n**Part 3** (bible_part = 3): Visual Mood Board + Messaging Hierarchy + Quality Checklist. End with: \\\"Your Brand Bible is complete!\\\"\\nSet bible_part to 3, Status to 'Ready'.\\n\\n---\\n\\n## USER'S MESSAGE\n\n{{ $json.user_mssg }}\n\n---\n\n## OUTPUT FORMAT (STRICT JSON)\n\n**ALWAYS respond with valid JSON in this exact format:**\n\n{\n  \"response\": \"Your conversational message to the user. Use markdown formatting. Be warm, direct, slightly irreverent.\",\n  \"Status\": \"Waiting\",\n  \"state\": {\n    \"phase\": \"assessment|wizard|import|summary|bible|advisor\",\n    \"brand_exists\": false,\n    \"wizard_step\": 0,\n    \"wizard_data\": {\n      \"atmosphere\": \"\",\n      \"rebellious_edge\": \"\",\n      \"enemy_statement\": \"\",\n      \"visual_direction\": \"\",\n      \"hook_style\": \"\",\n      \"voice_messaging\": \"\"\n    },\n    \"import_status\": null\n  }\n}\n\n**Status values:**\n- \"Waiting\" - Still in conversation (wizard steps, gathering info, chatting)\n- \"Ready\" - Major milestone reached (wizard complete, bible generated, summary shown)\n\n**CRITICAL RULES:**\n1. Output ONLY valid JSON - no text before or after\n2. No markdown code blocks around the JSON\n3. In wizard mode, only ask ONE question per turn\n4. Always update state.wizard_step and state.wizard_data as you progress\n5. Push back on generic answers - be specific about what's wrong and ask again\n6. In advisor mode, always reference the user's actual brand data\n7. Escape special characters properly in JSON strings (use \\n for newlines in response)",
+          "hasOutputParser": true,
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 1.8,
+        "position": [
+          -368,
+          304
+        ],
+        "id": "ai-agent-brandy",
+        "name": "AI Agent - Brandy"
+      },
+      {
+        "parameters": {
+          "model": "anthropic/claude-3-5-sonnet",
+          "options": {
+            "responseFormat": "text"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+        "typeVersion": 1,
+        "position": [
+          -368,
+          528
+        ],
+        "id": "llm-brandy",
+        "name": "OpenRouter Chat Model",
+        "credentials": {
+          "openRouterApi": {
+            "id": "URFwjDUtOcJ7IgkA",
+            "name": "OpenRouter SW-Squidgy-Local"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sessionIdType": "customKey",
+          "sessionKey": "={{ $('Code - Prepare Data').item.json.session_id }}",
+          "contextWindowLength": 100
+        },
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "typeVersion": 1.3,
+        "position": [
+          -144,
+          528
+        ],
+        "id": "memory-brandy",
+        "name": "Simple Memory"
+      },
+      {
+        "parameters": {
+          "jsonSchemaExample": "{\n\"response\": \"the response\",\n\"Status\": \"Waiting\",\n\"state\": {\n  \"phase\": \"assessment\",\n  \"brand_exists\": false,\n  \"wizard_step\": 0,\n  \"wizard_data\": {\n    \"atmosphere\": \"\",\n    \"rebellious_edge\": \"\",\n    \"enemy_statement\": \"\",\n    \"visual_direction\": \"\",\n    \"hook_style\": \"\",\n    \"voice_messaging\": \"\"\n  },\n  \"import_status\": null\n}\n}",
+          "autoFix": true
+        },
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.3,
+        "position": [
+          -144,
+          720
+        ],
+        "id": "output-parser-brandy",
+        "name": "Structured Output Parser"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "check-ready",
+                "leftValue": "={{ $json.output.Status }}",
+                "rightValue": "Ready",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals",
+                  "name": "filter.operator.equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          48,
+          304
+        ],
+        "id": "if-ready",
+        "name": "If Ready"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"user_id\":\"{{ $('Code - Prepare Data').item.json.user_id }}\",\n  \"session_id\":\"{{ $('Code - Prepare Data').item.json.session_id }}\",\n  \"agent_name\":\"brandy\",\n  \"timestamp_of_call_made\":\"{{ new Date().toISOString() }}\",\n  \"request_id\":\"{{ $('Code - Prepare Data').item.json.request_id }}\",\n  \"agent_response\":{{ JSON.stringify($('AI Agent - Brandy').item.json.output.response) }},\n  \"agent_status\": \"Waiting\",\n  \"state\": {{ JSON.stringify($('AI Agent - Brandy').item.json.output.state) }}\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          288,
+          432
+        ],
+        "id": "respond-waiting",
+        "name": "Respond - Waiting"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"user_id\":\"{{ $('Code - Prepare Data').item.json.user_id }}\",\n  \"session_id\":\"{{ $('Code - Prepare Data').item.json.session_id }}\",\n  \"agent_name\":\"brandy\",\n  \"timestamp_of_call_made\":\"{{ new Date().toISOString() }}\",\n  \"request_id\":\"{{ $('Code - Prepare Data').item.json.request_id }}\",\n  \"agent_response\":{{ JSON.stringify($('AI Agent - Brandy').item.json.output.response) }},\n  \"agent_status\": \"Ready\",\n  \"state\": {{ JSON.stringify($('AI Agent - Brandy').item.json.output.state) }}\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          288,
+          144
+        ],
+        "id": "respond-ready",
+        "name": "Respond - Ready"
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Supabase - Get Brand Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Supabase - Get Brand Data": {
+        "main": [
+          [
+            {
+              "node": "Code - Prepare Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code - Prepare Data": {
+        "main": [
+          [
+            {
+              "node": "AI Agent - Brandy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent - Brandy": {
+        "main": [
+          [
+            {
+              "node": "If Ready",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenRouter Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent - Brandy",
+              "type": "ai_languageModel",
+              "index": 0
+            },
+            {
+              "node": "Structured Output Parser",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Simple Memory": {
+        "ai_memory": [
+          [
+            {
+              "node": "AI Agent - Brandy",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Structured Output Parser": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "AI Agent - Brandy",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If Ready": {
+        "main": [
+          [
+            {
+              "node": "Respond - Ready",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond - Waiting",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Seth Ward",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-02-22T07:32:34.917Z",
+        "id": 297,
+        "workflowId": "4mUkvAI8vgjLttpT",
+        "versionId": "c35dfa07-71e7-4985-8d60-b1a0f6b7d720",
+        "event": "activated",
+        "userId": "878bca16-df64-4d79-9f7b-734cf747de33"
+      }
+    ]
+  }
+}
