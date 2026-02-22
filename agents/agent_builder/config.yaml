@@ -1,0 +1,221 @@
+# ===========================================
+# AGENT BUILDER - ACE (Agent Creation Expert)
+# ===========================================
+
+agent:
+  id: agent_builder
+  emoji: "🏗️"
+  name: "Ace | Agent Creation Expert"
+  category: OPERATIONS
+  description: "Build and configure new AI agents with guided setup"
+  specialization: "Agent Architect"
+  tagline: "Design. Build. Deploy."
+  avatar: "/Squidgy AI Assistants Avatars/builder.png"
+  pinned: true
+  enabled: true
+
+  initial_message: 'Hey! 👋 I''m Ace, your Agent Creation Expert.<br><br>I can help you build new AI agents from scratch with:<br>✅ Guided conversation to define your agent<br>✅ Automatic YAML configuration<br>✅ N8N workflow templates<br>✅ Integration setup scripts<br>✅ Testing and validation<br><br>Ready to create your first agent? Let''s start with: What will your agent do?'
+
+  sidebar_greeting: "Hi! I'm Ace - your Agent Builder. I'll guide you through creating custom AI agents with all the integrations, workflows, and configurations you need."
+
+  capabilities:
+    - "Conversational agent design and planning"
+    - "YAML configuration generation"
+    - "N8N workflow template creation"
+    - "Integration helper scripts (Playwright automation)"
+    - "API wrapper generation for CRM/platforms"
+    - "Agent testing and validation"
+    - "Tier detection (simple to complex agents)"
+    - "Figma UI integration setup"
+
+  recent_actions:
+    - "Created Solar Sales Agent with calculator integrations"
+    - "Generated N8N workflow for Newsletter Multi agent"
+    - "Built Playwright script for GHL subaccount setup"
+    - "Validated and deployed Social Media Scheduler agent"
+
+# N8N Webhook Configuration
+n8n:
+  webhook_url: https://n8n.theaiteam.uk/webhook/agent_builder
+
+# UI Configuration
+ui:
+  page_type: "standard"
+  figma_url: ''
+  figma_deployed_url: ''
+  figma_token: figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd
+
+# UI Configuration - Generated
+ui_use:
+  page_type: single_page
+  pages:
+    - name: Agent Builder Dashboard
+      path: agent-builder-dashboard
+      order: 1
+      validated: true
+
+# Interface Configuration
+interface:
+  type: chat
+  features:
+    - text_input
+    - file_upload  # For importing existing configs
+    - suggestion_buttons
+    - code_preview  # Show generated YAML
+
+# Suggestion buttons
+suggestions:
+  - "Create a new agent"
+  - "Build a marketing agent"
+  - "Build a sales agent"
+  - "Add GHL integration"
+  - "Generate N8N workflow"
+  - "Create Playwright automation script"
+  - "Test my agent configuration"
+  - "Show agent creation guide"
+
+# Agent personality
+personality:
+  tone: professional
+  style: educational
+  approach: consultative
+
+# Agent Builder Specific Configuration
+agent_builder_config:
+  # Agent complexity tiers
+  tiers:
+    - name: "Tier 1 - Basic Chat"
+      description: "Simple conversational agent with N8N webhook"
+      features:
+        - "Standard chat interface"
+        - "Suggestion buttons"
+        - "Basic N8N webhook"
+        - "Personality configuration"
+      automation_level: "fully_automated"
+
+    - name: "Tier 2 - Platform Integrated"
+      description: "Multi-platform integration (social media, CRM, etc.)"
+      features:
+        - "Multi-platform configs"
+        - "Media handling"
+        - "Account management"
+        - "File upload support"
+      automation_level: "semi_automated"
+      requires:
+        - "OAuth setup (manual)"
+        - "Platform API keys (manual)"
+        - "Playwright scripts for browser automation"
+
+    - name: "Tier 3 - Domain Expert"
+      description: "Industry-specific with complex calculations and external APIs"
+      features:
+        - "Custom domain configs"
+        - "Calculator widgets"
+        - "Map integrations"
+        - "Pre-setup pages"
+        - "Regional configs"
+      automation_level: "semi_automated"
+      requires:
+        - "Domain API integrations"
+        - "Custom UI components"
+        - "Specialized N8N workflows"
+
+    - name: "Tier 4 - Multi-Modal"
+      description: "Figma UI generation with multi-page carousels"
+      features:
+        - "Figma integration"
+        - "Multi-page UI"
+        - "Conversation state persistence"
+        - "Generated React components"
+      automation_level: "semi_automated"
+      requires:
+        - "Figma URLs/tokens"
+        - "UI generation pipeline"
+        - "Component validation"
+
+  # Available integration templates
+  integration_templates:
+    - name: "GoHighLevel (GHL)"
+      type: "crm"
+      automation_type: "playwright"
+      capabilities:
+        - "Subaccount creation"
+        - "Media management"
+        - "Contact management"
+        - "Workflow automation"
+      setup_guide: "/guides/integrations/ghl-setup.md"
+
+    - name: "Facebook Business"
+      type: "social_media"
+      automation_type: "oauth"
+      capabilities:
+        - "Page posting"
+        - "Story scheduling"
+        - "Media upload"
+      setup_guide: "/guides/integrations/facebook-setup.md"
+
+    - name: "Instagram Business"
+      type: "social_media"
+      automation_type: "oauth"
+      capabilities:
+        - "Feed posting"
+        - "Story scheduling"
+        - "Media upload"
+      setup_guide: "/guides/integrations/instagram-setup.md"
+
+    - name: "LinkedIn"
+      type: "social_media"
+      automation_type: "oauth"
+      capabilities:
+        - "Profile posting"
+        - "Company page posting"
+      setup_guide: "/guides/integrations/linkedin-setup.md"
+
+    - name: "Google Calendar"
+      type: "productivity"
+      automation_type: "oauth"
+      capabilities:
+        - "Event creation"
+        - "Event listing"
+        - "Availability checking"
+      setup_guide: "/guides/integrations/google-calendar-setup.md"
+
+    - name: "Supabase"
+      type: "database"
+      automation_type: "api_key"
+      capabilities:
+        - "Data storage"
+        - "Query execution"
+        - "Real-time subscriptions"
+      setup_guide: "/guides/integrations/supabase-setup.md"
+
+  # N8N workflow components
+  n8n_components:
+    - name: "Webhook Trigger"
+      type: "trigger"
+      required: true
+
+    - name: "Supabase Data Fetch"
+      type: "data"
+      common: true
+
+    - name: "AI Agent Conversation"
+      type: "ai"
+      common: true
+      requires_llm: true
+
+    - name: "Structured Output Parser"
+      type: "parser"
+      common: true
+
+    - name: "Conditional Logic"
+      type: "control_flow"
+      common: true
+
+    - name: "HTTP Request"
+      type: "action"
+      common: true
+
+    - name: "Code Node"
+      type: "transform"
+      common: true
