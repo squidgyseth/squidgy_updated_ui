@@ -1,0 +1,101 @@
+{
+  "name": "Brandy - Brand Advisor (FIXED)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "brandy",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "brandy-webhook"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Simple passthrough - extract data from webhook\nconst webhookData = $('Webhook').first().json;\n\nreturn {\n  json: {\n    user_id: webhookData.user_id,\n    session_id: webhookData.session_id,\n    agent_name: webhookData.agent_name || 'brandy',\n    timestamp_of_call_made: webhookData.timestamp_of_call_made || new Date().toISOString(),\n    request_id: webhookData.request_id,\n    user_mssg: webhookData.user_mssg || webhookData.message || '',\n    conversation_state: webhookData.conversation_state || null\n  }\n};"
+      },
+      "id": "extract-data",
+      "name": "Extract Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_mssg }}",
+        "options": {
+          "systemMessage": "You are Brandy, a brand advisor who helps people build authentic brands.\n\nWhen users first interact with you, offer them these 3 options:\n\n1. **Build from scratch** - Guide through 6 quick questions\n2. **Import existing** - Parse uploaded brand docs\n3. **Just chat** - Have a conversation about their brand\n\nIf they choose option 1 (build from scratch), guide them through these 6 questions:\n\n**Step 1 - ATMOSPHERE**: What's the overall vibe you want people to feel?\n**Step 2 - REBELLIOUS EDGE**: What makes you different?\n**Step 3 - ENEMY**: What do you stand against?\n**Step 4 - VISUALS**: Describe your visual vibe\n**Step 5 - HOOKS**: How do you grab attention?\n**Step 6 - MESSAGING**: How do you sound?\n\nAfter all 6 steps, provide a summary and offer to generate a full brand bible.\n\nAlways respond in a friendly, direct, authentic tone. Push back on generic answers.\n\nIMPORTANT: Always return valid JSON in this exact format:\n\n{\n  \"response\": \"Your message to the user\",\n  \"status\": \"Waiting\",\n  \"phase\": \"assessment\",\n  \"wizard_step\": 0\n}\n\nStatus can be: Waiting, Ready, or Complete.\nPhase can be: assessment, wizard, import, summary, bible, or advisor."
+        }
+      },
+      "id": "ai-agent",
+      "name": "AI Agent - Brandy",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {}
+      },
+      "id": "openrouter-model",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [440, 220],
+      "credentials": {
+        "openRouterApi": {
+          "id": "YOUR_OPENROUTER_CREDENTIAL_ID",
+          "name": "OpenRouter API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Format response to match frontend expectations\nconst webhookData = $('Extract Data').first().json;\nconst aiData = $('AI Agent - Brandy').first().json;\n\n// Extract AI response\nlet aiResponse = \"I'm here to help with your brand!\";\nlet status = \"Ready\";\nlet phase = \"assessment\";\nlet wizard_step = 0;\n\nif (aiData.output) {\n  if (typeof aiData.output === 'string') {\n    try {\n      const parsed = JSON.parse(aiData.output);\n      aiResponse = parsed.response || aiData.output;\n      status = parsed.status || parsed.Status || \"Ready\";\n      phase = parsed.phase || \"assessment\";\n      wizard_step = parsed.wizard_step || 0;\n    } catch (e) {\n      aiResponse = aiData.output;\n    }\n  } else if (typeof aiData.output === 'object') {\n    aiResponse = aiData.output.response || JSON.stringify(aiData.output);\n    status = aiData.output.status || aiData.output.Status || \"Ready\";\n    phase = aiData.output.phase || \"assessment\";\n    wizard_step = aiData.output.wizard_step || 0;\n  }\n}\n\n// Build proper response structure\nconst response = {\n  user_id: webhookData.user_id,\n  session_id: webhookData.session_id,\n  agent_name: \"brandy\",\n  timestamp_of_call_made: webhookData.timestamp_of_call_made,\n  request_id: webhookData.request_id,\n  agent_response: aiResponse,\n  agent_status: status,\n  state: {\n    phase: phase,\n    brand_exists: false,\n    wizard_step: wizard_step,\n    wizard_data: {},\n    import_status: null\n  }\n};\n\nreturn { json: response };"
+      },
+      "id": "format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [880, 0]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "Extract Data", "type": "main", "index": 0}]]
+    },
+    "Extract Data": {
+      "main": [[{"node": "AI Agent - Brandy", "type": "main", "index": 0}]]
+    },
+    "AI Agent - Brandy": {
+      "main": [[{"node": "Format Response", "type": "main", "index": 0}]]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [[{"node": "AI Agent - Brandy", "type": "ai_languageModel", "index": 0}]]
+    },
+    "Format Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
