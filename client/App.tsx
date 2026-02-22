@@ -88,6 +88,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminActivity from "./pages/admin/AdminActivity";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import { AdminRoute } from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
@@ -98,36 +99,93 @@ const AuthHandler = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const handleAuthRedirect = () => {
+    const handleAuthRedirect = async () => {
+      // First, let Supabase process any auth tokens in the URL
+      // This is important for email verification links
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session?.user?.email_confirmed_at) {
+          // User's email is confirmed and they have a session
+          sessionStorage.setItem('email_verified', 'true');
+        }
+      } catch (e) {
+        console.error('Error getting session:', e);
+      }
+
+      // Check both query params and hash fragment (Supabase uses hash for tokens)
       const urlParams = new URLSearchParams(location.search);
+      const hashParams = new URLSearchParams(location.hash.replace('#', ''));
+      
       const code = urlParams.get('code');
-      const error = urlParams.get('error');
-      const type = urlParams.get('type');
-      const accessToken = urlParams.get('access_token');
-      const refreshToken = urlParams.get('refresh_token');
+      const error = urlParams.get('error') || hashParams.get('error');
+      const type = urlParams.get('type') || hashParams.get('type');
+      const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token') || hashParams.get('refresh_token');
 
-
-      // Only redirect if we're on the root path with auth parameters
-      if (location.pathname === '/' && (code || accessToken) && !error) {
+      // Handle auth parameters on root path or login page
+      if ((location.pathname === '/' || location.pathname === '/login') && (code || accessToken || type) && !error) {
+        
+        // If we have tokens in hash, try to establish session
+        if (accessToken && refreshToken) {
+          try {
+            const { data, error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            
+            if (!sessionError && data.session) {
+              // Session set successfully - user is now logged in
+              sessionStorage.setItem('email_verified', 'true');
+              // Clear hash to prevent re-processing
+              window.history.replaceState(null, '', location.pathname);
+              navigate('/login', { replace: true });
+              return;
+            }
+          } catch (e) {
+            console.error('Failed to set session from tokens:', e);
+          }
+        }
         
         if (type === 'recovery') {
           // Password reset flow
-          navigate('/reset-password' + location.search, { replace: true });
+          navigate('/reset-password', { replace: true });
         } else if (type === 'signup') {
-          // Signup confirmation flow
-          navigate('/login' + location.search, { replace: true });
-        } else if (code || accessToken) {
-          // Generic auth callback - could be either, check for password reset indicators
-          // If no specific type, default to login page
-          navigate('/login' + location.search, { replace: true });
+          // Email verification confirmation
+          // The tokens in the URL have already been processed by Supabase
+          // which sets email_confirmed_at in auth.users
+          sessionStorage.setItem('email_verified', 'true');
+          // Clear URL params and redirect to login
+          window.history.replaceState(null, '', '/login');
+          navigate('/login', { replace: true });
+        } else if (type === 'email_change') {
+          // Email change confirmation
+          sessionStorage.setItem('email_verified', 'true');
+          window.history.replaceState(null, '', '/login');
+          navigate('/login', { replace: true });
+        } else if (code) {
+          // Code-based auth callback - exchange code for session
+          try {
+            const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            if (!exchangeError && data.session) {
+              sessionStorage.setItem('email_verified', 'true');
+            }
+          } catch (e) {
+            console.error('Failed to exchange code for session:', e);
+          }
+          sessionStorage.setItem('email_verified', 'true');
+          window.history.replaceState(null, '', '/login');
+          navigate('/login', { replace: true });
         }
       }
       
       // Listen for PASSWORD_RECOVERY event from Supabase to handle password reset
-      // This is the only reliable way to detect password reset vs email verification
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
           navigate('/reset-password', { replace: true });
+        }
+        // Handle successful sign in from email verification
+        if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+          sessionStorage.setItem('email_verified', 'true');
         }
       });
 
@@ -404,6 +462,11 @@ const App = () => (
           <Route path="/admin/activity" element={
             <AdminRoute>
               <AdminActivity />
+            </AdminRoute>
+          } />
+          <Route path="/admin/analytics" element={
+            <AdminRoute>
+              <AdminAnalytics />
             </AdminRoute>
           } />
           

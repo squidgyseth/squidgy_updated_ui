@@ -144,13 +144,24 @@ class NotificationsService {
       this.reconnectAttempts = 0;
       this.lastHeartbeat = Date.now();
       
-      // Send initial connection message
+      // Send initial connection message only if WebSocket is in OPEN state
       const connectionMessage = {
         type: 'connection',
         userId,
         sessionId,
       };
-      this.ws?.send(JSON.stringify(connectionMessage));
+      
+      // Check readyState before sending to avoid "Still in CONNECTING state" error
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify(connectionMessage));
+      } else {
+        // If not open yet, wait a bit and try again
+        setTimeout(() => {
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify(connectionMessage));
+          }
+        }, 100);
+      }
       
       // Start heartbeat monitoring
       this.startHeartbeat();
@@ -222,17 +233,45 @@ class NotificationsService {
     };
 
     this.ws.onerror = (error) => {
-      console.error('❌ WEBSOCKET ERROR:', error);
-      console.error('   URL:', fullWsUrl);
-      console.error('   Ready state:', this.ws?.readyState);
+      // Only log error if it's not the first connection attempt
+      // First attempt failures are common during page load and will auto-retry
+      if (this.reconnectAttempts > 0) {
+        console.error('❌ WEBSOCKET ERROR:', error);
+        console.error('   URL:', fullWsUrl);
+        console.error('   Ready state:', this.ws?.readyState);
+        console.error('   Reconnect attempts:', this.reconnectAttempts);
+      }
     };
 
     this.ws.onclose = (event) => {
+      // Only log close events after first attempt to reduce noise
+      if (this.reconnectAttempts > 0) {
+        console.log(`WebSocket closed: code=${event.code}, reason=${event.reason}, wasClean=${event.wasClean}`);
+      }
+      
       this.ws = null;
       
-      // Always attempt to reconnect (infinite attempts)
+      // Don't reconnect if closed cleanly (user logged out)
+      if (event.wasClean && event.code === 1000) {
+        return;
+      }
+      
+      // Limit reconnection attempts to prevent infinite loops
+      if (this.reconnectAttempts >= 5) {
+        if (this.reconnectAttempts === 5) {
+          console.warn('⚠️ WebSocket: Max reconnection attempts reached. Notifications will not be real-time.');
+        }
+        return;
+      }
+      
+      // Always attempt to reconnect (up to 5 attempts)
       this.reconnectAttempts++;
       const delay = Math.min(1000 * Math.pow(2, Math.min(this.reconnectAttempts, 6)), 30000);
+      
+      // Only log reconnection attempts after first failure
+      if (this.reconnectAttempts > 1) {
+        console.log(`🔄 WebSocket: Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/5)...`);
+      }
       
       this.reconnectTimeout = setTimeout(() => {
         if (this.currentUserId) {

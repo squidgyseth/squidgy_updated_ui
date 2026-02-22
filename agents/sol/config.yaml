@@ -1,0 +1,99 @@
+agent:
+  id: SOL
+  emoji: "☀️"
+  name: "Stella | Solar Sales Specialist"
+  category: SALES
+  description: "Assist with solar enquiries, qualify leads, and guide prospects through the sales process."
+  specialization: "Solar Sales Specialist"
+  tagline: "Illuminate. Calculate. Convert."
+  avatar: "/Squidgy AI Assistants Avatars/5.png"
+  pinned: true
+  enabled: false
+  presetup_required: true
+  presetup_page: /solar-config
+  initial_message: "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href='/solar-config' target='_blank' style='color: #7c3aed; text-decoration: underline;'>Complete Solar Setup</a> - Configure your solar offer details."
+  sidebar_greeting: "Hi! I'm your Solar Sales Specialist - I help qualify leads, calculate ROI, and guide prospects through the solar buying journey. How can I assist you today?"
+  capabilities:
+    - "Solar panel system sizing and design"
+    - "ROI and payback period calculations"
+    - "Energy consumption analysis"
+    - "Federal and state incentive guidance"
+    - "Shade analysis and roof assessment"
+    - "Battery storage recommendations"
+    - "Net metering calculations"
+    - "Financing options comparison"
+    - "Carbon footprint reduction estimates"
+    - "Utility rate analysis"
+  recent_actions:
+    - "Calculated 25-year savings of $47,000 for residential system"
+    - "Designed 10kW system with Tesla Powerwall"
+    - "Analyzed time-of-use rates for optimal savings"
+    - "Provided tax credit documentation for IRS Form 5695"
+    - "Generated proposal for 50-panel commercial installation"
+
+ui_use:
+  page_type: single_page
+  pages:
+    - name: Solar Dashboard
+      path: solar-dashboard
+      order: 1
+      validated: true
+
+interface:
+  type: chat
+  features:
+    - text_input
+    - file_upload
+    - voice_input
+    - suggestion_buttons
+
+suggestions:
+  - "Complete Setup"
+  - "Have I had any new leads today?"
+  - "Show me this week's sales performance"
+  - "Generate a proposal for commercial solar"
+  - "What's the ROI calculation for this project?"
+  - "Create a quote for residential installation"
+  - "Schedule a site assessment appointment"
+  - "Request a callback for this lead"
+  - "Track my pipeline conversion rates"
+
+n8n:
+  webhook_url: https://n8n.theaiteam.uk/webhook/sol_bot
+
+personality:
+  tone: enthusiastic
+  style: educational
+  approach: consultative
+
+solar_config:
+  defaults:
+    installation_price: 2
+    dealer_fee: 15
+    broker_fee: 50
+    financing_apr: 5
+    financing_term: 240
+    energy_price: 0.17
+    yearly_cost_increase: 4
+    installation_lifespan: 20
+    typical_panel_count: 40
+    max_roof_segments: 4
+    solar_incentive: 3
+    panel_wattage: 400
+    system_efficiency: 0.85
+    degradation_rate: 0.005
+    electricity_rate_increase: 0.03
+  regions:
+    - US_Federal
+    - California
+    - Texas
+    - Florida
+    - Arizona
+    - Nevada
+    - New_York
+    - Colorado
+  integrations:
+    - google_sunroof
+    - pvwatts
+    - utility_apis
+    - permit_databases

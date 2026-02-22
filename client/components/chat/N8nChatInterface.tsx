@@ -6,6 +6,7 @@ import HTMLPreview from './HTMLPreview';
 import SocialMediaPreview from './SocialMediaPreview';
 import EnableContentRepurposerButton from './EnableContentRepurposerButton';
 import FileMessage from './FileMessage';
+import ChatMessageBubble from './ChatMessageBubble';
 import { sendToN8nWorkflowStreaming, generateRequestId, generateSessionId } from '../../lib/n8nService';
 import { ChatHistoryService } from '../../services/chatHistoryService';
 import { FileUploadService } from '../../services/fileUploadService';
@@ -397,7 +398,9 @@ export default function N8nChatInterface({
     message: string,
     sender: 'User' | 'Agent',
     timestamp?: Date,
-    agentStatus?: string
+    agentStatus?: string,
+    executionId?: string | number,
+    workflowId?: string
   ) => {
     try {
       const savedRecord = await chatHistoryService.saveMessage({
@@ -408,7 +411,9 @@ export default function N8nChatInterface({
         timestamp: (timestamp || new Date()).toISOString(),
         agent_name: agent.name,
         agent_id: agent.id,
-        agent_status: agentStatus
+        agent_status: agentStatus,
+        execution_id: executionId,
+        workflow_id: workflowId
       });
       return savedRecord;
     } catch (error) {
@@ -631,7 +636,9 @@ export default function N8nChatInterface({
           displayMessage,
           'Agent',
           messageTimestamp,
-          response.agent_status || 'Ready'  // Default to 'Ready' for streaming
+          response.agent_status || 'Ready',  // Default to 'Ready' for streaming
+          response.execution_id,  // Pass execution_id from n8n response
+          response.workflow_id  // Pass workflow_id from n8n response
         );
 
         // Update agentMessage with content_repurposer_history_id if available

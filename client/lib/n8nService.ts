@@ -244,7 +244,9 @@ export const sendToN8nWorkflow = async (
               actions_performed: lastMatch.actions_performed,
               actions_todo: lastMatch.actions_todo,
               routing: lastMatch.routing,
-              state: lastMatch.state
+              state: lastMatch.state,
+              execution_id: lastMatch.execution_id,
+              workflow_id: lastMatch.workflow_id
             } as N8nResponse;
           }
           
@@ -263,7 +265,9 @@ export const sendToN8nWorkflow = async (
                 actions_performed: contentParsed.actions_performed,
                 actions_todo: contentParsed.actions_todo,
                 routing: contentParsed.routing,
-                state: contentParsed.state
+                state: contentParsed.state,
+                execution_id: contentParsed.execution_id,
+                workflow_id: contentParsed.workflow_id
               } as N8nResponse;
             }
           } catch {
@@ -495,7 +499,9 @@ export const sendToN8nWorkflowStreaming = async (
         actions_performed: lastMatch.actions_performed,
         actions_todo: lastMatch.actions_todo,
         routing: lastMatch.routing,
-        state: lastMatch.state
+        state: lastMatch.state,
+        execution_id: lastMatch.execution_id,
+        workflow_id: lastMatch.workflow_id
       } as N8nResponse;
     }
     
@@ -526,7 +532,9 @@ export const sendToN8nWorkflowStreaming = async (
                 actions_performed: parsed.actions_performed,
                 actions_todo: parsed.actions_todo,
                 routing: parsed.routing,
-                state: parsed.state
+                state: parsed.state,
+                execution_id: parsed.execution_id,
+                workflow_id: parsed.workflow_id
               } as N8nResponse;
             }
           } catch {

@@ -1,8 +1,9 @@
 // useAdmin hook - Check and manage admin status
+// Uses profile from useUser to avoid duplicate API calls
 
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from './useUser';
-import { supabase } from '../lib/supabase';
+import { profilesApi } from '../lib/supabase-api';
 
 interface UseAdminReturn {
   isAdmin: boolean;
@@ -12,7 +13,7 @@ interface UseAdminReturn {
 }
 
 export const useAdmin = (): UseAdminReturn => {
-  const { userId, isAuthenticated, isReady } = useUser();
+  const { userId, isAuthenticated, isReady, profile } = useUser();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,19 +29,25 @@ export const useAdmin = (): UseAdminReturn => {
       setIsLoading(true);
       setError(null);
       
-      // Check admin status directly from Supabase profiles table
-      const { data, error: supabaseError } = await supabase
-        .from('profiles')
-        .select('is_super_admin')
-        .eq('user_id', userId)
-        .single();
+      // First check if profile from useUser has is_super_admin
+      if (profile && typeof profile.is_super_admin !== 'undefined') {
+        setIsAdmin(profile.is_super_admin === true);
+        setIsLoading(false);
+        return;
+      }
       
-      if (supabaseError) {
-        console.error('Error checking admin status:', supabaseError);
-        setError(supabaseError.message);
+      // Fallback: fetch profile using profilesApi if not available from useUser
+      const { data, error: apiError } = await profilesApi.getByUserId(userId);
+      
+      if (apiError) {
+        console.error('Error checking admin status:', apiError);
+        setError(apiError.message);
         setIsAdmin(false);
+      } else if (data) {
+        setIsAdmin(data.is_super_admin === true);
       } else {
-        setIsAdmin(data?.is_super_admin === true);
+        // No profile found
+        setIsAdmin(false);
       }
     } catch (err: any) {
       console.error('Error checking admin status:', err);
@@ -49,16 +56,28 @@ export const useAdmin = (): UseAdminReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, isAuthenticated]);
+  }, [userId, isAuthenticated, profile]);
+
+  // React to profile changes from useUser - this is the key fix
+  // When profile loads with is_super_admin, update admin status immediately
+  useEffect(() => {
+    if (profile && typeof profile.is_super_admin !== 'undefined') {
+      setIsAdmin(profile.is_super_admin === true);
+      setIsLoading(false);
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (isReady && isAuthenticated && userId) {
-      checkAdminStatus();
+      // Only fetch if profile doesn't have is_super_admin yet
+      if (!profile || typeof profile.is_super_admin === 'undefined') {
+        checkAdminStatus();
+      }
     } else if (isReady && !isAuthenticated) {
       setIsAdmin(false);
       setIsLoading(false);
     }
-  }, [isReady, isAuthenticated, userId, checkAdminStatus]);
+  }, [isReady, isAuthenticated, userId, profile, checkAdminStatus]);
 
   return {
     isAdmin,

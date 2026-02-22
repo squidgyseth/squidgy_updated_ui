@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@google-cloud/local-auth": "^3.0.1",
+    "@neondatabase/serverless": "^1.0.2",
     "@playwright/test": "^1.56.0",
     "@supabase/supabase-js": "^2.57.0",
     "@types/cheerio": "^0.22.35",

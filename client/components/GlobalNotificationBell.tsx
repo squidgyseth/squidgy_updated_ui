@@ -9,12 +9,18 @@ import { toast } from 'sonner';
  * No UI - just the connection logic
  */
 export default function GlobalNotificationBell() {
-  const { userId, isAuthenticated } = useUser();
+  const { userId, isAuthenticated, isReady } = useUser();
   const isConnectedRef = useRef(false);
   const lastUserIdRef = useRef<string | null>(null);
   const visibilityListenerRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
+    // Wait for auth flow to complete before connecting WebSocket
+    // This prevents multiple connection attempts during login
+    if (!isReady) {
+      return;
+    }
+
     if (!userId || !isAuthenticated) {
       if (isConnectedRef.current) {
         notificationsService.disconnectWebSocket();
@@ -79,7 +85,7 @@ export default function GlobalNotificationBell() {
         visibilityListenerRef.current = null;
       }
     };
-  }, [userId, isAuthenticated]);
+  }, [userId, isAuthenticated, isReady]);
 
   // This component has no visual output
   return null;

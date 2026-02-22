@@ -8,6 +8,7 @@ interface SignUpData {
   email: string;
   password: string;
   fullName: string;
+  referralCode?: string;
   termsAccepted?: boolean;
   aiProcessingConsent?: boolean;
   marketingConsent?: boolean;
@@ -44,7 +45,8 @@ export class AuthService {
   // Password validation helper
   private isValidPassword(password: string): boolean {
     // At least 8 characters, 1 uppercase, 1 lowercase, 1 number
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/;
+    // Allow ANY characters (including all special chars from password managers)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
     return passwordRegex.test(password);
   }
 
@@ -74,15 +76,16 @@ export class AuthService {
       try {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        const url = `${supabaseUrl}/rest/v1/profiles?email=eq.${userData.email.toLowerCase()}&select=id`;
+        const emailLower = userData.email.toLowerCase();
+        const encodedEmail = encodeURIComponent(emailLower);
+        const url = `${supabaseUrl}/rest/v1/profiles?email=eq.${encodedEmail}&select=id,email`;
 
         const response = await fetch(url, {
           method: 'GET',
           headers: {
             'apikey': supabaseKey,
             'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
+            'Content-Type': 'application/json'
           }
         });
 
@@ -148,9 +151,20 @@ export class AuthService {
         throw new Error('Failed to create user account');
       }
 
+      // Check if user already exists - Supabase returns empty identities array for existing users
+      // This is a security feature to prevent email enumeration
+      if (authData.user.identities && authData.user.identities.length === 0) {
+        throw new Error('An account with this email already exists. Please try logging in instead.');
+      }
+      
+      // Also check if identities is undefined or null (another indicator of existing user)
+      if (!authData.user.identities) {
+        throw new Error('An account with this email already exists. Please try logging in instead.');
+      }
+
       // Create profile immediately after user creation
       try {
-        // First check if profile already exists (might be created by trigger)
+        // First check if profile already exists (by id OR email to prevent duplicates)
         // Note: Using direct API call because Supabase JS client hangs in this environment
         let existingProfile = null;
         let checkError = null;
@@ -158,9 +172,10 @@ export class AuthService {
         try {
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
           const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-          const url = `${supabaseUrl}/rest/v1/profiles?id=eq.${authData.user.id}&select=*`;
-
-          const response = await fetch(url, {
+          
+          // Check by id first (trigger might create with auth user id)
+          let url = `${supabaseUrl}/rest/v1/profiles?id=eq.${authData.user.id}&select=*`;
+          let response = await fetch(url, {
             method: 'GET',
             headers: {
               'apikey': supabaseKey,
@@ -173,9 +188,46 @@ export class AuthService {
           if (response.ok) {
             const profiles = await response.json();
             existingProfile = profiles && profiles.length > 0 ? profiles[0] : null;
-          } else {
-            console.error('❌ AUTH_SERVICE: Profile check API call failed:', response.status, response.statusText);
-            checkError = { code: 'API_ERROR', message: `HTTP ${response.status}` };
+          }
+          
+          // If not found by id, check by email to prevent duplicates
+          if (!existingProfile) {
+            url = `${supabaseUrl}/rest/v1/profiles?email=eq.${encodeURIComponent(authData.user.email?.toLowerCase() || '')}&select=*`;
+            response = await fetch(url, {
+              method: 'GET',
+              headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+              }
+            });
+
+            if (response.ok) {
+              const profiles = await response.json();
+              existingProfile = profiles && profiles.length > 0 ? profiles[0] : null;
+              
+              // If found by email but with different id, update the id to match auth user
+              if (existingProfile && existingProfile.id !== authData.user.id) {
+                console.log('⚠️ AUTH_SERVICE: Found profile by email with different id, updating to match auth user');
+                const updateUrl = `${supabaseUrl}/rest/v1/profiles?id=eq.${existingProfile.id}`;
+                const updateResponse = await fetch(updateUrl, {
+                  method: 'PATCH',
+                  headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${supabaseKey}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                  },
+                  body: JSON.stringify({ id: authData.user.id, updated_at: new Date().toISOString() })
+                });
+                
+                if (updateResponse.ok) {
+                  const updatedProfiles = await updateResponse.json();
+                  existingProfile = updatedProfiles && updatedProfiles.length > 0 ? updatedProfiles[0] : existingProfile;
+                }
+              }
+            }
           }
         } catch (error: any) {
           console.error('❌ AUTH_SERVICE: Error during profile check:', error);
@@ -191,9 +243,11 @@ export class AuthService {
             const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
             const url = `${supabaseUrl}/rest/v1/profiles`;
 
+            const userId = uuidv4();
+
             const profileData = {
               id: authData.user.id,
-              user_id: uuidv4(),
+              user_id: userId,
               company_id: uuidv4(), // Generate company_id for new user
               email: authData.user.email,
               full_name: userData.fullName.trim(),
@@ -211,6 +265,11 @@ export class AuthService {
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             };
+
+            // TODO: Track referral if referralCode was provided
+            // If userData.referralCode exists and is not "SQUIDWINS":
+            //   1. Look up the referrer's user_id from referral_codes table
+            //   2. Create entry in referrals table linking referrer to referee (userId)
 
             const response = await fetch(url, {
               method: 'POST',
@@ -450,7 +509,12 @@ export class AuthService {
           throw new Error('Invalid email or password');
         }
         if (authError.message.includes('Email not confirmed')) {
-          throw new Error('Please check your email and click the confirmation link to verify your account before signing in.');
+          // Return needsEmailConfirmation flag instead of throwing error
+          // This allows Login.tsx to show a helpful verification panel
+          return {
+            user: null,
+            needsEmailConfirmation: true
+          };
         }
         if (authError.message.includes('rate limit') || 
             authError.message.includes('too many requests') ||
@@ -639,7 +703,10 @@ export class AuthService {
       }
 
     } catch (error: any) {
-      console.error('Get current user error:', error);
+      // Don't log AuthSessionMissingError as it's expected when not logged in
+      if (error.name !== 'AuthSessionMissingError') {
+        console.error('Get current user error:', error);
+      }
       return { user: null, profile: null };
     }
   }

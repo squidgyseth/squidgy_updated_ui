@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-02-22T10:19:54.421Z
+// Generated on: 2026-02-20T16:51:11.636Z
 
 export interface AgentConfig {
   agent: {
@@ -12,8 +12,8 @@ export interface AgentConfig {
     tagline?: string;
     avatar?: string;
     pinned?: boolean;
-    enabled?: boolean;  // Whether agent is enabled by default (personal_assistant always true)
-    uses_conversation_state?: boolean;  // Enables multi-turn conversation state persistence
+    enabled?: boolean;
+    uses_conversation_state?: boolean;
     initial_message?: string;
     sidebar_greeting?: string;
     capabilities?: string[];
@@ -45,95 +45,6 @@ export interface AgentConfig {
 
 // All agents (pre-sorted)
 export const ALL_AGENTS: AgentConfig[] = [
-  {
-    "agent": {
-      "id": "project_architect",
-      "emoji": "🏗️",
-      "name": "Project Architect",
-      "category": "ADMIN",
-      "description": "Discuss architecture, plan features, debug cross-project issues",
-      "specialization": "Platform Architecture Advisor",
-      "tagline": "Know the codebase. Plan the future.",
-      "avatar": "/Squidgy AI Assistants Avatars/3.png",
-      "pinned": false,
-      "enabled": true,
-      "admin_only": true,
-      "uses_conversation_state": true,
-      "initial_message": "Hey! I'm your Project Architect - I know the Squidgy platform inside and out.<br><br>I have deep knowledge of all 3 sub-projects, their integrations, and the tribal knowledge that keeps things running.<br><br>I can help with:<br><br><b>1. Architecture questions</b> - How does X work? Where does Y live?<br><b>2. Planning new features</b> - What files need changing? What patterns to follow?<br><b>3. Planning new agents</b> - YAML config, N8N workflow, Pia routing<br><b>4. Debugging</b> - Cross-project issues, N8N problems, integration failures<br><br>What do you need?",
-      "sidebar_greeting": "I know the Squidgy platform architecture. Ask me about how things work, plan new features, or debug cross-project issues.",
-      "capabilities": [
-        "Deep knowledge of frontend (React/Vite/Express), backend (FastAPI/Heroku), and agent builder (CLI/N8N)",
-        "Cross-project integration flow expertise",
-        "N8N workflow pattern guidance (10-node agent pattern, debugging)",
-        "Agent creation pipeline guidance (YAML, N8N, Pia routing)",
-        "Database schema knowledge (Supabase + Neon pgvector)",
-        "Deployment and infrastructure troubleshooting"
-      ],
-      "recent_actions": [
-        "Documented full platform architecture",
-        "Mapped all 75 backend API endpoints",
-        "Cataloged N8N workflow patterns and gotchas",
-        "Identified cross-project integration flows"
-      ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/project_architect"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": ""
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Project Architect",
-          "path": "project-architect",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "How does the agent creation pipeline work?",
-      "What files do I need to change for a new feature?",
-      "Help me debug an N8N workflow issue",
-      "Plan a new agent for me"
-    ],
-    "personality": {
-      "tone": "technical",
-      "style": "precise",
-      "approach": "consultative"
-    },
-    "knowledge_base": [
-      {
-        "file": "system_prompt.md",
-        "description": "Core architecture knowledge from docs-hub"
-      },
-      {
-        "file": "n8n_patterns.md",
-        "description": "N8N workflow patterns, gotchas, and debugging"
-      },
-      {
-        "file": "agent_pipeline.md",
-        "description": "How to create and deploy new agents"
-      }
-    ],
-    "conversation_state_schema": {
-      "topic": "string",
-      "context": "object",
-      "files_discussed": "array"
-    }
-  },
   {
     "agent": {
       "id": "personal_assistant",
@@ -202,49 +113,37 @@ export const ALL_AGENTS: AgentConfig[] = [
   },
   {
     "agent": {
-      "id": "brandy",
-      "emoji": "🎨",
-      "name": "Brandy | Brand Advisor",
+      "id": "newsletter_multi",
+      "emoji": "📰",
+      "name": "Nina | Newsletter Specialist",
       "category": "MARKETING",
-      "description": "Build your anti-brand or get brand guidance",
-      "specialization": "Brand Strategist",
-      "tagline": "Define. Refine. Align.",
+      "description": "Create and manage multi-topic newsletters.",
+      "specialization": "Newsletter Specialist",
+      "tagline": "Content. Create. Distribute.",
       "avatar": "/Squidgy AI Assistants Avatars/7.png",
-      "pinned": true,
-      "enabled": true,
+      "pinned": false,
+      "enabled": false,
       "uses_conversation_state": true,
-      "initial_message": "Hey! 🎨 I'm Brandy, your brand advisor.<br><br>I help you build authentic brands that actually sound like you - no corporate BS.<br><br>Want to:<br><br><b>1. Build from scratch</b> - I'll guide you through 6 quick questions<br><b>2. Import existing</b> - Got brand docs? Paste them and I'll extract what matters<br><b>3. Just chat</b> - Ask me brand questions and we'll figure it out as we go<br><br>What works for you?",
-      "sidebar_greeting": "Hi! I'm Brandy - your brand strategist. Whether you're building from scratch or refining what you have, I'll help you create a brand that feels real.",
+      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+      "sidebar_greeting": "Hi! I'm your Newsletter Specialist - I help you create engaging multi-topic newsletters. How can I assist you today?",
       "capabilities": [
-        "Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
-        "Brand document import and parsing",
-        "Brand voice refinement and guidance",
-        "Content review against brand guidelines",
-        "Hook and headline generation",
-        "Before/after copy transformations"
+        "Multi-topic newsletter creation",
+        "Content optimization for email",
+        "Newsletter template generation",
+        "Email marketing best practices"
       ],
       "recent_actions": [
-        "Built brand foundation for SaaS startup",
-        "Imported and refined existing brand docs",
-        "Generated 20 on-brand social hooks",
-        "Reviewed website copy for brand alignment"
+        "Generated newsletter for Q4 product launch",
+        "Created 3-topic newsletter for weekly digest",
+        "Optimized subject lines for better open rates"
       ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/brandy"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
     },
     "ui_use": {
       "page_type": "single_page",
       "pages": [
         {
-          "name": "Brandy Dashboard",
-          "path": "brandy-dashboard",
+          "name": "Newsletter Dashboard",
+          "path": "newsletter-dashboard",
           "order": 1,
           "validated": true
         }
@@ -255,204 +154,89 @@ export const ALL_AGENTS: AgentConfig[] = [
       "features": [
         "text_input",
         "file_upload",
+        "voice_input",
         "suggestion_buttons"
       ]
     },
     "suggestions": [
-      "1 - Build from scratch",
-      "2 - Import existing brand docs",
-      "3 - Just chat"
+      "Complete Setup",
+      "Create newsletter content",
+      "Generate email templates",
+      "Optimize subject lines",
+      "Design email layout"
     ],
-    "personality": {
-      "tone": "friendly",
-      "style": "direct",
-      "approach": "consultative"
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/newsletter_multi",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
     },
-    "brandy_config": {
-      "wizard_phases": [
-        {
-          "id": "assessment",
-          "description": "Check if user has brand data, offer options",
-          "triggers": [
-            "first_interaction",
-            "restart"
-          ]
-        },
-        {
-          "id": "import",
-          "description": "Parse uploaded brand docs or website",
-          "triggers": [
-            "user_uploads_file",
-            "provides_url"
-          ]
-        },
-        {
-          "id": "wizard_build",
-          "description": "6-step brand building process",
-          "steps": [
-            {
-              "id": "atmosphere",
-              "question": "What's the overall vibe/feeling you want people to experience?",
-              "stores_to": "brands.atmosphere"
-            },
-            {
-              "id": "rebellious_edge",
-              "question": "What makes you different? What won't you compromise on?",
-              "stores_to": "brands.rebellious_edge"
-            },
-            {
-              "id": "enemy",
-              "question": "What do you stand against? (industry BS, not competitors)",
-              "stores_to": "brands.enemy_statement"
-            },
-            {
-              "id": "visuals",
-              "question": "Describe your visual vibe (colors, energy, feel)",
-              "stores_to": "brands.visual_direction"
-            },
-            {
-              "id": "hooks",
-              "question": "How do you grab attention? What makes people stop scrolling?",
-              "stores_to": "brands.hook_style"
-            },
-            {
-              "id": "messaging",
-              "question": "How do you sound? What's your authentic voice?",
-              "stores_to": "brands.voice_messaging"
-            }
-          ]
-        },
-        {
-          "id": "summary",
-          "description": "Compile Phase 1 summary",
-          "outputs": "brand_foundation_summary"
-        },
-        {
-          "id": "bible_generation",
-          "description": "Generate full brand bible (Phase 2)",
-          "triggers": [
-            "user_requests_full_bible"
-          ],
-          "outputs": "full_brand_bible"
-        },
-        {
-          "id": "advisor_mode",
-          "description": "Answer questions, generate content, review copy",
-          "triggers": [
-            "brand_exists"
-          ]
-        }
+    "personality": {
+      "tone": "professional",
+      "style": "helpful",
+      "approach": "proactive"
+    }
+  },
+  {
+    "agent": {
+      "id": "content_repurposer",
+      "emoji": "🔄",
+      "name": "Rita | Repurposing Maestro",
+      "category": "MARKETING",
+      "description": "Transform existing content into fresh formats for different platforms.",
+      "specialization": "Repurposing Maestro",
+      "tagline": "Repurpose. Convert. Deliver.",
+      "avatar": "/Squidgy AI Assistants Avatars/15.png",
+      "pinned": false,
+      "enabled": false,
+      "uses_conversation_state": true,
+      "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
+      "sidebar_greeting": "Hi! I'm your Content Repurposer - I transform your existing content into fresh formats for different platforms. How can I assist you today?",
+      "capabilities": [
+        "Transform blogs into social media posts",
+        "Convert videos into articles",
+        "Generate multi-platform content",
+        "Adapt content for different audiences"
       ],
-      "database": {
-        "table": "brands",
-        "columns": [
-          {
-            "name": "user_id",
-            "type": "UUID",
-            "required": true
-          },
-          {
-            "name": "atmosphere",
-            "type": "TEXT",
-            "description": "Overall vibe and feeling"
-          },
-          {
-            "name": "rebellious_edge",
-            "type": "TEXT",
-            "description": "What makes them different"
-          },
-          {
-            "name": "enemy_statement",
-            "type": "TEXT",
-            "description": "What they stand against"
-          },
-          {
-            "name": "visual_direction",
-            "type": "TEXT",
-            "description": "Visual vibe description"
-          },
-          {
-            "name": "hook_style",
-            "type": "TEXT",
-            "description": "How they grab attention"
-          },
-          {
-            "name": "voice_messaging",
-            "type": "TEXT",
-            "description": "Authentic voice"
-          },
-          {
-            "name": "signature_phrases",
-            "type": "TEXT[]",
-            "description": "Key phrases they use"
-          },
-          {
-            "name": "full_brand_bible",
-            "type": "JSONB",
-            "description": "Complete brand bible document"
-          },
-          {
-            "name": "created_at",
-            "type": "TIMESTAMP",
-            "default": "NOW()"
-          },
-          {
-            "name": "updated_at",
-            "type": "TIMESTAMP",
-            "default": "NOW()"
-          }
-        ]
-      },
-      "import": {
-        "supported_formats": [
-          ".pdf",
-          ".docx",
-          ".txt",
-          ".md",
-          "website_url"
-        ],
-        "extraction_targets": [
-          "brand_values",
-          "brand_voice",
-          "messaging",
-          "visual_guidelines",
-          "about_page_content",
-          "mission_statement"
-        ]
-      },
-      "knowledge_base": [
+      "recent_actions": [
+        "Repurposed newsletter into 5 social posts",
+        "Converted blog article to video script",
+        "Generated LinkedIn content from podcast"
+      ]
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
         {
-          "file": "instructions.md",
-          "description": "Core agent behavior and conditional logic"
-        },
-        {
-          "file": "wizard_flow.md",
-          "description": "6-step wizard conversation flow"
-        },
-        {
-          "file": "brand_methodology.md",
-          "description": "Anti-branding methodology (punk branding framework)"
-        },
-        {
-          "file": "import_parser.md",
-          "description": "How to parse and extract from brand docs"
+          "name": "Content Repurposer Dashboard",
+          "path": "content-repurposer-dashboard",
+          "order": 1,
+          "validated": true
         }
       ]
     },
-    "conversation_state_schema": {
-      "phase": "string",
-      "brand_exists": "boolean",
-      "wizard_step": "number",
-      "wizard_data": {
-        "atmosphere": "string",
-        "rebellious_edge": "string",
-        "enemy_statement": "string",
-        "visual_direction": "string",
-        "hook_style": "string",
-        "voice_messaging": "string"
-      },
-      "import_status": "string",
-      "last_interaction": "timestamp"
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons"
+      ]
+    },
+    "suggestions": [
+      "Complete Setup",
+      "Repurpose blog to social posts",
+      "Convert video to article",
+      "Transform article to video script",
+      "Generate multi-platform content"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
+      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+    },
+    "personality": {
+      "tone": "professional",
+      "style": "helpful",
+      "approach": "proactive"
     }
   },
   {
@@ -464,8 +248,8 @@ export const ALL_AGENTS: AgentConfig[] = [
       "specialization": "Automated & Strategic",
       "tagline": "Schedule. Publish. Engage.",
       "avatar": "/Squidgy AI Assistants Avatars/6.png",
-      "pinned": true,
-      "enabled": true,
+      "pinned": false,
+      "enabled": false,
       "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
       "capabilities": [
         "Schedule posts across multiple social media platforms",
@@ -484,6 +268,26 @@ export const ALL_AGENTS: AgentConfig[] = [
         "Drafted Instagram captions with trending hashtags"
       ]
     },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Social Media Dashboard",
+          "path": "social-media-scheduler-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "suggestion_buttons",
+        "calendar_integration"
+      ]
+    },
     "suggestions": [
       "Complete Setup",
       "Schedule a post for tomorrow",
@@ -496,244 +300,15 @@ export const ALL_AGENTS: AgentConfig[] = [
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_scheduler"
     },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "suggestion_buttons",
-        "calendar_integration"
-      ]
-    },
-    "personality": {
-      "tone": "professional yet friendly",
-      "style": "strategic and organized",
-      "approach": "proactive scheduling and optimization"
-    },
-    "ui_use": {
-      "pages": [
-        {
-          "name": "Social Media Dashboard",
-          "path": "/agents/social_media_scheduler/dashboard",
-          "order": 1
-        }
-      ],
-      "default_page": "/agents/social_media_scheduler/dashboard"
-    }
-  },
-  {
-    "agent": {
-      "id": "content_repurposer_multi",
-      "emoji": "✨",
-      "name": "Content Repurposer Multi",
-      "category": "MARKETING",
-      "description": "Transform content into multiple platform formats",
-      "uses_conversation_state": true,
-      "specialization": "Content Repurposer",
-      "tagline": "Repurpose. Convert. Deliver.",
-      "avatar": "/Squidgy AI Assistants Avatars/10.png",
-      "enabled": false,
-      "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
-      "capabilities": [
-        "Multi-platform content transformation",
-        "Social media post generation (LinkedIn, Twitter, Instagram)",
-        "Blog to social media conversion",
-        "Newsletter content repurposing",
-        "Tone and style adaptation per platform"
-      ],
-      "recent_actions": [
-        "Converted blog post into 5 LinkedIn posts",
-        "Generated Twitter thread from newsletter",
-        "Created Instagram captions from article",
-        "Adapted content for multiple audiences"
-      ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
-      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Your Agent Dashboard",
-          "path": "your-agent-dashboard",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "Complete Setup",
-      "Convert newsletter to social posts",
-      "Create LinkedIn post from content",
-      "Generate Twitter thread",
-      "Adapt for Instagram",
-      "Repurpose for multiple platforms",
-      "Change tone for different audience"
-    ],
     "personality": {
       "tone": "professional",
-      "style": "helpful",
+      "style": "strategic",
       "approach": "proactive"
     }
   },
   {
     "agent": {
-      "id": "newsletter_multi",
-      "emoji": "📰",
-      "name": "Newsletter Agent Multi",
-      "category": "MARKETING",
-      "description": "Create and manage newsletters",
-      "specialization": "Creative & Trendy",
-      "tagline": "Content. Create. Distribute.",
-      "avatar": "/Squidgy AI Assistants Avatars/7.png",
-      "pinned": false,
-      "enabled": false,
-      "uses_conversation_state": true,
-      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
-      "capabilities": [
-        "Content creation and optimization for newsletters",
-        "PDF document processing and analysis",
-        "Speech-to-text content input",
-        "Newsletter template generation",
-        "Email marketing best practices"
-      ],
-      "recent_actions": [
-        "Generated newsletter for Q4 product launch",
-        "Processed PDF content from marketing materials",
-        "Analyzed competitor newsletter performance"
-      ]
-    },
-    "suggestions": [
-      "Complete Setup",
-      "Create newsletter content",
-      "Process PDF document",
-      "Generate email templates",
-      "Analyze newsletter performance",
-      "Design email layout",
-      "Optimize subject lines"
-    ],
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/newsletter_multi",
-      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
-      "pages": [
-        {
-          "name": "newsletter_liquid-blanch-17032840_page1",
-          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-          "order": 1,
-          "source": {
-            "type": "figma_deployed",
-            "url": "https://liquid-blanch-17032840.figma.site/"
-          }
-        }
-      ]
-    },
-    "ui_use": {
-      "pages": [
-        {
-          "name": "Newsletter Liquid-Blanch-17032840 Page1",
-          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-          "order": 1,
-          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
-        }
-      ],
-      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
-    }
-  },
-  {
-    "agent": {
-      "id": "newsletter",
-      "emoji": "📧",
-      "name": "Nyla | Newsletter Ninja",
-      "category": "MARKETING",
-      "description": "Craft and send engaging email newsletters to keep your audience informed and connected.",
-      "specialization": "Newsletter Ninja",
-      "tagline": "Content. Create. Distribute.",
-      "avatar": "/Squidgy AI Assistants Avatars/4.png",
-      "pinned": false,
-      "enabled": false,
-      "uses_conversation_state": true,
-      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
-      "capabilities": [
-        "Content creation and optimization for newsletters",
-        "PDF document processing and analysis",
-        "Speech-to-text content input",
-        "Newsletter template generation",
-        "Email marketing best practices"
-      ],
-      "recent_actions": [
-        "Generated newsletter for Q4 product launch",
-        "Processed PDF content from marketing materials",
-        "Analyzed competitor newsletter performance"
-      ]
-    },
-    "suggestions": [
-      "Complete Setup",
-      "Create newsletter content",
-      "Process PDF document",
-      "Generate email templates",
-      "Analyze newsletter performance",
-      "Design email layout",
-      "Optimize subject lines"
-    ],
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
-      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
-      "pages": [
-        {
-          "name": "newsletter_liquid-blanch-17032840_page1",
-          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-          "order": 1,
-          "source": {
-            "type": "figma_deployed",
-            "url": "https://liquid-blanch-17032840.figma.site/"
-          }
-        }
-      ]
-    },
-    "ui_use": {
-      "pages": [
-        {
-          "name": "Newsletter Liquid-Blanch-17032840 Page1",
-          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-          "order": 1,
-          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
-        }
-      ],
-      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
-    }
-  },
-  {
-    "agent": {
-      "id": "social_media_agent",
+      "id": "social_media",
       "emoji": "📱",
       "name": "Sophia | Social Media Superhero",
       "category": "MARKETING",
@@ -849,252 +424,6 @@ export const ALL_AGENTS: AgentConfig[] = [
   },
   {
     "agent": {
-      "id": "agent_builder",
-      "emoji": "🏗️",
-      "name": "Ace | Agent Creation Expert",
-      "category": "OPERATIONS",
-      "description": "Build and configure new AI agents with guided setup",
-      "specialization": "Agent Architect",
-      "tagline": "Design. Build. Deploy.",
-      "avatar": "/Squidgy AI Assistants Avatars/builder.png",
-      "pinned": true,
-      "enabled": true,
-      "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I can help you build new AI agents from scratch with:<br>✅ Guided conversation to define your agent<br>✅ Automatic YAML configuration<br>✅ N8N workflow templates<br>✅ Integration setup scripts<br>✅ Testing and validation<br><br>Ready to create your first agent? Let's start with: What will your agent do?",
-      "sidebar_greeting": "Hi! I'm Ace - your Agent Builder. I'll guide you through creating custom AI agents with all the integrations, workflows, and configurations you need.",
-      "capabilities": [
-        "Conversational agent design and planning",
-        "YAML configuration generation",
-        "N8N workflow template creation",
-        "Integration helper scripts (Playwright automation)",
-        "API wrapper generation for CRM/platforms",
-        "Agent testing and validation",
-        "Tier detection (simple to complex agents)",
-        "Figma UI integration setup"
-      ],
-      "recent_actions": [
-        "Created Solar Sales Agent with calculator integrations",
-        "Generated N8N workflow for Newsletter Multi agent",
-        "Built Playwright script for GHL subaccount setup",
-        "Validated and deployed Social Media Scheduler agent"
-      ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/agent_builder"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Agent Builder Dashboard",
-          "path": "agent-builder-dashboard",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "suggestion_buttons",
-        "code_preview"
-      ]
-    },
-    "suggestions": [
-      "Create a new agent",
-      "Build a marketing agent",
-      "Build a sales agent",
-      "Add GHL integration",
-      "Generate N8N workflow",
-      "Create Playwright automation script",
-      "Test my agent configuration",
-      "Show agent creation guide"
-    ],
-    "personality": {
-      "tone": "professional",
-      "style": "educational",
-      "approach": "consultative"
-    },
-    "agent_builder_config": {
-      "tiers": [
-        {
-          "name": "Tier 1 - Basic Chat",
-          "description": "Simple conversational agent with N8N webhook",
-          "features": [
-            "Standard chat interface",
-            "Suggestion buttons",
-            "Basic N8N webhook",
-            "Personality configuration"
-          ],
-          "automation_level": "fully_automated"
-        },
-        {
-          "name": "Tier 2 - Platform Integrated",
-          "description": "Multi-platform integration (social media, CRM, etc.)",
-          "features": [
-            "Multi-platform configs",
-            "Media handling",
-            "Account management",
-            "File upload support"
-          ],
-          "automation_level": "semi_automated",
-          "requires": [
-            "OAuth setup (manual)",
-            "Platform API keys (manual)",
-            "Playwright scripts for browser automation"
-          ]
-        },
-        {
-          "name": "Tier 3 - Domain Expert",
-          "description": "Industry-specific with complex calculations and external APIs",
-          "features": [
-            "Custom domain configs",
-            "Calculator widgets",
-            "Map integrations",
-            "Pre-setup pages",
-            "Regional configs"
-          ],
-          "automation_level": "semi_automated",
-          "requires": [
-            "Domain API integrations",
-            "Custom UI components",
-            "Specialized N8N workflows"
-          ]
-        },
-        {
-          "name": "Tier 4 - Multi-Modal",
-          "description": "Figma UI generation with multi-page carousels",
-          "features": [
-            "Figma integration",
-            "Multi-page UI",
-            "Conversation state persistence",
-            "Generated React components"
-          ],
-          "automation_level": "semi_automated",
-          "requires": [
-            "Figma URLs/tokens",
-            "UI generation pipeline",
-            "Component validation"
-          ]
-        }
-      ],
-      "integration_templates": [
-        {
-          "name": "GoHighLevel (GHL)",
-          "type": "crm",
-          "automation_type": "playwright",
-          "capabilities": [
-            "Subaccount creation",
-            "Media management",
-            "Contact management",
-            "Workflow automation"
-          ],
-          "setup_guide": "/guides/integrations/ghl-setup.md"
-        },
-        {
-          "name": "Facebook Business",
-          "type": "social_media",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Page posting",
-            "Story scheduling",
-            "Media upload"
-          ],
-          "setup_guide": "/guides/integrations/facebook-setup.md"
-        },
-        {
-          "name": "Instagram Business",
-          "type": "social_media",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Feed posting",
-            "Story scheduling",
-            "Media upload"
-          ],
-          "setup_guide": "/guides/integrations/instagram-setup.md"
-        },
-        {
-          "name": "LinkedIn",
-          "type": "social_media",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Profile posting",
-            "Company page posting"
-          ],
-          "setup_guide": "/guides/integrations/linkedin-setup.md"
-        },
-        {
-          "name": "Google Calendar",
-          "type": "productivity",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Event creation",
-            "Event listing",
-            "Availability checking"
-          ],
-          "setup_guide": "/guides/integrations/google-calendar-setup.md"
-        },
-        {
-          "name": "Supabase",
-          "type": "database",
-          "automation_type": "api_key",
-          "capabilities": [
-            "Data storage",
-            "Query execution",
-            "Real-time subscriptions"
-          ],
-          "setup_guide": "/guides/integrations/supabase-setup.md"
-        }
-      ],
-      "n8n_components": [
-        {
-          "name": "Webhook Trigger",
-          "type": "trigger",
-          "required": true
-        },
-        {
-          "name": "Supabase Data Fetch",
-          "type": "data",
-          "common": true
-        },
-        {
-          "name": "AI Agent Conversation",
-          "type": "ai",
-          "common": true,
-          "requires_llm": true
-        },
-        {
-          "name": "Structured Output Parser",
-          "type": "parser",
-          "common": true
-        },
-        {
-          "name": "Conditional Logic",
-          "type": "control_flow",
-          "common": true
-        },
-        {
-          "name": "HTTP Request",
-          "type": "action",
-          "common": true
-        },
-        {
-          "name": "Code Node",
-          "type": "transform",
-          "common": true
-        }
-      ]
-    }
-  },
-  {
-    "agent": {
       "id": "SOL",
       "emoji": "☀️",
       "name": "Stella | Solar Sales Specialist",
@@ -1107,7 +436,8 @@ export const ALL_AGENTS: AgentConfig[] = [
       "enabled": false,
       "presetup_required": true,
       "presetup_page": "/solar-config",
-      "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-config\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your solar offer details.",
+      "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href='/solar-config' target='_blank' style='color: #7c3aed; text-decoration: underline;'>Complete Solar Setup</a> - Configure your solar offer details.",
+      "sidebar_greeting": "Hi! I'm your Solar Sales Specialist - I help qualify leads, calculate ROI, and guide prospects through the solar buying journey. How can I assist you today?",
       "capabilities": [
         "Solar panel system sizing and design",
         "ROI and payback period calculations",
@@ -1128,15 +458,6 @@ export const ALL_AGENTS: AgentConfig[] = [
         "Generated proposal for 50-panel commercial installation"
       ]
     },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/sol_bot"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
-    },
     "ui_use": {
       "page_type": "single_page",
       "pages": [
@@ -1154,9 +475,7 @@ export const ALL_AGENTS: AgentConfig[] = [
         "text_input",
         "file_upload",
         "voice_input",
-        "suggestion_buttons",
-        "calculator_widget",
-        "map_integration"
+        "suggestion_buttons"
       ]
     },
     "suggestions": [
@@ -1170,6 +489,9 @@ export const ALL_AGENTS: AgentConfig[] = [
       "Request a callback for this lead",
       "Track my pipeline conversion rates"
     ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/sol_bot"
+    },
     "personality": {
       "tone": "enthusiastic",
       "style": "educational",
@@ -1210,626 +532,44 @@ export const ALL_AGENTS: AgentConfig[] = [
         "permit_databases"
       ]
     }
-  },
-  {
-    "agent": {
-      "id": "content_repurposer",
-      "emoji": "🔄",
-      "name": "Rita | Repurposing Maestro",
-      "category": "SALES",
-      "description": "Transform existing content into fresh formats for different platforms—turn blogs into social posts, videos into articles, and more.",
-      "uses_conversation_state": true,
-      "specialization": "Repurposing Maestro",
-      "tagline": "Repurpose. Convert. Deliver.",
-      "avatar": "/Squidgy AI Assistants Avatars/15.png",
-      "enabled": false,
-      "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
-      "capabilities": [
-        "Primary capability or main function",
-        "Secondary feature or service provided",
-        "Integration or special functionality",
-        "Advanced feature or automation",
-        "Additional service or tool"
-      ],
-      "recent_actions": [
-        "Completed a recent task or project",
-        "Generated content or performed analysis",
-        "Processed user request or data",
-        "Automated workflow or integration"
-      ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
-      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Your Agent Dashboard",
-          "path": "your-agent-dashboard",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "Complete Setup",
-      "Repurpose blog to social posts",
-      "Convert video to article",
-      "Transform article to video script",
-      "Generate multi-platform content",
-      "Show my content library"
-    ],
-    "personality": {
-      "tone": "professional",
-      "style": "helpful",
-      "approach": "proactive"
-    }
   }
 ];
 
 // Agents by ID (for fast lookup)
 export const AGENTS_BY_ID: Record<string, AgentConfig> = {
-  "agent_builder": {
-    "agent": {
-      "id": "agent_builder",
-      "emoji": "🏗️",
-      "name": "Ace | Agent Creation Expert",
-      "category": "OPERATIONS",
-      "description": "Build and configure new AI agents with guided setup",
-      "specialization": "Agent Architect",
-      "tagline": "Design. Build. Deploy.",
-      "avatar": "/Squidgy AI Assistants Avatars/builder.png",
-      "pinned": true,
-      "enabled": true,
-      "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I can help you build new AI agents from scratch with:<br>✅ Guided conversation to define your agent<br>✅ Automatic YAML configuration<br>✅ N8N workflow templates<br>✅ Integration setup scripts<br>✅ Testing and validation<br><br>Ready to create your first agent? Let's start with: What will your agent do?",
-      "sidebar_greeting": "Hi! I'm Ace - your Agent Builder. I'll guide you through creating custom AI agents with all the integrations, workflows, and configurations you need.",
-      "capabilities": [
-        "Conversational agent design and planning",
-        "YAML configuration generation",
-        "N8N workflow template creation",
-        "Integration helper scripts (Playwright automation)",
-        "API wrapper generation for CRM/platforms",
-        "Agent testing and validation",
-        "Tier detection (simple to complex agents)",
-        "Figma UI integration setup"
-      ],
-      "recent_actions": [
-        "Created Solar Sales Agent with calculator integrations",
-        "Generated N8N workflow for Newsletter Multi agent",
-        "Built Playwright script for GHL subaccount setup",
-        "Validated and deployed Social Media Scheduler agent"
-      ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/agent_builder"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Agent Builder Dashboard",
-          "path": "agent-builder-dashboard",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "suggestion_buttons",
-        "code_preview"
-      ]
-    },
-    "suggestions": [
-      "Create a new agent",
-      "Build a marketing agent",
-      "Build a sales agent",
-      "Add GHL integration",
-      "Generate N8N workflow",
-      "Create Playwright automation script",
-      "Test my agent configuration",
-      "Show agent creation guide"
-    ],
-    "personality": {
-      "tone": "professional",
-      "style": "educational",
-      "approach": "consultative"
-    },
-    "agent_builder_config": {
-      "tiers": [
-        {
-          "name": "Tier 1 - Basic Chat",
-          "description": "Simple conversational agent with N8N webhook",
-          "features": [
-            "Standard chat interface",
-            "Suggestion buttons",
-            "Basic N8N webhook",
-            "Personality configuration"
-          ],
-          "automation_level": "fully_automated"
-        },
-        {
-          "name": "Tier 2 - Platform Integrated",
-          "description": "Multi-platform integration (social media, CRM, etc.)",
-          "features": [
-            "Multi-platform configs",
-            "Media handling",
-            "Account management",
-            "File upload support"
-          ],
-          "automation_level": "semi_automated",
-          "requires": [
-            "OAuth setup (manual)",
-            "Platform API keys (manual)",
-            "Playwright scripts for browser automation"
-          ]
-        },
-        {
-          "name": "Tier 3 - Domain Expert",
-          "description": "Industry-specific with complex calculations and external APIs",
-          "features": [
-            "Custom domain configs",
-            "Calculator widgets",
-            "Map integrations",
-            "Pre-setup pages",
-            "Regional configs"
-          ],
-          "automation_level": "semi_automated",
-          "requires": [
-            "Domain API integrations",
-            "Custom UI components",
-            "Specialized N8N workflows"
-          ]
-        },
-        {
-          "name": "Tier 4 - Multi-Modal",
-          "description": "Figma UI generation with multi-page carousels",
-          "features": [
-            "Figma integration",
-            "Multi-page UI",
-            "Conversation state persistence",
-            "Generated React components"
-          ],
-          "automation_level": "semi_automated",
-          "requires": [
-            "Figma URLs/tokens",
-            "UI generation pipeline",
-            "Component validation"
-          ]
-        }
-      ],
-      "integration_templates": [
-        {
-          "name": "GoHighLevel (GHL)",
-          "type": "crm",
-          "automation_type": "playwright",
-          "capabilities": [
-            "Subaccount creation",
-            "Media management",
-            "Contact management",
-            "Workflow automation"
-          ],
-          "setup_guide": "/guides/integrations/ghl-setup.md"
-        },
-        {
-          "name": "Facebook Business",
-          "type": "social_media",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Page posting",
-            "Story scheduling",
-            "Media upload"
-          ],
-          "setup_guide": "/guides/integrations/facebook-setup.md"
-        },
-        {
-          "name": "Instagram Business",
-          "type": "social_media",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Feed posting",
-            "Story scheduling",
-            "Media upload"
-          ],
-          "setup_guide": "/guides/integrations/instagram-setup.md"
-        },
-        {
-          "name": "LinkedIn",
-          "type": "social_media",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Profile posting",
-            "Company page posting"
-          ],
-          "setup_guide": "/guides/integrations/linkedin-setup.md"
-        },
-        {
-          "name": "Google Calendar",
-          "type": "productivity",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Event creation",
-            "Event listing",
-            "Availability checking"
-          ],
-          "setup_guide": "/guides/integrations/google-calendar-setup.md"
-        },
-        {
-          "name": "Supabase",
-          "type": "database",
-          "automation_type": "api_key",
-          "capabilities": [
-            "Data storage",
-            "Query execution",
-            "Real-time subscriptions"
-          ],
-          "setup_guide": "/guides/integrations/supabase-setup.md"
-        }
-      ],
-      "n8n_components": [
-        {
-          "name": "Webhook Trigger",
-          "type": "trigger",
-          "required": true
-        },
-        {
-          "name": "Supabase Data Fetch",
-          "type": "data",
-          "common": true
-        },
-        {
-          "name": "AI Agent Conversation",
-          "type": "ai",
-          "common": true,
-          "requires_llm": true
-        },
-        {
-          "name": "Structured Output Parser",
-          "type": "parser",
-          "common": true
-        },
-        {
-          "name": "Conditional Logic",
-          "type": "control_flow",
-          "common": true
-        },
-        {
-          "name": "HTTP Request",
-          "type": "action",
-          "common": true
-        },
-        {
-          "name": "Code Node",
-          "type": "transform",
-          "common": true
-        }
-      ]
-    }
-  },
-  "brandy": {
-    "agent": {
-      "id": "brandy",
-      "emoji": "🎨",
-      "name": "Brandy | Brand Advisor",
-      "category": "MARKETING",
-      "description": "Build your anti-brand or get brand guidance",
-      "specialization": "Brand Strategist",
-      "tagline": "Define. Refine. Align.",
-      "avatar": "/Squidgy AI Assistants Avatars/7.png",
-      "pinned": true,
-      "enabled": true,
-      "uses_conversation_state": true,
-      "initial_message": "Hey! 🎨 I'm Brandy, your brand advisor.<br><br>I help you build authentic brands that actually sound like you - no corporate BS.<br><br>Want to:<br><br><b>1. Build from scratch</b> - I'll guide you through 6 quick questions<br><b>2. Import existing</b> - Got brand docs? Paste them and I'll extract what matters<br><b>3. Just chat</b> - Ask me brand questions and we'll figure it out as we go<br><br>What works for you?",
-      "sidebar_greeting": "Hi! I'm Brandy - your brand strategist. Whether you're building from scratch or refining what you have, I'll help you create a brand that feels real.",
-      "capabilities": [
-        "Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
-        "Brand document import and parsing",
-        "Brand voice refinement and guidance",
-        "Content review against brand guidelines",
-        "Hook and headline generation",
-        "Before/after copy transformations"
-      ],
-      "recent_actions": [
-        "Built brand foundation for SaaS startup",
-        "Imported and refined existing brand docs",
-        "Generated 20 on-brand social hooks",
-        "Reviewed website copy for brand alignment"
-      ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/brandy"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Brandy Dashboard",
-          "path": "brandy-dashboard",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "1 - Build from scratch",
-      "2 - Import existing brand docs",
-      "3 - Just chat"
-    ],
-    "personality": {
-      "tone": "friendly",
-      "style": "direct",
-      "approach": "consultative"
-    },
-    "brandy_config": {
-      "wizard_phases": [
-        {
-          "id": "assessment",
-          "description": "Check if user has brand data, offer options",
-          "triggers": [
-            "first_interaction",
-            "restart"
-          ]
-        },
-        {
-          "id": "import",
-          "description": "Parse uploaded brand docs or website",
-          "triggers": [
-            "user_uploads_file",
-            "provides_url"
-          ]
-        },
-        {
-          "id": "wizard_build",
-          "description": "6-step brand building process",
-          "steps": [
-            {
-              "id": "atmosphere",
-              "question": "What's the overall vibe/feeling you want people to experience?",
-              "stores_to": "brands.atmosphere"
-            },
-            {
-              "id": "rebellious_edge",
-              "question": "What makes you different? What won't you compromise on?",
-              "stores_to": "brands.rebellious_edge"
-            },
-            {
-              "id": "enemy",
-              "question": "What do you stand against? (industry BS, not competitors)",
-              "stores_to": "brands.enemy_statement"
-            },
-            {
-              "id": "visuals",
-              "question": "Describe your visual vibe (colors, energy, feel)",
-              "stores_to": "brands.visual_direction"
-            },
-            {
-              "id": "hooks",
-              "question": "How do you grab attention? What makes people stop scrolling?",
-              "stores_to": "brands.hook_style"
-            },
-            {
-              "id": "messaging",
-              "question": "How do you sound? What's your authentic voice?",
-              "stores_to": "brands.voice_messaging"
-            }
-          ]
-        },
-        {
-          "id": "summary",
-          "description": "Compile Phase 1 summary",
-          "outputs": "brand_foundation_summary"
-        },
-        {
-          "id": "bible_generation",
-          "description": "Generate full brand bible (Phase 2)",
-          "triggers": [
-            "user_requests_full_bible"
-          ],
-          "outputs": "full_brand_bible"
-        },
-        {
-          "id": "advisor_mode",
-          "description": "Answer questions, generate content, review copy",
-          "triggers": [
-            "brand_exists"
-          ]
-        }
-      ],
-      "database": {
-        "table": "brands",
-        "columns": [
-          {
-            "name": "user_id",
-            "type": "UUID",
-            "required": true
-          },
-          {
-            "name": "atmosphere",
-            "type": "TEXT",
-            "description": "Overall vibe and feeling"
-          },
-          {
-            "name": "rebellious_edge",
-            "type": "TEXT",
-            "description": "What makes them different"
-          },
-          {
-            "name": "enemy_statement",
-            "type": "TEXT",
-            "description": "What they stand against"
-          },
-          {
-            "name": "visual_direction",
-            "type": "TEXT",
-            "description": "Visual vibe description"
-          },
-          {
-            "name": "hook_style",
-            "type": "TEXT",
-            "description": "How they grab attention"
-          },
-          {
-            "name": "voice_messaging",
-            "type": "TEXT",
-            "description": "Authentic voice"
-          },
-          {
-            "name": "signature_phrases",
-            "type": "TEXT[]",
-            "description": "Key phrases they use"
-          },
-          {
-            "name": "full_brand_bible",
-            "type": "JSONB",
-            "description": "Complete brand bible document"
-          },
-          {
-            "name": "created_at",
-            "type": "TIMESTAMP",
-            "default": "NOW()"
-          },
-          {
-            "name": "updated_at",
-            "type": "TIMESTAMP",
-            "default": "NOW()"
-          }
-        ]
-      },
-      "import": {
-        "supported_formats": [
-          ".pdf",
-          ".docx",
-          ".txt",
-          ".md",
-          "website_url"
-        ],
-        "extraction_targets": [
-          "brand_values",
-          "brand_voice",
-          "messaging",
-          "visual_guidelines",
-          "about_page_content",
-          "mission_statement"
-        ]
-      },
-      "knowledge_base": [
-        {
-          "file": "instructions.md",
-          "description": "Core agent behavior and conditional logic"
-        },
-        {
-          "file": "wizard_flow.md",
-          "description": "6-step wizard conversation flow"
-        },
-        {
-          "file": "brand_methodology.md",
-          "description": "Anti-branding methodology (punk branding framework)"
-        },
-        {
-          "file": "import_parser.md",
-          "description": "How to parse and extract from brand docs"
-        }
-      ]
-    },
-    "conversation_state_schema": {
-      "phase": "string",
-      "brand_exists": "boolean",
-      "wizard_step": "number",
-      "wizard_data": {
-        "atmosphere": "string",
-        "rebellious_edge": "string",
-        "enemy_statement": "string",
-        "visual_direction": "string",
-        "hook_style": "string",
-        "voice_messaging": "string"
-      },
-      "import_status": "string",
-      "last_interaction": "timestamp"
-    }
-  },
   "content_repurposer": {
     "agent": {
       "id": "content_repurposer",
       "emoji": "🔄",
       "name": "Rita | Repurposing Maestro",
-      "category": "SALES",
-      "description": "Transform existing content into fresh formats for different platforms—turn blogs into social posts, videos into articles, and more.",
-      "uses_conversation_state": true,
+      "category": "MARKETING",
+      "description": "Transform existing content into fresh formats for different platforms.",
       "specialization": "Repurposing Maestro",
       "tagline": "Repurpose. Convert. Deliver.",
       "avatar": "/Squidgy AI Assistants Avatars/15.png",
+      "pinned": false,
       "enabled": false,
+      "uses_conversation_state": true,
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
+      "sidebar_greeting": "Hi! I'm your Content Repurposer - I transform your existing content into fresh formats for different platforms. How can I assist you today?",
       "capabilities": [
-        "Primary capability or main function",
-        "Secondary feature or service provided",
-        "Integration or special functionality",
-        "Advanced feature or automation",
-        "Additional service or tool"
+        "Transform blogs into social media posts",
+        "Convert videos into articles",
+        "Generate multi-platform content",
+        "Adapt content for different audiences"
       ],
       "recent_actions": [
-        "Completed a recent task or project",
-        "Generated content or performed analysis",
-        "Processed user request or data",
-        "Automated workflow or integration"
+        "Repurposed newsletter into 5 social posts",
+        "Converted blog article to video script",
+        "Generated LinkedIn content from podcast"
       ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
-      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
     },
     "ui_use": {
       "page_type": "single_page",
       "pages": [
         {
-          "name": "Your Agent Dashboard",
-          "path": "your-agent-dashboard",
+          "name": "Content Repurposer Dashboard",
+          "path": "content-repurposer-dashboard",
           "order": 1,
           "validated": true
         }
@@ -1849,223 +589,80 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "Repurpose blog to social posts",
       "Convert video to article",
       "Transform article to video script",
-      "Generate multi-platform content",
-      "Show my content library"
+      "Generate multi-platform content"
     ],
-    "personality": {
-      "tone": "professional",
-      "style": "helpful",
-      "approach": "proactive"
-    }
-  },
-  "content_repurposer_multi": {
-    "agent": {
-      "id": "content_repurposer_multi",
-      "emoji": "✨",
-      "name": "Content Repurposer Multi",
-      "category": "MARKETING",
-      "description": "Transform content into multiple platform formats",
-      "uses_conversation_state": true,
-      "specialization": "Content Repurposer",
-      "tagline": "Repurpose. Convert. Deliver.",
-      "avatar": "/Squidgy AI Assistants Avatars/10.png",
-      "enabled": false,
-      "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
-      "capabilities": [
-        "Multi-platform content transformation",
-        "Social media post generation (LinkedIn, Twitter, Instagram)",
-        "Blog to social media conversion",
-        "Newsletter content repurposing",
-        "Tone and style adaptation per platform"
-      ],
-      "recent_actions": [
-        "Converted blog post into 5 LinkedIn posts",
-        "Generated Twitter thread from newsletter",
-        "Created Instagram captions from article",
-        "Adapted content for multiple audiences"
-      ]
-    },
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
       "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
     },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Your Agent Dashboard",
-          "path": "your-agent-dashboard",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "voice_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "Complete Setup",
-      "Convert newsletter to social posts",
-      "Create LinkedIn post from content",
-      "Generate Twitter thread",
-      "Adapt for Instagram",
-      "Repurpose for multiple platforms",
-      "Change tone for different audience"
-    ],
     "personality": {
       "tone": "professional",
       "style": "helpful",
       "approach": "proactive"
-    }
-  },
-  "newsletter": {
-    "agent": {
-      "id": "newsletter",
-      "emoji": "📧",
-      "name": "Nyla | Newsletter Ninja",
-      "category": "MARKETING",
-      "description": "Craft and send engaging email newsletters to keep your audience informed and connected.",
-      "specialization": "Newsletter Ninja",
-      "tagline": "Content. Create. Distribute.",
-      "avatar": "/Squidgy AI Assistants Avatars/4.png",
-      "pinned": false,
-      "enabled": false,
-      "uses_conversation_state": true,
-      "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
-      "capabilities": [
-        "Content creation and optimization for newsletters",
-        "PDF document processing and analysis",
-        "Speech-to-text content input",
-        "Newsletter template generation",
-        "Email marketing best practices"
-      ],
-      "recent_actions": [
-        "Generated newsletter for Q4 product launch",
-        "Processed PDF content from marketing materials",
-        "Analyzed competitor newsletter performance"
-      ]
-    },
-    "suggestions": [
-      "Complete Setup",
-      "Create newsletter content",
-      "Process PDF document",
-      "Generate email templates",
-      "Analyze newsletter performance",
-      "Design email layout",
-      "Optimize subject lines"
-    ],
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
-      "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
-      "pages": [
-        {
-          "name": "newsletter_liquid-blanch-17032840_page1",
-          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-          "order": 1,
-          "source": {
-            "type": "figma_deployed",
-            "url": "https://liquid-blanch-17032840.figma.site/"
-          }
-        }
-      ]
-    },
-    "ui_use": {
-      "pages": [
-        {
-          "name": "Newsletter Liquid-Blanch-17032840 Page1",
-          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-          "order": 1,
-          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
-        }
-      ],
-      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
     }
   },
   "newsletter_multi": {
     "agent": {
       "id": "newsletter_multi",
       "emoji": "📰",
-      "name": "Newsletter Agent Multi",
+      "name": "Nina | Newsletter Specialist",
       "category": "MARKETING",
-      "description": "Create and manage newsletters",
-      "specialization": "Creative & Trendy",
+      "description": "Create and manage multi-topic newsletters.",
+      "specialization": "Newsletter Specialist",
       "tagline": "Content. Create. Distribute.",
       "avatar": "/Squidgy AI Assistants Avatars/7.png",
       "pinned": false,
       "enabled": false,
       "uses_conversation_state": true,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+      "sidebar_greeting": "Hi! I'm your Newsletter Specialist - I help you create engaging multi-topic newsletters. How can I assist you today?",
       "capabilities": [
-        "Content creation and optimization for newsletters",
-        "PDF document processing and analysis",
-        "Speech-to-text content input",
+        "Multi-topic newsletter creation",
+        "Content optimization for email",
         "Newsletter template generation",
         "Email marketing best practices"
       ],
       "recent_actions": [
         "Generated newsletter for Q4 product launch",
-        "Processed PDF content from marketing materials",
-        "Analyzed competitor newsletter performance"
+        "Created 3-topic newsletter for weekly digest",
+        "Optimized subject lines for better open rates"
+      ]
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Newsletter Dashboard",
+          "path": "newsletter-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "voice_input",
+        "suggestion_buttons"
       ]
     },
     "suggestions": [
       "Complete Setup",
       "Create newsletter content",
-      "Process PDF document",
       "Generate email templates",
-      "Analyze newsletter performance",
-      "Design email layout",
-      "Optimize subject lines"
+      "Optimize subject lines",
+      "Design email layout"
     ],
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/newsletter_multi",
       "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
     },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
-      "pages": [
-        {
-          "name": "newsletter_liquid-blanch-17032840_page1",
-          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-          "order": 1,
-          "source": {
-            "type": "figma_deployed",
-            "url": "https://liquid-blanch-17032840.figma.site/"
-          }
-        }
-      ]
-    },
-    "ui_use": {
-      "pages": [
-        {
-          "name": "Newsletter Liquid-Blanch-17032840 Page1",
-          "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-          "order": 1,
-          "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
-        }
-      ],
-      "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
+    "personality": {
+      "tone": "professional",
+      "style": "helpful",
+      "approach": "proactive"
     }
   },
   "personal_assistant": {
@@ -2134,98 +731,9 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "approach": "proactive"
     }
   },
-  "project_architect": {
+  "social_media": {
     "agent": {
-      "id": "project_architect",
-      "emoji": "🏗️",
-      "name": "Project Architect",
-      "category": "ADMIN",
-      "description": "Discuss architecture, plan features, debug cross-project issues",
-      "specialization": "Platform Architecture Advisor",
-      "tagline": "Know the codebase. Plan the future.",
-      "avatar": "/Squidgy AI Assistants Avatars/3.png",
-      "pinned": false,
-      "enabled": true,
-      "admin_only": true,
-      "uses_conversation_state": true,
-      "initial_message": "Hey! I'm your Project Architect - I know the Squidgy platform inside and out.<br><br>I have deep knowledge of all 3 sub-projects, their integrations, and the tribal knowledge that keeps things running.<br><br>I can help with:<br><br><b>1. Architecture questions</b> - How does X work? Where does Y live?<br><b>2. Planning new features</b> - What files need changing? What patterns to follow?<br><b>3. Planning new agents</b> - YAML config, N8N workflow, Pia routing<br><b>4. Debugging</b> - Cross-project issues, N8N problems, integration failures<br><br>What do you need?",
-      "sidebar_greeting": "I know the Squidgy platform architecture. Ask me about how things work, plan new features, or debug cross-project issues.",
-      "capabilities": [
-        "Deep knowledge of frontend (React/Vite/Express), backend (FastAPI/Heroku), and agent builder (CLI/N8N)",
-        "Cross-project integration flow expertise",
-        "N8N workflow pattern guidance (10-node agent pattern, debugging)",
-        "Agent creation pipeline guidance (YAML, N8N, Pia routing)",
-        "Database schema knowledge (Supabase + Neon pgvector)",
-        "Deployment and infrastructure troubleshooting"
-      ],
-      "recent_actions": [
-        "Documented full platform architecture",
-        "Mapped all 75 backend API endpoints",
-        "Cataloged N8N workflow patterns and gotchas",
-        "Identified cross-project integration flows"
-      ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/project_architect"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": ""
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Project Architect",
-          "path": "project-architect",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "How does the agent creation pipeline work?",
-      "What files do I need to change for a new feature?",
-      "Help me debug an N8N workflow issue",
-      "Plan a new agent for me"
-    ],
-    "personality": {
-      "tone": "technical",
-      "style": "precise",
-      "approach": "consultative"
-    },
-    "knowledge_base": [
-      {
-        "file": "system_prompt.md",
-        "description": "Core architecture knowledge from docs-hub"
-      },
-      {
-        "file": "n8n_patterns.md",
-        "description": "N8N workflow patterns, gotchas, and debugging"
-      },
-      {
-        "file": "agent_pipeline.md",
-        "description": "How to create and deploy new agents"
-      }
-    ],
-    "conversation_state_schema": {
-      "topic": "string",
-      "context": "object",
-      "files_discussed": "array"
-    }
-  },
-  "social_media_agent": {
-    "agent": {
-      "id": "social_media_agent",
+      "id": "social_media",
       "emoji": "📱",
       "name": "Sophia | Social Media Superhero",
       "category": "MARKETING",
@@ -2348,8 +856,8 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "specialization": "Automated & Strategic",
       "tagline": "Schedule. Publish. Engage.",
       "avatar": "/Squidgy AI Assistants Avatars/6.png",
-      "pinned": true,
-      "enabled": true,
+      "pinned": false,
+      "enabled": false,
       "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
       "capabilities": [
         "Schedule posts across multiple social media platforms",
@@ -2368,6 +876,26 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
         "Drafted Instagram captions with trending hashtags"
       ]
     },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Social Media Dashboard",
+          "path": "social-media-scheduler-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "suggestion_buttons",
+        "calendar_integration"
+      ]
+    },
     "suggestions": [
       "Complete Setup",
       "Schedule a post for tomorrow",
@@ -2380,29 +908,10 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_scheduler"
     },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "file_upload",
-        "suggestion_buttons",
-        "calendar_integration"
-      ]
-    },
     "personality": {
-      "tone": "professional yet friendly",
-      "style": "strategic and organized",
-      "approach": "proactive scheduling and optimization"
-    },
-    "ui_use": {
-      "pages": [
-        {
-          "name": "Social Media Dashboard",
-          "path": "/agents/social_media_scheduler/dashboard",
-          "order": 1
-        }
-      ],
-      "default_page": "/agents/social_media_scheduler/dashboard"
+      "tone": "professional",
+      "style": "strategic",
+      "approach": "proactive"
     }
   },
   "SOL": {
@@ -2419,7 +928,8 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "enabled": false,
       "presetup_required": true,
       "presetup_page": "/solar-config",
-      "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-config\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your solar offer details.",
+      "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href='/solar-config' target='_blank' style='color: #7c3aed; text-decoration: underline;'>Complete Solar Setup</a> - Configure your solar offer details.",
+      "sidebar_greeting": "Hi! I'm your Solar Sales Specialist - I help qualify leads, calculate ROI, and guide prospects through the solar buying journey. How can I assist you today?",
       "capabilities": [
         "Solar panel system sizing and design",
         "ROI and payback period calculations",
@@ -2440,15 +950,6 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
         "Generated proposal for 50-panel commercial installation"
       ]
     },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/sol_bot"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
-    },
     "ui_use": {
       "page_type": "single_page",
       "pages": [
@@ -2466,9 +967,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
         "text_input",
         "file_upload",
         "voice_input",
-        "suggestion_buttons",
-        "calculator_widget",
-        "map_integration"
+        "suggestion_buttons"
       ]
     },
     "suggestions": [
@@ -2482,6 +981,9 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "Request a callback for this lead",
       "Track my pipeline conversion rates"
     ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/sol_bot"
+    },
     "personality": {
       "tone": "enthusiastic",
       "style": "educational",
@@ -2527,97 +1029,6 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
 
 // Agents by category (pre-grouped)
 export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
-  "ADMIN": [
-    {
-      "agent": {
-        "id": "project_architect",
-        "emoji": "🏗️",
-        "name": "Project Architect",
-        "category": "ADMIN",
-        "description": "Discuss architecture, plan features, debug cross-project issues",
-        "specialization": "Platform Architecture Advisor",
-        "tagline": "Know the codebase. Plan the future.",
-        "avatar": "/Squidgy AI Assistants Avatars/3.png",
-        "pinned": false,
-        "enabled": true,
-        "admin_only": true,
-        "uses_conversation_state": true,
-        "initial_message": "Hey! I'm your Project Architect - I know the Squidgy platform inside and out.<br><br>I have deep knowledge of all 3 sub-projects, their integrations, and the tribal knowledge that keeps things running.<br><br>I can help with:<br><br><b>1. Architecture questions</b> - How does X work? Where does Y live?<br><b>2. Planning new features</b> - What files need changing? What patterns to follow?<br><b>3. Planning new agents</b> - YAML config, N8N workflow, Pia routing<br><b>4. Debugging</b> - Cross-project issues, N8N problems, integration failures<br><br>What do you need?",
-        "sidebar_greeting": "I know the Squidgy platform architecture. Ask me about how things work, plan new features, or debug cross-project issues.",
-        "capabilities": [
-          "Deep knowledge of frontend (React/Vite/Express), backend (FastAPI/Heroku), and agent builder (CLI/N8N)",
-          "Cross-project integration flow expertise",
-          "N8N workflow pattern guidance (10-node agent pattern, debugging)",
-          "Agent creation pipeline guidance (YAML, N8N, Pia routing)",
-          "Database schema knowledge (Supabase + Neon pgvector)",
-          "Deployment and infrastructure troubleshooting"
-        ],
-        "recent_actions": [
-          "Documented full platform architecture",
-          "Mapped all 75 backend API endpoints",
-          "Cataloged N8N workflow patterns and gotchas",
-          "Identified cross-project integration flows"
-        ]
-      },
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/project_architect"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "",
-        "figma_token": ""
-      },
-      "ui_use": {
-        "page_type": "single_page",
-        "pages": [
-          {
-            "name": "Project Architect",
-            "path": "project-architect",
-            "order": 1,
-            "validated": true
-          }
-        ]
-      },
-      "interface": {
-        "type": "chat",
-        "features": [
-          "text_input",
-          "suggestion_buttons"
-        ]
-      },
-      "suggestions": [
-        "How does the agent creation pipeline work?",
-        "What files do I need to change for a new feature?",
-        "Help me debug an N8N workflow issue",
-        "Plan a new agent for me"
-      ],
-      "personality": {
-        "tone": "technical",
-        "style": "precise",
-        "approach": "consultative"
-      },
-      "knowledge_base": [
-        {
-          "file": "system_prompt.md",
-          "description": "Core architecture knowledge from docs-hub"
-        },
-        {
-          "file": "n8n_patterns.md",
-          "description": "N8N workflow patterns, gotchas, and debugging"
-        },
-        {
-          "file": "agent_pipeline.md",
-          "description": "How to create and deploy new agents"
-        }
-      ],
-      "conversation_state_schema": {
-        "topic": "string",
-        "context": "object",
-        "files_discussed": "array"
-      }
-    }
-  ],
   "GENERAL": [
     {
       "agent": {
@@ -2689,49 +1100,37 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
   "MARKETING": [
     {
       "agent": {
-        "id": "brandy",
-        "emoji": "🎨",
-        "name": "Brandy | Brand Advisor",
+        "id": "newsletter_multi",
+        "emoji": "📰",
+        "name": "Nina | Newsletter Specialist",
         "category": "MARKETING",
-        "description": "Build your anti-brand or get brand guidance",
-        "specialization": "Brand Strategist",
-        "tagline": "Define. Refine. Align.",
+        "description": "Create and manage multi-topic newsletters.",
+        "specialization": "Newsletter Specialist",
+        "tagline": "Content. Create. Distribute.",
         "avatar": "/Squidgy AI Assistants Avatars/7.png",
-        "pinned": true,
-        "enabled": true,
+        "pinned": false,
+        "enabled": false,
         "uses_conversation_state": true,
-        "initial_message": "Hey! 🎨 I'm Brandy, your brand advisor.<br><br>I help you build authentic brands that actually sound like you - no corporate BS.<br><br>Want to:<br><br><b>1. Build from scratch</b> - I'll guide you through 6 quick questions<br><b>2. Import existing</b> - Got brand docs? Paste them and I'll extract what matters<br><b>3. Just chat</b> - Ask me brand questions and we'll figure it out as we go<br><br>What works for you?",
-        "sidebar_greeting": "Hi! I'm Brandy - your brand strategist. Whether you're building from scratch or refining what you have, I'll help you create a brand that feels real.",
+        "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
+        "sidebar_greeting": "Hi! I'm your Newsletter Specialist - I help you create engaging multi-topic newsletters. How can I assist you today?",
         "capabilities": [
-          "Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
-          "Brand document import and parsing",
-          "Brand voice refinement and guidance",
-          "Content review against brand guidelines",
-          "Hook and headline generation",
-          "Before/after copy transformations"
+          "Multi-topic newsletter creation",
+          "Content optimization for email",
+          "Newsletter template generation",
+          "Email marketing best practices"
         ],
         "recent_actions": [
-          "Built brand foundation for SaaS startup",
-          "Imported and refined existing brand docs",
-          "Generated 20 on-brand social hooks",
-          "Reviewed website copy for brand alignment"
+          "Generated newsletter for Q4 product launch",
+          "Created 3-topic newsletter for weekly digest",
+          "Optimized subject lines for better open rates"
         ]
-      },
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/brandy"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "",
-        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
       },
       "ui_use": {
         "page_type": "single_page",
         "pages": [
           {
-            "name": "Brandy Dashboard",
-            "path": "brandy-dashboard",
+            "name": "Newsletter Dashboard",
+            "path": "newsletter-dashboard",
             "order": 1,
             "validated": true
           }
@@ -2742,204 +1141,89 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "features": [
           "text_input",
           "file_upload",
+          "voice_input",
           "suggestion_buttons"
         ]
       },
       "suggestions": [
-        "1 - Build from scratch",
-        "2 - Import existing brand docs",
-        "3 - Just chat"
+        "Complete Setup",
+        "Create newsletter content",
+        "Generate email templates",
+        "Optimize subject lines",
+        "Design email layout"
       ],
-      "personality": {
-        "tone": "friendly",
-        "style": "direct",
-        "approach": "consultative"
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/newsletter_multi",
+        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
       },
-      "brandy_config": {
-        "wizard_phases": [
-          {
-            "id": "assessment",
-            "description": "Check if user has brand data, offer options",
-            "triggers": [
-              "first_interaction",
-              "restart"
-            ]
-          },
-          {
-            "id": "import",
-            "description": "Parse uploaded brand docs or website",
-            "triggers": [
-              "user_uploads_file",
-              "provides_url"
-            ]
-          },
-          {
-            "id": "wizard_build",
-            "description": "6-step brand building process",
-            "steps": [
-              {
-                "id": "atmosphere",
-                "question": "What's the overall vibe/feeling you want people to experience?",
-                "stores_to": "brands.atmosphere"
-              },
-              {
-                "id": "rebellious_edge",
-                "question": "What makes you different? What won't you compromise on?",
-                "stores_to": "brands.rebellious_edge"
-              },
-              {
-                "id": "enemy",
-                "question": "What do you stand against? (industry BS, not competitors)",
-                "stores_to": "brands.enemy_statement"
-              },
-              {
-                "id": "visuals",
-                "question": "Describe your visual vibe (colors, energy, feel)",
-                "stores_to": "brands.visual_direction"
-              },
-              {
-                "id": "hooks",
-                "question": "How do you grab attention? What makes people stop scrolling?",
-                "stores_to": "brands.hook_style"
-              },
-              {
-                "id": "messaging",
-                "question": "How do you sound? What's your authentic voice?",
-                "stores_to": "brands.voice_messaging"
-              }
-            ]
-          },
-          {
-            "id": "summary",
-            "description": "Compile Phase 1 summary",
-            "outputs": "brand_foundation_summary"
-          },
-          {
-            "id": "bible_generation",
-            "description": "Generate full brand bible (Phase 2)",
-            "triggers": [
-              "user_requests_full_bible"
-            ],
-            "outputs": "full_brand_bible"
-          },
-          {
-            "id": "advisor_mode",
-            "description": "Answer questions, generate content, review copy",
-            "triggers": [
-              "brand_exists"
-            ]
-          }
+      "personality": {
+        "tone": "professional",
+        "style": "helpful",
+        "approach": "proactive"
+      }
+    },
+    {
+      "agent": {
+        "id": "content_repurposer",
+        "emoji": "🔄",
+        "name": "Rita | Repurposing Maestro",
+        "category": "MARKETING",
+        "description": "Transform existing content into fresh formats for different platforms.",
+        "specialization": "Repurposing Maestro",
+        "tagline": "Repurpose. Convert. Deliver.",
+        "avatar": "/Squidgy AI Assistants Avatars/15.png",
+        "pinned": false,
+        "enabled": false,
+        "uses_conversation_state": true,
+        "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
+        "sidebar_greeting": "Hi! I'm your Content Repurposer - I transform your existing content into fresh formats for different platforms. How can I assist you today?",
+        "capabilities": [
+          "Transform blogs into social media posts",
+          "Convert videos into articles",
+          "Generate multi-platform content",
+          "Adapt content for different audiences"
         ],
-        "database": {
-          "table": "brands",
-          "columns": [
-            {
-              "name": "user_id",
-              "type": "UUID",
-              "required": true
-            },
-            {
-              "name": "atmosphere",
-              "type": "TEXT",
-              "description": "Overall vibe and feeling"
-            },
-            {
-              "name": "rebellious_edge",
-              "type": "TEXT",
-              "description": "What makes them different"
-            },
-            {
-              "name": "enemy_statement",
-              "type": "TEXT",
-              "description": "What they stand against"
-            },
-            {
-              "name": "visual_direction",
-              "type": "TEXT",
-              "description": "Visual vibe description"
-            },
-            {
-              "name": "hook_style",
-              "type": "TEXT",
-              "description": "How they grab attention"
-            },
-            {
-              "name": "voice_messaging",
-              "type": "TEXT",
-              "description": "Authentic voice"
-            },
-            {
-              "name": "signature_phrases",
-              "type": "TEXT[]",
-              "description": "Key phrases they use"
-            },
-            {
-              "name": "full_brand_bible",
-              "type": "JSONB",
-              "description": "Complete brand bible document"
-            },
-            {
-              "name": "created_at",
-              "type": "TIMESTAMP",
-              "default": "NOW()"
-            },
-            {
-              "name": "updated_at",
-              "type": "TIMESTAMP",
-              "default": "NOW()"
-            }
-          ]
-        },
-        "import": {
-          "supported_formats": [
-            ".pdf",
-            ".docx",
-            ".txt",
-            ".md",
-            "website_url"
-          ],
-          "extraction_targets": [
-            "brand_values",
-            "brand_voice",
-            "messaging",
-            "visual_guidelines",
-            "about_page_content",
-            "mission_statement"
-          ]
-        },
-        "knowledge_base": [
+        "recent_actions": [
+          "Repurposed newsletter into 5 social posts",
+          "Converted blog article to video script",
+          "Generated LinkedIn content from podcast"
+        ]
+      },
+      "ui_use": {
+        "page_type": "single_page",
+        "pages": [
           {
-            "file": "instructions.md",
-            "description": "Core agent behavior and conditional logic"
-          },
-          {
-            "file": "wizard_flow.md",
-            "description": "6-step wizard conversation flow"
-          },
-          {
-            "file": "brand_methodology.md",
-            "description": "Anti-branding methodology (punk branding framework)"
-          },
-          {
-            "file": "import_parser.md",
-            "description": "How to parse and extract from brand docs"
+            "name": "Content Repurposer Dashboard",
+            "path": "content-repurposer-dashboard",
+            "order": 1,
+            "validated": true
           }
         ]
       },
-      "conversation_state_schema": {
-        "phase": "string",
-        "brand_exists": "boolean",
-        "wizard_step": "number",
-        "wizard_data": {
-          "atmosphere": "string",
-          "rebellious_edge": "string",
-          "enemy_statement": "string",
-          "visual_direction": "string",
-          "hook_style": "string",
-          "voice_messaging": "string"
-        },
-        "import_status": "string",
-        "last_interaction": "timestamp"
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "voice_input",
+          "suggestion_buttons"
+        ]
+      },
+      "suggestions": [
+        "Complete Setup",
+        "Repurpose blog to social posts",
+        "Convert video to article",
+        "Transform article to video script",
+        "Generate multi-platform content"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
+        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
+      },
+      "personality": {
+        "tone": "professional",
+        "style": "helpful",
+        "approach": "proactive"
       }
     },
     {
@@ -2951,8 +1235,8 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "specialization": "Automated & Strategic",
         "tagline": "Schedule. Publish. Engage.",
         "avatar": "/Squidgy AI Assistants Avatars/6.png",
-        "pinned": true,
-        "enabled": true,
+        "pinned": false,
+        "enabled": false,
         "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
         "capabilities": [
           "Schedule posts across multiple social media platforms",
@@ -2971,6 +1255,26 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
           "Drafted Instagram captions with trending hashtags"
         ]
       },
+      "ui_use": {
+        "page_type": "single_page",
+        "pages": [
+          {
+            "name": "Social Media Dashboard",
+            "path": "social-media-scheduler-dashboard",
+            "order": 1,
+            "validated": true
+          }
+        ]
+      },
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "suggestion_buttons",
+          "calendar_integration"
+        ]
+      },
       "suggestions": [
         "Complete Setup",
         "Schedule a post for tomorrow",
@@ -2983,244 +1287,15 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       "n8n": {
         "webhook_url": "https://n8n.theaiteam.uk/webhook/social_media_scheduler"
       },
-      "interface": {
-        "type": "chat",
-        "features": [
-          "text_input",
-          "file_upload",
-          "suggestion_buttons",
-          "calendar_integration"
-        ]
-      },
-      "personality": {
-        "tone": "professional yet friendly",
-        "style": "strategic and organized",
-        "approach": "proactive scheduling and optimization"
-      },
-      "ui_use": {
-        "pages": [
-          {
-            "name": "Social Media Dashboard",
-            "path": "/agents/social_media_scheduler/dashboard",
-            "order": 1
-          }
-        ],
-        "default_page": "/agents/social_media_scheduler/dashboard"
-      }
-    },
-    {
-      "agent": {
-        "id": "content_repurposer_multi",
-        "emoji": "✨",
-        "name": "Content Repurposer Multi",
-        "category": "MARKETING",
-        "description": "Transform content into multiple platform formats",
-        "uses_conversation_state": true,
-        "specialization": "Content Repurposer",
-        "tagline": "Repurpose. Convert. Deliver.",
-        "avatar": "/Squidgy AI Assistants Avatars/10.png",
-        "enabled": false,
-        "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
-        "capabilities": [
-          "Multi-platform content transformation",
-          "Social media post generation (LinkedIn, Twitter, Instagram)",
-          "Blog to social media conversion",
-          "Newsletter content repurposing",
-          "Tone and style adaptation per platform"
-        ],
-        "recent_actions": [
-          "Converted blog post into 5 LinkedIn posts",
-          "Generated Twitter thread from newsletter",
-          "Created Instagram captions from article",
-          "Adapted content for multiple audiences"
-        ]
-      },
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
-        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "",
-        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
-      },
-      "ui_use": {
-        "page_type": "single_page",
-        "pages": [
-          {
-            "name": "Your Agent Dashboard",
-            "path": "your-agent-dashboard",
-            "order": 1,
-            "validated": true
-          }
-        ]
-      },
-      "interface": {
-        "type": "chat",
-        "features": [
-          "text_input",
-          "file_upload",
-          "voice_input",
-          "suggestion_buttons"
-        ]
-      },
-      "suggestions": [
-        "Complete Setup",
-        "Convert newsletter to social posts",
-        "Create LinkedIn post from content",
-        "Generate Twitter thread",
-        "Adapt for Instagram",
-        "Repurpose for multiple platforms",
-        "Change tone for different audience"
-      ],
       "personality": {
         "tone": "professional",
-        "style": "helpful",
+        "style": "strategic",
         "approach": "proactive"
       }
     },
     {
       "agent": {
-        "id": "newsletter_multi",
-        "emoji": "📰",
-        "name": "Newsletter Agent Multi",
-        "category": "MARKETING",
-        "description": "Create and manage newsletters",
-        "specialization": "Creative & Trendy",
-        "tagline": "Content. Create. Distribute.",
-        "avatar": "/Squidgy AI Assistants Avatars/7.png",
-        "pinned": false,
-        "enabled": false,
-        "uses_conversation_state": true,
-        "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
-        "capabilities": [
-          "Content creation and optimization for newsletters",
-          "PDF document processing and analysis",
-          "Speech-to-text content input",
-          "Newsletter template generation",
-          "Email marketing best practices"
-        ],
-        "recent_actions": [
-          "Generated newsletter for Q4 product launch",
-          "Processed PDF content from marketing materials",
-          "Analyzed competitor newsletter performance"
-        ]
-      },
-      "suggestions": [
-        "Complete Setup",
-        "Create newsletter content",
-        "Process PDF document",
-        "Generate email templates",
-        "Analyze newsletter performance",
-        "Design email layout",
-        "Optimize subject lines"
-      ],
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/newsletter_multi",
-        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
-        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
-        "pages": [
-          {
-            "name": "newsletter_liquid-blanch-17032840_page1",
-            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-            "order": 1,
-            "source": {
-              "type": "figma_deployed",
-              "url": "https://liquid-blanch-17032840.figma.site/"
-            }
-          }
-        ]
-      },
-      "ui_use": {
-        "pages": [
-          {
-            "name": "Newsletter Liquid-Blanch-17032840 Page1",
-            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-            "order": 1,
-            "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
-          }
-        ],
-        "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
-      }
-    },
-    {
-      "agent": {
-        "id": "newsletter",
-        "emoji": "📧",
-        "name": "Nyla | Newsletter Ninja",
-        "category": "MARKETING",
-        "description": "Craft and send engaging email newsletters to keep your audience informed and connected.",
-        "specialization": "Newsletter Ninja",
-        "tagline": "Content. Create. Distribute.",
-        "avatar": "/Squidgy AI Assistants Avatars/4.png",
-        "pinned": false,
-        "enabled": false,
-        "uses_conversation_state": true,
-        "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
-        "capabilities": [
-          "Content creation and optimization for newsletters",
-          "PDF document processing and analysis",
-          "Speech-to-text content input",
-          "Newsletter template generation",
-          "Email marketing best practices"
-        ],
-        "recent_actions": [
-          "Generated newsletter for Q4 product launch",
-          "Processed PDF content from marketing materials",
-          "Analyzed competitor newsletter performance"
-        ]
-      },
-      "suggestions": [
-        "Complete Setup",
-        "Create newsletter content",
-        "Process PDF document",
-        "Generate email templates",
-        "Analyze newsletter performance",
-        "Design email layout",
-        "Optimize subject lines"
-      ],
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/Squidgy/Newsletter",
-        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "https://liquid-blanch-17032840.figma.site/\n",
-        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd",
-        "pages": [
-          {
-            "name": "newsletter_liquid-blanch-17032840_page1",
-            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-            "order": 1,
-            "source": {
-              "type": "figma_deployed",
-              "url": "https://liquid-blanch-17032840.figma.site/"
-            }
-          }
-        ]
-      },
-      "ui_use": {
-        "pages": [
-          {
-            "name": "Newsletter Liquid-Blanch-17032840 Page1",
-            "path": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1",
-            "order": 1,
-            "generatedComponent": "/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/client/pages/agents/newsletter/dashboard.tsx"
-          }
-        ],
-        "default_page": "/agents/newsletter/newsletter_liquid-blanch-17032840_page1"
-      }
-    },
-    {
-      "agent": {
-        "id": "social_media_agent",
+        "id": "social_media",
         "emoji": "📱",
         "name": "Sophia | Social Media Superhero",
         "category": "MARKETING",
@@ -3335,254 +1410,6 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       }
     }
   ],
-  "OPERATIONS": [
-    {
-      "agent": {
-        "id": "agent_builder",
-        "emoji": "🏗️",
-        "name": "Ace | Agent Creation Expert",
-        "category": "OPERATIONS",
-        "description": "Build and configure new AI agents with guided setup",
-        "specialization": "Agent Architect",
-        "tagline": "Design. Build. Deploy.",
-        "avatar": "/Squidgy AI Assistants Avatars/builder.png",
-        "pinned": true,
-        "enabled": true,
-        "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I can help you build new AI agents from scratch with:<br>✅ Guided conversation to define your agent<br>✅ Automatic YAML configuration<br>✅ N8N workflow templates<br>✅ Integration setup scripts<br>✅ Testing and validation<br><br>Ready to create your first agent? Let's start with: What will your agent do?",
-        "sidebar_greeting": "Hi! I'm Ace - your Agent Builder. I'll guide you through creating custom AI agents with all the integrations, workflows, and configurations you need.",
-        "capabilities": [
-          "Conversational agent design and planning",
-          "YAML configuration generation",
-          "N8N workflow template creation",
-          "Integration helper scripts (Playwright automation)",
-          "API wrapper generation for CRM/platforms",
-          "Agent testing and validation",
-          "Tier detection (simple to complex agents)",
-          "Figma UI integration setup"
-        ],
-        "recent_actions": [
-          "Created Solar Sales Agent with calculator integrations",
-          "Generated N8N workflow for Newsletter Multi agent",
-          "Built Playwright script for GHL subaccount setup",
-          "Validated and deployed Social Media Scheduler agent"
-        ]
-      },
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/agent_builder"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "",
-        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
-      },
-      "ui_use": {
-        "page_type": "single_page",
-        "pages": [
-          {
-            "name": "Agent Builder Dashboard",
-            "path": "agent-builder-dashboard",
-            "order": 1,
-            "validated": true
-          }
-        ]
-      },
-      "interface": {
-        "type": "chat",
-        "features": [
-          "text_input",
-          "file_upload",
-          "suggestion_buttons",
-          "code_preview"
-        ]
-      },
-      "suggestions": [
-        "Create a new agent",
-        "Build a marketing agent",
-        "Build a sales agent",
-        "Add GHL integration",
-        "Generate N8N workflow",
-        "Create Playwright automation script",
-        "Test my agent configuration",
-        "Show agent creation guide"
-      ],
-      "personality": {
-        "tone": "professional",
-        "style": "educational",
-        "approach": "consultative"
-      },
-      "agent_builder_config": {
-        "tiers": [
-          {
-            "name": "Tier 1 - Basic Chat",
-            "description": "Simple conversational agent with N8N webhook",
-            "features": [
-              "Standard chat interface",
-              "Suggestion buttons",
-              "Basic N8N webhook",
-              "Personality configuration"
-            ],
-            "automation_level": "fully_automated"
-          },
-          {
-            "name": "Tier 2 - Platform Integrated",
-            "description": "Multi-platform integration (social media, CRM, etc.)",
-            "features": [
-              "Multi-platform configs",
-              "Media handling",
-              "Account management",
-              "File upload support"
-            ],
-            "automation_level": "semi_automated",
-            "requires": [
-              "OAuth setup (manual)",
-              "Platform API keys (manual)",
-              "Playwright scripts for browser automation"
-            ]
-          },
-          {
-            "name": "Tier 3 - Domain Expert",
-            "description": "Industry-specific with complex calculations and external APIs",
-            "features": [
-              "Custom domain configs",
-              "Calculator widgets",
-              "Map integrations",
-              "Pre-setup pages",
-              "Regional configs"
-            ],
-            "automation_level": "semi_automated",
-            "requires": [
-              "Domain API integrations",
-              "Custom UI components",
-              "Specialized N8N workflows"
-            ]
-          },
-          {
-            "name": "Tier 4 - Multi-Modal",
-            "description": "Figma UI generation with multi-page carousels",
-            "features": [
-              "Figma integration",
-              "Multi-page UI",
-              "Conversation state persistence",
-              "Generated React components"
-            ],
-            "automation_level": "semi_automated",
-            "requires": [
-              "Figma URLs/tokens",
-              "UI generation pipeline",
-              "Component validation"
-            ]
-          }
-        ],
-        "integration_templates": [
-          {
-            "name": "GoHighLevel (GHL)",
-            "type": "crm",
-            "automation_type": "playwright",
-            "capabilities": [
-              "Subaccount creation",
-              "Media management",
-              "Contact management",
-              "Workflow automation"
-            ],
-            "setup_guide": "/guides/integrations/ghl-setup.md"
-          },
-          {
-            "name": "Facebook Business",
-            "type": "social_media",
-            "automation_type": "oauth",
-            "capabilities": [
-              "Page posting",
-              "Story scheduling",
-              "Media upload"
-            ],
-            "setup_guide": "/guides/integrations/facebook-setup.md"
-          },
-          {
-            "name": "Instagram Business",
-            "type": "social_media",
-            "automation_type": "oauth",
-            "capabilities": [
-              "Feed posting",
-              "Story scheduling",
-              "Media upload"
-            ],
-            "setup_guide": "/guides/integrations/instagram-setup.md"
-          },
-          {
-            "name": "LinkedIn",
-            "type": "social_media",
-            "automation_type": "oauth",
-            "capabilities": [
-              "Profile posting",
-              "Company page posting"
-            ],
-            "setup_guide": "/guides/integrations/linkedin-setup.md"
-          },
-          {
-            "name": "Google Calendar",
-            "type": "productivity",
-            "automation_type": "oauth",
-            "capabilities": [
-              "Event creation",
-              "Event listing",
-              "Availability checking"
-            ],
-            "setup_guide": "/guides/integrations/google-calendar-setup.md"
-          },
-          {
-            "name": "Supabase",
-            "type": "database",
-            "automation_type": "api_key",
-            "capabilities": [
-              "Data storage",
-              "Query execution",
-              "Real-time subscriptions"
-            ],
-            "setup_guide": "/guides/integrations/supabase-setup.md"
-          }
-        ],
-        "n8n_components": [
-          {
-            "name": "Webhook Trigger",
-            "type": "trigger",
-            "required": true
-          },
-          {
-            "name": "Supabase Data Fetch",
-            "type": "data",
-            "common": true
-          },
-          {
-            "name": "AI Agent Conversation",
-            "type": "ai",
-            "common": true,
-            "requires_llm": true
-          },
-          {
-            "name": "Structured Output Parser",
-            "type": "parser",
-            "common": true
-          },
-          {
-            "name": "Conditional Logic",
-            "type": "control_flow",
-            "common": true
-          },
-          {
-            "name": "HTTP Request",
-            "type": "action",
-            "common": true
-          },
-          {
-            "name": "Code Node",
-            "type": "transform",
-            "common": true
-          }
-        ]
-      }
-    }
-  ],
   "SALES": [
     {
       "agent": {
@@ -3598,7 +1425,8 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "enabled": false,
         "presetup_required": true,
         "presetup_page": "/solar-config",
-        "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href=\"/solar-config\" target=\"_blank\" style=\"color: #7c3aed; text-decoration: underline;\">Complete Solar Setup</a> - Configure your solar offer details.",
+        "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href='/solar-config' target='_blank' style='color: #7c3aed; text-decoration: underline;'>Complete Solar Setup</a> - Configure your solar offer details.",
+        "sidebar_greeting": "Hi! I'm your Solar Sales Specialist - I help qualify leads, calculate ROI, and guide prospects through the solar buying journey. How can I assist you today?",
         "capabilities": [
           "Solar panel system sizing and design",
           "ROI and payback period calculations",
@@ -3619,15 +1447,6 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
           "Generated proposal for 50-panel commercial installation"
         ]
       },
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/sol_bot"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "",
-        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
-      },
       "ui_use": {
         "page_type": "single_page",
         "pages": [
@@ -3645,9 +1464,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
           "text_input",
           "file_upload",
           "voice_input",
-          "suggestion_buttons",
-          "calculator_widget",
-          "map_integration"
+          "suggestion_buttons"
         ]
       },
       "suggestions": [
@@ -3661,6 +1478,9 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "Request a callback for this lead",
         "Track my pipeline conversion rates"
       ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/sol_bot"
+      },
       "personality": {
         "tone": "enthusiastic",
         "style": "educational",
@@ -3701,83 +1521,12 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
           "permit_databases"
         ]
       }
-    },
-    {
-      "agent": {
-        "id": "content_repurposer",
-        "emoji": "🔄",
-        "name": "Rita | Repurposing Maestro",
-        "category": "SALES",
-        "description": "Transform existing content into fresh formats for different platforms—turn blogs into social posts, videos into articles, and more.",
-        "uses_conversation_state": true,
-        "specialization": "Repurposing Maestro",
-        "tagline": "Repurpose. Convert. Deliver.",
-        "avatar": "/Squidgy AI Assistants Avatars/15.png",
-        "enabled": false,
-        "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
-        "capabilities": [
-          "Primary capability or main function",
-          "Secondary feature or service provided",
-          "Integration or special functionality",
-          "Advanced feature or automation",
-          "Additional service or tool"
-        ],
-        "recent_actions": [
-          "Completed a recent task or project",
-          "Generated content or performed analysis",
-          "Processed user request or data",
-          "Automated workflow or integration"
-        ]
-      },
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/content_repurposer",
-        "image_generator_url": "https://n8n.theaiteam.uk/webhook/image_generator"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "",
-        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
-      },
-      "ui_use": {
-        "page_type": "single_page",
-        "pages": [
-          {
-            "name": "Your Agent Dashboard",
-            "path": "your-agent-dashboard",
-            "order": 1,
-            "validated": true
-          }
-        ]
-      },
-      "interface": {
-        "type": "chat",
-        "features": [
-          "text_input",
-          "file_upload",
-          "voice_input",
-          "suggestion_buttons"
-        ]
-      },
-      "suggestions": [
-        "Complete Setup",
-        "Repurpose blog to social posts",
-        "Convert video to article",
-        "Transform article to video script",
-        "Generate multi-platform content",
-        "Show my content library"
-      ],
-      "personality": {
-        "tone": "professional",
-        "style": "helpful",
-        "approach": "proactive"
-      }
     }
   ]
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["agent_builder","brandy","content_repurposer","content_repurposer_multi","newsletter","newsletter_multi","personal_assistant","project_architect","social_media_agent","social_media_scheduler","SOL"];
+export const AGENT_IDS: string[] = ["content_repurposer","newsletter_multi","personal_assistant","social_media","social_media_scheduler","SOL"];
 
 // Total count
-export const TOTAL_AGENTS = 11;
+export const TOTAL_AGENTS = 6;

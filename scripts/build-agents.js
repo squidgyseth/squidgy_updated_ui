@@ -5,6 +5,7 @@ import path from 'path';
 import yaml from 'js-yaml';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
+import { neon } from '@neondatabase/serverless';
 import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -12,6 +13,23 @@ const __dirname = path.dirname(__filename);
 
 // Load environment variables from .env file
 dotenv.config({ path: path.join(__dirname, '../.env') });
+
+/**
+ * Build a Neon connection string from individual env vars
+ */
+function getNeonConnectionString() {
+  const host = process.env.NEON_DB_HOST;
+  const port = process.env.NEON_DB_PORT || '5432';
+  const user = process.env.NEON_DB_USER;
+  const password = process.env.NEON_DB_PASSWORD;
+  const dbName = process.env.NEON_DB_NAME || 'neondb';
+
+  if (!host || !user || !password) {
+    return null;
+  }
+
+  return `postgresql://${user}:${encodeURIComponent(password)}@${host}:${port}/${dbName}?sslmode=require`;
+}
 
 /**
  * Upsert agents to Supabase personal_assistant_config table
@@ -73,14 +91,13 @@ async function upsertAgentsToSupabase(agents) {
     tagline: agent.agent.tagline || null,
     webhook_url: agent.n8n?.webhook_url || null,
     avatar_url: agent.agent.avatar || null,
-    is_enabled: agent.agent.enabled !== false, // Read from YAML, default true
+    is_enabled: agent.agent.enabled !== false,
     is_default: agent.agent.id === 'personal_assistant',
     display_order: agent.agent.pinned ? index : index + 100
   }));
 
   for (const record of agentRecords) {
     try {
-      // Check if agent exists
       const { data: existing } = await supabase
         .from('agents')
         .select('id')
@@ -88,7 +105,6 @@ async function upsertAgentsToSupabase(agents) {
         .single();
 
       if (existing) {
-        // Update existing agent
         const { error } = await supabase
           .from('agents')
           .update({
@@ -113,7 +129,6 @@ async function upsertAgentsToSupabase(agents) {
           console.log(`  ✅ Updated: ${record.agent_id}`);
         }
       } else {
-        // Insert new agent
         const { error } = await supabase
           .from('agents')
           .insert(record);
@@ -130,6 +145,133 @@ async function upsertAgentsToSupabase(agents) {
   }
 
   console.log(`✅ Synced ${agentRecords.length} agents to database`);
+
+  // ============================================
+  // CLEANUP: Remove agents from DB that are not in YAML configs
+  // ============================================
+  const yamlAgentIds = agentRecords.map(r => r.agent_id);
+  
+  try {
+    const { data: dbAgents, error: fetchError } = await supabase
+      .from('agents')
+      .select('agent_id');
+    
+    if (fetchError) {
+      console.error('❌ Error fetching agents for cleanup:', fetchError.message);
+    } else if (dbAgents) {
+      const orphanedAgents = dbAgents.filter(
+        dbAgent => !yamlAgentIds.includes(dbAgent.agent_id)
+      );
+      
+      if (orphanedAgents.length > 0) {
+        console.log('🧹 Cleaning up orphaned agents from database...');
+        for (const orphan of orphanedAgents) {
+          const { error: deleteError } = await supabase
+            .from('agents')
+            .delete()
+            .eq('agent_id', orphan.agent_id);
+          
+          if (deleteError) {
+            console.error(`  ❌ Error deleting ${orphan.agent_id}:`, deleteError.message);
+          } else {
+            console.log(`  🗑️  Deleted: ${orphan.agent_id}`);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('❌ Error during cleanup:', err.message);
+  }
+}
+
+/**
+ * Compile system prompts (base + agent-specific) and upsert to Neon
+ * Reads: agents/shared/base_system_prompt.md (base)
+ * Reads: agents/<agent_id>/system_prompt.md (per-agent)
+ * Writes compiled prompt to: agent_system_prompts.system_prompt via @neondatabase/serverless
+ */
+async function syncSystemPromptsToNeon(agents) {
+  const connectionString = getNeonConnectionString();
+
+  if (!connectionString) {
+    console.log('⚠️ Neon DB credentials not found, skipping system prompt sync');
+    return;
+  }
+
+  const sql = neon(connectionString);
+  const agentsDir = path.join(__dirname, '../agents');
+
+  // Read the base system prompt
+  let basePrompt;
+  try {
+    basePrompt = await fs.readFile(
+      path.join(agentsDir, 'shared', 'base_system_prompt.md'),
+      'utf8'
+    );
+    console.log(`📄 Loaded base system prompt (${basePrompt.length} chars)`);
+  } catch (err) {
+    console.error('❌ Could not read agents/shared/base_system_prompt.md:', err.message);
+    return;
+  }
+
+  console.log('🧠 Compiling and syncing system prompts to Neon...');
+
+  let successCount = 0;
+
+  for (const agent of agents) {
+    const agentId = agent.agent.id;
+
+    // Read agent-specific prompt (optional — some agents may only use the base)
+    let agentPrompt = null;
+    try {
+      agentPrompt = await fs.readFile(
+        path.join(agentsDir, agentId, 'system_prompt.md'),
+        'utf8'
+      );
+    } catch {
+      // No agent-specific prompt — that's fine
+    }
+
+    // Compile: base + agent-specific (with a clear separator)
+    const compiledPrompt = agentPrompt
+      ? `${basePrompt}\n\n---\n\n${agentPrompt}`
+      : basePrompt;
+
+    try {
+      await sql`
+        INSERT INTO agent_system_prompts (agent_id, system_prompt)
+        VALUES (${agentId}, ${compiledPrompt})
+        ON CONFLICT (agent_id) DO UPDATE SET
+          system_prompt = EXCLUDED.system_prompt,
+          updated_at = NOW()
+      `;
+
+      const suffix = agentPrompt
+        ? `(base + agent prompt, ${compiledPrompt.length} chars)`
+        : `(base only, ${compiledPrompt.length} chars)`;
+      console.log(`  ✅ ${agentId} ${suffix}`);
+      successCount++;
+    } catch (err) {
+      console.error(`  ❌ ${agentId}: ${err.message}`);
+    }
+  }
+
+  // Clean up orphaned prompts (agents removed from YAML but still in DB)
+  const yamlAgentIds = agents.map(a => a.agent.id);
+  try {
+    const deleted = await sql`
+      DELETE FROM agent_system_prompts
+      WHERE agent_id != ALL(${yamlAgentIds}::varchar[])
+      RETURNING agent_id
+    `;
+    if (deleted.length > 0) {
+      console.log(`  🗑️  Cleaned up ${deleted.length} orphaned system prompt(s): ${deleted.map(r => r.agent_id).join(', ')}`);
+    }
+  } catch (err) {
+    console.error('  ❌ Error cleaning up orphaned prompts:', err.message);
+  }
+
+  console.log(`✅ Synced ${successCount} system prompts to Neon`);
 }
 
 /**
@@ -138,27 +280,26 @@ async function upsertAgentsToSupabase(agents) {
  */
 async function buildAgents() {
   try {
-    const configDir = path.join(__dirname, '../agents/configs');
+    const agentsDir = path.join(__dirname, '../agents');
     const outputFile = path.join(__dirname, '../client/data/agents.ts');
     
     // Ensure output directory exists
     await fs.mkdir(path.dirname(outputFile), { recursive: true });
     
-    // Read all YAML files
-    const files = await fs.readdir(configDir);
-    const yamlFiles = files.filter(file => 
-      (file.endsWith('.yaml') || file.endsWith('.yml')) && 
-      !file.includes('template')
+    // Read all directories in the agents folder
+    const entries = await fs.readdir(agentsDir, { withFileTypes: true });
+    const agentFolders = entries.filter(entry => 
+      entry.isDirectory() && entry.name !== 'shared'
     );
     
     const agents = [];
     const agentMap = {};
     
-    // Parse each YAML file
-    for (const file of yamlFiles) {
+    // Parse config.yaml from each agent folder
+    for (const folder of agentFolders) {
       try {
-        const filePath = path.join(configDir, file);
-        const content = await fs.readFile(filePath, 'utf8');
+        const configPath = path.join(agentsDir, folder.name, 'config.yaml');
+        const content = await fs.readFile(configPath, 'utf8');
         const config = yaml.load(content);
         
         // Only include valid agent configs
@@ -167,6 +308,7 @@ async function buildAgents() {
           agentMap[config.agent.id] = config;
         }
       } catch (error) {
+        // Skip folders without config.yaml
       }
     }
     
@@ -207,8 +349,8 @@ export interface AgentConfig {
     tagline?: string;
     avatar?: string;
     pinned?: boolean;
-    enabled?: boolean;  // Whether agent is enabled by default (personal_assistant always true)
-    uses_conversation_state?: boolean;  // Enables multi-turn conversation state persistence
+    enabled?: boolean;
+    uses_conversation_state?: boolean;
     initial_message?: string;
     sidebar_greeting?: string;
     capabilities?: string[];
@@ -256,7 +398,6 @@ export const TOTAL_AGENTS = ${agents.length};
     
     await fs.writeFile(outputFile, tsContent);
     
-    
     // Also generate a simple JSON version for external use
     const jsonOutput = path.join(__dirname, '../public/agents-compiled.json');
     await fs.writeFile(jsonOutput, JSON.stringify({
@@ -268,10 +409,12 @@ export const TOTAL_AGENTS = ${agents.length};
         buildTime: new Date().toISOString()
       }
     }, null, 2));
-    
 
     // Sync agents to Supabase database
     await upsertAgentsToSupabase(agents);
+
+    // Compile and sync system prompts to Neon
+    await syncSystemPromptsToNeon(agents);
 
   } catch (error) {
     console.error('❌ Failed to build agents:', error);

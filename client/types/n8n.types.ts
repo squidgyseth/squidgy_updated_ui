@@ -29,6 +29,8 @@ export interface N8nResponse {
   agent_response: string; // Can be plain text or HTML
   response?: string; // Fallback response field when JSON parsing fails
   agent_status: 'Ready' | 'Waiting' | 'Nothing';
+  execution_id?: string | number; // n8n execution ID for tracking
+  workflow_id?: string; // n8n workflow ID for building execution URL
   // Conversation state for multi-turn agents (newsletter_multi)
   state?: {
     phase: 'topic_selection' | 'gathering' | 'ready';

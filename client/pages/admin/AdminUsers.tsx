@@ -7,10 +7,13 @@ import { useAdmin } from '../../hooks/useAdmin';
 import { supabase } from '../../lib/supabase';
 import { 
   Users, Search, ChevronLeft, ChevronRight, Shield, ShieldOff, 
-  Trash2, Edit2, X, Check, ArrowLeft, Filter, ArrowUpDown, Building2, Bot
+  Trash2, Edit2, X, Check, ArrowLeft, Filter, ArrowUpDown, Building2, Bot, Copy,
+  MessageSquare, Clock, User as UserIcon, History, Hash, Mail, KeyRound, Send, BarChart3
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ALL_AGENTS, AgentConfig } from '../../data/agents';
+import { chatSessionService, ChatSession as ChatSessionType, ChatMessage as ChatMessageType } from '../../services/chatSessionService';
+import ChatMessageBubble from '../../components/chat/ChatMessageBubble';
 
 interface UserProfile {
   id: string;
@@ -19,7 +22,6 @@ interface UserProfile {
   full_name?: string;
   role?: string;
   is_super_admin?: boolean;
-  is_deleted?: boolean;
   created_at?: string;
   updated_at?: string;
   phone_number?: string;
@@ -62,6 +64,8 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [chatHistoryUser, setChatHistoryUser] = useState<UserProfile | null>(null);
+  const [activityUser, setActivityUser] = useState<UserProfile | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   
   // Filtering & Sorting
@@ -70,6 +74,9 @@ export default function AdminUsers() {
   const [filterRole, setFilterRole] = useState<FilterRole>('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('');
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Auth email verification status (from Supabase auth table)
+  const [authEmailStatus, setAuthEmailStatus] = useState<Record<string, boolean>>({});
 
   const loadUsers = useCallback(async () => {
     if (!userId) return;
@@ -95,11 +102,7 @@ export default function AdminUsers() {
       }
       
       // Add status filter
-      if (filterStatus === 'active') {
-        query = query.or('is_deleted.is.null,is_deleted.eq.false');
-      } else if (filterStatus === 'deleted') {
-        query = query.eq('is_deleted', true);
-      } else if (filterStatus === 'admin') {
+      if (filterStatus === 'admin') {
         query = query.eq('is_super_admin', true);
       }
       
@@ -117,6 +120,26 @@ export default function AdminUsers() {
     }
   }, [userId, page, pageSize, search, sortField, sortOrder, filterRole, filterStatus]);
 
+  // Load auth email verification status from Supabase auth table
+  const loadAuthEmailStatus = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_all_users_email_verified');
+      if (error) {
+        console.error('Error loading auth email status:', error);
+        return;
+      }
+      if (data && data.length > 0) {
+        const statusMap: Record<string, boolean> = {};
+        data.forEach((row: { user_id: string; auth_email_confirmed: boolean }) => {
+          statusMap[row.user_id] = row.auth_email_confirmed;
+        });
+        setAuthEmailStatus(statusMap);
+      }
+    } catch (error) {
+      console.error('Error loading auth email status:', error);
+    }
+  }, []);
+
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
       navigate('/dashboard');
@@ -125,8 +148,9 @@ export default function AdminUsers() {
 
     if (userId && isAdmin) {
       loadUsers();
+      loadAuthEmailStatus();
     }
-  }, [userId, isAdmin, adminLoading, navigate, loadUsers]);
+  }, [userId, isAdmin, adminLoading, navigate, loadUsers, loadAuthEmailStatus]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,17 +198,28 @@ export default function AdminUsers() {
 
   const handleDeleteUser = async (targetUserId: string) => {
     try {
-      // Soft delete - set is_deleted flag
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_deleted: true })
-        .eq('user_id', targetUserId);
+      // Hard delete - call backend API to remove user from all tables
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://squidgy-backend.onrender.com';
+      const response = await fetch(`${backendUrl}/admin/delete-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: targetUserId,
+          admin_user_id: userId
+        })
+      });
       
-      if (error) throw error;
+      const result = await response.json();
       
-      await logAdminAction('user_deleted', targetUserId);
+      if (!response.ok) {
+        throw new Error(result.detail || 'Failed to delete user');
+      }
       
-      toast.success('User deleted successfully');
+      await logAdminAction('user_hard_deleted', targetUserId);
+      
+      toast.success('User permanently deleted');
       setDeleteConfirm(null);
       loadUsers();
     } catch (error: any) {
@@ -427,27 +462,28 @@ export default function AdminUsers() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {user.is_deleted ? (
-                          <span className="inline-flex px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
-                            Deleted
-                          </span>
-                        ) : (
-                          <span className="inline-flex px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                            Active
-                          </span>
-                        )}
+                        <span className="inline-flex px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                          Active
+                        </span>
                       </td>
                       <td className="px-6 py-4">
-                        {user.email_confirmed ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                            <Check className="w-3 h-3" />
-                            Verified
-                          </span>
-                        ) : (
-                          <span className="inline-flex px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
-                            Pending
-                          </span>
-                        )}
+                        {(() => {
+                          const authStatus = authEmailStatus[user.id] ?? authEmailStatus[user.user_id];
+                          return authStatus === true ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                              <Check className="w-3 h-3" />
+                              Verified
+                            </span>
+                          ) : authStatus === false ? (
+                            <span className="inline-flex px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
+                              Pending
+                            </span>
+                          ) : (
+                            <span className="inline-flex px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
+                              -
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {user.created_at
@@ -476,6 +512,20 @@ export default function AdminUsers() {
                             ) : (
                               <Shield className="w-4 h-4" />
                             )}
+                          </button>
+                          <button
+                            onClick={() => setChatHistoryUser(user)}
+                            className="p-2 hover:bg-purple-100 text-purple-600 rounded-lg transition-colors"
+                            title="View chat history"
+                          >
+                            <History className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setActivityUser(user)}
+                            className="p-2 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors"
+                            title="View PostHog activity"
+                          >
+                            <BarChart3 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setEditingUser(user)}
@@ -549,12 +599,28 @@ export default function AdminUsers() {
         </div>
       </div>
 
+      {/* Chat History Modal */}
+      {chatHistoryUser && (
+        <ChatHistoryModal
+          user={chatHistoryUser}
+          onClose={() => setChatHistoryUser(null)}
+        />
+      )}
+
       {/* Edit User Modal */}
       {editingUser && (
         <EditUserModal
           user={editingUser}
           onClose={() => setEditingUser(null)}
           onSave={(updates) => handleUpdateUser(editingUser, updates)}
+        />
+      )}
+
+      {/* PostHog Activity Modal */}
+      {activityUser && (
+        <PostHogActivityModal
+          user={activityUser}
+          onClose={() => setActivityUser(null)}
         />
       )}
     </div>
@@ -566,6 +632,28 @@ interface EditUserModalProps {
   user: UserProfile;
   onClose: () => void;
   onSave: (updates: Partial<UserProfile>) => void;
+}
+
+interface AdminChatSession {
+  session_id: string;
+  message_count: number;
+  agents: string[];
+  first_message: string;
+  last_message: string;
+  preview: string;
+}
+
+interface AdminChatMessage {
+  id: string;
+  session_id: string;
+  user_id: string;
+  sender: string;
+  message: string;
+  timestamp: string;
+  agent_name?: string;
+  agent_id?: string;
+  execution_id?: string | number;
+  workflow_id?: string;
 }
 
 function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
@@ -622,7 +710,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   
   // Fields that are boolean (shown as checkboxes)
   const booleanFields = [
-    'is_deleted', 'email_confirmed', 'terms_accepted', 'terms_read', 'onboarding_completed',
+    'terms_accepted', 'terms_read', 'onboarding_completed',
     'ai_processing_consent', 'marketing_consent', 'terms_viewed', 'terms_scrolled_to_bottom',
     'privacy_scrolled_to_bottom', 'privacy_viewed', 'notifications_enabled'
   ];
@@ -642,7 +730,6 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   };
   
   // Boolean fields that have associated timestamp fields (auto-update when toggled)
-  // Note: email_confirmed_at doesn't exist in profiles table, so email_confirmed is excluded
   const booleanTimestampPairs: Record<string, string> = {
     terms_accepted: 'terms_accepted_at',
     terms_read: 'terms_read_at',
@@ -1129,22 +1216,73 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {profileFields
                         .filter(([key]) => booleanFields.includes(key))
-                        .map(([key]) => (
-                          <label key={key} className="flex items-center gap-2 cursor-pointer text-sm">
-                            <input
-                              type="checkbox"
-                              checked={Boolean(profileData[key])}
-                              onChange={(e) => handleFieldChange(key, e.target.checked)}
-                              className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                            />
-                            <span className="text-gray-700">{formatFieldName(key)}</span>
-                          </label>
-                        ))}
+                        .map(([key]) => {
+                          const isEditable = key === 'notifications_enabled';
+                          return (
+                            <label key={key} className={`flex items-center gap-2 text-sm ${isEditable ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
+                              <input
+                                type="checkbox"
+                                checked={Boolean(profileData[key])}
+                                onChange={isEditable ? (e) => handleFieldChange(key, e.target.checked) : undefined}
+                                disabled={!isEditable}
+                                className={`w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 ${isEditable ? '' : 'cursor-not-allowed opacity-60'}`}
+                              />
+                              <span className={isEditable ? 'text-gray-700' : 'text-gray-500'}>{formatFieldName(key)}</span>
+                            </label>
+                          );
+                        })}
                     </div>
                   </div>
                 </div>
               )}
               
+              {/* Email Actions Section */}
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Email Actions</h3>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+                          redirectTo: `${window.location.origin}/reset-password`
+                        });
+                        if (error) throw error;
+                        toast.success(`Password reset email sent to ${user.email}`);
+                      } catch (error: any) {
+                        toast.error(error.message || 'Failed to send password reset email');
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                    Send Password Reset
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const { error } = await supabase.auth.signInWithOtp({
+                          email: user.email,
+                          options: {
+                            shouldCreateUser: false
+                          }
+                        });
+                        if (error) throw error;
+                        toast.success(`Magic link sent to ${user.email}`);
+                      } catch (error: any) {
+                        console.error('Magic link error:', error);
+                        toast.error(error.message || 'Failed to send magic link');
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    <Mail className="w-4 h-4" />
+                    Send Magic Link
+                  </button>
+                </div>
+              </div>
+
               {/* Timestamp Info Section (Read-only) - Compact */}
               {profileFields.some(([key]) => timestampFields.includes(key)) && (
                 <div className="border-t border-gray-200 pt-6">
@@ -1198,7 +1336,20 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-gray-900">Business Information</h3>
                     {businessSettings.id && (
-                      <span className="text-xs text-gray-400">ID: {businessSettings.id}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400">Business ID: {businessSettings.id}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(businessSettings.id || '');
+                            toast.success('Business ID copied');
+                          }}
+                          className="p-1 hover:bg-gray-100 rounded transition-colors"
+                          title="Copy Business ID"
+                        >
+                          <Copy className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                        </button>
+                      </div>
                     )}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1296,7 +1447,21 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                                 {ghl.ghl_location_id ? '✓' : '○'}
                               </span>
                               <span className="text-sm text-gray-600">Location ID Assigned</span>
-                              {ghl.ghl_location_id && <span className="text-xs text-gray-400 ml-auto">{ghl.ghl_location_id}</span>}
+                              {ghl.ghl_location_id && (
+                                <div className="flex items-center gap-1 ml-auto">
+                                  <span className="text-xs text-gray-400">{ghl.ghl_location_id}</span>
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(ghl.ghl_location_id);
+                                      toast.success('Location ID copied!');
+                                    }}
+                                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                    title="Copy Location ID"
+                                  >
+                                    <Copy className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                                  </button>
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               <span className={ghl.firebase_token ? 'text-green-500' : 'text-gray-300'}>
@@ -1337,6 +1502,23 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                               {ghl.subaccount_created_at ? new Date(ghl.subaccount_created_at).toLocaleDateString() : '-'}
                             </div>
                           </div>
+                          
+                          {/* Open Dashboard Button */}
+                          {ghl.ghl_location_id && (
+                            <div className="flex justify-center mt-4 pt-4 border-t border-gray-200">
+                              <a
+                                href={`https://app.gohighlevel.com/v2/location/${ghl.ghl_location_id}/dashboard`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                              >
+                                Open Dashboard
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              </a>
+                            </div>
+                          )}
                         </div>
                         
                         {/* Retry Button for Failed Status */}
@@ -1498,6 +1680,545 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
               )}
             </div>
           ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Chat History Modal Component
+interface ChatHistoryModalProps {
+  user: UserProfile;
+  onClose: () => void;
+}
+
+function ChatHistoryModal({ user, onClose }: ChatHistoryModalProps) {
+  const [chatSessions, setChatSessions] = useState<AdminChatSession[] | null>(null);
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [sessionMessages, setSessionMessages] = useState<AdminChatMessage[]>([]);
+  const [loadingChat, setLoadingChat] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+
+  const loadChatSessions = async () => {
+    try {
+      setLoadingChat(true);
+      
+      const { data, error } = await supabase
+        .from('chat_history')
+        .select('session_id, agent_id, agent_name, timestamp, message, sender, execution_id, workflow_id')
+        .eq('user_id', user.user_id)
+        .order('timestamp', { ascending: false });
+      
+      if (error) {
+        console.error('Error loading chat sessions:', error);
+        setChatSessions([]);
+        return;
+      }
+      
+      if (!data || data.length === 0) {
+        setChatSessions([]);
+        return;
+      }
+      
+      const sessionMap = new Map<string, {
+        session_id: string;
+        message_count: number;
+        agents: Set<string>;
+        first_message: string;
+        last_message: string;
+        preview: string;
+        has_user_message: boolean;
+      }>();
+      
+      data.forEach(row => {
+        const existing = sessionMap.get(row.session_id);
+        
+        if (!existing) {
+          sessionMap.set(row.session_id, {
+            session_id: row.session_id,
+            message_count: 1,
+            agents: new Set(row.sender !== 'User' ? [row.agent_name || row.sender] : []),
+            first_message: row.timestamp,
+            last_message: row.timestamp,
+            preview: row.sender === 'User' ? row.message?.substring(0, 100) || '' : '',
+            has_user_message: row.sender === 'User'
+          });
+        } else {
+          existing.message_count++;
+          if (row.sender !== 'User' && (row.agent_name || row.sender)) {
+            existing.agents.add(row.agent_name || row.sender);
+          }
+          if (row.sender === 'User') {
+            existing.has_user_message = true;
+            if (!existing.preview) {
+              existing.preview = row.message?.substring(0, 100) || '';
+            }
+          }
+          if (row.timestamp < existing.first_message) {
+            existing.first_message = row.timestamp;
+          }
+          if (row.timestamp > existing.last_message) {
+            existing.last_message = row.timestamp;
+          }
+        }
+      });
+      
+      const sessions = Array.from(sessionMap.values())
+        .filter(s => s.has_user_message)
+        .map(s => ({
+          session_id: s.session_id,
+          message_count: s.message_count,
+          agents: Array.from(s.agents),
+          first_message: s.first_message,
+          last_message: s.last_message,
+          preview: s.preview
+        }))
+        .sort((a, b) => new Date(b.last_message).getTime() - new Date(a.last_message).getTime());
+      
+      setChatSessions(sessions);
+    } catch (error) {
+      console.error('Error loading chat sessions:', error);
+      setChatSessions([]);
+    } finally {
+      setLoadingChat(false);
+    }
+  };
+
+  const loadSessionMessages = async (sessionId: string) => {
+    try {
+      setLoadingMessages(true);
+      setSelectedSession(sessionId);
+      
+      const messages = await chatSessionService.getSessionMessages(sessionId);
+      
+      const mappedMessages: AdminChatMessage[] = messages.map(msg => ({
+        id: msg.id,
+        session_id: msg.session_id,
+        user_id: user.user_id,
+        sender: msg.sender,
+        message: msg.message,
+        timestamp: msg.timestamp,
+        agent_name: msg.agent_name,
+        agent_id: msg.agent_id,
+        execution_id: (msg as any).execution_id,
+        workflow_id: (msg as any).workflow_id
+      }));
+      
+      setSessionMessages(mappedMessages);
+    } catch (error) {
+      console.error('Error loading session messages:', error);
+      setSessionMessages([]);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  useEffect(() => {
+    loadChatSessions();
+  }, [user.user_id]);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+              <History className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Chat History</h2>
+              <p className="text-sm text-gray-500">{user.full_name || user.email}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 min-h-[400px]">
+          {loadingChat ? (
+            <div className="flex justify-center py-12">
+              <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : selectedSession ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-4">
+                <button
+                  onClick={() => {
+                    setSelectedSession(null);
+                    setSessionMessages([]);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
+                  <ArrowLeft className="w-4 h-4 text-gray-600" />
+                </button>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Session Messages</h3>
+                  <p className="text-xs text-gray-500 font-mono">{selectedSession}</p>
+                </div>
+              </div>
+              
+              {loadingMessages ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : sessionMessages.length > 0 ? (
+                <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                  {sessionMessages.map((msg, index) => (
+                    <div key={msg.id || index} className="relative">
+                      <ChatMessageBubble
+                        message={msg.message}
+                        sender={msg.sender === 'User' ? 'user' : 'agent'}
+                        timestamp={msg.timestamp}
+                        agentName={msg.agent_name || msg.sender}
+                        agentId={msg.agent_id}
+                        showAvatar={false}
+                      />
+                      {msg.sender === 'Agent' && msg.execution_id && msg.workflow_id && (
+                        <a
+                          href={`https://n8n.theaiteam.uk/workflow/${msg.workflow_id}/executions/${msg.execution_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 mt-1 ml-12 text-xs text-purple-600 hover:text-purple-700 hover:underline"
+                          title="View n8n execution"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                          View Execution #{msg.execution_id}
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm">No messages in this session</p>
+                </div>
+              )}
+            </div>
+          ) : chatSessions && chatSessions.length > 0 ? (
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                Chat Sessions ({chatSessions.length})
+              </h3>
+              <div className="space-y-2">
+                {chatSessions.map((session, index) => (
+                  <button
+                    key={session.session_id || index}
+                    onClick={() => loadSessionMessages(session.session_id)}
+                    className="w-full text-left p-4 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-purple-600" />
+                        <span className="text-sm font-medium text-gray-900">
+                          {session.message_count} messages
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {session.last_message && new Date(session.last_message).toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                    {session.agents.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {session.agents.map((agent, i) => (
+                          <span
+                            key={i}
+                            className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full"
+                          >
+                            {agent}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {session.preview && (
+                      <p className="text-xs text-gray-500 truncate">{session.preview}</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                      <Clock className="w-3 h-3" />
+                      <span>
+                        {session.first_message && new Date(session.first_message).toLocaleTimeString('en-GB', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                        {' - '}
+                        {session.last_message && new Date(session.last_message).toLocaleTimeString('en-GB', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 mt-1 text-xs text-gray-300">
+                      <Hash className="w-3 h-3" />
+                      <span className="font-mono truncate flex-1">{session.session_id}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(session.session_id);
+                          toast.success('Session ID copied!');
+                        }}
+                        className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Copy session ID"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p>No chat history found for this user</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// PostHog Activity Modal Component
+interface PostHogActivityModalProps {
+  user: UserProfile;
+  onClose: () => void;
+}
+
+function PostHogActivityModal({ user, onClose }: PostHogActivityModalProps) {
+  const [loading, setLoading] = useState(true);
+  const [activityData, setActivityData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+
+  useEffect(() => {
+    const fetchActivity = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch(
+          `${BACKEND_URL}/api/admin/analytics/user-activity?email=${encodeURIComponent(user.email)}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch user activity');
+        }
+
+        const data = await response.json();
+        console.log('📊 PostHog activity data received:', data);
+        console.log('🆔 Person ID:', data.person_id);
+        setActivityData(data);
+      } catch (err: any) {
+        console.error('Error fetching PostHog activity:', err);
+        setError(err.message || 'Failed to load activity data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivity();
+  }, [user.email]);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <BarChart3 className="w-6 h-6 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">User Activity</h2>
+              <p className="text-sm text-gray-500">{user.email}</p>
+              {activityData?.person_id && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-gray-400 font-mono">
+                    PostHog ID: {activityData.person_id}
+                  </span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(activityData.person_id);
+                      toast.success('PostHog ID copied!');
+                    }}
+                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    title="Copy PostHog ID"
+                  >
+                    <Copy className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading activity data...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to Load Activity</h3>
+              <p className="text-gray-500 mb-4">{error}</p>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          ) : activityData ? (
+            <div className="space-y-6">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-blue-600 font-medium">Total Events</p>
+                      <p className="text-2xl font-bold text-blue-900 mt-1">
+                        {activityData.total_events || 0}
+                      </p>
+                    </div>
+                    <BarChart3 className="w-8 h-8 text-blue-600 opacity-50" />
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-purple-600 font-medium">Sessions</p>
+                      <p className="text-2xl font-bold text-purple-900 mt-1">
+                        {activityData.session_count || 0}
+                      </p>
+                    </div>
+                    <Clock className="w-8 h-8 text-purple-600 opacity-50" />
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-green-600 font-medium">Last Seen</p>
+                      <p className="text-sm font-semibold text-green-900 mt-1">
+                        {activityData.last_seen 
+                          ? new Date(activityData.last_seen).toLocaleDateString()
+                          : 'Never'}
+                      </p>
+                    </div>
+                    <UserIcon className="w-8 h-8 text-green-600 opacity-50" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Events */}
+              {activityData.recent_events && activityData.recent_events.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Events</h3>
+                  <div className="space-y-2">
+                    {activityData.recent_events.map((event: any, index: number) => {
+                      // Extract session recording URL from properties
+                      const sessionId = event.properties?.$session_id;
+                      const recordingUrl = sessionId 
+                        ? `https://us.posthog.com/replay/${sessionId}`
+                        : null;
+                      
+                      return (
+                        <div
+                          key={index}
+                          className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3">
+                                <span className="font-medium text-gray-900">{event.event}</span>
+                                {recordingUrl && (
+                                  <a
+                                    href={recordingUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Watch Recording
+                                  </a>
+                                )}
+                              </div>
+                              {event.properties?.current_url && (
+                                <div className="mt-1 text-xs text-gray-500 truncate max-w-md">
+                                  {event.properties.current_url}
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500 whitespace-nowrap ml-4">
+                              {event.timestamp 
+                                ? new Date(event.timestamp).toLocaleString()
+                                : 'Unknown'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* View in PostHog Link */}
+              <div className="border-t border-gray-200 pt-4">
+                {activityData.person_id ? (
+                  <a
+                    href={`https://eu.posthog.com/project/95299/persons/${activityData.person_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium"
+                  >
+                    View full details in PostHog
+                    <ArrowLeft className="w-4 h-4 rotate-180" />
+                  </a>
+                ) : (
+                  <a
+                    href={`https://eu.posthog.com/persons?q=${encodeURIComponent(user.email)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium"
+                  >
+                    View full details in PostHog
+                    <ArrowLeft className="w-4 h-4 rotate-180" />
+                  </a>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <p>No activity data available</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -67,13 +67,22 @@ class ReferralService {
       // Generate new code if doesn't exist
       const { data: userData } = await supabase.auth.getUser();
       const userEmail = userData?.user?.email || '';
-      const userName = userData?.user?.user_metadata?.full_name || userEmail.split('@')[0];
-      
-      // Generate code: First 3 letters of name + random 4 chars + year
-      const namePrefix = userName.substring(0, 3).toUpperCase();
-      const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase();
+
+      // Generate deterministic code (same email = same code)
+      // Format: SQUID + Email prefix + 5-char hash + year
+      const emailPrefix = userEmail.split('@')[0].substring(0, 3).toUpperCase();
+
+      // Generate deterministic hash from email
+      let hash = 0;
+      for (let i = 0; i < userEmail.length; i++) {
+        hash = ((hash << 5) - hash) + userEmail.charCodeAt(i);
+        hash = hash & hash; // Convert to 32bit integer
+      }
+
+      // Convert hash to base36 and take 5 characters (harder to guess)
+      const hashStr = Math.abs(hash).toString(36).toUpperCase().substring(0, 5).padEnd(5, '0');
       const year = new Date().getFullYear();
-      const code = `${namePrefix}${randomChars}${year}`;
+      const code = `SQUID${emailPrefix}${hashStr}${year}`;
       const link = `https://app.squidgy.ai/register?ref=${code}`;
 
       // Insert new code
@@ -843,6 +852,45 @@ class ReferralService {
     return () => {
       subscription.unsubscribe();
     };
+  }
+
+  // =====================================================
+  // REFERRAL CODE VALIDATION
+  // =====================================================
+
+  /**
+   * Validate a referral code
+   * Returns true if:
+   * - Code is "SQUIDWINS" (master code), OR
+   * - Code exists in referral_codes table and is active
+   */
+  async validateReferralCode(code: string): Promise<boolean> {
+    try {
+      // Trim and uppercase the code for comparison
+      const trimmedCode = code.trim().toUpperCase();
+
+      // Check if it's the master code
+      if (trimmedCode === 'SQUIDWINS') {
+        return true;
+      }
+
+      // Check if code exists in database
+      const { data, error } = await supabase
+        .from('referral_codes')
+        .select('code')
+        .eq('code', trimmedCode)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !data) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error validating referral code:', error);
+      return false;
+    }
   }
 }
 

@@ -146,18 +146,39 @@ export default function CategorizedAgentSidebar() {
       const onboardingService = OnboardingService.getInstance();
       const allAgentConfigs = agentService.getAllAgents();
       
+      // Check if we're in development/local environment
+      const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
+                           import.meta.env.DEV === true ||
+                           window.location.hostname === 'localhost' ||
+                           window.location.hostname === '127.0.0.1';
+      
+      // Get platform-enabled agents from agents table (skip in dev mode)
+      let platformEnabledIds: Set<string>;
+      
+      if (isDevelopment) {
+        // In dev/local, all agents are considered platform-enabled
+        platformEnabledIds = new Set(allAgentConfigs.map(c => c.agent.id));
+      } else {
+        const { data: platformAgents } = await supabase
+          .from('agents')
+          .select('agent_id, is_enabled')
+          .eq('is_enabled', true);
+        
+        platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+      }
+      
       // Get enabled agents for this user
       const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
       const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
       
-      // Debug logging
-      
       // Always include Personal Assistant (pinned)
       enabledAgentIds.add('personal_assistant');
+      platformEnabledIds.add('personal_assistant');
       
-      // Filter configs to only show enabled agents
+      // Filter configs to only show agents that are BOTH platform-enabled AND user-enabled
+      // In dev mode, platform-enabled check is bypassed (all agents are platform-enabled)
       const enabledConfigs = allAgentConfigs.filter(config => 
-        enabledAgentIds.has(config.agent.id)
+        enabledAgentIds.has(config.agent.id) && platformEnabledIds.has(config.agent.id)
       );
       
       

@@ -49,13 +49,23 @@ export default function Index() {
   const [enabledAgentIds, setEnabledAgentIds] = useState<string[]>([]);
   const navigate = useNavigate();
   const { companyName, isLoading } = useCompanyBranding();
-  const { user, userId, profile } = useUser();
-  const { isAdmin } = useAdmin();
+  const { user, userId, profile, isReady } = useUser();
+  const { isAdmin, isLoading: isAdminLoading } = useAdmin();
 
   // Check if we should show onboarding modal - SIMPLE LOGIC
+  // Admin users should never see onboarding modal
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       if (!userId) return;
+
+      // Wait for admin status to be determined before checking onboarding
+      if (isAdminLoading) return;
+
+      // Admin users should never see onboarding modal
+      if (isAdmin) {
+        setShowOnboarding(false);
+        return;
+      }
 
       try {
         // Simple logic: Query enabled agents count
@@ -77,71 +87,51 @@ export default function Index() {
     };
 
     checkOnboardingStatus();
-  }, [userId]);
+  }, [userId, isAdmin, isAdminLoading]);
 
-  // Fetch user's profile data to get their first name
+  // Get user's first name from profile (already loaded by useUser hook)
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!userId) {
-        setIsLoadingUserName(false);
-        return;
-      }
-
-      try {
-
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('user_id', userId)
-          .single();
-
-        if (error) {
-          console.error('❌ Dashboard: Error fetching profile:', error);
-          setUserFirstName("User");
-        } else if (profile && profile.full_name) {
-          // Extract first name from full_name
-          const firstName = profile.full_name.split(' ')[0];
-          setUserFirstName(firstName);
-        } else {
-          setUserFirstName("User");
-        }
-      } catch (error) {
-        console.error('❌ Dashboard: Error in fetchUserProfile:', error);
-        setUserFirstName("User");
-      } finally {
-        setIsLoadingUserName(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, [userId]);
+    if (profile?.full_name) {
+      const firstName = profile.full_name.split(' ')[0];
+      setUserFirstName(firstName);
+    } else {
+      setUserFirstName("User");
+    }
+    setIsLoadingUserName(false);
+  }, [profile]);
 
   // Fetch enabled agents from assistant_personalizations
   useEffect(() => {
     const fetchEnabledAgents = async () => {
-      if (!userId) return;
+      // Wait for auth to be ready and profile to be loaded
+      if (!isReady || !profile?.user_id) {
+        return;
+      }
+
+      // Use profile.user_id which is the correct user_id from profiles table
+      const profileUserId = profile.user_id;
 
       try {
         const { data, error } = await supabase
           .from('assistant_personalizations')
           .select('assistant_id')
-          .eq('user_id', userId)
+          .eq('user_id', profileUserId)
           .eq('is_enabled', true);
 
         if (error) {
-          console.error('❌ Dashboard: Error fetching enabled agents:', error);
+          console.error('Dashboard: Error fetching enabled agents:', error);
           return;
         }
 
         const agentIds = data?.map((row: { assistant_id: string }) => row.assistant_id) || [];
         setEnabledAgentIds(agentIds);
       } catch (error) {
-        console.error('❌ Dashboard: Error in fetchEnabledAgents:', error);
+        console.error('Dashboard: Error in fetchEnabledAgents:', error);
       }
     };
 
     fetchEnabledAgents();
-  }, [userId]);
+  }, [profile?.user_id, isReady]);
 
   const desktopLayout = (
     <div className="h-screen overflow-y-auto bg-white">

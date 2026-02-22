@@ -3,6 +3,7 @@ import { googleCalendarService } from '../../lib/googleCalendar';
 import { toast } from 'sonner';
 import AgentMappingService from '../../services/agentMappingService';
 import LinkDetectingTextArea from '../ui/LinkDetectingTextArea';
+import ImageCarousel from './ImageCarousel';
 
 interface InteractiveMessageButtonsProps {
   content: string;
@@ -37,7 +38,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
     const images: ImagePreview[] = [];
     let index = 1;
 
-    // Pattern 1: Markdown images ![Image X - Description](url) or ![alt](url)
+    // Pattern 1: Standard markdown images ![alt](url)
     const markdownImgPattern = /!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g;
     let match;
     while ((match = markdownImgPattern.exec(text)) !== null) {
@@ -49,11 +50,25 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
       if (!numMatch) index++;
     }
 
-    // Pattern 2: Legacy $$IMG:url$$ format (fallback)
+    // Pattern 2: Non-standard markdown ![url] (URL inside brackets) - what the agent returns
+    const nonStandardPattern = /!\[(https?:\/\/[^\]]+)\]/g;
+    while ((match = nonStandardPattern.exec(text)) !== null) {
+      // Only add if not already added from standard pattern
+      const url = match[1].trim();
+      if (!images.find(img => img.url === url)) {
+        images.push({ url, index });
+        index++;
+      }
+    }
+
+    // Pattern 3: Legacy $$IMG:url$$ format (fallback)
     const legacyImgPattern = /\$\$IMG:(https?:\/\/[^$]+)\$\$/g;
     while ((match = legacyImgPattern.exec(text)) !== null) {
-      images.push({ url: match[1].trim(), index });
-      index++;
+      const url = match[1].trim();
+      if (!images.find(img => img.url === url)) {
+        images.push({ url, index });
+        index++;
+      }
     }
 
     return images;
@@ -116,23 +131,38 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
   };
 
   // Remove button patterns from content to show clean text
-  // KEEP $$IMG:url$$ patterns - they render as inline images at their exact position
+  // KEEP image patterns (markdown and legacy) - carousel will render them
   const cleanContent = (text: string): string => {
     let cleaned = text;
 
-    // Step 1: Temporarily replace $IMG:url$ and $$IMG:url$$ with placeholders to protect them
+    // Step 1: Temporarily replace all image patterns with placeholders to protect them
     const imgPatterns: string[] = [];
-    // Double dollar pattern
+
+    // Standard markdown images ![alt](url)
+    cleaned = cleaned.replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g, (match) => {
+      imgPatterns.push(match);
+      return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
+    });
+
+    // Non-standard markdown ![url]
+    cleaned = cleaned.replace(/!\[(https?:\/\/[^\]]+)\]/g, (match) => {
+      imgPatterns.push(match);
+      return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
+    });
+
+    // Double dollar pattern $$IMG:url$$
     cleaned = cleaned.replace(/\$\$IMG:(https?:\/\/[^$\s]*?)\$\$/g, (match) => {
       imgPatterns.push(match);
       return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
     });
-    // Single dollar pattern
+
+    // Single dollar pattern $IMG:url$
     cleaned = cleaned.replace(/\$IMG:(https?:\/\/[^$\s]*?)\$/g, (match) => {
       imgPatterns.push(match);
       return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
     });
-    // Incomplete patterns (during streaming) - also protect these
+
+    // Incomplete patterns (during streaming)
     cleaned = cleaned.replace(/\$\$?IMG:(?:https?:\/\/[^\s]*)?/g, (match) => {
       imgPatterns.push(match);
       return `__IMG_PLACEHOLDER_${imgPatterns.length - 1}__`;
@@ -140,14 +170,18 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
 
     // Step 2: Remove button format: $content$
     cleaned = cleaned.replace(/\$([^$]+)\$/g, '');
-    
+
     // Step 2b: Remove orphaned $$ or $ (incomplete button patterns)
     cleaned = cleaned.replace(/\$\$+/g, '');
 
-    // Step 3: Restore $$IMG:url$$ patterns
+    // Step 3: Restore all image patterns
     imgPatterns.forEach((pattern, index) => {
       cleaned = cleaned.replace(`__IMG_PLACEHOLDER_${index}__`, pattern);
     });
+
+    // Step 4: Remove markdown image patterns from text (they'll be shown in carousel)
+    cleaned = cleaned.replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g, '');
+    cleaned = cleaned.replace(/!\[(https?:\/\/[^\]]+)\]/g, '');
 
     // Remove stray empty list bullets that often remain after stripping $buttons$
     // e.g. lines that are only '-', '•', or '*' (optionally with whitespace)
@@ -155,7 +189,7 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
       .split('\n')
       .filter((line) => !/^\s*[-*•]\s*$/.test(line))
       .join('\n');
-    
+
     // Clean up extra whitespace and empty lines
     return cleaned
       .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace triple+ newlines with double
@@ -293,38 +327,33 @@ export default function InteractiveMessageButtons({ content, onButtonClick, stre
         />
       )}
 
+      {/* Display image carousel if there are images */}
+      {imagePreviews.length > 0 && (
+        <ImageCarousel
+          images={imagePreviews.map(img => ({
+            url: img.url,
+            index: img.index,
+            alt: `Post preview ${img.index}`
+          }))}
+          className="my-4"
+        />
+      )}
+
       {/* Display interactive buttons - only after streaming completes, with staggered animation */}
       {buttonOptions.length > 0 && !isStreaming && (
         <div className="space-y-2 mt-4">
           {buttonOptions.map((option, index) => {
-            const imageUrl = getImageForButton(option.text);
-
             return (
               <button
                 key={index}
                 onClick={() => handleButtonClick(option)}
-                className={`w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all text-left group opacity-0 animate-fade-in-up ${
-                  imageUrl ? 'flex-col sm:flex-row' : ''
-                }`}
+                className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all text-left group opacity-0 animate-fade-in-up"
                 style={{
                   animationDelay: `${index * 150}ms`,
                   animationFillMode: 'forwards'
                 }}
               >
-                {/* Show image thumbnail if this is an image selection button */}
-                {imageUrl && (
-                  <div className="w-full sm:w-24 h-20 sm:h-16 flex-shrink-0 rounded overflow-hidden bg-gray-200">
-                    <img
-                      src={`${imageUrl}?w=200&h=150&fit=crop`}
-                      alt={option.description || option.text}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
-                {option.emoji && !imageUrl && <span className="text-lg flex-shrink-0">{option.emoji}</span>}
+                {option.emoji && <span className="text-lg flex-shrink-0">{option.emoji}</span>}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-gray-900 group-hover:text-purple-700">

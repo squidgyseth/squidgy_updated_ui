@@ -1,0 +1,61 @@
+# ===========================================
+# AGENT CONFIGURATION TEMPLATE
+# ===========================================
+# Instructions:
+# 1. Create a new folder: agents/your_agent_id/
+# 2. Copy this file to: agents/your_agent_id/config.yaml
+# 3. Create system prompt: agents/your_agent_id/system_prompt.md
+# 4. Run: node scripts/build-agents.js
+# 5. Restart dev server: npm run dev
+# ===========================================
+
+agent:
+  id: your_agent_id
+  emoji: "🤖"
+  name: "Name | Agent Title"
+  category: MARKETING  # MARKETING, SALES, GENERAL, HR, SUPPORT, OPERATIONS
+  description: Brief description of what this agent does.
+  specialization: "Expert Title"
+  tagline: "Action. Create. Deliver."
+  avatar: "/Squidgy AI Assistants Avatars/1.png"
+  pinned: false
+  enabled: false
+  initial_message: "Hey! I'm your Agent Name. Ready to help you today!"
+  sidebar_greeting: "Hi! I'm your Agent - description of what you do. How can I assist you today?"
+  capabilities:
+    - "Primary capability"
+    - "Secondary feature"
+    - "Integration or special functionality"
+  recent_actions:
+    - "Completed a recent task"
+    - "Generated content or analysis"
+
+ui_use:
+  page_type: single_page
+  pages:
+    - name: Agent Dashboard
+      path: agent-dashboard
+      order: 1
+      validated: true
+
+interface:
+  type: chat
+  features:
+    - text_input
+    - file_upload
+    - voice_input
+    - suggestion_buttons
+
+suggestions:
+  - "Complete Setup"
+  - "First action"
+  - "Second action"
+  - "Third action"
+
+n8n:
+  webhook_url: https://n8n.theaiteam.uk/webhook/your_agent_id
+
+personality:
+  tone: professional
+  style: helpful
+  approach: proactive

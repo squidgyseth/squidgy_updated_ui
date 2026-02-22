@@ -3,6 +3,7 @@ import { authService } from '../lib/auth-service';
 import { supabase } from '../lib/supabase';
 import { sessionManager } from '../lib/session-manager';
 import { profilesApi } from '../lib/supabase-api';
+import { posthogService } from '../lib/posthog-service';
 
 // Generate a unique session ID
 const generateSessionId = (): string => {
@@ -59,83 +60,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         const { data: { session } } = await supabase.auth.getSession();
         const endSessionCheck = Date.now();
         
-        // Check if we're in development mode
-        const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                             !import.meta.env.VITE_SUPABASE_URL || 
-                             import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
-        
-        
-        if (isDevelopment) {
-          // Development mode - create or use existing dev user
-          let devUserId = localStorage.getItem('dev_user_id') || import.meta.env.VITE_DEV_USER_ID;
-          let devUserEmail = localStorage.getItem('dev_user_email') || import.meta.env.VITE_DEV_USER_EMAIL || 'dmacproject123@gmail.com';
-          
-          
-          if (!devUserId) {
-            devUserId = generateUserId();
-            localStorage.setItem('dev_user_id', devUserId);
-          }
-          
-          // Try to fetch profile from Supabase first using direct API
-          let profileData = null;
-          try {
-            
-            // First try by user ID
-            let result = await profilesApi.getById(devUserId);
-            profileData = result.data;
-              
-            if (!profileData) {
-              // If not found by ID, try by email
-              result = await profilesApi.getByEmail(devUserEmail);
-              profileData = result.data;
-            }
-            
-          } catch (error) {
-          }
-          
-          
-          // ALWAYS use user_id from profiles table in development mode
-          let finalUserId = profileData?.user_id;
-          
-          if (!finalUserId) {
-            try {
-              // Try to get the correct user_id by email lookup using direct API
-              const emailLookupResult = await profilesApi.getByEmail(devUserEmail);
-              
-              if (emailLookupResult.data?.user_id) {
-                finalUserId = emailLookupResult.data.user_id;
-              } else {
-                finalUserId = devUserId;
-              }
-            } catch (error) {
-              console.error('❌ USER_PROVIDER Dev: Email lookup failed:', error);
-              finalUserId = devUserId;
-            }
-          }
-          
-          
-          setIsAuthenticated(true);
-          setUser({ id: devUserId, email: devUserEmail });
-          setProfile(profileData || { 
-            id: devUserId,
-            user_id: finalUserId, 
-            email: devUserEmail,
-            full_name: 'Development User',
-            profile_avatar_url: ''
-          });
-          setUserIdState(finalUserId);
-          setSessionIdState(`session_${finalUserId}`);
-          setAgentIdState(`agent_${finalUserId}`);
-          localStorage.setItem('squidgy_user_id', finalUserId);
-          
-          // Start session monitoring even in dev mode
-          sessionManager.startSessionMonitoring();
-          
-          setIsReady(true);
-          return;
-        }
-        
-        // Production mode - check Supabase authentication with retry logic
+        // Check Supabase authentication with retry logic (same for dev and production)
         
         // If we already found a session, set authenticated immediately to prevent redirect
         if (session?.user) {
@@ -180,19 +105,21 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           
           setIsAuthenticated(true);
           setUser(authResult.user);
-          setProfile(authResult.profile);
           
           // Get the correct user_id from profiles table using email
           let currentUserId = authResult.profile?.user_id;
+          let finalProfile = authResult.profile;
           
-          // ALWAYS do email lookup to get correct user_id from profiles table using direct API
+          // ALWAYS do email lookup to get correct user_id and full profile from profiles table
           if (authResult.user.email) {
             try {
               const profileResult = await profilesApi.getByEmail(authResult.user.email);
               
               
-              if (profileResult.data?.user_id) {
-                currentUserId = profileResult.data.user_id;
+              if (profileResult.data) {
+                currentUserId = profileResult.data.user_id || authResult.user.id;
+                // Use the fresh profile data which includes is_super_admin
+                finalProfile = profileResult.data;
               } else {
                 currentUserId = authResult.user.id;
               }
@@ -204,11 +131,20 @@ export const UserProvider = ({ children }: UserProviderProps) => {
             currentUserId = currentUserId || authResult.user.id;
           }
           
+          // Set profile with fresh data that includes is_super_admin
+          setProfile(finalProfile);
           setUserIdState(currentUserId);
           localStorage.setItem('squidgy_user_id', currentUserId);
           
           const currentAgentId = `agent_${currentUserId}`;
           setAgentIdState(currentAgentId);
+          
+          // Identify user in PostHog with correct profile.user_id
+          posthogService.identifyUser(
+            currentUserId,
+            authResult.user.email,
+            finalProfile?.full_name
+          );
           
           // Start session monitoring
           sessionManager.startSessionMonitoring();
@@ -232,51 +168,20 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         setIsReady(true);
       } catch (error) {
         console.error('Failed to initialize user:', error);
-        
-        // In production, don't fallback to dev mode - set as unauthenticated
-        const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                             !import.meta.env.VITE_SUPABASE_URL || 
-                             import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
-        
-        if (isDevelopment) {
-          // Fallback to development mode only in dev environment
-          let devUserId = localStorage.getItem('dev_user_id') || import.meta.env.VITE_DEV_USER_ID;
-          let devUserEmail = localStorage.getItem('dev_user_email') || import.meta.env.VITE_DEV_USER_EMAIL || 'dmacproject123@gmail.com';
-          
-          if (!devUserId) {
-            devUserId = generateUserId();
-            localStorage.setItem('dev_user_id', devUserId);
-          }
-          
-          setIsAuthenticated(true);
-          setUser({ id: devUserId, email: devUserEmail });
-          setProfile({ user_id: devUserId, full_name: 'Development User' });
-          setUserIdState(devUserId);
-          localStorage.setItem('squidgy_user_id', devUserId);
-          
-          const currentAgentId = `agent_${devUserId}`;
-          setAgentIdState(currentAgentId);
-        } else {
-          // Production - set as unauthenticated
-          setIsAuthenticated(false);
-          setUser(null);
-          setProfile(null);
-        }
-        
+        // Set as unauthenticated on error
+        setIsAuthenticated(false);
+        setUser(null);
+        setProfile(null);
         setIsReady(true);
       }
     };
 
     initializeUser();
 
-    // Listen for auth state changes only in production mode
+    // Listen for auth state changes
     let subscription: any = null;
     
-    const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                         !import.meta.env.VITE_SUPABASE_URL || 
-                         import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
-        if (!isDevelopment) {
-      try {
+    try {
         const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
           
           if (event === 'SIGNED_IN' && session?.user) {
@@ -305,39 +210,21 @@ export const UserProvider = ({ children }: UserProviderProps) => {
               } catch (profileError) {
               }
               
-              // If this is an email confirmation and we have a profile, update email_confirmed using direct API
-              if (isEmailConfirmation && userProfile) {
-                try {
-                  
-                  const updateResult = await profilesApi.updateById(userProfile.id, { 
-                    email_confirmed: true,
-                    updated_at: new Date().toISOString()
-                  });
-                  
-                  if (updateResult.error) {
-                    console.error('❌ USER_PROVIDER: Failed to update email_confirmed:', updateResult.error);
-                  } else {
-                    // Update the local profile object
-                    userProfile = { ...userProfile, email_confirmed: true };
-                  }
-                } catch (confirmError) {
-                  console.error('❌ USER_PROVIDER: Error updating email confirmation:', confirmError);
-                }
-              }
-              
               setIsAuthenticated(true);
               setUser(authUser);
-              setProfile(userProfile);
               
-              // ALWAYS do email lookup to get correct user_id 
+              // ALWAYS do email lookup to get correct user_id and full profile with is_super_admin
               let currentUserId = userProfile?.user_id;
+              let finalProfile = userProfile;
               
               if (authUser?.email) {
                 try {
                   const { data: profileData } = await profilesApi.getByEmail(authUser.email);
                   
-                  if (profileData?.user_id) {
-                    currentUserId = profileData.user_id;
+                  if (profileData) {
+                    currentUserId = profileData.user_id || authUser.id;
+                    // Use the fresh profile data which includes is_super_admin
+                    finalProfile = profileData;
                   } else {
                     currentUserId = authUser.id;
                   }
@@ -349,11 +236,20 @@ export const UserProvider = ({ children }: UserProviderProps) => {
                 currentUserId = currentUserId || authUser.id;
               }
               
+              // Set profile with fresh data that includes is_super_admin
+              setProfile(finalProfile);
               setUserIdState(currentUserId);
               localStorage.setItem('squidgy_user_id', currentUserId);
               
               const currentAgentId = `agent_${currentUserId}`;
               setAgentIdState(currentAgentId);
+              
+              // Identify user in PostHog with correct profile.user_id
+              posthogService.identifyUser(
+                currentUserId,
+                authUser.email,
+                finalProfile?.full_name
+              );
               
             } catch (error) {
               console.error('Error handling auth state change:', error);
@@ -365,13 +261,15 @@ export const UserProvider = ({ children }: UserProviderProps) => {
             setUserIdState('');
             setAgentIdState('');
             localStorage.removeItem('squidgy_user_id');
+            
+            // Reset PostHog identity on logout
+            posthogService.reset();
           }
         });
         subscription = data.subscription;
       } catch (error) {
         console.error('Error setting up auth listener:', error);
       }
-    }
 
     return () => {
       if (subscription) {
@@ -381,38 +279,16 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   }, []);
 
   const setUserId = (newUserId: string) => {
-    console.trace('🚨 Call stack for setUserId:');
-    
     // Don't update if it's the same user ID to prevent unnecessary re-renders
     if (newUserId === userId) {
       return;
     }
-    
-    // Log the setUserId call for debugging
     
     setUserIdState(newUserId);
     localStorage.setItem('squidgy_user_id', newUserId);
     
     const newAgentId = `agent_${newUserId}`;
     setAgentIdState(newAgentId);
-    
-    // Update authentication state for development users
-    const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                         !import.meta.env.VITE_SUPABASE_URL || 
-                         import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
-    
-    if (isDevelopment && newUserId) {
-      const devUserEmail = localStorage.getItem('dev_user_email') || import.meta.env.VITE_DEV_USER_EMAIL || 'dmacproject123@gmail.com';
-      const devUserName = localStorage.getItem('dev_user_name') || import.meta.env.VITE_DEV_USER_NAME || 'Development User';
-      const devUserAvatar = localStorage.getItem('dev_user_avatar') || '';
-      setIsAuthenticated(true);
-      setUser({ id: newUserId, email: devUserEmail });
-      setProfile({ 
-        user_id: newUserId, 
-        full_name: devUserName,
-        profile_avatar_url: devUserAvatar
-      });
-    }
   };
 
   const clearUser = async () => {
@@ -424,6 +300,9 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     
     // Stop session monitoring
     sessionManager.stopSessionMonitoring();
+    
+    // Reset PostHog identity
+    posthogService.reset();
     
     setUserIdState('');
     setSessionIdState('');
@@ -449,13 +328,10 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       // Try to fetch updated profile from database
       let { data } = await profilesApi.getById(userId);
         
-      if (!data) {
+      if (!data && user?.email) {
         // If not found by ID, try by email
-        const userEmail = user?.email || localStorage.getItem('dev_user_email');
-        if (userEmail) {
-          const result = await profilesApi.getByEmail(userEmail);
-          data = result.data;
-        }
+        const result = await profilesApi.getByEmail(user.email);
+        data = result.data;
       }
       
       if (data) {

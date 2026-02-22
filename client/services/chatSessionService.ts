@@ -17,6 +17,8 @@ export interface ChatMessage {
   timestamp: string;
   agent_name: string;
   agent_id: string;
+  execution_id?: string | number;
+  workflow_id?: string;
 }
 
 class ChatSessionService {
@@ -199,7 +201,9 @@ class ChatSessionService {
           message,
           timestamp,
           agent_name,
-          agent_id
+          agent_id,
+          execution_id,
+          workflow_id
         `)
         .eq('session_id', sessionId)
         .order('timestamp', { ascending: true });

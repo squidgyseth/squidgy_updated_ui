@@ -80,11 +80,16 @@ export default function IntegrationsSettings() {
   const [socialMediaLoading, setSocialMediaLoading] = useState(false);
   const [manualOAuthId, setManualOAuthId] = useState<string>('');
   const [connectedSocialMediaAccounts, setConnectedSocialMediaAccounts] = useState<any[]>([]);
-  const [socialMediaPlatform, setSocialMediaPlatform] = useState<'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky'>('facebook');
+  const [socialMediaPlatform, setSocialMediaPlatform] = useState<'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky' | 'teams' | 'slack'>('facebook');
   const [socialMediaPolling, setSocialMediaPolling] = useState(false);
   const [oauthWindowOpen, setOauthWindowOpen] = useState(false);
   const [showManageModal, setShowManageModal] = useState(false);
-  const [managePlatform, setManagePlatform] = useState<'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky'>('facebook');
+  const [managePlatform, setManagePlatform] = useState<'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky' | 'teams' | 'slack'>('facebook');
+
+  // Workspace Integration states (Slack, Teams)
+  const [slackIntegrations, setSlackIntegrations] = useState<any[]>([]);
+  const [teamsIntegrations, setTeamsIntegrations] = useState<any[]>([]);
+  const [workspaceLoading, setWorkspaceLoading] = useState(false);
 
   // Templates states
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -171,11 +176,16 @@ export default function IntegrationsSettings() {
   }, [locationId, firebaseToken, accessToken, refreshingToken]);
 
   useEffect(() => {
-    // Auto-fetch connected social media accounts when tokens are available
+    // Auto-fetch connected social media accounts and integrations when tokens are available
     if (locationId && firebaseToken && accessToken) {
       fetchConnectedSocialMediaAccounts();
     }
-  }, [locationId, firebaseToken, accessToken]);
+    // Slack and Teams use backend endpoints with firmUserId
+    if (firmUserId) {
+      fetchSlackIntegrations();
+      fetchTeamsIntegrations();
+    }
+  }, [locationId, firebaseToken, accessToken, firmUserId]);
 
   // Real-time polling for social media account updates
   useEffect(() => {
@@ -353,8 +363,8 @@ export default function IntegrationsSettings() {
       } catch (error) {
         console.error('❌ Error polling for token:', error);
       }
-    }, 5000); // Poll every 5 seconds
-    
+    }, 60000); // Poll every 1 minute
+
     // Stop polling after 5 minutes to prevent infinite polling
     setTimeout(() => {
       clearInterval(pollInterval);
@@ -813,6 +823,142 @@ export default function IntegrationsSettings() {
       const v = c == 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
     });
+  };
+
+  const handleSlackOAuth = async () => {
+    if (!firmUserId || !locationId) {
+      toast.error('Missing user or location information');
+      return;
+    }
+
+    console.log('🔵 Starting Slack OAuth with firmUserId:', firmUserId);
+
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      // Call backend to get OAuth URL (same pattern as Facebook/Instagram)
+      const response = await fetch(`${backendUrl}/api/social/slack/start-oauth`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          agent_id: 'SOL'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to generate Slack OAuth URL');
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.oauth_url) {
+        throw new Error('Invalid response from server');
+      }
+
+      console.log('🔵 Slack OAuth URL received:', data.oauth_url);
+
+      // Open OAuth URL in popup window
+      const popup = window.open(data.oauth_url, 'slack-oauth', 'width=600,height=700');
+
+      // Monitor popup and auto-close after OAuth completes
+      if (popup) {
+        let oauthCompleted = false;
+
+        // Auto-close popup after 15 seconds (gives time for OAuth + GHL processing)
+        const autoCloseTimeout = setTimeout(() => {
+          if (popup && !popup.closed) {
+            console.log('🔵 Auto-closing popup after OAuth timeout');
+            popup.close();
+            oauthCompleted = true;
+            // Refresh Slack integrations after OAuth completes
+            setTimeout(() => {
+              fetchSlackIntegrations();
+            }, 2000);
+          }
+        }, 15000); // 15 seconds should be enough for OAuth flow
+
+        // Also check if user closes popup manually
+        const checkPopup = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkPopup);
+            clearTimeout(autoCloseTimeout);
+
+            if (!oauthCompleted) {
+              console.log('🔵 Popup closed, refreshing Slack integrations');
+              oauthCompleted = true;
+              // Refresh Slack integrations after OAuth completes
+              setTimeout(() => {
+                fetchSlackIntegrations();
+              }, 2000);
+            }
+          }
+        }, 500);
+      }
+    } catch (error: any) {
+      console.error('❌ Error starting Slack OAuth:', error);
+      toast.error(error.message || 'Failed to start Slack OAuth');
+    }
+  };
+
+  const handleTeamsOAuth = () => {
+    if (!firmUserId || !locationId) {
+      toast.error('Missing user or location information');
+      return;
+    }
+
+    // Microsoft Teams app client ID (get from environment or Azure AD app registration)
+    const teamsClientId = import.meta.env.VITE_TEAMS_CLIENT_ID || 'YOUR_TEAMS_CLIENT_ID';
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+    // Microsoft Teams/Graph API scopes
+    const scopes = [
+      'openid',
+      'profile',
+      'email',
+      'offline_access',
+      'User.Read',
+      'Team.ReadBasic.All',
+      'Channel.ReadBasic.All',
+      'ChannelMessage.Send',
+      'Chat.ReadWrite',
+      'ChatMessage.Send'
+    ].join(' ');
+
+    // Generate random string for state (like GHL does)
+    const randomString = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    // Format: locationId,randomString (matching GHL's format)
+    const state = encodeURIComponent(`${locationId},${randomString}`);
+
+    const redirectUri = `${backendUrl}/api/teams/oauth-callback`;
+
+    const oauthParams = new URLSearchParams({
+      client_id: teamsClientId,
+      response_type: 'code',
+      redirect_uri: redirectUri,
+      response_mode: 'query',
+      scope: scopes,
+      state: state
+    });
+
+    const teamsOAuthUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${oauthParams.toString()}`;
+    const popup = window.open(teamsOAuthUrl, 'teams-oauth', 'width=600,height=700');
+
+    // Monitor popup closure to refresh Teams integrations
+    if (popup) {
+      const checkPopup = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkPopup);
+          // Refresh Teams integrations after OAuth completes
+          setTimeout(() => {
+            fetchTeamsIntegrations();
+          }, 2000); // Wait 2 seconds for GHL to process the connection
+        }
+      }, 1000); // Check every second
+    }
   };
 
   const generateFacebookOAuthUrl = async () => {
@@ -1369,7 +1515,7 @@ export default function IntegrationsSettings() {
   };
 
   // Generic handler for new social media platforms using direct GHL OAuth
-  const handleSocialMediaConnect = async (platform: 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky') => {
+  const handleSocialMediaConnect = async (platform: 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky' | 'teams' | 'slack') => {
     setSocialMediaPlatform(platform);
     if (!locationId || !ghlUserId) {
       toast.error('Missing location ID or user ID. Please ensure GHL integration is set up.');
@@ -1428,13 +1574,93 @@ export default function IntegrationsSettings() {
     }
   };
 
+  const fetchSlackIntegrations = async () => {
+    if (!firmUserId) {
+      console.log('⚠️ Skipping Slack fetch: missing firmUserId');
+      return;
+    }
+
+    try {
+      console.log('🔵 Fetching Slack integrations for firmUserId:', firmUserId);
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      const response = await fetch(`${backendUrl}/api/social/slack/connected-workspaces`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          agent_id: 'SOL'
+        })
+      });
+
+      if (!response.ok) {
+        console.error('❌ Slack API error:', response.status);
+        setSlackIntegrations([]);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.integrations && Array.isArray(data.integrations)) {
+        setSlackIntegrations(data.integrations);
+        console.log('🟣 Slack integrations loaded:', data.integrations.length, 'workspace(s)');
+      } else {
+        setSlackIntegrations([]);
+        console.log('🟣 No Slack integrations found');
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching Slack integrations:', error);
+      setSlackIntegrations([]);
+    }
+  };
+
+  const fetchTeamsIntegrations = async () => {
+    if (!locationId || !firebaseToken || !accessToken) {
+      return;
+    }
+
+    try {
+      // Try Teams endpoint (similar structure to Slack)
+      const teamsEndpoint = `https://api.leadconnectorhq.com/teams/${locationId}/integrations`;
+
+      const response = await fetch(teamsEndpoint, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Authorization': `Bearer ${accessToken}`,
+          'token-id': firebaseToken,
+          'channel': 'APP'
+        }
+      });
+
+      if (!response.ok) {
+        console.error('❌ Teams API error:', response.status);
+        setTeamsIntegrations([]);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.integrations && Array.isArray(data.integrations)) {
+        setTeamsIntegrations(data.integrations);
+        console.log('🔵 Teams integrations loaded:', data.integrations);
+      } else {
+        setTeamsIntegrations([]);
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching Teams integrations:', error);
+      setTeamsIntegrations([]);
+    }
+  };
+
   const fetchConnectedSocialMediaAccounts = async () => {
     if (!locationId || !firebaseToken || !accessToken) {
       return;
     }
 
     try {
-
       // Call GHL's accounts endpoint directly to get all connected accounts
       const accountsEndpoint = `https://backend.leadconnectorhq.com/social-media-posting/${locationId}/accounts?fetchAll=true`;
 
@@ -1467,6 +1693,13 @@ export default function IntegrationsSettings() {
           }));
 
         setConnectedSocialMediaAccounts(allAccounts);
+
+        // Log for debugging
+        console.log('📊 Connected social media accounts:', allAccounts);
+        const slackAccounts = allAccounts.filter(a => a.platform === 'slack');
+        const teamsAccounts = allAccounts.filter(a => a.platform === 'teams');
+        console.log('🟣 Slack accounts:', slackAccounts);
+        console.log('🔵 Teams accounts:', teamsAccounts);
       } else {
         setConnectedSocialMediaAccounts([]);
       }
@@ -1559,7 +1792,7 @@ export default function IntegrationsSettings() {
     pollForAccounts();
   };
 
-  const fetchSocialMediaAccountsWithOAuthId = async (oAuthId: string, platform: 'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky' = 'facebook') => {
+  const fetchSocialMediaAccountsWithOAuthId = async (oAuthId: string, platform: 'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky' | 'teams' | 'slack' = 'facebook') => {
     if (!locationId || !firebaseToken || !accessToken) {
       console.error('Missing required tokens for GHL API call');
       return;
@@ -1629,7 +1862,7 @@ export default function IntegrationsSettings() {
     }
 
     // For LinkedIn and all new platforms, call GHL API directly (no backend needed)
-    const directGHLPlatforms = ['linkedin', 'threads', 'gbp', 'tiktok', 'youtube', 'pinterest', 'community', 'bluesky'];
+    const directGHLPlatforms = ['linkedin', 'threads', 'gbp', 'tiktok', 'youtube', 'pinterest', 'community', 'bluesky', 'teams', 'slack'];
     if (directGHLPlatforms.includes(socialMediaPlatform)) {
       if (!locationId || !firebaseToken || !accessToken) {
         toast.error('Missing authentication tokens');
@@ -1814,6 +2047,48 @@ export default function IntegrationsSettings() {
     }
   };
 
+  const disconnectSlackWorkspace = async (integration: any) => {
+    if (!firmUserId) {
+      toast.error('Missing user information');
+      return;
+    }
+
+    // Confirm disconnection
+    if (!window.confirm(`Are you sure you want to disconnect "${integration.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      const response = await fetch(`${backendUrl}/api/social/slack/disconnect-workspace`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          agent_id: 'SOL',
+          integration_id: integration.id
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to disconnect workspace');
+      }
+
+      toast.success(`Successfully disconnected ${integration.name}`);
+
+      // Refresh the Slack integrations list
+      fetchSlackIntegrations();
+
+    } catch (error: any) {
+      console.error('❌ Error disconnecting Slack workspace:', error);
+      toast.error(error.message || 'Failed to disconnect workspace');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
       'created': { label: 'Active', variant: 'default' },
@@ -1846,6 +2121,7 @@ export default function IntegrationsSettings() {
                 <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
                 <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
                 <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
+                <p className="text-xs text-gray-400 mt-1">This may take up to 2 minutes</p>
               </div>
             </div>
           )}
@@ -2195,12 +2471,188 @@ export default function IntegrationsSettings() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Slack Integration */}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg"
+                    alt="Slack"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-900">Slack</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Connect Slack workspaces for team collaboration
+                  </p>
+                  {slackIntegrations.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <Badge variant="default" className="bg-green-500">
+                        {slackIntegrations.length} Workspace{slackIntegrations.length !== 1 ? 's' : ''} Connected
+                      </Badge>
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {slackIntegrations.map((integration) => (
+                          <div key={integration.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                            <img
+                              src={getPlaceholderAvatar('slack', integration.name)}
+                              alt={integration.name}
+                              className="w-8 h-8 rounded-full"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-gray-900 truncate">{integration.name}</p>
+                              <p className="text-xs text-gray-500">Slack Workspace</p>
+                            </div>
+                            <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  onClick={handleSlackOAuth}
+                  disabled={loading || !locationId || !firmUserId}
+                >
+                  {loading ? 'Loading...' : slackIntegrations.length > 0 ? 'Add Another Workspace' : 'Connect Workspace'}
+                </Button>
+                {slackIntegrations.length > 0 && (
+                  <Button
+                    variant="outline"
+                    className="w-full mt-2"
+                    onClick={() => {
+                      setManagePlatform('slack');
+                      setShowManageModal(true);
+                    }}
+                  >
+                    Manage Workspaces
+                  </Button>
+                )}
+                {!loading && (!locationId || !ghlUserId) && (
+                  <p className="text-xs text-red-500">
+                    Please set up a GHL subaccount first
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Microsoft Teams Integration - Coming Soon */}
+          <Card className="relative opacity-60 cursor-not-allowed">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="absolute top-4 right-4">
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
+                    Coming Soon
+                  </Badge>
+                </div>
+                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 grayscale">
+                  <img
+                    src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg"
+                    alt="Microsoft Teams"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-500">Microsoft Teams</h3>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Connect Microsoft Teams for collaboration
+                  </p>
+                </div>
+                <Button
+                  className="w-full bg-gray-300 text-gray-500 cursor-not-allowed"
+                  disabled
+                >
+                  Coming Soon
+                </Button>
+                <p className="text-xs text-gray-400">
+                  Microsoft Teams integration will be available soon
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Show manage modal for Slack workspaces */}
+          {showManageModal && managePlatform === 'slack' && (
+            <Card className="col-span-full">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Manage Slack Workspaces</CardTitle>
+                    <CardDescription>View and manage all connected workspaces</CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowManageModal(false)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {slackIntegrations.map((integration) => {
+                    const dateAdded = integration.dateAdded ? new Date(integration.dateAdded) : null;
+
+                    return (
+                      <div
+                        key={integration.id}
+                        className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-start gap-3 flex-1">
+                          <img
+                            src={getPlaceholderAvatar('slack', integration.name)}
+                            alt={integration.name}
+                            className="w-12 h-12 rounded-full"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-gray-900">{integration.name}</p>
+                              <Badge variant="default" className="bg-green-500 text-xs">
+                                Active
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-gray-500 mb-2">ID: {integration.id}</p>
+                            {dateAdded && (
+                              <p className="text-xs text-gray-400">
+                                Connected: {dateAdded.toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => disconnectSlackWorkspace(integration)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
           </div>
         </div>
 
         {/* Social Media Integrations Section */}
         <div className="mt-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Social Media Integrations</h2>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Social Media Integrations</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Connect your social media accounts for posting and ads management
+            </p>
+          </div>
           <div className="relative">
             {(refreshingToken || pollingForToken) && (
               <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
@@ -2208,6 +2660,7 @@ export default function IntegrationsSettings() {
                   <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
                   <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
                   <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
+                  <p className="text-xs text-gray-400 mt-1">This may take up to 2 minutes</p>
                 </div>
               </div>
             )}
