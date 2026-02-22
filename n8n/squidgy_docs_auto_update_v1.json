@@ -1,0 +1,720 @@
+{
+  "name": "SW | Squidgy Docs Auto-Update v1",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": [0, 6, 12, 18]
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-1200, 300]
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-1200, 480]
+    },
+    {
+      "parameters": {
+        "jsCode": "const REPOS = [\n  { repo: 'squidgy_updated_ui', owner: 'Squidgy-AI', docFile: 'squidgy_updated_ui/brownfield-architecture.md' },\n  { repo: 'squidgy_updated_backend', owner: 'Squidgy-AI', docFile: 'squidgy_updated_backend/brownfield-architecture.md' }\n];\n\nconst FILE_TO_SECTION_MAP = {\n  'squidgy_updated_ui': {\n    'agents/configs/': ['The Agent System'],\n    'client/components/': ['UI Component System', 'Source Tree and Module Organization'],\n    'client/services/': ['Client Services Reference'],\n    'client/hooks/': ['Custom Hooks'],\n    'client/pages/': ['Source Tree and Module Organization'],\n    'server/': ['Server API Routes'],\n    'server/routes/': ['Server API Routes'],\n    'database/': ['Database Schema'],\n    'shared/': ['Client Services Reference'],\n    'knowledge_base/': ['The Agent System'],\n    'package.json': ['Tech Stack'],\n    'vite.config': ['Build and Deployment'],\n    'tsconfig': ['Build and Deployment'],\n    '.env': ['Quick Reference']\n  },\n  'squidgy_updated_backend': {\n    'main.py': ['API Endpoints', 'Core Business Logic', 'In-Memory State'],\n    'routes/': ['API Endpoints'],\n    'requirements.txt': ['Tech Stack'],\n    'Procfile': ['Deployment'],\n    'runtime.txt': ['Deployment'],\n    'scripts/': ['Source Tree and Module Organization'],\n    'migrations/': ['Databases'],\n    'Tools/': ['Source Tree and Module Organization']\n  }\n};\n\nreturn [{ json: { repos: REPOS, fileMap: FILE_TO_SECTION_MAP } }];"
+      },
+      "id": "code-initialize",
+      "name": "Code - Initialize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-960, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/repos/Squidgy-AI/squidgy-docs-hub/contents/.last-run.json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $credentials.githubApi.accessToken }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-get-last-run",
+      "name": "HTTP - Get Last Run Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [-720, 300],
+      "credentials": {
+        "githubApi": {
+          "id": "btRYHL7BV2Qz6u3V",
+          "name": "Github SW"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const content = $input.first().json;\nlet lastRunData;\n\ntry {\n  // GitHub API returns content as base64\n  const decoded = Buffer.from(content.content, 'base64').toString('utf8');\n  lastRunData = JSON.parse(decoded);\n} catch (e) {\n  // First run or corrupted data - use empty SHAs\n  lastRunData = { repos: {} };\n}\n\nconst repos = $('Code - Initialize').first().json.repos;\nconst items = repos.map(r => ({\n  json: {\n    ...r,\n    lastSHA: lastRunData.repos?.[r.repo]?.lastSHA || '',\n    fileMap: $('Code - Initialize').first().json.fileMap\n  }\n}));\n\nreturn items;"
+      },
+      "id": "code-parse-last-run",
+      "name": "Code - Parse Last Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-480, 300]
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "loop-repos",
+      "name": "Loop Over Repos",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [-240, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $json.owner }}/{{ $json.repo }}/compare/{{ $json.lastSHA || 'HEAD~10' }}...HEAD",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $credentials.githubApi.accessToken }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-compare-commits",
+      "name": "HTTP - Compare Commits",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [0, 300],
+      "credentials": {
+        "githubApi": {
+          "id": "btRYHL7BV2Qz6u3V",
+          "name": "Github SW"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst repo = $('Loop Over Repos').first().json.repo;\nconst docFile = $('Loop Over Repos').first().json.docFile;\nconst fileMap = $('Loop Over Repos').first().json.fileMap;\nconst repoMap = fileMap[repo] || {};\n\n// Get compare data\nconst compareData = input;\nconst files = compareData.files || [];\nconst newSHA = compareData.commits?.length > 0 \n  ? compareData.commits[compareData.commits.length - 1].sha \n  : $('Loop Over Repos').first().json.lastSHA;\n\n// Map changed files to doc sections\nconst sectionsToUpdate = new Map();\n\nfor (const file of files) {\n  const filename = file.filename;\n  for (const [pattern, sections] of Object.entries(repoMap)) {\n    if (filename.includes(pattern) || filename.startsWith(pattern)) {\n      for (const section of sections) {\n        if (!sectionsToUpdate.has(section)) {\n          sectionsToUpdate.set(section, {\n            section,\n            changedFiles: [],\n            patches: []\n          });\n        }\n        const entry = sectionsToUpdate.get(section);\n        if (!entry.changedFiles.includes(filename)) {\n          entry.changedFiles.push(filename);\n          entry.patches.push({\n            filename,\n            status: file.status,\n            patch: (file.patch || '').substring(0, 2000) // Limit patch size\n          });\n        }\n      }\n    }\n  }\n}\n\nconst sectionItems = Array.from(sectionsToUpdate.values()).map(s => ({\n  json: {\n    ...s,\n    repo,\n    docFile,\n    newSHA\n  }\n}));\n\nif (sectionItems.length === 0) {\n  return [{ json: { repo, docFile, newSHA, noChanges: true } }];\n}\n\nreturn sectionItems;"
+      },
+      "id": "code-extract-changes",
+      "name": "Code - Extract Changes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-sections",
+              "leftValue": "={{ $json.noChanges }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-has-sections",
+      "name": "IF - Has Sections To Update",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "loop-sections",
+      "name": "Loop Over Sections",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/Squidgy-AI/squidgy-docs-hub/contents/{{ $json.docFile }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $credentials.githubApi.accessToken }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-fetch-doc",
+      "name": "HTTP - Fetch Current Doc",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [960, 300],
+      "credentials": {
+        "githubApi": {
+          "id": "btRYHL7BV2Qz6u3V",
+          "name": "Github SW"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const section = $('Loop Over Sections').first().json;\nconst docContent = $input.first().json;\n\n// Decode doc from base64\nlet fullDoc;\ntry {\n  fullDoc = Buffer.from(docContent.content, 'base64').toString('utf8');\n} catch(e) {\n  fullDoc = '';\n}\n\n// Extract the target section from the doc\nconst sectionName = section.section;\nconst lines = fullDoc.split('\\n');\nlet sectionStart = -1;\nlet sectionEnd = lines.length;\nlet sectionLevel = 0;\n\nfor (let i = 0; i < lines.length; i++) {\n  const line = lines[i];\n  const headingMatch = line.match(/^(#{1,4})\\s+(.+)/);\n  if (headingMatch) {\n    const level = headingMatch[1].length;\n    const title = headingMatch[2].trim();\n    if (title.includes(sectionName) || sectionName.includes(title.replace(/^\\d+\\.\\s*/, ''))) {\n      sectionStart = i;\n      sectionLevel = level;\n    } else if (sectionStart >= 0 && level <= sectionLevel) {\n      sectionEnd = i;\n      break;\n    }\n  }\n}\n\nconst currentSection = sectionStart >= 0 \n  ? lines.slice(sectionStart, sectionEnd).join('\\n')\n  : `Section \"${sectionName}\" not found in document.`;\n\n// Build patches summary\nconst patchesSummary = section.patches.map(p => \n  `### ${p.filename} (${p.status})\\n\\`\\`\\`diff\\n${p.patch}\\n\\`\\`\\``\n).join('\\n\\n');\n\nconst prompt = `You are a technical documentation updater for the Squidgy AI platform.\n\nTASK: Update the following documentation section based on recent code changes. \n- Only modify content that is directly affected by the changes shown below.\n- Maintain the EXACT same markdown heading level and formatting style.\n- Keep the same overall structure. Add new items if new files/features were added. Remove items if files were deleted.\n- Be factual and precise. Don't add speculative content.\n- Return ONLY the updated section markdown, starting with the section heading.\n\nCURRENT DOCUMENTATION SECTION:\n${currentSection}\n\nCODE CHANGES (diffs from ${section.repo}):\n${patchesSummary}\n\nFILES CHANGED: ${section.changedFiles.join(', ')}\n\nReturn the updated section as valid markdown. If no meaningful documentation changes are needed (e.g., whitespace-only code changes), return the section unchanged.`;\n\nreturn [{\n  json: {\n    aiPrompt: prompt,\n    sectionName,\n    sectionStart,\n    sectionEnd,\n    fullDoc,\n    repo: section.repo,\n    docFile: section.docFile,\n    newSHA: section.newSHA,\n    changedFiles: section.changedFiles\n  }\n}];"
+      },
+      "id": "code-build-prompt",
+      "name": "Code - Build AI Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 300]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.aiPrompt }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "id": "ai-agent-doc-updater",
+      "name": "AI Agent - Doc Updater",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [1440, 300]
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3-5-sonnet",
+        "options": {
+          "responseFormat": "text"
+        }
+      },
+      "id": "openrouter-chat-model",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [1440, 500],
+      "credentials": {
+        "openRouterApi": {
+          "id": "URFwjDUtOcJ7IgkA",
+          "name": "OpenRouter SW-Squidgy-Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"updatedMarkdown\": \"the full updated markdown for this section\",\n\"changeDescription\": \"brief description of what changed\",\n\"confidence\": \"high\"\n}",
+        "autoFix": true
+      },
+      "id": "output-parser",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [1440, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst output = input.output;\n\nconst fullDoc = $('Code - Build AI Prompt').first().json.fullDoc;\nconst sectionStart = $('Code - Build AI Prompt').first().json.sectionStart;\nconst sectionEnd = $('Code - Build AI Prompt').first().json.sectionEnd;\nconst sectionName = $('Code - Build AI Prompt').first().json.sectionName;\nconst repo = $('Code - Build AI Prompt').first().json.repo;\nconst docFile = $('Code - Build AI Prompt').first().json.docFile;\nconst newSHA = $('Code - Build AI Prompt').first().json.newSHA;\nconst changedFiles = $('Code - Build AI Prompt').first().json.changedFiles;\n\nlet updatedMarkdown;\ntry {\n  updatedMarkdown = output.updatedMarkdown || output.response || '';\n} catch(e) {\n  updatedMarkdown = '';\n}\n\nconst changeDescription = output?.changeDescription || `Updated ${sectionName}`;\n\nif (!updatedMarkdown || sectionStart < 0) {\n  // No update needed or section not found - pass through unchanged\n  return [{ json: { \n    markdown: fullDoc, \n    fileName: docFile.split('/').pop(),\n    filePath: docFile,\n    commitMessage: `No changes needed for ${sectionName} in ${docFile}`,\n    repo,\n    newSHA,\n    skipped: true\n  }}];\n}\n\nconst lines = fullDoc.split('\\n');\nconst before = lines.slice(0, sectionStart);\nconst after = lines.slice(sectionEnd);\nconst reconstructed = [...before, updatedMarkdown.trim(), '', ...after].join('\\n');\n\nreturn [{\n  json: {\n    markdown: reconstructed,\n    fileName: docFile.split('/').pop(),\n    filePath: docFile,\n    commitMessage: `Auto-update ${sectionName}: ${changeDescription} [${changedFiles.slice(0,3).join(', ')}]`,\n    repo,\n    newSHA,\n    skipped: false\n  }\n}];"
+      },
+      "id": "code-reconstruct-doc",
+      "name": "Code - Reconstruct Doc",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const markdown = $json.markdown;\nconst buffer = Buffer.from(markdown, 'utf8');\nreturn [{\n  json: { filePath: $json.filePath, commitMessage: $json.commitMessage, skipped: $json.skipped },\n  binary: {\n    data: {\n      data: buffer.toString('base64'),\n      mimeType: 'text/markdown',\n      fileName: $json.fileName\n    }\n  }\n}];"
+      },
+      "id": "code-convert-to-binary",
+      "name": "Convert to File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1920, 300]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Squidgy-AI"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "squidgy-docs-hub",
+          "mode": "list",
+          "cachedResultName": "squidgy-docs-hub",
+          "cachedResultUrl": "https://github.com/Squidgy-AI/squidgy-docs-hub"
+        },
+        "filePath": "={{ $json.filePath }}",
+        "binaryData": true,
+        "commitMessage": "={{ $json.commitMessage }}",
+        "additionalParameters": {
+          "branch": {
+            "branch": "main"
+          }
+        }
+      },
+      "id": "github-edit-doc",
+      "name": "GitHub Edit - Update Doc",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [2160, 300],
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "githubApi": {
+          "id": "btRYHL7BV2Qz6u3V",
+          "name": "Github SW"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $('Convert to File').first();\nreturn [{ json: item.json, binary: item.binary }];"
+      },
+      "id": "code-restore-binary",
+      "name": "Restore Binary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 500]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "create",
+        "owner": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Squidgy-AI"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "squidgy-docs-hub",
+          "mode": "list",
+          "cachedResultName": "squidgy-docs-hub",
+          "cachedResultUrl": "https://github.com/Squidgy-AI/squidgy-docs-hub"
+        },
+        "filePath": "={{ $json.filePath }}",
+        "binaryData": true,
+        "commitMessage": "={{ $json.commitMessage }}",
+        "additionalParameters": {
+          "branch": {
+            "branch": "main"
+          }
+        }
+      },
+      "id": "github-create-doc",
+      "name": "GitHub Create - New Doc",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [2400, 500],
+      "credentials": {
+        "githubApi": {
+          "id": "btRYHL7BV2Qz6u3V",
+          "name": "Github SW"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "id": "wait-1s",
+      "name": "Wait 1s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "webhookId": "wait-docs-loop",
+      "position": [2400, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all newSHAs from processed repos\nconst repos = $('Code - Initialize').first().json.repos;\nconst lastRunData = {\n  lastRun: new Date().toISOString(),\n  repos: {}\n};\n\n// For each repo, get the latest SHA we processed\nfor (const repo of repos) {\n  // Try to find the newSHA from processing\n  try {\n    const items = $('Code - Extract Changes').all();\n    const repoItem = items.find(i => i.json.repo === repo.repo);\n    if (repoItem?.json.newSHA) {\n      lastRunData.repos[repo.repo] = {\n        lastSHA: repoItem.json.newSHA,\n        owner: repo.owner\n      };\n    } else {\n      // Fallback - keep old SHA\n      const oldData = $('Code - Parse Last Run').all().find(i => i.json.repo === repo.repo);\n      lastRunData.repos[repo.repo] = {\n        lastSHA: oldData?.json.lastSHA || '',\n        owner: repo.owner\n      };\n    }\n  } catch(e) {\n    lastRunData.repos[repo.repo] = { lastSHA: '', owner: repo.owner };\n  }\n}\n\nreturn [{\n  json: {\n    content: JSON.stringify(lastRunData, null, 2),\n    fileName: '.last-run.json',\n    filePath: '.last-run.json'\n  }\n}];"
+      },
+      "id": "code-update-last-run",
+      "name": "Code - Update Last Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2640, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const content = $json.content;\nconst buffer = Buffer.from(content, 'utf8');\nreturn [{\n  json: { filePath: $json.filePath },\n  binary: {\n    data: {\n      data: buffer.toString('base64'),\n      mimeType: 'application/json',\n      fileName: $json.fileName\n    }\n  }\n}];"
+      },
+      "id": "code-convert-last-run",
+      "name": "Convert to File - Last Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2880, 300]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Squidgy-AI"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "squidgy-docs-hub",
+          "mode": "list",
+          "cachedResultName": "squidgy-docs-hub",
+          "cachedResultUrl": "https://github.com/Squidgy-AI/squidgy-docs-hub"
+        },
+        "filePath": ".last-run.json",
+        "binaryData": true,
+        "commitMessage": "Update last run data",
+        "additionalParameters": {
+          "branch": {
+            "branch": "main"
+          }
+        }
+      },
+      "id": "github-edit-last-run",
+      "name": "GitHub Edit - Save Last Run",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [3120, 300],
+      "credentials": {
+        "githubApi": {
+          "id": "btRYHL7BV2Qz6u3V",
+          "name": "Github SW"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code - Initialize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code - Initialize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Initialize": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Get Last Run Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Last Run Data": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse Last Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Parse Last Run": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Repos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Repos": {
+      "main": [
+        [
+          {
+            "node": "Code - Update Last Run",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP - Compare Commits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Compare Commits": {
+      "main": [
+        [
+          {
+            "node": "Code - Extract Changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Extract Changes": {
+      "main": [
+        [
+          {
+            "node": "IF - Has Sections To Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Has Sections To Update": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Sections",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Repos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Sections": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Repos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP - Fetch Current Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Fetch Current Doc": {
+      "main": [
+        [
+          {
+            "node": "Code - Build AI Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build AI Prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Doc Updater",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Doc Updater": {
+      "main": [
+        [
+          {
+            "node": "Code - Reconstruct Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Doc Updater",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent - Doc Updater",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Reconstruct Doc": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "GitHub Edit - Update Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub Edit - Update Doc": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Restore Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Binary": {
+      "main": [
+        [
+          {
+            "node": "GitHub Create - New Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub Create - New Doc": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1s": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Sections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Update Last Run": {
+      "main": [
+        [
+          {
+            "node": "Convert to File - Last Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File - Last Run": {
+      "main": [
+        [
+          {
+            "node": "GitHub Edit - Save Last Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-02-22T00:00:00.000Z",
+  "versionId": "1"
+}
