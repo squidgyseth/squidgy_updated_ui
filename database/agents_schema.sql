@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS agents (
   -- N8N Integration
   n8n_webhook_url TEXT,
   
+  -- Platform Control
+  is_enabled BOOLEAN DEFAULT true NOT NULL,
+  
   -- Metadata
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
@@ -38,6 +41,7 @@ CREATE TABLE IF NOT EXISTS agent_conversations (
 
 -- Indexes for performance
 CREATE INDEX idx_agents_category ON agents(category);
+CREATE INDEX idx_agents_is_enabled ON agents(is_enabled);
 CREATE INDEX idx_conversations_session ON agent_conversations(session_id);
 CREATE INDEX idx_conversations_timestamp ON agent_conversations(session_id, timestamp);
 CREATE INDEX idx_conversations_sender ON agent_conversations(is_user_message);
