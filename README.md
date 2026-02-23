@@ -15,6 +15,15 @@ This application guides solar sales agents through a comprehensive setup process
 ## Project Structure
 
 ```
+agents/                   # AI Agent configurations (see agents/README.md)
+├── shared/               # Shared resources for all agents
+│   ├── base_system_prompt.md  # Base prompt for all agents
+│   └── agent_template.yaml    # Template for new agents
+├── personal_assistant/   # Individual agent folders
+│   ├── config.yaml       # Agent configuration
+│   └── system_prompt.md  # Agent-specific instructions
+└── [other_agents]/       # Each agent has its own folder
+
 client/                   # React SPA frontend
 ├── pages/                # Setup wizard pages
 │   ├── Index.tsx         # Welcome/Landing page
@@ -26,6 +35,7 @@ client/                   # React SPA frontend
 │   ├── FacebookConnect.tsx # Facebook integration
 │   └── SetupComplete.tsx # Completion dashboard
 ├── components/ui/        # Pre-built UI component library
+├── data/agents.ts        # Compiled agent configs (auto-generated)
 ├── App.tsx              # App entry point with setup wizard routing
 └── global.css           # TailwindCSS 3 theming and global styles
 
@@ -36,9 +46,13 @@ server/                   # Express API backend (connects to Squidgy backend)
 shared/                   # Types used by both client & server
 └── api.ts                # Shared interfaces for setup wizard
 
-Documentation/            # Project documentation
-├── FRONTEND_BACKEND_ENDPOINT_MAPPING.md # Backend integration guide
-└── FRONTEND_CODING_STANDARDS.md         # Development standards
+scripts/                  # Build and utility scripts
+└── build-agents.js       # Compile agents and sync to database
+
+docs/                     # Project documentation
+├── README.md             # Documentation index
+├── AGENT_ARCHITECTURE_PLAN.md # Agent system architecture
+└── n8n-agent-setup.md    # N8N workflow setup guide
 ```
 
 ## Key Features
@@ -125,6 +139,15 @@ pnpm test          # Run Vitest tests
 ```
 
 ## Documentation
+
+### [🤖 AI Agents Guide](agents/README.md)
+Complete guide for creating and managing AI agents:
+- **Agent folder structure** and required files
+- **Creating new agents** step-by-step
+- **System prompt compilation** (base + agent-specific)
+- **Platform and user-level enablement** logic
+- **Troubleshooting** common agent issues
+- **Build and deployment** process
 
 ### [📋 FRONTEND_BACKEND_ENDPOINT_MAPPING.md](FRONTEND_BACKEND_ENDPOINT_MAPPING.md)
 Complete integration guide between the React frontend and Squidgy backend:
