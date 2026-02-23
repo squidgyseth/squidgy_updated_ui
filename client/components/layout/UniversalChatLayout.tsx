@@ -148,7 +148,7 @@ export default function UniversalChatLayout({
   const [recentActions, setRecentActions] = useState<string[]>([]);
   const [isLoadingActions, setIsLoadingActions] = useState(true); // Only true on initial load
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-  const [openSection, setOpenSection] = useState<string | null>(agent.id === 'social_media_agent' ? 'content' : 'activity');
+  const [openSection, setOpenSection] = useState<string | null>(agent.id === 'social_media' ? 'content' : 'activity');
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
 
   const toggleSection = (sectionId: string) => {

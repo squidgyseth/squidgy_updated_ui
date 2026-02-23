@@ -246,7 +246,7 @@ export default function Index() {
           </Card>
 
           {/* Social Media Manager Card - Only show if enabled */}
-          {enabledAgentIds.includes('social_media_agent') && (
+          {enabledAgentIds.includes('social_media') && (
             <Card className="border-2 border-blue-400 bg-blue-50">
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
@@ -260,7 +260,7 @@ export default function Index() {
                     <p className="text-[15px] text-gray-600 font-open-sans mt-1">Manage and schedule social media content across Facebook, Instagram, and LinkedIn.</p>
                   </div>
                   <Button
-                    onClick={() => navigate('/chat/social_media_agent')}
+                    onClick={() => navigate('/chat/social_media')}
                     className="bg-squidgy-gradient text-white gap-2 px-6 py-2.5 h-auto text-sm font-semibold"
                   >
                     <MessageCircle className="w-5 h-5" />
