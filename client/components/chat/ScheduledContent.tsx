@@ -330,8 +330,8 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
   const [editingPost, setEditingPost] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Only show for social_media_agent
-  const shouldShow = agentId === 'social_media_agent';
+  // Only show for social_media
+  const shouldShow = agentId === 'social_media';
   
   // Filter posts based on selected filter
   const filteredPosts = scheduledPosts.filter(post => {

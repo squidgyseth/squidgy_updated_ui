@@ -19,7 +19,7 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
   const [loading, setLoading] = useState(true);
 
   // Only show Previous Content for agents that generate newsletters or social content
-  const shouldShowPreviousContent = agentId === 'newsletter' || agentId === 'content_repurposer' || agentId === 'social_media_agent' || !agentId;
+  const shouldShowPreviousContent = agentId === 'newsletter' || agentId === 'content_repurposer' || agentId === 'social_media' || !agentId;
 
   useEffect(() => {
     if (shouldShowPreviousContent) {
@@ -155,8 +155,8 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
     );
   }
 
-  // For social_media_agent, don't show empty state - just show scheduled content
-  if (agentId === 'social_media_agent') {
+  // For social_media, don't show empty state - just show scheduled content
+  if (agentId === 'social_media') {
     return (
       <div className={`previous-content-container ${className}`}>
         <ScheduledContent agentId={agentId} />
@@ -249,8 +249,8 @@ export default function PreviousContent({ className = '', agentId }: PreviousCon
           </div>
         )}
 
-        {/* Scheduled Content - Only for social_media_agent */}
-        {agentId === 'social_media_agent' && (
+        {/* Scheduled Content - Only for social_media */}
+        {agentId === 'social_media' && (
           <div className="mt-4 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-2 mb-3">
               <Clock className="w-4 h-4 text-orange-500" />
