@@ -32,6 +32,17 @@ const EditPostModal: React.FC<{
 }> = ({ post, onClose, onSave, onPostpone, isSaving, isPostponing, userId }) => {
   const [summary, setSummary] = useState(post.summary || '');
   const [scheduleDate, setScheduleDate] = useState(() => {
+    // Check if post is drafted (either has isDrafted flag or has 2099 schedule date)
+    const isDrafted = post.isDrafted || (post.scheduleDate && post.scheduleDate.startsWith('2099'));
+    
+    if (isDrafted) {
+      // For drafted posts, default to current date/time
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      return now.toISOString().slice(0, 16);
+    }
+    
+    // For regular posts, use existing schedule date
     const date = post.scheduleDate || post.displayDate || '';
     if (date) {
       const d = new Date(date);
@@ -433,8 +444,8 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
       const result = await scheduledPostsService.deletePost(postId, userId, 'SOL');
       
       if (result.success) {
-        // Remove the post from local state
-        setScheduledPosts(prev => prev.filter(p => (p as any)._id !== postId && p.id !== postId));
+        // Refresh the posts list to get updated data from GHL
+        await loadScheduledPosts();
         setSelectedPost(null);
       } else {
         alert(result.error || 'Failed to delete post');
@@ -454,13 +465,8 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
       const result = await scheduledPostsService.editPost(postId, userId, { summary, schedule_date: scheduleDate, account_ids: accountIds }, 'SOL');
       
       if (result.success) {
-        // Update the post in local state
-        setScheduledPosts(prev => prev.map(p => {
-          if ((p as any)._id === postId || p.id === postId) {
-            return { ...p, summary, scheduleDate, displayDate: scheduleDate, accountIds };
-          }
-          return p;
-        }));
+        // Refresh the posts list to get updated data (post may have new ID after edit)
+        await loadScheduledPosts();
         setEditingPost(null);
         setSelectedPost(null);
       } else {
@@ -481,8 +487,8 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
       const result = await scheduledPostsService.postponePost(postId, userId, '2099-12-31T23:59:59.999Z', 'SOL');
       
       if (result.success) {
-        // Remove the post from local state (it's now scheduled for 2099)
-        setScheduledPosts(prev => prev.filter(p => (p as any)._id !== postId && p.id !== postId));
+        // Refresh the posts list to get updated data
+        await loadScheduledPosts();
         setEditingPost(null);
         setSelectedPost(null);
       } else {

@@ -85,6 +85,29 @@ class ScheduledPostsService {
   }
 
   /**
+   * Check if a post is drafted by checking post_confirmation_checker table
+   */
+  async isPostDrafted(postId: string, firmUserId: string): Promise<boolean> {
+    const url = `${BACKEND_URL}/api/social/scheduled/posts/check-draft/${postId}?firm_user_id=${firmUserId}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+      return data.is_drafted || false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
    * Format date for display - handles GHL date fields
    */
   formatPostDate(post: ScheduledPost): string {
@@ -142,6 +165,11 @@ class ScheduledPostsService {
    * Get post status display
    */
   getStatusDisplay(post: ScheduledPost): { label: string; color: string } {
+    // Only check draft status if the flag exists (post exists in checker table)
+    if ((post as any).isDrafted === true) {
+      return { label: 'Drafted', color: 'text-gray-500' };
+    }
+    
     const status = post.status?.toLowerCase() || '';
     switch (status) {
       case 'published':
