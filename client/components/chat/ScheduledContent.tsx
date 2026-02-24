@@ -484,7 +484,7 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
     
     setIsPostponing(true);
     try {
-      const result = await scheduledPostsService.postponePost(postId, userId, '2099-12-31T23:59:59.999Z', 'SOL');
+      const result = await scheduledPostsService.postponePost(postId, userId, 'SOL');
       
       if (result.success) {
         // Refresh the posts list to get updated data

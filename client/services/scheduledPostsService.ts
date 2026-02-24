@@ -280,26 +280,18 @@ class ScheduledPostsService {
   }
 
   /**
-   * Postpone a scheduled post to a far future date
+   * Postpone a scheduled post to a far future date (2099)
    */
   async postponePost(
     postId: string,
     firmUserId: string,
-    scheduleDate: string = '2099-12-31T23:59:59.999Z',
     agentId: string = 'SOL'
   ): Promise<{ success: boolean; error?: string; new_schedule_date?: string }> {
-    const url = `${BACKEND_URL}/api/social/scheduled/posts/${postId}/postpone`;
+    const url = `${BACKEND_URL}/api/social/scheduled/posts/${postId}/postpone?firm_user_id=${firmUserId}&agent_id=${agentId}`;
 
     try {
       const response = await fetch(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firm_user_id: firmUserId,
-          post_id: postId,
-          schedule_date: scheduleDate,
-          agent_id: agentId
-        })
+        method: 'GET'
       });
 
       if (!response.ok) {
