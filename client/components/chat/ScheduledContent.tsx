@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Clock, Calendar, RefreshCw, Facebook, Instagram, Linkedin, Twitter, X, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
+import { Clock, Calendar, RefreshCw, Facebook, Instagram, Linkedin, Twitter, X, ChevronDown, ChevronUp, Pencil, Trash2, Archive } from 'lucide-react';
 import scheduledPostsService, { ScheduledPost } from '../../services/scheduledPostsService';
 import { useUser } from '../../hooks/useUser';
 import { supabase } from '../../lib/supabase';
@@ -25,9 +25,11 @@ const EditPostModal: React.FC<{
   post: any; 
   onClose: () => void; 
   onSave: (postId: string, summary: string, scheduleDate: string, accountIds: string[]) => Promise<void>; 
+  onPostpone: (postId: string) => Promise<void>;
   isSaving: boolean;
+  isPostponing: boolean;
   userId: string;
-}> = ({ post, onClose, onSave, isSaving, userId }) => {
+}> = ({ post, onClose, onSave, onPostpone, isSaving, isPostponing, userId }) => {
   const [summary, setSummary] = useState(post.summary || '');
   const [scheduleDate, setScheduleDate] = useState(() => {
     const date = post.scheduleDate || post.displayDate || '';
@@ -150,28 +152,47 @@ const EditPostModal: React.FC<{
         </div>
         
         {/* Footer */}
-        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2">
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between gap-2">
           <button
-            onClick={onClose}
-            disabled={isSaving}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={() => onPostpone(post._id || post.id)}
+            disabled={isPostponing || isSaving}
+            className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving || !summary.trim() || selectedAccountIds.length === 0}
-            className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {isSaving ? (
+            {isPostponing ? (
               <>
                 <RefreshCw size={14} className="animate-spin" />
-                Saving...
+                Drafting...
               </>
             ) : (
-              'Save Changes'
+              <>
+                <Archive size={14} />
+                Draft
+              </>
             )}
           </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              disabled={isSaving || isPostponing}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving || isPostponing || !summary.trim() || selectedAccountIds.length === 0}
+              className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <RefreshCw size={14} className="animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -329,6 +350,7 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingPost, setEditingPost] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPostponing, setIsPostponing] = useState(false);
 
   // Only show for social_media
   const shouldShow = agentId === 'social_media';
@@ -448,6 +470,28 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
       alert(err.message || 'Failed to edit post');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePostponePost = async (postId: string) => {
+    if (!userId || !postId) return;
+    
+    setIsPostponing(true);
+    try {
+      const result = await scheduledPostsService.postponePost(postId, userId, '2099-12-31T23:59:59.999Z', 'SOL');
+      
+      if (result.success) {
+        // Remove the post from local state (it's now scheduled for 2099)
+        setScheduledPosts(prev => prev.filter(p => (p as any)._id !== postId && p.id !== postId));
+        setEditingPost(null);
+        setSelectedPost(null);
+      } else {
+        alert(result.error || 'Failed to postpone post');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to postpone post');
+    } finally {
+      setIsPostponing(false);
     }
   };
 
@@ -642,7 +686,9 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
           post={editingPost}
           onClose={() => setEditingPost(null)}
           onSave={handleEditPost}
+          onPostpone={handlePostponePost}
           isSaving={isSaving}
+          isPostponing={isPostponing}
           userId={userId}
         />
       )}

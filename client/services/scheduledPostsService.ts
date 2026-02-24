@@ -250,6 +250,47 @@ class ScheduledPostsService {
       };
     }
   }
+
+  /**
+   * Postpone a scheduled post to a far future date
+   */
+  async postponePost(
+    postId: string,
+    firmUserId: string,
+    scheduleDate: string = '2099-12-31T23:59:59.999Z',
+    agentId: string = 'SOL'
+  ): Promise<{ success: boolean; error?: string; new_schedule_date?: string }> {
+    const url = `${BACKEND_URL}/api/social/scheduled/posts/${postId}/postpone`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firm_user_id: firmUserId,
+          post_id: postId,
+          schedule_date: scheduleDate,
+          agent_id: agentId
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error: errorData.detail || `HTTP ${response.status}: ${response.statusText}`
+        };
+      }
+
+      const data = await response.json();
+      return { success: true, new_schedule_date: data.new_schedule_date };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to postpone post'
+      };
+    }
+  }
 }
 
 export default ScheduledPostsService.getInstance();
