@@ -90,6 +90,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminActivity from "./pages/admin/AdminActivity";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import { AdminRoute } from "./components/AdminRoute";
+import ImpersonationBanner from "./components/ImpersonationBanner";
 
 const queryClient = new QueryClient();
 
@@ -212,6 +213,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthHandler />
+          <ImpersonationBanner />
           <GlobalNotificationBell />
           <Routes>
           <Route path="/login" element={<Login />} />

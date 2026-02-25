@@ -1193,3 +1193,27 @@ export const saveBusinessDetails = async (data: BusinessDetailsData): Promise<{ 
     throw new Error(error instanceof Error ? error.message : 'Failed to save business details');
   }
 };
+
+// Admin Impersonation APIs
+export const adminApi = {
+  impersonateUser: async (targetUserId: string, adminUserId: string): Promise<{ success: boolean; profile: any; impersonation_data: any; message: string }> => {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://squidgy-backend.onrender.com';
+    const response = await fetch(`${backendUrl}/admin/impersonate-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        target_user_id: targetUserId,
+        admin_user_id: adminUserId
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to impersonate user' }));
+      throw new Error(error.detail || 'Failed to impersonate user');
+    }
+    
+    return response.json();
+  }
+};

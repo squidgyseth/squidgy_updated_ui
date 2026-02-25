@@ -8,7 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { 
   Users, Search, ChevronLeft, ChevronRight, Shield, ShieldOff, 
   Trash2, Edit2, X, Check, ArrowLeft, Filter, ArrowUpDown, Building2, Bot, Copy,
-  MessageSquare, Clock, User as UserIcon, History, Hash, Mail, KeyRound, Send, BarChart3
+  MessageSquare, Clock, User as UserIcon, History, Hash, Mail, KeyRound, Send, BarChart3, LogIn
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ALL_AGENTS, AgentConfig } from '../../data/agents';
@@ -54,7 +54,7 @@ type FilterStatus = '' | 'active' | 'deleted' | 'admin';
 
 export default function AdminUsers() {
   const navigate = useNavigate();
-  const { userId } = useUser();
+  const { userId, impersonateUser } = useUser();
   const { isAdmin, isLoading: adminLoading } = useAdmin();
   
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -243,6 +243,17 @@ export default function AdminUsers() {
       loadUsers();
     } catch (error: any) {
       toast.error(error.message || 'Failed to update user');
+    }
+  };
+
+  const handleImpersonateUser = async (user: UserProfile) => {
+    try {
+      const targetUserId = user.user_id || user.id;
+      toast.loading('Logging in as user...');
+      await impersonateUser(targetUserId);
+    } catch (error: any) {
+      toast.dismiss();
+      toast.error(error.message || 'Failed to impersonate user');
     }
   };
 
@@ -498,6 +509,13 @@ export default function AdminUsers() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleImpersonateUser(user)}
+                            className="p-2 hover:bg-green-100 text-green-600 rounded-lg transition-colors"
+                            title="Login as user"
+                          >
+                            <LogIn className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => handleToggleAdmin(user)}
                             className={`p-2 rounded-lg transition-colors ${

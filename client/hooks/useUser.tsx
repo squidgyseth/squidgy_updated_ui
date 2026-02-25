@@ -32,6 +32,10 @@ interface UserContextType {
   isAuthenticated: boolean;
   user: any;
   profile: any;
+  isImpersonating: boolean;
+  originalAdminId: string | null;
+  impersonateUser: (targetUserId: string) => Promise<void>;
+  returnToAdmin: () => Promise<void>;
 }
 
 // Create context
@@ -50,11 +54,21 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [isImpersonating, setIsImpersonating] = useState<boolean>(false);
+  const [originalAdminId, setOriginalAdminId] = useState<string | null>(null);
 
   // Initialize user data on mount
   useEffect(() => {
     const initializeUser = async () => {
       try {
+        // Check if we're in impersonation mode
+        const isImpersonatingStored = localStorage.getItem('is_impersonating') === 'true';
+        const originalAdminIdStored = localStorage.getItem('original_admin_id');
+        
+        if (isImpersonatingStored && originalAdminIdStored) {
+          setIsImpersonating(true);
+          setOriginalAdminId(originalAdminIdStored);
+        }
         
         // Quick check for existing session to prevent unnecessary redirects
         const startSessionCheck = Date.now();
@@ -107,43 +121,74 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           setIsAuthenticated(true);
           setUser(authResult.user);
           
+          // Check if we're in impersonation mode FIRST before using authResult.profile
+          const storedUserId = localStorage.getItem('squidgy_user_id');
+          const isImpersonatingNow = localStorage.getItem('is_impersonating') === 'true';
+          
           // Get the correct user_id from profiles table using email
-          let currentUserId = authResult.profile?.user_id;
+          // BUT don't use authResult.profile if we're impersonating
+          let currentUserId = isImpersonatingNow ? storedUserId : authResult.profile?.user_id;
           let finalProfile = authResult.profile;
           
-          // ALWAYS do email lookup to get correct user_id and full profile from profiles table
-          if (authResult.user.email) {
+          if (isImpersonatingNow && storedUserId) {
+            // In impersonation mode: use the stored impersonated user ID
+            // and fetch that user's profile instead of the admin's
             try {
-              const profileResult = await profilesApi.getByEmail(authResult.user.email);
+              const { data: impersonatedProfile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('user_id', storedUserId)
+                .single();
               
-              
-              if (profileResult.data) {
-                currentUserId = profileResult.data.user_id || authResult.user.id;
-                // Use the fresh profile data which includes is_super_admin
-                finalProfile = profileResult.data;
+              if (impersonatedProfile) {
+                currentUserId = storedUserId;
+                finalProfile = impersonatedProfile;
               } else {
+                console.error('Failed to load impersonated user profile for ID:', storedUserId);
                 currentUserId = authResult.user.id;
               }
             } catch (error) {
-              console.error('❌ USER_PROVIDER Prod: Error in email lookup:', error);
+              console.error('❌ Error loading impersonated profile:', error);
               currentUserId = authResult.user.id;
             }
           } else {
-            currentUserId = currentUserId || authResult.user.id;
+            // Normal mode: do email lookup to get correct user_id and full profile from profiles table
+            if (authResult.user.email) {
+              try {
+                const profileResult = await profilesApi.getByEmail(authResult.user.email);
+                
+                if (profileResult.data) {
+                  currentUserId = profileResult.data.user_id || authResult.user.id;
+                  // Use the fresh profile data which includes is_super_admin
+                  finalProfile = profileResult.data;
+                } else {
+                  currentUserId = authResult.user.id;
+                }
+              } catch (error) {
+                console.error('❌ USER_PROVIDER Prod: Error in email lookup:', error);
+                currentUserId = authResult.user.id;
+              }
+            } else {
+              currentUserId = currentUserId || authResult.user.id;
+            }
           }
           
           // Set profile with fresh data that includes is_super_admin
           setProfile(finalProfile);
           setUserIdState(currentUserId);
-          localStorage.setItem('squidgy_user_id', currentUserId);
+          // Only update localStorage if not in impersonation mode (to preserve impersonated user ID)
+          if (!isImpersonatingNow) {
+            localStorage.setItem('squidgy_user_id', currentUserId);
+          }
           
           const currentAgentId = `agent_${currentUserId}`;
           setAgentIdState(currentAgentId);
           
           // Identify user in PostHog with correct profile.user_id
+          // Use the impersonated user's data if in impersonation mode
           posthogService.identifyUser(
             currentUserId,
-            authResult.user.email,
+            finalProfile?.email || authResult.user.email,
             finalProfile?.full_name
           );
           
@@ -192,6 +237,13 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           
           if (event === 'SIGNED_IN' && session?.user) {
             try {
+              // IMPORTANT: Check if we're in impersonation mode - if so, skip this handler
+              // to avoid overwriting the impersonated user's data
+              const isImpersonatingNow = localStorage.getItem('is_impersonating') === 'true';
+              if (isImpersonatingNow) {
+                console.log('🎭 Auth state change: Skipping SIGNED_IN handler - in impersonation mode');
+                return;
+              }
               
               // Use the session user directly instead of calling getCurrentUser
               const authUser = session.user;
@@ -295,8 +347,13 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       return;
     }
     
+    // Don't update localStorage if in impersonation mode
+    const isImpersonatingNow = localStorage.getItem('is_impersonating') === 'true';
+    
     setUserIdState(newUserId);
-    localStorage.setItem('squidgy_user_id', newUserId);
+    if (!isImpersonatingNow) {
+      localStorage.setItem('squidgy_user_id', newUserId);
+    }
     
     const newAgentId = `agent_${newUserId}`;
     setAgentIdState(newAgentId);
@@ -353,6 +410,57 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     }
   };
 
+  // Impersonation functions
+  const impersonateUser = async (targetUserId: string) => {
+    try {
+      // Store current admin's user_id before impersonating
+      const currentAdminId = userId;
+      
+      // Import adminApi dynamically to avoid circular dependency
+      const { adminApi } = await import('../lib/api');
+      
+      // Call backend to verify admin can impersonate this user
+      const result = await adminApi.impersonateUser(targetUserId, currentAdminId);
+      
+      if (result.success && result.profile) {
+        // Set impersonation data in localStorage BEFORE reload
+        localStorage.setItem('is_impersonating', 'true');
+        localStorage.setItem('original_admin_id', currentAdminId);
+        localStorage.setItem('squidgy_user_id', targetUserId);
+        
+        // Small delay to ensure localStorage is written
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Force a full page reload to reinitialize everything with the new user
+        window.location.href = '/dashboard';
+      }
+    } catch (error) {
+      console.error('Failed to impersonate user:', error);
+      throw error;
+    }
+  };
+  
+  const returnToAdmin = async () => {
+    try {
+      const adminId = originalAdminId || localStorage.getItem('original_admin_id');
+      
+      if (!adminId) {
+        throw new Error('No admin session found');
+      }
+      
+      // Clear impersonation state and restore admin ID
+      localStorage.removeItem('is_impersonating');
+      localStorage.removeItem('original_admin_id');
+      localStorage.setItem('squidgy_user_id', adminId);
+      
+      // Force a full page reload to reinitialize with admin user
+      window.location.href = '/admin/users';
+    } catch (error) {
+      console.error('Failed to return to admin:', error);
+      throw error;
+    }
+  };
+
   const value = {
     isAuthenticated,
     isReady,
@@ -363,7 +471,11 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     agentId,
     setUserId,
     clearUser,
-    refreshProfile
+    refreshProfile,
+    isImpersonating,
+    originalAdminId,
+    impersonateUser,
+    returnToAdmin
   };
 
   return (
