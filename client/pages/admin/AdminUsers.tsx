@@ -1488,6 +1488,12 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                               <span className="text-sm text-gray-600">Firebase Token Captured</span>
                             </div>
                             <div className="flex items-center gap-2">
+                              <span className={ghl.pit_token ? 'text-green-500' : 'text-gray-300'}>
+                                {ghl.pit_token ? '✓' : '○'}
+                              </span>
+                              <span className="text-sm text-gray-600">PIT Token Captured</span>
+                            </div>
+                            <div className="flex items-center gap-2">
                               <span className={automationStatus === 'completed' || automationStatus === 'ready' ? 'text-green-500' : 'text-gray-300'}>
                                 {automationStatus === 'completed' || automationStatus === 'ready' ? '✓' : '○'}
                               </span>
@@ -1539,8 +1545,8 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                           )}
                         </div>
                         
-                        {/* Retry Button for Failed Status */}
-                        {(creationStatus === 'failed' || automationStatus === 'failed' || automationStatus === 'pit_failed' || automationStatus === 'token_capture_failed') && (
+                        {/* Retry Button for Failed Status or Missing PIT Token */}
+                        {(creationStatus === 'failed' || automationStatus === 'failed' || automationStatus === 'pit_failed' || automationStatus === 'token_capture_failed' || !ghl.pit_token) && (
                           <div className="flex justify-end pt-4 border-t border-gray-200">
                             <button
                               type="button"

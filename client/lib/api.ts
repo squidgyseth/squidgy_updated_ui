@@ -676,10 +676,26 @@ export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<
     // Check automation status - don't trigger if already running or pending
     const automationStatus = ghlData.automation_status;
     const creationStatus = ghlData.creation_status;
+    const updatedAt = ghlData.updated_at;
     
-    if (automationStatus === 'running' || automationStatus === 'pit_running' || 
-        automationStatus === 'not_started' || creationStatus === 'pending' || 
-        creationStatus === 'creating') {
+    // Check if automation is stuck (running for more than 1 minute for local dev, 10 for production)
+    const stuckThresholdMinutes = 1; // Changed from 10 to 1 for faster local testing
+    let isStuck = false;
+    if ((automationStatus === 'running' || automationStatus === 'pit_running' || automationStatus === 'token_refresh_running') && updatedAt) {
+      const updatedTime = new Date(updatedAt);
+      const currentTime = new Date();
+      const minutesRunning = (currentTime.getTime() - updatedTime.getTime()) / (1000 * 60);
+      
+      if (minutesRunning > stuckThresholdMinutes) {
+        console.log(`[GHL CHECK] Automation stuck in '${automationStatus}' for ${minutesRunning.toFixed(1)} minutes - will retry`);
+        isStuck = true;
+      }
+    }
+    
+    // Skip if automation is actively running (not stuck) or pending creation
+    if (!isStuck && (automationStatus === 'running' || automationStatus === 'pit_running' || 
+        automationStatus === 'token_refresh_running' || automationStatus === 'not_started' || 
+        creationStatus === 'pending' || creationStatus === 'creating')) {
       console.log(`[GHL CHECK] Automation already in progress (creation: ${creationStatus}, automation: ${automationStatus}) - skipping`);
       return { hasPitToken: false, triggered: false };
     }
@@ -687,15 +703,29 @@ export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<
     // Check if pit_token exists
     const hasPitToken = !!(ghlData.pit_token || ghlData.access_token);
     
-    // ONLY trigger retry if:
-    // 1. No pit_token exists
-    // 2. Location ID exists (subaccount was created)
-    // 3. Automation is not currently running
-    // 4. Status indicates failure or completion without token
-    if (!hasPitToken && ghlData.ghl_location_id && 
-        (automationStatus === 'failed' || automationStatus === 'pit_failed' || 
-         automationStatus === 'token_capture_failed' || automationStatus === 'completed')) {
-      console.log('[GHL CHECK] PIT token missing for existing user - triggering retry automation...');
+    // CRITICAL: If automation is stuck, retry regardless of token presence
+    // Otherwise, only trigger retry if pit_token is missing OR status is empty/null
+    const shouldRetry = ghlData.ghl_location_id && (
+      // Case 1: Automation is stuck (force retry even if token exists)
+      isStuck ||
+      // Case 2: Status is empty/null/undefined (incomplete setup)
+      (!automationStatus || automationStatus === '') ||
+      // Case 3: No token AND (failed status OR completed without proper token)
+      (!hasPitToken && (
+        automationStatus === 'failed' || 
+        automationStatus === 'pit_failed' || 
+        automationStatus === 'token_capture_failed' || 
+        automationStatus === 'completed'
+      ))
+    );
+    
+    if (shouldRetry) {
+      const reason = isStuck 
+        ? 'Automation stuck - forcing retry' 
+        : (!automationStatus || automationStatus === '')
+          ? 'Automation status empty - incomplete setup'
+          : 'PIT token missing for existing user';
+      console.log(`[GHL CHECK] ${reason} - triggering retry automation...`);
       
       // Trigger retry automation endpoint
       const response = await fetch(`${BACKEND_URL}/api/ghl/retry-automation`, {
@@ -706,11 +736,11 @@ export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<
       
       if (response.ok) {
         console.log('[GHL CHECK] Retry automation triggered successfully');
-        return { hasPitToken: false, triggered: true };
+        return { hasPitToken, triggered: true };
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error('[GHL CHECK] Failed to trigger retry automation:', errorData);
-        return { hasPitToken: false, triggered: false, error: errorData.detail || 'Failed to trigger automation' };
+        return { hasPitToken, triggered: false, error: errorData.detail || 'Failed to trigger automation' };
       }
     }
     
