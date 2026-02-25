@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { sessionManager } from '../lib/session-manager';
 import { profilesApi } from '../lib/supabase-api';
 import { posthogService } from '../lib/posthog-service';
+import { checkAndTriggerGhlOnboarding } from '../lib/api';
 
 // Generate a unique session ID
 const generateSessionId = (): string => {
@@ -148,6 +149,11 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           
           // Start session monitoring
           sessionManager.startSessionMonitoring();
+          
+          // Check GHL pit_token and trigger onboarding if missing
+          checkAndTriggerGhlOnboarding(currentUserId).catch(err => {
+            console.error('[GHL CHECK] Failed to check GHL onboarding:', err);
+          });
         } else {
           setIsAuthenticated(false);
           setUser(null);
@@ -250,6 +256,11 @@ export const UserProvider = ({ children }: UserProviderProps) => {
                 authUser.email,
                 finalProfile?.full_name
               );
+              
+              // Check GHL pit_token and trigger onboarding if missing
+              checkAndTriggerGhlOnboarding(currentUserId).catch(err => {
+                console.error('[GHL CHECK] Failed to check GHL onboarding:', err);
+              });
               
             } catch (error) {
               console.error('Error handling auth state change:', error);

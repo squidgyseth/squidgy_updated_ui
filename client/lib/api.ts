@@ -642,6 +642,90 @@ export const getCurrentUser = async (): Promise<{ user: any; profile: any | null
   return authService.getCurrentUser();
 };
 
+// GHL Onboarding Check - Check if pit_token exists, trigger retry if missing
+// ONLY for existing users - does NOT run for newly registered users
+export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<{ 
+  hasPitToken: boolean; 
+  triggered: boolean;
+  error?: string;
+}> => {
+  try {
+    // Check ghl_subaccounts for pit_token
+    const { data: ghlDataArray, error } = await ghlSubaccountsApi.getByUserId(firmUserId);
+    
+    if (error) {
+      console.error('[GHL CHECK] Error checking GHL subaccounts:', error);
+      return { hasPitToken: false, triggered: false, error: error.message };
+    }
+    
+    // Find the SOL agent record (default agent)
+    const ghlData = Array.isArray(ghlDataArray) 
+      ? ghlDataArray.find(item => item.agent_id === 'SOL') 
+      : null;
+    
+    // If no GHL record exists = NEW USER - skip check entirely
+    // The signup process will handle GHL creation automatically
+    if (!ghlData) {
+      console.log('[GHL CHECK] No GHL subaccount found - new user, skipping check');
+      return { hasPitToken: false, triggered: false };
+    }
+    
+    // Record exists = EXISTING USER - proceed with pit_token check
+    console.log('[GHL CHECK] GHL subaccount exists - checking pit_token for existing user');
+    
+    // Check automation status - don't trigger if already running or pending
+    const automationStatus = ghlData.automation_status;
+    const creationStatus = ghlData.creation_status;
+    
+    if (automationStatus === 'running' || automationStatus === 'pit_running' || 
+        automationStatus === 'not_started' || creationStatus === 'pending' || 
+        creationStatus === 'creating') {
+      console.log(`[GHL CHECK] Automation already in progress (creation: ${creationStatus}, automation: ${automationStatus}) - skipping`);
+      return { hasPitToken: false, triggered: false };
+    }
+    
+    // Check if pit_token exists
+    const hasPitToken = !!(ghlData.pit_token || ghlData.access_token);
+    
+    // ONLY trigger retry if:
+    // 1. No pit_token exists
+    // 2. Location ID exists (subaccount was created)
+    // 3. Automation is not currently running
+    // 4. Status indicates failure or completion without token
+    if (!hasPitToken && ghlData.ghl_location_id && 
+        (automationStatus === 'failed' || automationStatus === 'pit_failed' || 
+         automationStatus === 'token_capture_failed' || automationStatus === 'completed')) {
+      console.log('[GHL CHECK] PIT token missing for existing user - triggering retry automation...');
+      
+      // Trigger retry automation endpoint
+      const response = await fetch(`${BACKEND_URL}/api/ghl/retry-automation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firm_user_id: firmUserId })
+      });
+      
+      if (response.ok) {
+        console.log('[GHL CHECK] Retry automation triggered successfully');
+        return { hasPitToken: false, triggered: true };
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[GHL CHECK] Failed to trigger retry automation:', errorData);
+        return { hasPitToken: false, triggered: false, error: errorData.detail || 'Failed to trigger automation' };
+      }
+    }
+    
+    console.log(`[GHL CHECK] No action needed (hasPitToken: ${hasPitToken}, status: ${automationStatus})`);
+    return { hasPitToken, triggered: false };
+  } catch (error) {
+    console.error('[GHL CHECK] Error:', error);
+    return { 
+      hasPitToken: false, 
+      triggered: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+};
+
 // N8N Webhook API
 interface N8NWebhookRequest {
   user_id: string;
