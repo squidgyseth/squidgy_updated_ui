@@ -700,8 +700,8 @@ export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<
       return { hasPitToken: false, triggered: false };
     }
     
-    // Check if pit_token exists
-    const hasPitToken = !!(ghlData.pit_token || ghlData.access_token);
+    // Check if pit_token exists (only check pit_token, not access_token)
+    const hasPitToken = !!ghlData.pit_token;
     
     // CRITICAL: If automation is stuck, retry regardless of token presence
     // Otherwise, only trigger retry if pit_token is missing OR status is empty/null
