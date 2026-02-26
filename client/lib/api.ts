@@ -663,11 +663,49 @@ export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<
       ? ghlDataArray.find(item => item.agent_id === 'SOL') 
       : null;
     
-    // If no GHL record exists = NEW USER - skip check entirely
-    // The signup process will handle GHL creation automatically
+    // If no GHL record exists = NEW USER - initiate automation immediately
     if (!ghlData) {
-      console.log('[GHL CHECK] No GHL subaccount found - new user, skipping check');
-      return { hasPitToken: false, triggered: false };
+      console.log('[GHL CHECK] No GHL subaccount found - new user, initiating automation...');
+      
+      // Get user profile to get actual email and name
+      try {
+        // Get user profile first to have the correct email
+        const { data: profile } = await profilesApi.getByUserId(firmUserId);
+        
+        if (!profile || !profile.email) {
+          console.error('[GHL CHECK] No user profile found or missing email');
+          return { hasPitToken: false, triggered: false, error: 'User profile not found' };
+        }
+        
+        // Trigger automation for new user using registration endpoint
+        const response = await fetch(`${BACKEND_URL}/api/ghl/create-subaccount-and-user-registration`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            full_name: profile.full_name || 'Solar User',
+            email: profile.email,
+            phone: profile.phone || '+17166044029',
+            address: profile.address || '456 Solar Demo Avenue',
+            city: profile.city || 'Buffalo',
+            state: profile.state || 'NY',
+            country: profile.country || 'US',
+            postal_code: profile.postal_code || '14201',
+            website: profile.website || 'https://example.com'
+          })
+        });
+        
+        if (response.ok) {
+          console.log('[GHL CHECK] New user automation triggered successfully');
+          return { hasPitToken: false, triggered: true };
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('[GHL CHECK] Failed to trigger new user automation:', errorData);
+          return { hasPitToken: false, triggered: false, error: errorData.detail || 'Failed to trigger automation' };
+        }
+      } catch (error) {
+        console.error('[GHL CHECK] Error triggering new user automation:', error);
+        return { hasPitToken: false, triggered: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
     }
     
     // Record exists = EXISTING USER - proceed with pit_token check
