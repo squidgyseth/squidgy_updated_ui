@@ -78,13 +78,23 @@ export default function PersonalisationSettings() {
         const agentsData = await response.json();
         
         if (agentsData && agentsData.agents) {
-          // Get platform-enabled agents from agents table
-          const { data: platformAgents } = await supabase
-            .from('agents')
-            .select('agent_id, is_enabled')
-            .eq('is_enabled', true);
+          // Check if we should show all agents (local development override)
+          const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';
           
-          const platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+          // Get platform-enabled agents from agents table (skip if show_all_agents is true)
+          let platformEnabledIds: Set<string>;
+          
+          if (showAllAgents) {
+            // In local development with show_all_agents, all agents are considered platform-enabled
+            platformEnabledIds = new Set(agentsData.agents.map((a: any) => a.agent.id));
+          } else {
+            const { data: platformAgents } = await supabase
+              .from('agents')
+              .select('agent_id, is_enabled')
+              .eq('is_enabled', true);
+            
+            platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+          }
 
           // Get user-enabled agents from assistant_personalizations
           const onboardingService = OnboardingService.getInstance();

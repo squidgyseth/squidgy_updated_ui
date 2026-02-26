@@ -134,13 +134,23 @@ export default function CategorizedAgentSidebar() {
       const onboardingService = OnboardingService.getInstance();
       const allAgentConfigs = agentService.getAllAgents();
       
-      // Get platform-enabled agents from agents table
-      const { data: platformAgents } = await supabase
-        .from('agents')
-        .select('agent_id, is_enabled')
-        .eq('is_enabled', true);
+      // Check if we should show all agents (local development override)
+      const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';
       
-      const platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+      // Get platform-enabled agents from agents table (skip if show_all_agents is true)
+      let platformEnabledIds: Set<string>;
+      
+      if (showAllAgents) {
+        // In local development with show_all_agents, all agents are considered platform-enabled
+        platformEnabledIds = new Set(allAgentConfigs.map(c => c.agent.id));
+      } else {
+        const { data: platformAgents } = await supabase
+          .from('agents')
+          .select('agent_id, is_enabled')
+          .eq('is_enabled', true);
+        
+        platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+      }
       
       // Get enabled agents for this user
       const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
