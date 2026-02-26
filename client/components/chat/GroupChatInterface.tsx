@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader, Users, Bot } from 'lucide-react';
 import GroupChatService, { type GroupChat, type GroupChatMessage } from '../../services/groupChatService';
 import OptimizedAgentService from '../../services/optimizedAgentService';
+import OnboardingService from '../../services/onboardingService';
 import { supabase } from '../../lib/supabase';
 import { sendToN8nWorkflow, generateRequestId } from '../../lib/n8nService';
 import StreamingChatMessage from './StreamingChatMessage';
@@ -91,22 +92,72 @@ export default function GroupChatInterface({
     }
   };
 
-  const loadAgents = () => {
-    const agentConfigs = agentService.getAllAgents();
-    const agentMap = new Map<string, AgentConfig>();
+  const loadAgents = async () => {
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setAgents(new Map());
+        return;
+      }
 
-    agentConfigs.forEach(config => {
-      // Cast to any to access potentially missing properties in the type definition but present at runtime
-      const agentData = config.agent as any;
-      agentMap.set(agentData.id, {
-        id: agentData.id,
-        name: agentData.name,
-        avatar: agentData.avatar,
-        webhookUrl: agentData.webhookUrl
+      // Get the correct user_id from profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('Error fetching profile:', profileError);
+        setAgents(new Map());
+        return;
+      }
+
+      const actualUserId = profile.user_id;
+      const agentService = OptimizedAgentService.getInstance();
+      const onboardingService = OnboardingService.getInstance();
+      const allAgentConfigs = agentService.getAllAgents();
+
+      // Get platform-enabled agents from agents table
+      const { data: platformAgents } = await supabase
+        .from('agents')
+        .select('agent_id, is_enabled')
+        .eq('is_enabled', true);
+      
+      const platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+
+      // Get user-enabled agents from assistant_personalizations
+      const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
+      const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
+
+      // Always include Personal Assistant
+      enabledAgentIds.add('personal_assistant');
+      platformEnabledIds.add('personal_assistant');
+
+      // Filter configs to only show agents that are BOTH platform-enabled AND user-enabled
+      const enabledConfigs = allAgentConfigs.filter(config =>
+        enabledAgentIds.has(config.agent.id) && platformEnabledIds.has(config.agent.id)
+      );
+
+      const agentMap = new Map<string, AgentConfig>();
+
+      enabledConfigs.forEach(config => {
+        // Cast to any to access potentially missing properties in the type definition but present at runtime
+        const agentData = config.agent as any;
+        agentMap.set(agentData.id, {
+          id: agentData.id,
+          name: agentData.name,
+          avatar: agentData.avatar,
+          webhookUrl: agentData.webhookUrl
+        });
       });
-    });
 
-    setAgents(agentMap);
+      setAgents(agentMap);
+    } catch (error) {
+      console.error('Failed to load enabled agents:', error);
+      setAgents(new Map());
+    }
   };
 
   const loadMessages = async () => {

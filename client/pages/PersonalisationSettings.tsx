@@ -11,6 +11,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
+import { supabase } from '../lib/supabase';
+import OnboardingService from '../services/onboardingService';
 
 interface Agent {
   id: string;
@@ -44,17 +46,62 @@ export default function PersonalisationSettings() {
     }
   }, [location.state]);
 
-  // Load agents from compiled data
+  // Load agents from compiled data with proper filtering
   useEffect(() => {
     const loadAgents = async () => {
       setLoading(true);
       try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setAgents([]);
+          return;
+        }
+
+        // Get the correct user_id from profiles table
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error('Error fetching profile:', profileError);
+          setAgents([]);
+          return;
+        }
+
+        const actualUserId = profile.user_id;
+
         // Load agents from public compiled file
         const response = await fetch('/agents-compiled.json');
         const agentsData = await response.json();
         
         if (agentsData && agentsData.agents) {
-          const formattedAgents: Agent[] = agentsData.agents.map((agentData: any) => ({
+          // Get platform-enabled agents from agents table
+          const { data: platformAgents } = await supabase
+            .from('agents')
+            .select('agent_id, is_enabled')
+            .eq('is_enabled', true);
+          
+          const platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+
+          // Get user-enabled agents from assistant_personalizations
+          const onboardingService = OnboardingService.getInstance();
+          const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
+          const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
+
+          // Always include Personal Assistant
+          enabledAgentIds.add('personal_assistant');
+          platformEnabledIds.add('personal_assistant');
+
+          // Filter agents to only show those that are BOTH platform-enabled AND user-enabled
+          const filteredAgents = agentsData.agents.filter((agentData: any) => {
+            const agentId = agentData.agent.id;
+            return enabledAgentIds.has(agentId) && platformEnabledIds.has(agentId);
+          });
+
+          const formattedAgents: Agent[] = filteredAgents.map((agentData: any) => ({
             id: agentData.agent.id,
             name: agentData.agent.name,
             avatar: agentData.agent.avatar,

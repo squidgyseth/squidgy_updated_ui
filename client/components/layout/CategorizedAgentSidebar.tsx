@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useUser } from '../../hooks/useUser';
 import CreateGroupChatModal from '../modals/CreateGroupChatModal';
 import OptimizedAgentService from '../../services/optimizedAgentService';
 import OnboardingService from '../../services/onboardingService';
@@ -25,13 +26,14 @@ interface AssistantCategory {
 export default function CategorizedAgentSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { userId, profile, isImpersonating } = useUser();
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [categories, setCategories] = useState<AssistantCategory[]>([]);
   const [selectedAssistant, setSelectedAssistant] = useState<string | null>(null);
 
   useEffect(() => {
     loadAgentsFromYAML();
-  }, []);
+  }, [userId, profile, isImpersonating]); // Refresh when user data changes (including impersonation)
 
   // Refresh agents when needed (can be called from outside)
   const refreshAgents = () => {
@@ -120,22 +122,8 @@ export default function CategorizedAgentSidebar() {
 
   const loadAgentsFromYAML = async () => {
     try {
-      // Get current user from auth
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setCategories([]);
-        return;
-      }
-
-      // Get the correct user_id from profiles table
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError || !profile) {
-        console.error('Error fetching profile:', profileError);
+      // Use the useUser hook which properly handles impersonation
+      if (!userId || !profile) {
         setCategories([]);
         return;
       }
@@ -146,26 +134,13 @@ export default function CategorizedAgentSidebar() {
       const onboardingService = OnboardingService.getInstance();
       const allAgentConfigs = agentService.getAllAgents();
       
-      // Check if we're in development/local environment
-      const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                           import.meta.env.DEV === true ||
-                           window.location.hostname === 'localhost' ||
-                           window.location.hostname === '127.0.0.1';
+      // Get platform-enabled agents from agents table
+      const { data: platformAgents } = await supabase
+        .from('agents')
+        .select('agent_id, is_enabled')
+        .eq('is_enabled', true);
       
-      // Get platform-enabled agents from agents table (skip in dev mode)
-      let platformEnabledIds: Set<string>;
-      
-      if (isDevelopment) {
-        // In dev/local, all agents are considered platform-enabled
-        platformEnabledIds = new Set(allAgentConfigs.map(c => c.agent.id));
-      } else {
-        const { data: platformAgents } = await supabase
-          .from('agents')
-          .select('agent_id, is_enabled')
-          .eq('is_enabled', true);
-        
-        platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
-      }
+      const platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
       
       // Get enabled agents for this user
       const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
@@ -176,7 +151,6 @@ export default function CategorizedAgentSidebar() {
       platformEnabledIds.add('personal_assistant');
       
       // Filter configs to only show agents that are BOTH platform-enabled AND user-enabled
-      // In dev mode, platform-enabled check is bypassed (all agents are platform-enabled)
       const enabledConfigs = allAgentConfigs.filter(config => 
         enabledAgentIds.has(config.agent.id) && platformEnabledIds.has(config.agent.id)
       );

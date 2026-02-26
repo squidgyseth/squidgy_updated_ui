@@ -69,26 +69,13 @@ export function MobileChatList({
       const onboardingService = OnboardingService.getInstance();
       const allAgentConfigs = agentService.getAllAgents();
 
-      // Check if in development mode
-      const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                           import.meta.env.DEV === true ||
-                           window.location.hostname === 'localhost' ||
-                           window.location.hostname === '127.0.0.1';
+      // Get platform-enabled agents from agents table
+      const { data: platformAgents } = await supabase
+        .from('agents')
+        .select('agent_id, is_enabled')
+        .eq('is_enabled', true);
       
-      // Get platform-enabled agents from agents table (skip in dev mode)
-      let platformEnabledIds: Set<string>;
-      
-      if (isDevelopment) {
-        // In dev/local, all agents are considered platform-enabled
-        platformEnabledIds = new Set(allAgentConfigs.map(c => c.agent.id));
-      } else {
-        const { data: platformAgents } = await supabase
-          .from('agents')
-          .select('agent_id, is_enabled')
-          .eq('is_enabled', true);
-        
-        platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
-      }
+      const platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
 
       // Get user-enabled agents from assistant_personalizations
       const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);

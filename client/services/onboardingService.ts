@@ -143,7 +143,6 @@ class OnboardingService {
    */
   async getEnabledAgents(userId: string): Promise<OnboardingAgentData[]> {
     try {
-
       const { data, error } = await supabase
         .from('assistant_personalizations')
         .select('*')
