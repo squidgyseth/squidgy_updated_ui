@@ -41,7 +41,7 @@ interface Template {
 }
 
 export default function IntegrationsSettings() {
-  const { user } = useUser();
+  const { user, userId, isImpersonating } = useUser();
   const [ghlIntegrations, setGhlIntegrations] = useState<GHLIntegration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -560,6 +560,21 @@ export default function IntegrationsSettings() {
   };
 
   const getUserFirmId = async () => {
+    // When in impersonation mode, fetch the impersonated user's profile directly
+    if (isImpersonating && userId) {
+      try {
+        const { data: profile } = await profilesApi.getById(userId);
+        if (profile?.user_id) {
+          setFirmUserId(profile.user_id);
+        }
+      } catch (error) {
+        console.error('Error getting impersonated user profile:', error);
+        // Fallback to using userId directly
+        setFirmUserId(userId);
+      }
+      return;
+    }
+    
     if (!user?.email) return;
     try {
       const { data: profile } = await profilesApi.getByEmail(user.email);

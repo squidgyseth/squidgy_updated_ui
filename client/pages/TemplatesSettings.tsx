@@ -9,7 +9,7 @@ import { templatesService, type Template } from '../lib/templates-api';
 import { toast } from 'sonner';
 
 export default function TemplatesSettings() {
-  const { user } = useUser();
+  const { user, userId, isImpersonating, profile } = useUser();
   const [firmUserId, setFirmUserId] = useState<string | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -19,14 +19,16 @@ export default function TemplatesSettings() {
 
   // Get business ID from business_settings table (consistent across the app)
   const getUserFirmId = async () => {
-    if (!user?.email) {
+    // When in impersonation mode, use the impersonated user's email from profile
+    const emailToUse = isImpersonating && profile?.email ? profile.email : user?.email;
+    
+    if (!emailToUse) {
       console.warn('⚠️ No user email available');
       return;
     }
 
     try {
-      console.log('🔍 Fetching business ID for email:', user.email);
-      const { businessId, error } = await templatesService.getBusinessId(user.email);
+      const { businessId, error } = await templatesService.getBusinessId(emailToUse);
 
       if (error || !businessId) {
         console.error('❌ Failed to get business ID:', error);
@@ -41,7 +43,6 @@ export default function TemplatesSettings() {
       }
 
       setFirmUserId(businessId);
-      console.log('✅ Business ID:', businessId);
     } catch (error: any) {
       console.error('❌ Error getting business ID:', error);
       setTemplatesError('Failed to load business information. Please try again.');
@@ -70,10 +71,6 @@ export default function TemplatesSettings() {
       }
 
       setTemplates(data.templates || []);
-
-      if (data.debug) {
-        console.log('🔍 Debug info:', data.debug);
-      }
 
       if (data.templates.length === 0) {
         setTemplatesError('No templates found. Please contact support to get templates tagged with "showeveryone".');
