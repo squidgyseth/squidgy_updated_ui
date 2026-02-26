@@ -694,7 +694,7 @@ export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<
     
     // Skip if automation is actively running (not stuck) or pending creation
     if (!isStuck && (automationStatus === 'running' || automationStatus === 'pit_running' || 
-        automationStatus === 'token_refresh_running' || automationStatus === 'not_started' || 
+        automationStatus === 'token_refresh_running' || 
         creationStatus === 'pending' || creationStatus === 'creating')) {
       console.log(`[GHL CHECK] Automation already in progress (creation: ${creationStatus}, automation: ${automationStatus}) - skipping`);
       return { hasPitToken: false, triggered: false };
@@ -710,7 +710,9 @@ export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<
       isStuck ||
       // Case 2: Status is empty/null/undefined (incomplete setup)
       (!automationStatus || automationStatus === '') ||
-      // Case 3: No token AND (failed status OR completed without proper token)
+      // Case 3: Creation failed and automation not started (needs retry)
+      (creationStatus === 'failed' && automationStatus === 'not_started') ||
+      // Case 4: No token AND (failed status OR completed without proper token)
       (!hasPitToken && (
         automationStatus === 'failed' || 
         automationStatus === 'pit_failed' || 
@@ -724,7 +726,9 @@ export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<
         ? 'Automation stuck - forcing retry' 
         : (!automationStatus || automationStatus === '')
           ? 'Automation status empty - incomplete setup'
-          : 'PIT token missing for existing user';
+          : (creationStatus === 'failed' && automationStatus === 'not_started')
+            ? 'Creation failed and automation not started - retrying'
+            : 'PIT token missing for existing user';
       console.log(`[GHL CHECK] ${reason} - triggering retry automation...`);
       
       // Trigger retry automation endpoint
