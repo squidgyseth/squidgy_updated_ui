@@ -8,7 +8,7 @@ import { navigationService } from '../services/navigationService';
 import { useNavigationService } from '../hooks/useNavigationService';
 import { chatSessionService } from '../services/chatSessionService';
 import { queryByUserId } from '../services/supabaseQueryService';
-import { checkAndTriggerGhlOnboarding } from '../lib/api';
+import { checkPitTokenStatus } from '../lib/api';
 import { AlertTriangle, Clock, MessageCircle, RefreshCw } from 'lucide-react';
 
 /**
@@ -41,7 +41,7 @@ export default function DynamicAgentDashboard() {
         setPitTokenStatus(prev => ({ ...prev, loading: true }));
         
         try {
-          const result = await checkAndTriggerGhlOnboarding(userId);
+          const result = await checkPitTokenStatus(userId);
           setPitTokenStatus({
             hasPitToken: result.hasPitToken,
             checked: true,

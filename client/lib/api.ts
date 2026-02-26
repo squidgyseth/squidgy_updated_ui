@@ -642,6 +642,46 @@ export const getCurrentUser = async (): Promise<{ user: any; profile: any | null
   return authService.getCurrentUser();
 };
 
+// Check PIT token status WITHOUT triggering any automation
+// Used for social media agent to verify setup status only
+export const checkPitTokenStatus = async (firmUserId: string): Promise<{ 
+  hasPitToken: boolean; 
+  error?: string;
+}> => {
+  try {
+    // Check ghl_subaccounts for pit_token
+    const { data: ghlDataArray, error } = await ghlSubaccountsApi.getByUserId(firmUserId);
+    
+    if (error) {
+      console.error('[PIT CHECK] Error checking GHL subaccounts:', error);
+      return { hasPitToken: false, error: error.message };
+    }
+    
+    // Find the SOL agent record (default agent)
+    const ghlData = Array.isArray(ghlDataArray) 
+      ? ghlDataArray.find(item => item.agent_id === 'SOL') 
+      : null;
+    
+    // If no GHL record exists, PIT token doesn't exist
+    if (!ghlData) {
+      console.log('[PIT CHECK] No GHL subaccount found - no PIT token');
+      return { hasPitToken: false };
+    }
+    
+    // Check if pit_token exists
+    const hasPitToken = !!ghlData.pit_token;
+    console.log(`[PIT CHECK] PIT token status: ${hasPitToken ? 'exists' : 'missing'}`);
+    
+    return { hasPitToken };
+  } catch (error) {
+    console.error('[PIT CHECK] Error:', error);
+    return { 
+      hasPitToken: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+};
+
 // GHL Onboarding Check - Check if pit_token exists, trigger retry if missing
 // ONLY for existing users - does NOT run for newly registered users
 export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<{ 

@@ -100,7 +100,7 @@ export default function Index() {
     setIsLoadingUserName(false);
   }, [profile]);
 
-  // Fetch enabled agents from assistant_personalizations
+  // Fetch enabled agents from BOTH agents table AND assistant_personalizations
   useEffect(() => {
     const fetchEnabledAgents = async () => {
       // Wait for auth to be ready and profile to be loaded
@@ -112,6 +112,28 @@ export default function Index() {
       const profileUserId = profile.user_id;
 
       try {
+        // Check if in development mode
+        const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
+                             import.meta.env.DEV === true ||
+                             window.location.hostname === 'localhost' ||
+                             window.location.hostname === '127.0.0.1';
+        
+        // Get platform-enabled agents from agents table (skip in dev mode)
+        let platformEnabledIds: Set<string>;
+        
+        if (isDevelopment) {
+          // In dev/local, all agents are considered platform-enabled
+          platformEnabledIds = new Set(['personal_assistant', 'social_media', 'content_repurposer', 'newsletter_multi']);
+        } else {
+          const { data: platformAgents } = await supabase
+            .from('agents')
+            .select('agent_id, is_enabled')
+            .eq('is_enabled', true);
+          
+          platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+        }
+        
+        // Get user-enabled agents from assistant_personalizations
         const { data, error } = await supabase
           .from('assistant_personalizations')
           .select('assistant_id')
@@ -123,7 +145,15 @@ export default function Index() {
           return;
         }
 
-        const agentIds = data?.map((row: { assistant_id: string }) => row.assistant_id) || [];
+        const userEnabledIds = new Set(data?.map((row: { assistant_id: string }) => row.assistant_id) || []);
+        
+        // Always include Personal Assistant
+        platformEnabledIds.add('personal_assistant');
+        userEnabledIds.add('personal_assistant');
+        
+        // Filter to only show agents that are BOTH platform-enabled AND user-enabled
+        const agentIds = Array.from(userEnabledIds).filter(id => platformEnabledIds.has(id));
+        
         setEnabledAgentIds(agentIds);
       } catch (error) {
         console.error('Dashboard: Error in fetchEnabledAgents:', error);
