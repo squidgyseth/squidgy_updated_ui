@@ -1183,6 +1183,26 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
             </div>
           ) : activeTab === 'profile' ? (
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-gray-900">Profile Information</h3>
+                {(user.user_id || user.id) && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">User ID: {user.user_id || user.id}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(user.user_id || user.id || '');
+                        toast.success('User ID copied');
+                      }}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      title="Copy User ID"
+                    >
+                      <Copy className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Regular Editable Fields (non-boolean) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {profileFields
