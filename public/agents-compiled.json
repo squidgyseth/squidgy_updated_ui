@@ -4,7 +4,7 @@
       "agent": {
         "id": "personal_assistant",
         "emoji": "🤖",
-        "name": "Pia | Personal Assistant",
+        "name": "Peter | Personal Assistant",
         "category": "GENERAL",
         "description": "Help manage your day-to-day tasks and keep you organised.",
         "specialization": "Personal Assistant",
@@ -622,7 +622,7 @@
       "agent": {
         "id": "personal_assistant",
         "emoji": "🤖",
-        "name": "Pia | Personal Assistant",
+        "name": "Peter | Personal Assistant",
         "category": "GENERAL",
         "description": "Help manage your day-to-day tasks and keep you organised.",
         "specialization": "Personal Assistant",
@@ -985,7 +985,7 @@
         "agent": {
           "id": "personal_assistant",
           "emoji": "🤖",
-          "name": "Pia | Personal Assistant",
+          "name": "Peter | Personal Assistant",
           "category": "GENERAL",
           "description": "Help manage your day-to-day tasks and keep you organised.",
           "specialization": "Personal Assistant",
@@ -1477,6 +1477,6 @@
   },
   "meta": {
     "total": 6,
-    "buildTime": "2026-02-26T16:37:21.854Z"
+    "buildTime": "2026-02-27T11:11:39.164Z"
   }
 }

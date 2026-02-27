@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-02-26T16:37:21.852Z
+// Generated on: 2026-02-27T11:11:39.163Z
 
 export interface AgentConfig {
   agent: {
@@ -49,7 +49,7 @@ export const ALL_AGENTS: AgentConfig[] = [
     "agent": {
       "id": "personal_assistant",
       "emoji": "🤖",
-      "name": "Pia | Personal Assistant",
+      "name": "Peter | Personal Assistant",
       "category": "GENERAL",
       "description": "Help manage your day-to-day tasks and keep you organised.",
       "specialization": "Personal Assistant",
@@ -669,7 +669,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     "agent": {
       "id": "personal_assistant",
       "emoji": "🤖",
-      "name": "Pia | Personal Assistant",
+      "name": "Peter | Personal Assistant",
       "category": "GENERAL",
       "description": "Help manage your day-to-day tasks and keep you organised.",
       "specialization": "Personal Assistant",
@@ -1034,7 +1034,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       "agent": {
         "id": "personal_assistant",
         "emoji": "🤖",
-        "name": "Pia | Personal Assistant",
+        "name": "Peter | Personal Assistant",
         "category": "GENERAL",
         "description": "Help manage your day-to-day tasks and keep you organised.",
         "specialization": "Personal Assistant",
