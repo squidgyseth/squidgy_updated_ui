@@ -422,7 +422,7 @@ export default function N8nChatInterface({
     }
   };
 
-  const handleSendMessage = async (message: string, fileUrl?: string, fileName?: string) => {
+  const handleSendMessage = async (message: string, fileUrl?: string, fileName?: string, agentMessage?: string) => {
     if (!message.trim() || isLoading) return;
 
     // For content_repurposer agent (and content_repurposer_multi), enforce newsletter selection
@@ -431,8 +431,9 @@ export default function N8nChatInterface({
       return;
     }
 
-    // If there's a file URL, include it in the message content
-    const messageContent = fileUrl ? `${message}\n\nFile: ${fileName}\nURL: ${fileUrl}` : message;
+    // If agentMessage is provided, use it for the agent; otherwise use the user message
+    // For file uploads: user sees simple message + file frame, agent gets detailed KB instruction
+    const messageContent = agentMessage || message;
 
     const messageId = generateRequestId();
     const userMessage: ChatMessage = {
@@ -947,6 +948,43 @@ export default function N8nChatInterface({
     }
   };
 
+  // Check for duplicate files in firm_users_knowledge_base
+  const checkForDuplicateFile = async (fileName: string): Promise<{ isDuplicate: boolean; existingFile?: { file_id: string; file_url: string } }> => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/files/user/${userId}?agent_id=${agent.id}`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        const files = result.data || [];
+        const existingFile = files.find((f: { file_name: string; file_id: string; file_url: string }) => 
+          f.file_name.toLowerCase() === fileName.toLowerCase()
+        );
+        
+        if (existingFile) {
+          return { isDuplicate: true, existingFile };
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for duplicate file:', error);
+    }
+    return { isDuplicate: false };
+  };
+
+  // Delete existing file before replacing
+  const deleteExistingFile = async (fileId: string): Promise<boolean> => {
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/knowledge-base/file/${fileId}`, {
+        method: 'DELETE'
+      });
+      return response.ok || response.status === 404;
+    } catch (error) {
+      console.error('Error deleting existing file:', error);
+      return false;
+    }
+  };
+
   const handleAttachmentClick = () => {
     // Create file input element
     const fileInput = document.createElement('input');
@@ -975,6 +1013,22 @@ export default function N8nChatInterface({
       }
       
       try {
+        // Check for duplicate file
+        const { isDuplicate, existingFile } = await checkForDuplicateFile(file.name);
+        
+        if (isDuplicate && existingFile) {
+          const confirmReplace = window.confirm(
+            `A file named "${file.name}" already exists.\n\nDo you want to replace it? The old version will be deleted.`
+          );
+          
+          if (!confirmReplace) {
+            return; // User cancelled
+          }
+          
+          // Delete the existing file first
+          await deleteExistingFile(existingFile.file_id);
+        }
+        
         await uploadFileToSupabase(file);
       } catch (error) {
         console.error('File upload error:', error);
@@ -1053,6 +1107,7 @@ export default function N8nChatInterface({
       formData.append('file_url', fileUrl);
       formData.append('agent_id', agent.id);
       formData.append('agent_name', agent.name);
+      formData.append('source', 'chat');
       
       
       // Use the backend URL from environment variables, default to localhost for development
@@ -1078,8 +1133,13 @@ export default function N8nChatInterface({
       monitorFileStatus(fileId, fileName);
     }
     
-      // Automatically send a message with the file URL
-      await handleSendMessage(`I've uploaded a file: ${fileName}`, fileUrl, fileName);
+    // Show the uploaded file in chat with preview capability (as before)
+    // User sees: simple message + file upload frame
+    // Agent receives: detailed KB instruction (without URL)
+    const userVisibleMessage = `I've uploaded a file: ${fileName}`;
+    const agentInstruction = `I've uploaded a file: ${fileName}. Please read and analyze this document from my knowledge base. You can ask me questions about it or provide insights based on its content.`;
+    
+    await handleSendMessage(userVisibleMessage, fileUrl, fileName, agentInstruction);
     } catch (error) {
       console.error('Error in callBackendProcessing:', error);
       throw error; // Re-throw to be caught by the outer try-catch
@@ -1089,10 +1149,17 @@ export default function N8nChatInterface({
   const monitorFileStatus = async (fileId: string, fileName: string) => {
     let attempts = 0;
     const maxAttempts = 30; // Monitor for 5 minutes (30 attempts * 10 seconds)
+    let timeoutId: NodeJS.Timeout | null = null;
     
     const checkStatus = async () => {
       try {
         const file = await fileUploadService.getFileStatus(fileId);
+        
+        // If file not found, stop monitoring
+        if (!file) {
+          console.log(`File ${fileId} not found, stopping monitoring`);
+          return;
+        }
         
         if (file) {
           // Update the file message status
@@ -1112,28 +1179,23 @@ export default function N8nChatInterface({
           }));
           
           if (file.processing_status === 'completed') {
-            // Show completion message
-            const completionMessage: ChatMessage = {
-              id: generateRequestId(),
-              content: `🎉 File "${fileName}" has been processed successfully! Click to preview the extracted text.`,
-              sender: 'agent',
-              timestamp: new Date()
-            };
+            // Stop polling - file is completed
+            if (timeoutId) clearTimeout(timeoutId);
             
-            setMessages(prev => [...prev, completionMessage]);
-            await saveMessageToHistory(completionMessage.content, 'Agent', completionMessage.timestamp);
+            // Show success toast
+            toast.success(`File "${fileName}" processed successfully!`, {
+              description: 'Added to your knowledge base.',
+              duration: 3000,
+            });
             return;
           } else if (file.processing_status === 'failed') {
-            // Show error message
-            const errorMessage: ChatMessage = {
-              id: generateRequestId(),
-              content: `❌ File "${fileName}" processing failed: ${file.error_message || 'Unknown error'}`,
-              sender: 'agent',
-              timestamp: new Date()
-            };
-            
-            setMessages(prev => [...prev, errorMessage]);
-            await saveMessageToHistory(errorMessage.content, 'Agent', errorMessage.timestamp);
+            // Show error toast notification
+            toast.error(`File "${fileName}" processing failed`, {
+              description: file.error_message || 'Unknown error occurred',
+              duration: 7000,
+            });
+            // Stop polling - file failed
+            if (timeoutId) clearTimeout(timeoutId);
             return;
           }
         }
@@ -1141,21 +1203,30 @@ export default function N8nChatInterface({
         // Continue monitoring if still processing
         attempts++;
         if (attempts < maxAttempts) {
-          setTimeout(checkStatus, 10000); // Check every 10 seconds
+          timeoutId = setTimeout(checkStatus, 10000); // Check every 10 seconds
         } else {
           // Timeout - stop monitoring
+          console.log(`File ${fileId} monitoring timed out after ${maxAttempts} attempts`);
         }
       } catch (error) {
         console.error('Error checking file status:', error);
         attempts++;
         if (attempts < maxAttempts) {
-          setTimeout(checkStatus, 10000);
+          timeoutId = setTimeout(checkStatus, 10000);
         }
       }
     };
     
     // Start monitoring after 5 seconds
-    setTimeout(checkStatus, 5000);
+    timeoutId = setTimeout(checkStatus, 5000);
+    
+    // Return cleanup function
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        console.log(`Stopped monitoring file ${fileId}`);
+      }
+    };
   };
 
   const handleMicrophoneClick = () => {
