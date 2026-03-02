@@ -6,7 +6,7 @@ import { Mic, Upload, Send, File, X, ArrowLeft, Trash2, FileText, Loader2, Check
 import { supabase } from '../lib/supabase';
 
 interface PreviousFile {
-  file_id: string;
+  id: string;
   file_name: string;
   file_url: string;
   created_at: string;
@@ -231,6 +231,7 @@ export default function AgentSettings() {
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
     
     // Check for duplicates against previously uploaded files
     const duplicates: File[] = [];
@@ -261,7 +262,7 @@ export default function AgentSettings() {
             pf => pf.file_name.toLowerCase() === file.name.toLowerCase()
           );
           if (existingFile) {
-            await handleDeletePreviousFile(existingFile.file_id, existingFile.file_url);
+            await handleDeletePreviousFile(existingFile.id, existingFile.file_url);
           }
         });
         setUploadedFiles(prev => [...prev, ...newFiles, ...duplicates]);
@@ -271,6 +272,11 @@ export default function AgentSettings() {
       }
     } else {
       setUploadedFiles(prev => [...prev, ...files]);
+    }
+    
+    // Reset file input so the same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -358,11 +364,11 @@ export default function AgentSettings() {
       }
 
       // Update local state - remove from list regardless
-      setPreviousFiles(prev => prev.filter(file => file.file_id !== fileId));
+      setPreviousFiles(prev => prev.filter(file => file.id !== fileId));
     } catch (error) {
       console.error('Error deleting file:', error);
       // Still remove from local state and refresh list
-      setPreviousFiles(prev => prev.filter(file => file.file_id !== fileId));
+      setPreviousFiles(prev => prev.filter(file => file.id !== fileId));
       fetchPreviousFiles(false);
     } finally {
       setDeletingFileId(null);
@@ -417,7 +423,7 @@ export default function AgentSettings() {
 
             if (response.ok) {
               const result = await response.json();
-              setCustomInstructionsFileId(result.file_id);
+              setCustomInstructionsFileId(result.id || result.file_id);
               successCount++;
             } else {
               console.error('Failed to create custom instructions');
@@ -464,17 +470,18 @@ export default function AgentSettings() {
             if (response.ok) {
               const result = await response.json();
               
-              // Update state with file ID
+              // Update state with file ID (backend returns 'id' now)
+              const fileId = result.id || result.file_id;
               setFileProcessingStates(prev => {
                 const newStates = [...prev];
                 if (newStates[i]) {
-                  newStates[i] = { ...newStates[i], fileId: result.file_id, status: 'extracting', message: 'Processing started...', progress: 10 };
+                  newStates[i] = { ...newStates[i], fileId: fileId, status: 'extracting', message: 'Processing started...', progress: 10 };
                 }
                 return newStates;
               });
               
               // Subscribe to SSE for real-time status updates
-              subscribeToFileStatus(result.file_id, i);
+              subscribeToFileStatus(fileId, i);
               return true;
             } else {
               const errorText = await response.text();
@@ -744,11 +751,27 @@ export default function AgentSettings() {
               <div className="text-center">
                 {fileProcessingStates.length > 0 && fileProcessingStates.every(s => ['completed', 'failed'].includes(s.status)) ? (
                   <button
-                    onClick={() => setFileProcessingStates([])}
+                    onClick={() => {
+                      setFileProcessingStates([]);
+                      // Reset file input so new files can be selected
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                      }
+                      // Refresh the previous files list
+                      fetchPreviousFiles(false);
+                    }}
                     className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
                   >
                     <CheckCircle size={20} />
                     Continue
+                  </button>
+                ) : fileProcessingStates.length > 0 && fileProcessingStates.some(s => !['completed', 'failed'].includes(s.status)) ? (
+                  <button
+                    disabled={true}
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Processing...
                   </button>
                 ) : (
                   <button
@@ -833,7 +856,7 @@ export default function AgentSettings() {
                     activeFileTab === 'images' ? (
                       /* Image Grid View */
                       <div
-                        key={file.file_id}
+                        key={file.id}
                         className="relative group rounded-lg overflow-hidden border border-gray-200 hover:border-amber-300 transition-colors"
                       >
                         <img
@@ -852,12 +875,12 @@ export default function AgentSettings() {
                             <ExternalLink size={16} />
                           </a>
                           <button
-                            onClick={() => handleDeletePreviousFile(file.file_id, file.file_url)}
-                            disabled={deletingFileId === file.file_id}
+                            onClick={() => handleDeletePreviousFile(file.id, file.file_url)}
+                            disabled={deletingFileId === file.id}
                             className="p-2 bg-white rounded-full text-red-500 hover:bg-red-50 disabled:opacity-50"
                             title="Delete"
                           >
-                            {deletingFileId === file.file_id ? (
+                            {deletingFileId === file.id ? (
                               <Loader2 className="animate-spin" size={16} />
                             ) : (
                               <Trash2 size={16} />
@@ -871,7 +894,7 @@ export default function AgentSettings() {
                     ) : (
                       /* Document List View */
                       <div
-                        key={file.file_id}
+                        key={file.id}
                         className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors"
                       >
                         <div className="flex items-center gap-3">
@@ -917,12 +940,12 @@ export default function AgentSettings() {
                           </a>
                           {/* Delete button */}
                           <button
-                            onClick={() => handleDeletePreviousFile(file.file_id, file.file_url)}
-                            disabled={deletingFileId === file.file_id}
+                            onClick={() => handleDeletePreviousFile(file.id, file.file_url)}
+                            disabled={deletingFileId === file.id}
                             className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                             title="Delete file"
                           >
-                            {deletingFileId === file.file_id ? (
+                            {deletingFileId === file.id ? (
                               <Loader2 className="animate-spin" size={18} />
                             ) : (
                               <Trash2 size={18} />
