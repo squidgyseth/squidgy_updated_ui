@@ -71,7 +71,7 @@ export function SettingsLayout({ children, title }: SettingsLayoutProps) {
                     {isLoading ? 'Loading...' : `${companyName} Team`}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {user?.email || 'admin@example.com'}
+                    {profile?.email || user?.email || 'admin@example.com'}
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full flex items-center justify-center overflow-hidden">
@@ -93,7 +93,7 @@ export function SettingsLayout({ children, title }: SettingsLayoutProps) {
                     className="text-white text-sm font-bold" 
                     style={{ display: profile?.profile_avatar_url ? 'none' : 'flex' }}
                   >
-                    {profile?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                    {profile?.full_name?.charAt(0)?.toUpperCase() || profile?.email?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
                   </span>
                 </div>
               </div>

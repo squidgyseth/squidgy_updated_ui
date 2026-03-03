@@ -51,7 +51,7 @@ export default function Index() {
   const { companyName, isLoading } = useCompanyBranding();
   const { user, userId, profile, isReady } = useUser();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
-
+  
   // Check if we should show onboarding modal - SIMPLE LOGIC
   // Admin users should never see onboarding modal
   useEffect(() => {
@@ -209,7 +209,7 @@ export default function Index() {
                     {isLoading ? 'Loading...' : (companyName && companyName.trim() !== '' ? `${companyName} Team` : 'Team')}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {user?.email || 'admin@example.com'}
+                    {profile?.email || user?.email || 'admin@example.com'}
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full flex items-center justify-center overflow-hidden">

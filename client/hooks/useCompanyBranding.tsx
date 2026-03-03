@@ -45,11 +45,6 @@ export function useCompanyBranding(): CompanyBranding {
         const websiteAnalysis = websiteResult.data && websiteResult.data.length > 0 ? websiteResult.data[0] : null;
         const businessDetails = businessResult.data && businessResult.data.length > 0 ? businessResult.data[0] : null;
 
-        console.log(' Company Branding Debug:', {
-          websiteAnalysis,
-          businessDetails
-        });
-
         // Clean up favicon URL by removing any trailing "?)"
         let cleanFaviconUrl = '';
         if (websiteAnalysis?.favicon_url) {
@@ -82,8 +77,15 @@ export function useCompanyBranding(): CompanyBranding {
                    !isErrorText(websiteAnalysis.business_domain) &&
                    !websiteAnalysis.business_domain.includes('supabase.co') &&
                    !websiteAnalysis.business_domain.includes('localhost') &&
-                   !websiteAnalysis.business_domain.includes('127.0.0.1')) {
-          // Second priority: business_domain from website_analysis (but skip internal URLs)
+                   !websiteAnalysis.business_domain.includes('127.0.0.1') &&
+                   !websiteAnalysis.business_domain.startsWith('www.') &&
+                   !websiteAnalysis.business_domain.includes('.com') &&
+                   !websiteAnalysis.business_domain.includes('.ch') &&
+                   !websiteAnalysis.business_domain.includes('.co') &&
+                   !websiteAnalysis.business_domain.includes('.org') &&
+                   !websiteAnalysis.business_domain.includes('.net') &&
+                   !websiteAnalysis.business_domain.includes('.io')) {
+          // Second priority: business_domain from website_analysis (but skip URLs/domains)
           companyName = websiteAnalysis.business_domain;
         } else if (websiteAnalysis?.company_description && !isErrorText(websiteAnalysis.company_description)) {
           // Third priority: extract from company_description
@@ -120,8 +122,6 @@ export function useCompanyBranding(): CompanyBranding {
         if (isErrorText(companyName)) {
           companyName = 'Squidgy';
         }
-
-        console.log(' Final company name:', companyName);
 
         setBranding({
           companyName,
