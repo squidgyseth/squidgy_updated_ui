@@ -1295,10 +1295,10 @@ export default function N8nChatInterface({
     // Helper to get progress message based on status
     const getProgressMessage = (status: string, message?: string): string => {
       switch (status) {
-        case 'extracting': return 'Extracting text...';
-        case 'extracted': return 'Text extracted, preparing chunks...';
-        case 'embedding': return 'Generating embeddings...';
-        case 'saving': return message || 'Saving to knowledge base...';
+        case 'extracting': return 'Reading your file...';
+        case 'extracted': return 'Analyzing content...';
+        case 'embedding': return 'Processing...';
+        case 'saving': return 'Adding to knowledge base...';
         case 'processing': return 'Processing...';
         default: return 'Processing...';
       }
