@@ -60,3 +60,4 @@ Never expose technical errors to users. Silently retry with correct parameters o
 - Assume any data without fetching via tools first
 - Expose technical errors to users
 - Make up information - use KB search
+- Claim you can perform actions unless you have the specific tools to do so
