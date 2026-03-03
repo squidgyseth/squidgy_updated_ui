@@ -262,18 +262,19 @@ export default function N8nChatInterface({
 
         // Convert database messages to ChatMessage format
         const chatMessages: ChatMessage[] = existingMessages.map(msg => {
-          const fileInfo = parseEmbeddedFileInfo(msg.message);
+          // Use file metadata from database fields if available
+          const hasFile = !!(msg.file_url && msg.file_name);
 
           return {
             id: msg.id,
-            content: fileInfo.messageText,
+            content: msg.message,
             sender: msg.sender.toLowerCase() as 'user' | 'agent',
             timestamp: safeParseDate(msg.timestamp),
             status: undefined, // No streaming for loaded messages - only stream new messages
-            fileUpload: fileInfo.hasFile
+            fileUpload: hasFile
               ? {
-                  fileName: fileInfo.fileName,
-                  fileUrl: fileInfo.fileUrl,
+                  fileName: msg.file_name!,
+                  fileUrl: msg.file_url!,
                   fileId: `file_${msg.id}`,
                   status: 'completed',
                   agentId: agent.id,
@@ -400,7 +401,9 @@ export default function N8nChatInterface({
     timestamp?: Date,
     agentStatus?: string,
     executionId?: string | number,
-    workflowId?: string
+    workflowId?: string,
+    fileUrl?: string,
+    fileName?: string
   ) => {
     try {
       const savedRecord = await chatHistoryService.saveMessage({
@@ -413,7 +416,9 @@ export default function N8nChatInterface({
         agent_id: agent.id,
         agent_status: agentStatus,
         execution_id: executionId,
-        workflow_id: workflowId
+        workflow_id: workflowId,
+        file_url: fileUrl,
+        file_name: fileName
       });
       return savedRecord;
     } catch (error) {
@@ -456,7 +461,8 @@ export default function N8nChatInterface({
     setIsLoading(true);
 
     // Save user message to database (with file info if present)
-    await saveMessageToHistory(messageContent, 'User', userMessage.timestamp);
+    // Save only the user-visible message, not the agent instruction
+    await saveMessageToHistory(message, 'User', userMessage.timestamp, undefined, undefined, undefined, fileUrl, fileName);
 
     try {
       // Reset streaming text
