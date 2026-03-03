@@ -210,12 +210,6 @@ export const maskStorageUrlsInText = (text: string): string => {
   result = convertMarkdownBold(result);
   result = convertRawUrls(result);
   
-  // Debug logging
-  if (text.includes('**') || text.includes('---') || text.includes('$$')) {
-    console.log('[maskStorageUrlsInText] Input:', text.substring(0, 100));
-    console.log('[maskStorageUrlsInText] Output:', result.substring(0, 100));
-  }
-  
   // Clean up excessive whitespace (2+ newlines become 1)
   result = result.replace(/\n{2,}/g, '\n');
   // Remove whitespace before/after headers

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Loader } from 'lucide-react';
 import { useStreamingText } from '../../lib/streaming';
 import type { N8nResponse } from '../../types/n8n.types';
 import HTMLPreview from './HTMLPreview';
@@ -15,6 +16,7 @@ interface StreamingAgentMessageProps {
   enableStreaming?: boolean; // Allow disabling streaming for specific cases
   streamingSpeed?: number; // Configurable streaming speed (ms per character)
   onButtonClick?: (text: string) => void; // Handler for button clicks
+  isExternalStreaming?: boolean; // True when content is being streamed from external source (n8n)
 }
 
 /**
@@ -27,11 +29,23 @@ export default function StreamingAgentMessage({
   className = '',
   enableStreaming = true,
   streamingSpeed = 15,
-  onButtonClick
+  onButtonClick,
+  isExternalStreaming = false
 }: StreamingAgentMessageProps) {
   // Ensure agent_response is always a string to prevent undefined errors
   const safeAgentResponse = response.agent_response ?? response.response ?? '';
   
+  // Track if this message was externally streamed - if so, skip internal animation
+  const wasExternallyStreamedRef = useRef(false);
+  
+  // Mark as externally streamed when isExternalStreaming is true
+  useEffect(() => {
+    if (isExternalStreaming) {
+      wasExternallyStreamedRef.current = true;
+    }
+  }, [isExternalStreaming]);
+  
+  // When external streaming is active, skip internal character-by-character animation
   const [shouldStream, setShouldStream] = useState(false);
   const [displayContent, setDisplayContent] = useState(safeAgentResponse);
 
@@ -171,7 +185,11 @@ export default function StreamingAgentMessage({
 
   // Determine if this content should be streamed
   useEffect(() => {
-    if (!enableStreaming) {
+    // Skip internal streaming if:
+    // - streaming is disabled
+    // - external streaming is active
+    // - this message was previously externally streamed (to avoid re-streaming)
+    if (!enableStreaming || isExternalStreaming || wasExternallyStreamedRef.current) {
       setShouldStream(false);
       return;
     }
@@ -202,7 +220,7 @@ export default function StreamingAgentMessage({
        !response.agent_status); // Also stream when status is undefined
 
     setShouldStream(shouldStreamContent);
-  }, [safeAgentResponse, response.agent_status, response.agent_name, enableStreaming]);
+  }, [safeAgentResponse, response.agent_status, response.agent_name, enableStreaming, isExternalStreaming]);
 
   // Determine content to stream: if buttons present, stream only text part
   const contentToStream = React.useMemo(() => {
@@ -231,12 +249,15 @@ export default function StreamingAgentMessage({
 
   // Update display content based on streaming state
   useEffect(() => {
-    if (shouldStream) {
+    if (isExternalStreaming) {
+      // When external streaming, use the content directly (it's already being streamed)
+      setDisplayContent(safeAgentResponse);
+    } else if (shouldStream) {
       setDisplayContent(streamedText);
     } else {
       setDisplayContent(safeAgentResponse);
     }
-  }, [shouldStream, streamedText, safeAgentResponse]);
+  }, [shouldStream, streamedText, safeAgentResponse, isExternalStreaming]);
 
   // Render different content types based on agent_status and content type
   const renderContent = () => {
@@ -288,7 +309,7 @@ export default function StreamingAgentMessage({
         // Pass full content for button parsing + streaming text for display
         if (hasButtons && onButtonClick) {
           return (
-            <div className="bg-gray-100 rounded-lg px-4 py-2">
+            <div className="bg-gray-100 rounded-lg px-4 py-2 min-h-[2.5rem] min-w-[120px]">
               <InteractiveMessageButtons
                 content={safeAgentResponse}
                 streamingText={displayContent}
@@ -297,9 +318,7 @@ export default function StreamingAgentMessage({
               />
               {/* Show streaming cursor while text is streaming */}
               {isStreaming && (
-                <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
-                  ▍
-                </span>
+                <span className="inline-block w-0.5 h-4 ml-0.5 bg-purple-500 animate-pulse align-text-bottom" />
               )}
             </div>
           );
@@ -310,7 +329,7 @@ export default function StreamingAgentMessage({
           const introText = getContentWithoutNumberedOptions(safeAgentResponse);
           const options = extractNumberedOptionsWithDescription(safeAgentResponse);
           return (
-            <div className="bg-gray-100 rounded-lg px-4 py-3">
+            <div className="bg-gray-100 rounded-lg px-4 py-3 min-h-[2.5rem] min-w-[120px]">
               {introText && (
                 <LinkDetectingTextArea
                   content={introText}
@@ -318,9 +337,7 @@ export default function StreamingAgentMessage({
                 />
               )}
               {isStreaming && (
-                <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
-                  ▍
-                </span>
+                <span className="inline-block w-0.5 h-4 ml-0.5 bg-purple-500 animate-pulse align-text-bottom" />
               )}
               {!isStreaming && (
                 <div className="space-y-2">
@@ -343,34 +360,76 @@ export default function StreamingAgentMessage({
         }
 
         // For plain text/markdown content (with streaming)
+        // Show collapsible dropdown while streaming, then show final content
+        const hasContent = displayContent && displayContent.trim().length > 0;
+        
+        // If still streaming (internal or external), show collapsible dropdown with constant frame
+        if (isStreaming || isExternalStreaming) {
+          return (
+            <div className="bg-gray-100 rounded-lg px-4 py-2 min-w-[200px]">
+              <details className="group" open>
+                <summary className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 list-none select-none">
+                  <Loader className="w-3.5 h-3.5 animate-spin text-purple-600 flex-shrink-0" />
+                  <span>Thinking...</span>
+                  <svg className="w-3 h-3 transition-transform group-open:rotate-180 flex-shrink-0 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                {hasContent && (
+                  <div className="mt-2 pt-2 border-t border-gray-200 text-sm text-gray-600 max-h-24 overflow-y-auto">
+                    {displayContent.substring(0, 300)}
+                    {displayContent.length > 300 && '...'}
+                  </div>
+                )}
+              </details>
+            </div>
+          );
+        }
+        
+        // Final content display (not streaming)
         return (
-          <div className="bg-gray-100 rounded-lg px-4 py-2">
+          <div className="bg-gray-100 rounded-lg px-4 py-2 min-h-[2.5rem] min-w-[120px]">
             <LinkDetectingTextArea
               content={displayContent}
               className="text-text-primary whitespace-pre-wrap"
             />
-            {/* Show streaming cursor */}
-            {isStreaming && (
-              <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
-                ▍
-              </span>
-            )}
           </div>
         );
 
       case 'Waiting':
         // For Waiting status, display with streaming
+        const hasWaitingContent = displayContent && displayContent.trim().length > 0;
+        
+        // If still streaming (internal or external), show collapsible dropdown
+        if (isStreaming || isExternalStreaming) {
+          return (
+            <div className="bg-gray-100 rounded-lg px-4 py-2 min-w-[200px]">
+              <details className="group" open>
+                <summary className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 list-none select-none">
+                  <Loader className="w-3.5 h-3.5 animate-spin text-purple-600 flex-shrink-0" />
+                  <span>Thinking...</span>
+                  <svg className="w-3 h-3 transition-transform group-open:rotate-180 flex-shrink-0 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                {hasWaitingContent && (
+                  <div className="mt-2 pt-2 border-t border-gray-200 text-sm text-gray-600 max-h-24 overflow-y-auto">
+                    {displayContent.substring(0, 300)}
+                    {displayContent.length > 300 && '...'}
+                  </div>
+                )}
+              </details>
+            </div>
+          );
+        }
+        
+        // Final content display
         return (
-          <div className="bg-gray-100 rounded-lg px-4 py-2">
+          <div className="bg-gray-100 rounded-lg px-4 py-2 min-h-[2.5rem] min-w-[120px]">
             <LinkDetectingTextArea
               content={displayContent}
               className="text-text-primary whitespace-pre-wrap"
             />
-            {isStreaming && (
-              <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
-                ▍
-              </span>
-            )}
           </div>
         );
 

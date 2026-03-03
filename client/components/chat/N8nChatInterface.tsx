@@ -468,12 +468,33 @@ export default function N8nChatInterface({
       // Reset streaming text
       setStreamingText('');
       
+      // Create a temporary streaming message ID
+      const streamingMessageId = `streaming_${generateRequestId()}`;
+      
+      // Add temporary streaming message to UI
+      const tempStreamingMessage: ChatMessage = {
+        id: streamingMessageId,
+        content: '',
+        sender: 'agent',
+        timestamp: new Date(),
+        status: 'Ready' // Enable streaming display
+      };
+      setMessages(prev => [...prev, tempStreamingMessage]);
+      
       // Send to n8n workflow with streaming updates
       const response = await sendToN8nWorkflowStreaming(
         userId,
         messageContent, // Send the full message content including file info
         agent.id,
-        (text) => setStreamingText(text), // Callback for streaming updates
+        (text) => {
+          // Update the temporary streaming message in real-time
+          setStreamingText(text);
+          setMessages(prev => prev.map(msg => 
+            msg.id === streamingMessageId 
+              ? { ...msg, content: text }
+              : msg
+          ));
+        }, // Callback for streaming updates
         sessionId,
         userMessage.id,
         webhookUrl, // Pass the webhook URL from agent config
@@ -607,6 +628,35 @@ export default function N8nChatInterface({
 
         // Parse response to handle structured JSON format
         let displayMessage = response.agent_response || response.response || 'I received your message but encountered an issue processing the response.';
+        
+        // Extract only the final response - n8n concatenates streaming "thinking" text with final response
+        // Pattern: streaming text ends with a sentence, then final response starts with transition words
+        // Example: "...your business and preferences.Perfect! I can see..." -> "Perfect! I can see..."
+        const transitionPatterns = [
+          /\.(Perfect!)/i,
+          /\.(Great!)/i,
+          /\.(Excellent!)/i,
+          /\.(Awesome!)/i,
+          /\.(I can see)/i,
+          /\.(I found)/i,
+          /\.(Here's)/i,
+          /\.(Let me help)/i,
+          /\.(Now let)/i,
+          /\.(Based on)/i,
+          /\.(Looking at)/i,
+        ];
+        
+        for (const pattern of transitionPatterns) {
+          const match = displayMessage.match(pattern);
+          if (match && match.index !== undefined) {
+            // Found the pattern - extract from the transition word onwards
+            const finalResponseStart = match.index + 1; // Skip the period
+            displayMessage = displayMessage.substring(finalResponseStart);
+            console.log('[Final Response] Extracted (removed streaming prefix):', displayMessage.substring(0, 100));
+            break;
+          }
+        }
+        
         let structuredData = null;
         
         // Handle agent enablement for Personal Assistant onboarding
@@ -653,7 +703,19 @@ export default function N8nChatInterface({
           agentMessage.content_repurposer_history_id = savedRecord.content_repurposer_history_id;
         }
 
-        setMessages(prev => [...prev, agentMessage]);
+        // Update the streaming message in place - just change the ID to remove streaming_ prefix
+        // This allows smooth transition without disappear/reappear effect
+        setMessages(prev => prev.map(msg => 
+          msg.id === streamingMessageId 
+            ? {
+                ...msg,
+                id: response.request_id, // Change ID to remove streaming_ prefix
+                content: displayMessage, // Use final content
+                status: response.agent_status || 'Ready',
+                content_repurposer_history_id: savedRecord?.content_repurposer_history_id
+              }
+            : msg
+        ));
 
         // Trigger Recent Actions refresh after agent response is saved
         onMessageSent?.();
@@ -662,15 +724,18 @@ export default function N8nChatInterface({
         // NOTE: Agent enablement is now handled via actions_todo (see agent_enabled case above)
         // No need for separate AgentEnablementService check
       } else {
-        // Handle error case
+        // Handle error case - remove streaming message and add error
         const errorMessage = 'Sorry, I encountered an error processing your request. Please try again.';
-        setMessages(prev => [...prev, {
-          id: generateRequestId(),
-          content: errorMessage,
-          sender: 'agent',
-          timestamp: new Date(),
-          status: 'Ready' // Enable streaming
-        }]);
+        setMessages(prev => [
+          ...prev.filter(msg => msg.id !== streamingMessageId),
+          {
+            id: generateRequestId(),
+            content: errorMessage,
+            sender: 'agent',
+            timestamp: new Date(),
+            status: 'Ready' // Enable streaming
+          }
+        ]);
         
         // Save error message to database
         await saveMessageToHistory(errorMessage, 'Agent');
@@ -678,13 +743,21 @@ export default function N8nChatInterface({
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessage = 'Failed to connect to the service. Please check your connection and try again.';
-      setMessages(prev => [...prev, {
-        id: generateRequestId(),
-        content: errorMessage,
-        sender: 'agent',
-        timestamp: new Date(),
-        status: 'Ready' // Enable streaming
-      }]);
+      
+      // Remove streaming message if it exists and add error
+      setMessages(prev => {
+        const filtered = prev.filter(msg => !msg.id.startsWith('streaming_'));
+        return [
+          ...filtered,
+          {
+            id: generateRequestId(),
+            content: errorMessage,
+            sender: 'agent',
+            timestamp: new Date(),
+            status: 'Ready' // Enable streaming
+          }
+        ];
+      });
       
       // Save error message to database
       await saveMessageToHistory(errorMessage, 'Agent');
@@ -1515,6 +1588,7 @@ export default function N8nChatInterface({
                         enableStreaming={true}
                         streamingSpeed={15}
                         onButtonClick={handleButtonClick}
+                        isExternalStreaming={message.id.startsWith('streaming_')}
                       />
                     ) : (
                       // Regular message display with interactive buttons support
@@ -1693,38 +1767,6 @@ export default function N8nChatInterface({
             </div>
           </div>
         ))}
-        
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="flex items-start gap-3">
-              {agent.avatar && (
-                <img
-                  src={agent.avatar ? createProxyUrl(agent.avatar, 'avatar') : agent.avatar}
-                  alt={agent.name}
-                  className="w-8 h-8 rounded-full flex-shrink-0"
-                />
-              )}
-              <div className="flex flex-col gap-2">
-                {/* Thinking indicator - compact collapsible style like Claude */}
-                <details className="group" open={!streamingText}>
-                  <summary className="flex items-center gap-2 cursor-pointer text-sm text-gray-500 hover:text-gray-700 list-none">
-                    <Loader className="w-3 h-3 animate-spin" />
-                    <span>{thinkingMessage}...</span>
-                    <svg className="w-3 h-3 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </summary>
-                  {streamingText && (
-                    <div className="mt-2 pl-5 border-l-2 border-gray-200 text-xs text-gray-500 max-h-32 overflow-y-auto break-words">
-                      {streamingText.substring(0, 200)}
-                      {streamingText.length > 200 && '...'}
-                    </div>
-                  )}
-                </details>
-              </div>
-            </div>
-          </div>
-        )}
         
         <div ref={messagesEndRef} />
       </div>
