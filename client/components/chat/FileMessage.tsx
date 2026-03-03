@@ -6,10 +6,16 @@ import { FileUploadService } from '../../services/fileUploadService';
 interface FileMessageProps {
   fileInfo: FileUploadInfo;
   timestamp: Date;
+  processingProgress?: {
+    status: string;
+    message: string;
+    progress: number;
+  };
 }
 
-export default function FileMessage({ fileInfo, timestamp }: FileMessageProps) {
+export default function FileMessage({ fileInfo, timestamp, processingProgress }: FileMessageProps) {
   const [showPreview, setShowPreview] = useState(false);
+  const [showProgress, setShowProgress] = useState(true);
   const fileUploadService = FileUploadService.getInstance();
 
   const isImageFile = (fileName: string): boolean => {
@@ -187,6 +193,25 @@ export default function FileMessage({ fileInfo, timestamp }: FileMessageProps) {
         <span className="text-xs text-gray-500 mt-2 block">
           {timestamp.toLocaleTimeString()}
         </span>
+        
+        {/* Processing Progress Dropdown */}
+        {processingProgress && showProgress && fileInfo.status !== 'completed' && (
+          <div className="mt-2 pt-2 border-t border-gray-200 animate-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-600 flex items-center gap-1">
+                <Loader className="w-3 h-3 animate-spin" />
+                {processingProgress.message}
+              </span>
+              <span className="text-xs text-gray-500">{processingProgress.progress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div 
+                className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                style={{ width: `${processingProgress.progress}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Preview Modal */}

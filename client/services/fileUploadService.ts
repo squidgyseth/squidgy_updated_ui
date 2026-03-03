@@ -5,11 +5,16 @@ export interface UploadedFile {
   file_url: string;
   agent_id: string;
   agent_name: string;
-  processing_status: 'pending' | 'processing' | 'completed' | 'failed';
+  processing_status: 'pending' | 'processing' | 'completed' | 'failed' | 'extracting' | 'extracted' | 'embedding' | 'saving';
   extracted_text?: string;
   error_message?: string;
   created_at: string;
   updated_at?: string;
+  // SSE status fields for real-time progress
+  status?: string;
+  message?: string;
+  processing_message?: string;
+  progress?: number;
 }
 
 export interface FileListResponse {

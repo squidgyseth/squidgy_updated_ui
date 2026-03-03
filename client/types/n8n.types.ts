@@ -94,11 +94,16 @@ export interface FileUploadInfo {
   fileName: string;
   fileUrl: string;
   fileId: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'extracting' | 'extracted' | 'embedding' | 'saving';
   agentId: string;
   agentName: string;
   extractedText?: string;
   errorMessage?: string;
+  processingProgress?: {
+    status: string;
+    message: string;
+    progress: number;
+  };
 }
 
 /**
@@ -115,4 +120,5 @@ export interface ChatMessage {
   isStreaming?: boolean;
   fileUpload?: FileUploadInfo;
   content_repurposer_history_id?: string; // Database record ID for content repurposer
+  isProcessingStatus?: boolean; // Flag for file processing status messages (not saved to history)
 }

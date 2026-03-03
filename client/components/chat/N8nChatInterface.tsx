@@ -1134,30 +1134,51 @@ export default function N8nChatInterface({
     
     // Track the file upload for status monitoring
     const fileId = result.data?.file_id;
-    if (fileId) {
-      // Start monitoring file status
-      monitorFileStatus(fileId, fileName);
-    }
-    
-    // Show the uploaded file in chat with preview capability (as before)
-    // User sees: simple message + file upload frame
-    // Agent receives: different instruction based on file type
-    const userVisibleMessage = `I've uploaded a file: ${fileName}`;
     
     // Detect if file is an image
     const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.tiff', '.ico', '.heic', '.heif'];
     const isImage = imageExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
     
-    let agentInstruction: string;
-    if (isImage) {
-      // For images: send URL with analysis instruction (not saved to history)
-      agentInstruction = `I've uploaded an image: ${fileUrl}. Please analyze this image and tell me what you see in it. Describe the content, objects, text, or any relevant information you can extract from the image.`;
-    } else {
-      // For documents: send KB instruction (not saved to history)
-      agentInstruction = `I've uploaded a file: ${fileName}. Please read and analyze this document from my knowledge base. You can ask me questions about it or provide insights based on its content.`;
-    }
+    // User visible message (saved to chat history)
+    const userVisibleMessage = `I've uploaded a file: ${fileName}`;
     
-    await handleSendMessage(userVisibleMessage, fileUrl, fileName, agentInstruction);
+    if (isImage) {
+      // For images: send URL with analysis instruction immediately (no need to wait for KB processing)
+      const agentInstruction = `I've uploaded an image: ${fileUrl}. Please analyze this image and tell me what you see in it. Describe the content, objects, text, or any relevant information you can extract from the image.`;
+      await handleSendMessage(userVisibleMessage, fileUrl, fileName, agentInstruction);
+      
+      // Still monitor for UI updates
+      if (fileId) {
+        monitorFileStatus(fileId, fileName);
+      }
+    } else {
+      // For documents: wait for processing to complete before sending agent instruction
+      // First show the file upload message in chat (without sending to agent yet)
+      const messageId = generateRequestId();
+      const userMessage: ChatMessage = {
+        id: messageId,
+        content: userVisibleMessage,
+        sender: 'user',
+        timestamp: new Date(),
+        fileUpload: {
+          fileName: fileName,
+          fileUrl: fileUrl,
+          fileId: fileId || `file_${messageId}`,
+          status: 'processing',
+          agentId: agent.id,
+          agentName: agent.name
+        }
+      };
+      setMessages(prev => [...prev, userMessage]);
+      
+      // Save user message to history (without agent instruction)
+      await saveMessageToHistory(userVisibleMessage, 'User', userMessage.timestamp, undefined, undefined, undefined, fileUrl, fileName);
+      
+      // Monitor file status and send agent instruction when complete
+      if (fileId) {
+        monitorFileStatusAndNotifyAgent(fileId, fileName, fileUrl);
+      }
+    }
     } catch (error) {
       console.error('Error in callBackendProcessing:', error);
       throw error; // Re-throw to be caught by the outer try-catch
@@ -1245,6 +1266,181 @@ export default function N8nChatInterface({
         console.log(`Stopped monitoring file ${fileId}`);
       }
     };
+  };
+
+  // Monitor file status and send agent instruction only when processing completes
+  const monitorFileStatusAndNotifyAgent = async (fileId: string, fileName: string, fileUrl: string) => {
+    let attempts = 0;
+    const maxAttempts = 60; // Monitor for 10 minutes (60 attempts * 10 seconds)
+    let timeoutId: NodeJS.Timeout | null = null;
+    let agentNotified = false;
+    
+    // Helper to get progress message based on status
+    const getProgressMessage = (status: string, message?: string): string => {
+      switch (status) {
+        case 'extracting': return 'Extracting text...';
+        case 'extracted': return 'Text extracted, preparing chunks...';
+        case 'embedding': return 'Generating embeddings...';
+        case 'saving': return message || 'Saving to knowledge base...';
+        case 'processing': return 'Processing...';
+        default: return 'Processing...';
+      }
+    };
+    
+    // Helper to get progress percentage based on status
+    const getProgressPercent = (status: string, serverProgress?: number): number => {
+      if (serverProgress) return serverProgress;
+      switch (status) {
+        case 'extracting': return 20;
+        case 'extracted': return 40;
+        case 'embedding': return 50;
+        case 'saving': return 70;
+        case 'processing': return 30;
+        default: return 10;
+      }
+    };
+    
+    const checkStatus = async () => {
+      try {
+        const file = await fileUploadService.getFileStatus(fileId);
+        
+        // If file not found, stop monitoring
+        if (!file) {
+          console.log(`File ${fileId} not found, stopping monitoring`);
+          return;
+        }
+        
+        const status = file.processing_status || file.status || 'processing';
+        const message = file.message || file.processing_message;
+        const progress = file.progress;
+        
+        // Update the file message with processing progress
+        setMessages(prev => prev.map(msg => {
+          if (msg.fileUpload?.fileId === fileId) {
+            return {
+              ...msg,
+              fileUpload: {
+                ...msg.fileUpload,
+                status: file.processing_status,
+                extractedText: file.extracted_text,
+                errorMessage: file.error_message,
+                processingProgress: status !== 'completed' && status !== 'failed' ? {
+                  status: status,
+                  message: getProgressMessage(status, message),
+                  progress: getProgressPercent(status, progress)
+                } : undefined
+              }
+            };
+          }
+          return msg;
+        }));
+        
+        if (file.processing_status === 'completed' && !agentNotified) {
+          // File processing complete - now send instruction to agent
+          agentNotified = true;
+          if (timeoutId) clearTimeout(timeoutId);
+          
+          // Show success toast
+          toast.success(`File "${fileName}" processed successfully!`, {
+            description: 'Added to your knowledge base.',
+            duration: 3000,
+          });
+          
+          // Now send the agent instruction (document is in KB)
+          const agentInstruction = `I've uploaded a file: ${fileName}. Please read and analyze this document from my knowledge base. You can ask me questions about it or provide insights based on its content.`;
+          
+          // Send to agent (this will add agent response to chat)
+          setIsLoading(true);
+          try {
+            const response = await sendToN8nWorkflowStreaming(
+              userId,
+              agentInstruction,
+              agent.id,
+              (text) => setStreamingText(text),
+              sessionId,
+              generateRequestId(),
+              webhookUrl,
+              (agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') ? selectedNewsletterId || undefined : undefined,
+              conversationState
+            );
+            
+            if (response) {
+              // Add agent response to chat
+              const displayMessage = response.agent_response || response.response || 'I received your file and processed it.';
+              const agentMessage: ChatMessage = {
+                id: response.request_id || generateRequestId(),
+                content: displayMessage,
+                sender: 'agent',
+                timestamp: new Date(),
+                status: response.agent_status || 'Ready',
+                isHtml: (response.agent_status || 'Ready') === 'Ready'
+              };
+              
+              setMessages(prev => [...prev, agentMessage]);
+              
+              // Save agent response to database
+              await saveMessageToHistory(
+                displayMessage,
+                'Agent',
+                agentMessage.timestamp,
+                response.agent_status || 'Ready',
+                response.execution_id,
+                response.workflow_id
+              );
+              
+              // Trigger Recent Actions refresh
+              onMessageSent?.();
+            }
+          } catch (error) {
+            console.error('Error sending to agent after file processing:', error);
+            const errorMessage = 'Your file was processed but I encountered an error analyzing it. Please try asking about it.';
+            // Add error message to chat
+            setMessages(prev => [...prev, {
+              id: generateRequestId(),
+              content: errorMessage,
+              sender: 'agent',
+              timestamp: new Date(),
+              status: 'Ready'
+            }]);
+          } finally {
+            setIsLoading(false);
+            setStreamingText('');
+          }
+          
+          return;
+        } else if (file.processing_status === 'failed') {
+          // Show error toast
+          toast.error(`File "${fileName}" processing failed`, {
+            description: file.error_message || 'Unknown error occurred',
+            duration: 7000,
+          });
+          
+          if (timeoutId) clearTimeout(timeoutId);
+          return;
+        }
+        
+        // Continue monitoring if still processing
+        attempts++;
+        if (attempts < maxAttempts) {
+          timeoutId = setTimeout(checkStatus, 1000); // Check every 1 second to catch fast processing
+        } else {
+          console.log(`File ${fileId} monitoring timed out after ${maxAttempts} attempts`);
+          toast.error(`File "${fileName}" processing timed out`, {
+            description: 'Please try uploading again.',
+            duration: 7000,
+          });
+        }
+      } catch (error) {
+        console.error('Error checking file status:', error);
+        attempts++;
+        if (attempts < maxAttempts) {
+          timeoutId = setTimeout(checkStatus, 1000); // Retry every 1 second on error too
+        }
+      }
+    };
+    
+    // Start monitoring immediately to catch fast processing
+    checkStatus();
   };
 
   const handleMicrophoneClick = () => {
@@ -1464,7 +1660,7 @@ export default function N8nChatInterface({
                 // User message display
                 <div>
                   {message.fileUpload ? (
-                    <FileMessage fileInfo={message.fileUpload} timestamp={message.timestamp} />
+                    <FileMessage fileInfo={message.fileUpload} timestamp={message.timestamp} processingProgress={message.fileUpload.processingProgress} />
                   ) : (
                     <>
                       <div className="bg-blue-500 text-white rounded-lg px-4 py-2 overflow-hidden">
