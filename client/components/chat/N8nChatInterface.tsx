@@ -1023,19 +1023,34 @@ export default function N8nChatInterface({
         const { isDuplicate, existingFile } = await checkForDuplicateFile(file.name);
         
         if (isDuplicate && existingFile) {
-          const confirmReplace = window.confirm(
-            `A file named "${file.name}" already exists.\n\nDo you want to replace it? The old version will be deleted.`
-          );
-          
-          if (!confirmReplace) {
-            return; // User cancelled
-          }
+          // Show in upload indicator that we're replacing
+          const uploadTrackingId = `upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { 
+            name: file.name, 
+            status: 'Replacing existing file...' 
+          })));
           
           // Delete the existing file first
           await deleteExistingFile(existingFile.file_id);
+          
+          // Update status to uploading
+          setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { 
+            name: file.name, 
+            status: 'Uploading...' 
+          })));
+          
+          // Pass trackingId to prevent double tracking
+          await uploadFileToSupabase(file, uploadTrackingId);
+          
+          // Clear the upload indicator
+          setUploadingFiles(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(uploadTrackingId);
+            return newMap;
+          });
+        } else {
+          await uploadFileToSupabase(file);
         }
-        
-        await uploadFileToSupabase(file);
       } catch (error) {
         console.error('File upload error:', error);
         console.error('Full error object:', error);
@@ -1049,7 +1064,7 @@ export default function N8nChatInterface({
     document.body.removeChild(fileInput);
   };
 
-  const uploadFileToSupabase = async (file: File) => {
+  const uploadFileToSupabase = async (file: File, trackingId?: string) => {
     try {
       const timestamp = Date.now();
       // Sanitize filename - remove special characters and spaces that cause "Invalid key" errors
@@ -1059,10 +1074,12 @@ export default function N8nChatInterface({
         .replace(/_+/g, '_') // Replace multiple underscores with single
         .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
       const fileName = `${userId}_${timestamp}_${sanitizedFileName}`;
-      const uploadTrackingId = `upload_${timestamp}_${Math.random().toString(36).slice(2, 8)}`;
+      const uploadTrackingId = trackingId || `upload_${timestamp}_${Math.random().toString(36).slice(2, 8)}`;
 
-      // Track the upload immediately so the UI can show an indicator
-      setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { name: file.name, status: 'uploading' })));
+      // Track the upload if no tracking ID was provided (non-duplicate case)
+      if (!trackingId) {
+        setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { name: file.name, status: 'Uploading...' })));
+      }
       
       
       // Step 1: Upload to Supabase storage
@@ -1721,7 +1738,7 @@ export default function N8nChatInterface({
                 <div key={id} className="flex items-center gap-2 text-sm text-gray-700">
                   <Loader className="w-4 h-4 animate-spin text-purple-600" />
                   <span className="font-medium truncate">{file.name}</span>
-                  <span className="text-gray-500">Uploading...</span>
+                  <span className="text-gray-500">{file.status}</span>
                 </div>
               ))}
             </div>
