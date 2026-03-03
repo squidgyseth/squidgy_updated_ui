@@ -1141,9 +1141,21 @@ export default function N8nChatInterface({
     
     // Show the uploaded file in chat with preview capability (as before)
     // User sees: simple message + file upload frame
-    // Agent receives: detailed KB instruction (without URL)
+    // Agent receives: different instruction based on file type
     const userVisibleMessage = `I've uploaded a file: ${fileName}`;
-    const agentInstruction = `I've uploaded a file: ${fileName}. Please read and analyze this document from my knowledge base. You can ask me questions about it or provide insights based on its content.`;
+    
+    // Detect if file is an image
+    const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.tiff', '.ico', '.heic', '.heif'];
+    const isImage = imageExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+    
+    let agentInstruction: string;
+    if (isImage) {
+      // For images: send URL with analysis instruction (not saved to history)
+      agentInstruction = `I've uploaded an image: ${fileUrl}. Please analyze this image and tell me what you see in it. Describe the content, objects, text, or any relevant information you can extract from the image.`;
+    } else {
+      // For documents: send KB instruction (not saved to history)
+      agentInstruction = `I've uploaded a file: ${fileName}. Please read and analyze this document from my knowledge base. You can ask me questions about it or provide insights based on its content.`;
+    }
     
     await handleSendMessage(userVisibleMessage, fileUrl, fileName, agentInstruction);
     } catch (error) {
