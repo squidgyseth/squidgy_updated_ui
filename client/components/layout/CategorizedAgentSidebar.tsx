@@ -52,6 +52,7 @@ export default function CategorizedAgentSidebar() {
   // Subscribe to Supabase Realtime for agent refresh broadcasts from backend
   useEffect(() => {
     let channel: any = null;
+    let redirectChannel: any = null;
 
     const setupRealtimeSubscription = async () => {
       try {
@@ -97,6 +98,30 @@ export default function CategorizedAgentSidebar() {
             console.log('📡 Realtime subscription status:', status);
           });
 
+        // Subscribe to redirect channel for this user (n8n triggers redirects here)
+        redirectChannel = supabase
+          .channel(`agent-redirect-${profile.user_id}`)
+          .on(
+            'broadcast',
+            { event: 'redirect_to_agent' },
+            (payload) => {
+              console.log('🔀 Redirect signal received from backend:', payload);
+              const { redirect_url, agent_id, message } = payload.payload || {};
+              
+              if (redirect_url) {
+                // Show optional message before redirect
+                if (message) {
+                  console.log(`📢 Redirect message: ${message}`);
+                }
+                // Navigate to the target agent
+                window.location.href = redirect_url;
+              }
+            }
+          )
+          .subscribe((status: string) => {
+            console.log('📡 Redirect subscription status:', status);
+          });
+
       } catch (error) {
         console.error('❌ Error setting up realtime subscription:', error);
       }
@@ -104,10 +129,13 @@ export default function CategorizedAgentSidebar() {
 
     setupRealtimeSubscription();
 
-    // Cleanup subscription on unmount
+    // Cleanup subscriptions on unmount
     return () => {
       if (channel) {
         supabase.removeChannel(channel);
+      }
+      if (redirectChannel) {
+        supabase.removeChannel(redirectChannel);
       }
     };
   }, []);
