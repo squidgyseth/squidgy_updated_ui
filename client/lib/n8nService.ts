@@ -458,28 +458,29 @@ export const sendToN8nWorkflowStreaming = async (
       const chunk = decoder.decode(value, { stream: true });
       fullText += chunk;
       
-      // Parse each line for streaming content
+      // Parse each line for streaming content (JSONL format)
       const lines = chunk.split('\n');
       for (const line of lines) {
         if (!line.trim()) continue;
         try {
           const parsed = JSON.parse(line.trim());
           
-          // Collect streaming text from "item" type entries
-          if (parsed.type === 'item' && parsed.content !== undefined) {
+          // Handle n8n streaming chunk types: message, item, begin, end
+          if ((parsed.type === 'message' || parsed.type === 'item') && parsed.content !== undefined) {
+            // Accumulate streaming text token by token
             streamingText += parsed.content;
-            // Send update to UI (but filter out JSON-looking content)
+            // Send accumulated text to UI (filter out JSON-looking content)
             if (!parsed.content.trim().startsWith('{') && !parsed.content.trim().startsWith('```')) {
               onStreamUpdate(streamingText);
             }
           }
           
-          // Check for complete response
+          // Check for complete response (final JSON with agent_response)
           if (parsed.agent_response !== undefined) {
             jsonMatches.push(parsed);
           }
         } catch {
-          // Not valid JSON, skip
+          // Not valid JSON, skip (could be partial chunk)
         }
       }
     }

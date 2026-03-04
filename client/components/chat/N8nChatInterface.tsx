@@ -630,30 +630,14 @@ export default function N8nChatInterface({
         let displayMessage = response.agent_response || response.response || 'I received your message but encountered an issue processing the response.';
         
         // Extract only the final response - n8n concatenates streaming "thinking" text with final response
-        // Pattern: streaming text ends with a sentence, then final response starts with transition words
-        // Example: "...your business and preferences.Perfect! I can see..." -> "Perfect! I can see..."
-        const transitionPatterns = [
-          /\.(Perfect!)/i,
-          /\.(Great!)/i,
-          /\.(Excellent!)/i,
-          /\.(Awesome!)/i,
-          /\.(I can see)/i,
-          /\.(I found)/i,
-          /\.(Here's)/i,
-          /\.(Let me help)/i,
-          /\.(Now let)/i,
-          /\.(Based on)/i,
-          /\.(Looking at)/i,
-        ];
-        
-        for (const pattern of transitionPatterns) {
-          const match = displayMessage.match(pattern);
-          if (match && match.index !== undefined) {
-            // Found the pattern - extract from the transition word onwards
-            const finalResponseStart = match.index + 1; // Skip the period
-            displayMessage = displayMessage.substring(finalResponseStart);
-            console.log('[Final Response] Extracted (removed streaming prefix):', displayMessage.substring(0, 100));
-            break;
+        // Find the LAST occurrence of '...' and extract everything after it
+        const lastEllipsisIndex = displayMessage.lastIndexOf('...');
+        if (lastEllipsisIndex !== -1 && lastEllipsisIndex < displayMessage.length - 3) {
+          // There's content after the last '...'
+          const afterEllipsis = displayMessage.substring(lastEllipsisIndex + 3).trim();
+          if (afterEllipsis) {
+            console.log('[Final Response] Extracted:', afterEllipsis.substring(0, 100) + (afterEllipsis.length > 100 ? '...' : ''));
+            displayMessage = afterEllipsis;
           }
         }
         
