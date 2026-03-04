@@ -172,4 +172,71 @@ router.get('/categories', async (req, res) => {
   }
 });
 
+/**
+ * Redirect to another agent's chat page
+ * POST /api/agents/redirect
+ * Body: { agentId: string, userId?: string, conversationId?: string }
+ */
+router.post('/redirect', async (req, res) => {
+  try {
+    const { agentId, userId, conversationId } = req.body;
+    
+    if (!agentId) {
+      return res.status(400).json({ error: 'agentId is required' });
+    }
+    
+    // Verify the agent exists
+    const agentsDir = path.join(__dirname, '../../agents');
+    const entries = await fs.readdir(agentsDir, { withFileTypes: true });
+    const agentFolders = entries.filter(entry => 
+      entry.isDirectory() && entry.name !== 'shared'
+    );
+    
+    let agentExists = false;
+    for (const folder of agentFolders) {
+      try {
+        const configPath = path.join(agentsDir, folder.name, 'config.yaml');
+        const content = await fs.readFile(configPath, 'utf8');
+        const config = yaml.load(content) as AgentConfig;
+        
+        if (config && config.agent && config.agent.id === agentId) {
+          agentExists = true;
+          break;
+        }
+      } catch (error) {
+      }
+    }
+    
+    if (!agentExists) {
+      return res.status(404).json({ error: `Agent ${agentId} not found` });
+    }
+    
+    // Build the redirect URL
+    let redirectUrl = `/chat/${agentId}`;
+    
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (conversationId) {
+      queryParams.append('conversationId', conversationId);
+    }
+    if (userId) {
+      queryParams.append('userId', userId);
+    }
+    
+    if (queryParams.toString()) {
+      redirectUrl += `?${queryParams.toString()}`;
+    }
+    
+    res.json({
+      success: true,
+      redirectUrl,
+      agentId,
+      message: `Redirect to ${agentId} chat page`
+    });
+  } catch (error) {
+    console.error('Error processing redirect:', error);
+    res.status(500).json({ error: 'Failed to process redirect request' });
+  }
+});
+
 export default router;
