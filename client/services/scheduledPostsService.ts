@@ -291,7 +291,10 @@ class ScheduledPostsService {
 
     try {
       const response = await fetch(url, {
-        method: 'GET'
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
       });
 
       if (!response.ok) {
