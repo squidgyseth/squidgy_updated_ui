@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import UniversalChatLayout from '../components/layout/UniversalChatLayout';
@@ -8,7 +8,7 @@ import { navigationService } from '../services/navigationService';
 import { useNavigationService } from '../hooks/useNavigationService';
 import { chatSessionService } from '../services/chatSessionService';
 import { queryByUserId } from '../services/supabaseQueryService';
-import { checkPitTokenStatus } from '../lib/api';
+import { checkPitTokenStatus, checkAndTriggerGhlOnboarding } from '../lib/api';
 import { AlertTriangle, Clock, MessageCircle, RefreshCw } from 'lucide-react';
 
 /**
@@ -34,27 +34,68 @@ export default function DynamicAgentDashboard() {
     loading: false
   });
 
-  // Check PIT token status for social media agent
-  useEffect(() => {
-    const checkPitToken = async () => {
-      if (agentId === 'social_media' && userId && !pitTokenStatus.checked) {
-        setPitTokenStatus(prev => ({ ...prev, loading: true }));
+  // Ref to prevent duplicate automation triggers (React Strict Mode runs effects twice in dev)
+  const automationTriggeredRef = useRef(false);
+
+  // Function to start polling for PIT token updates
+  const startPitTokenPolling = () => {
+    console.log('[SOCIAL MEDIA] Starting PIT token polling...');
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        const result = await checkPitTokenStatus(userId);
         
-        try {
-          const result = await checkPitTokenStatus(userId);
+        if (result.hasPitToken) {
+          console.log('[SOCIAL MEDIA] PIT token detected!');
+          clearInterval(pollInterval);
           setPitTokenStatus({
-            hasPitToken: result.hasPitToken,
-            checked: true,
-            loading: false
-          });
-        } catch (error) {
-          console.error('Error checking PIT token:', error);
-          setPitTokenStatus({
-            hasPitToken: false,
+            hasPitToken: true,
             checked: true,
             loading: false
           });
         }
+      } catch (error) {
+        console.error('[SOCIAL MEDIA] Error polling for PIT token:', error);
+      }
+    }, 3000); // Poll every 3 seconds for faster detection
+
+    // Stop polling after 2 minutes
+    setTimeout(() => {
+      clearInterval(pollInterval);
+      console.log('[SOCIAL MEDIA] Polling timeout reached');
+    }, 120000); // 2 minutes
+  };
+
+  // Check PIT token status for social media agent (read-only check, automation is triggered by useUser.tsx globally)
+  useEffect(() => {
+    if (agentId !== 'social_media' || !userId || pitTokenStatus.checked) {
+      return;
+    }
+
+    const checkPitToken = async () => {
+      setPitTokenStatus(prev => ({ ...prev, loading: true }));
+      
+      try {
+        // Only CHECK status - don't trigger automation (useUser.tsx handles that globally)
+        const result = await checkPitTokenStatus(userId);
+        setPitTokenStatus({
+          hasPitToken: result.hasPitToken,
+          checked: true,
+          loading: false
+        });
+        
+        // If PIT token is missing, start polling to detect when it appears
+        if (!result.hasPitToken) {
+          console.log('[SOCIAL MEDIA] PIT token missing, starting polling...');
+          startPitTokenPolling();
+        }
+      } catch (error) {
+        console.error('Error checking PIT token:', error);
+        setPitTokenStatus({
+          hasPitToken: false,
+          checked: true,
+          loading: false
+        });
       }
     };
 
@@ -151,7 +192,7 @@ export default function DynamicAgentDashboard() {
           const sessionId = await chatSessionService.getOrCreateActiveSession(userId, agentId);
           setCurrentSessionId(sessionId);
         } catch (error) {
-          console.error(`❌ Error initializing session for ${agentId}:`, error);
+          console.error(`Error initializing session for ${agentId}:`, error);
           // Fallback to creating new session
           const newSessionId = chatSessionService.generateSessionId(userId, agentId);
           setCurrentSessionId(newSessionId);
@@ -258,7 +299,7 @@ function generateIntroMessage(agent: any, fromSidebar?: boolean, hasWebsiteInfo?
  */
 function SocialMediaPitTokenWarning({ onRetry }: { onRetry: () => void }) {
   const navigate = useNavigate();
-  const [retryCountdown, setRetryCountdown] = useState<number>(300); // Start with 5 minutes
+  const [retryCountdown, setRetryCountdown] = useState<number>(120); // Start with 2 minutes (faster automation)
   const [isRetrying, setIsRetrying] = useState<boolean>(true); // Start retrying immediately
 
   const handleContactSupport = () => {
@@ -268,12 +309,12 @@ function SocialMediaPitTokenWarning({ onRetry }: { onRetry: () => void }) {
 
   // Auto-start retry when component mounts
   useEffect(() => {
-    // Set a timeout to retry after 5 minutes
+    // Set a timeout to retry after 2 minutes (automation is much faster now)
     const retryTimer = setTimeout(() => {
       // Trigger retry and refresh the page
       onRetry();
       window.location.reload(); // Refresh the page to show updated status
-    }, 5 * 60 * 1000); // 5 minutes in milliseconds
+    }, 2 * 60 * 1000); // 2 minutes in milliseconds
 
     return () => clearTimeout(retryTimer);
   }, [onRetry]);

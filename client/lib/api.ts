@@ -756,8 +756,9 @@ export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<
     const creationStatus = ghlData.creation_status;
     const updatedAt = ghlData.updated_at;
     
-    // Check if automation is stuck (running for more than 1 minute for local dev, 10 for production)
-    const stuckThresholdMinutes = 1; // Changed from 10 to 1 for faster local testing
+    // Check if automation is stuck (running for more than 3 minutes)
+    // With session persistence, automation completes in ~5-30 seconds, but allow 3 minutes for safety
+    const stuckThresholdMinutes = 3;
     let isStuck = false;
     if ((automationStatus === 'running' || automationStatus === 'pit_running' || automationStatus === 'token_refresh_running') && updatedAt) {
       const updatedTime = new Date(updatedAt);
