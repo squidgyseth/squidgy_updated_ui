@@ -250,6 +250,8 @@ export default function IntegrationsSettings() {
       
       if (result.success) {
         if (result.token_refreshed) {
+          // Token refresh started in background, start polling immediately
+          startTokenPolling();
         } else {
           const ageText = result.token_age_minutes !== undefined && result.token_age_minutes !== null 
             ? `${result.token_age_minutes} minutes` 
@@ -309,11 +311,10 @@ export default function IntegrationsSettings() {
             tokenNeedsRefresh = true;
           }
           
-          // Trigger refresh ONCE and start polling
+          // Trigger refresh ONCE
           if (tokenNeedsRefresh) {
             setTokenRefreshRequested(true);
             await refreshFirebaseToken();
-            startTokenPolling();
             return; // Don't set tokens yet, wait for refresh
           }
         }
@@ -334,7 +335,10 @@ export default function IntegrationsSettings() {
     
     setPollingForToken(true);
     
-    const pollInterval = setInterval(async () => {
+    // Store the initial token time to detect changes
+    let lastTokenTime: string | null = null;
+    
+    const checkForTokenUpdate = async () => {
       try {
         const { data: ghlData } = await supabase
           .from('ghl_subaccounts')
@@ -344,33 +348,44 @@ export default function IntegrationsSettings() {
         
         if (ghlData && ghlData.firebase_token) {
           const tokenTime = ghlData.firebase_token_time;
-          if (tokenTime) {
-            const tokenDate = new Date(tokenTime);
-            const now = new Date();
-            const ageInMinutes = (now.getTime() - tokenDate.getTime()) / (1000 * 60);
-            
-            
-            // If token is fresh (less than 5 minutes old), it's been updated
-            if (ageInMinutes < 5) {
-              clearInterval(pollInterval);
-              setPollingForToken(false);
-              setTokenRefreshRequested(false);
-              // Reload the page to get fresh data
-              window.location.reload();
-            }
+          
+          // If this is the first check, store the current time
+          if (lastTokenTime === null) {
+            lastTokenTime = tokenTime;
+            return;
+          }
+          
+          // Check if token_time has changed (indicating a refresh)
+          if (tokenTime && tokenTime !== lastTokenTime) {
+            console.log('✅ Token updated detected!');
+            clearInterval(pollInterval);
+            setPollingForToken(false);
+            setTokenRefreshRequested(false);
+            setRefreshingToken(false);
+            // Fetch the new tokens without reloading the page
+            await fetchTokensFromDatabase(false);
+            toast.success('Authentication refreshed successfully!');
           }
         }
       } catch (error) {
         console.error('❌ Error polling for token:', error);
       }
-    }, 60000); // Poll every 1 minute
+    };
+    
+    // Check immediately
+    checkForTokenUpdate();
+    
+    // Then poll every 3 seconds for faster detection
+    const pollInterval = setInterval(checkForTokenUpdate, 3000);
 
-    // Stop polling after 5 minutes to prevent infinite polling
+    // Stop polling after 2 minutes to prevent infinite polling
     setTimeout(() => {
       clearInterval(pollInterval);
       setPollingForToken(false);
       setTokenRefreshRequested(false);
-    }, 300000); // 5 minutes
+      setRefreshingToken(false);
+      toast.error('Token refresh timed out. Please try again.');
+    }, 120000); // 2 minutes
   };
 
   const checkGoogleCalendarConnection = async () => {
