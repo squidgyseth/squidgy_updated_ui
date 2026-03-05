@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { authService } from '../lib/auth-service';
 import { supabase } from '../lib/supabase';
 import { sessionManager } from '../lib/session-manager';
@@ -56,6 +56,9 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const [profile, setProfile] = useState<any>(null);
   const [isImpersonating, setIsImpersonating] = useState<boolean>(false);
   const [originalAdminId, setOriginalAdminId] = useState<string | null>(null);
+  
+  // Ref to prevent duplicate GHL automation calls (React Strict Mode runs effects twice)
+  const ghlAutomationCalledRef = useRef(false);
 
   // Initialize user data on mount
   useEffect(() => {
@@ -196,9 +199,21 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           sessionManager.startSessionMonitoring();
           
           // Check GHL pit_token and trigger onboarding if missing
-          checkAndTriggerGhlOnboarding(currentUserId).catch(err => {
-            console.error('[GHL CHECK] Failed to check GHL onboarding:', err);
-          });
+          // Skip this check on signup/signin pages - backend handles automation during registration
+          // Also prevent duplicate calls from React Strict Mode using ref
+          const currentPath = window.location.pathname;
+          const isAuthPage = currentPath.includes('/signup') || currentPath.includes('/signin') || currentPath.includes('/login');
+          
+          if (!isAuthPage && !ghlAutomationCalledRef.current) {
+            ghlAutomationCalledRef.current = true; // Mark as called to prevent duplicates
+            checkAndTriggerGhlOnboarding(currentUserId).catch(err => {
+              console.error('[GHL CHECK] Failed to check GHL onboarding:', err);
+            });
+          } else if (isAuthPage) {
+            console.log('[GHL CHECK] Skipping automation check on auth page - backend handles this during registration');
+          } else {
+            console.log('[GHL CHECK] Skipping duplicate automation check - already called');
+          }
         } else {
           setIsAuthenticated(false);
           setUser(null);
@@ -309,10 +324,8 @@ export const UserProvider = ({ children }: UserProviderProps) => {
                 finalProfile?.full_name
               );
               
-              // Check GHL pit_token and trigger onboarding if missing
-              checkAndTriggerGhlOnboarding(currentUserId).catch(err => {
-                console.error('[GHL CHECK] Failed to check GHL onboarding:', err);
-              });
+              // Note: GHL automation check removed from here to prevent duplicates
+              // It's already handled in the initial user load (line 199)
               
             } catch (error) {
               console.error('Error handling auth state change:', error);

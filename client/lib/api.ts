@@ -771,9 +771,9 @@ export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<
       }
     }
     
-    // Skip if automation is actively running (not stuck) or pending creation
+    // Skip if automation is actively running (not stuck), pending creation, or just started by backend
     if (!isStuck && (automationStatus === 'running' || automationStatus === 'pit_running' || 
-        automationStatus === 'token_refresh_running' || 
+        automationStatus === 'token_refresh_running' || automationStatus === 'not_started' ||
         creationStatus === 'pending' || creationStatus === 'creating')) {
       console.log(`[GHL CHECK] Automation already in progress (creation: ${creationStatus}, automation: ${automationStatus}) - skipping`);
       return { hasPitToken: false, triggered: false };
