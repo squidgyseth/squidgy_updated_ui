@@ -560,12 +560,17 @@ export default function IntegrationsSettings() {
   };
 
   const getUserFirmId = async () => {
+    setLoading(true);
+    
     // When in impersonation mode, fetch the impersonated user's profile directly
     if (isImpersonating && userId) {
       try {
         const { data: profile } = await profilesApi.getById(userId);
         if (profile?.user_id) {
           setFirmUserId(profile.user_id);
+        } else {
+          console.warn('No user_id found in impersonated user profile, using userId directly');
+          setFirmUserId(userId);
         }
       } catch (error) {
         console.error('Error getting impersonated user profile:', error);
@@ -575,14 +580,22 @@ export default function IntegrationsSettings() {
       return;
     }
     
-    if (!user?.email) return;
+    if (!user?.email) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       const { data: profile } = await profilesApi.getByEmail(user.email);
       if (profile?.user_id) {
         setFirmUserId(profile.user_id);
+      } else {
+        console.warn('No user_id found in profile');
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error getting firm user ID:', error);
+      setLoading(false);
     }
   };
 
@@ -705,7 +718,10 @@ export default function IntegrationsSettings() {
   }, [locationId, pitToken]);
 
   const fetchGHLIntegrations = async () => {
-    if (!firmUserId) return;
+    if (!firmUserId) {
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
