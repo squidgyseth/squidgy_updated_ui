@@ -8,7 +8,7 @@
 
 ## Overview
 
-All agent files are organized in the `client/{agent_id}/` directory structure. This keeps all agent-related files together in one location.
+All agent files are organized in the `agents/{agent_id}/` directory structure. This keeps all agent-related files together in one location and provides a clean separation from client code.
 
 ---
 
@@ -24,19 +24,12 @@ agents/
 ├── {agent_id}/                          # Agent-specific folder
 │   ├── config.yaml                      # Agent YAML configuration
 │   ├── system_prompt.md                 # Agent system prompt
-│   └── n8n_workflow.json                # Agent's customized N8N workflow
+│   └── n8n_workflow.json                # Agent's customized N8N workflow (optional)
 │
 └── another_agent/
     ├── config.yaml
     ├── system_prompt.md
     └── n8n_workflow.json
-
-client/
-├── {agent_id}/                          # Agent-specific folder (for build output)
-│   ├── config.yaml                      # Generated agent config
-│   └── system_prompt.md                 # Generated system prompt
-│
-└── [other client files]
 ```
 
 ---
@@ -81,7 +74,7 @@ Agent configuration file containing:
 - Suggestion buttons
 - Conversation state schema (if applicable)
 
-**Example location**: `client/email_marketing_manager/config.yaml`
+**Example location**: `agents/weather_advisor/config.yaml`
 
 ### `system_prompt.md`
 
@@ -92,7 +85,7 @@ Agent-specific system prompt containing:
 - Routing rules
 - Domain-specific knowledge
 
-**Example location**: `client/email_marketing_manager/system_prompt.md`
+**Example location**: `agents/weather_advisor/system_prompt.md`
 
 **Note**: The base system prompt (`agents/shared/base_system_prompt.md`) is automatically prepended during build.
 
@@ -100,75 +93,80 @@ Agent-specific system prompt containing:
 
 ## Creating New Agent Files
 
-### Using the Template-Based Builder
+### Using the Python Agent Management Script
+
+**Recommended approach** - Use the Python script for all agent creation and editing:
 
 ```bash
-node scripts/create-agent-from-template.js
+python scripts/create-agent-from-template.py
 ```
 
-This automatically creates all files in the correct location:
-- `client/{agent_id}/config.yaml`
-- `client/{agent_id}/system_prompt.md`
-- `client/{agent_id}/n8n_workflow.json`
+This automatically:
+- Creates the agent folder structure
+- Generates all required files in the correct locations
+- Handles YAML formatting and validation
+- Supports both creation and editing of existing agents
+- Optionally generates N8N workflows
 
-### Manual Creation
+### Manual Creation (Advanced)
+
+If you prefer to create agents manually:
 
 1. **Create agent directory**:
    ```bash
-   mkdir client/my_agent_id
+   mkdir agents/my_agent_id
    ```
 
 2. **Create config.yaml**:
    ```bash
-   cp agents/shared/agent_template.yaml client/my_agent_id/config.yaml
+   cp agents/shared/agent_template.yaml agents/my_agent_id/config.yaml
    ```
 
 3. **Create system_prompt.md**:
    ```bash
-   touch client/my_agent_id/system_prompt.md
+   touch agents/my_agent_id/system_prompt.md
    ```
 
-4. **Create or import N8N workflow**:
-   - Use template-based builder, OR
-   - Export from N8N and save as `client/my_agent_id/n8n_workflow.json`
+4. **Create or import N8N workflow** (optional):
+   - Use Python script with workflow generation, OR
+   - Export from N8N and save as `agents/my_agent_id/n8n_workflow.json`
 
 ---
 
 ## Build Process
 
-After creating agent files, run the build script:
+After creating agent files, run the build process for your platform:
 
 ```bash
-node scripts/build-agents.js
+# Use the build command for your system
+[build command]
 ```
 
-This script:
-1. Reads all `client/{agent_id}/config.yaml` files
-2. Compiles them into `client/data/agents.ts`
-3. Syncs to Supabase `agents` table
+This process:
+1. Reads all `agents/{agent_id}/config.yaml` files
+2. Compiles them for the application
+3. Syncs to database
 4. Combines base prompt + agent prompt
-5. Uploads to Neon database
+5. Uploads compiled prompts to database
 
 ---
 
 ## Migration from Old Structure
 
-If you have agents in the old `agents/{agent_id}/` structure:
+If you have agents in the old `client/{agent_id}/` structure:
 
 ### Move Files
 
 ```bash
 # For each agent
-mv agents/my_agent_id/config.yaml client/my_agent_id/config.yaml
-mv agents/my_agent_id/system_prompt.md client/my_agent_id/system_prompt.md
-
-# If you have N8N workflow in n8n/ folder
-mv n8n/my_agent_id_workflow.json client/my_agent_id/n8n_workflow.json
+mv client/my_agent_id/config.yaml agents/my_agent_id/config.yaml
+mv client/my_agent_id/system_prompt.md agents/my_agent_id/system_prompt.md
+mv client/my_agent_id/n8n_workflow.json agents/my_agent_id/n8n_workflow.json
 ```
 
 ### Update References
 
-Update any scripts or documentation that reference the old paths.
+Update any scripts or documentation that reference the old client paths.
 
 ---
 
@@ -184,9 +182,10 @@ Update any scripts or documentation that reference the old paths.
 ### Organization
 
 ✅ **Do**:
-- Keep all agent files in `client/{agent_id}/`
+- Keep all agent files in `agents/{agent_id}/`
 - Use descriptive agent IDs
 - Include all necessary files for the agent
+- Use the Python script for consistent file generation
 
 ❌ **Don't**:
 - Scatter agent files across multiple directories
@@ -209,16 +208,11 @@ agents/
 │   ├── base_system_prompt.md         # Base prompt for all agents
 │   ├── agent_template.yaml            # Template for new agents
 │   └── n8n_workflow_template.json     # Source N8N template
-│
+
 └── email_marketing_manager/
     ├── config.yaml                    # Agent configuration
     ├── system_prompt.md               # Agent-specific prompt
-    └── n8n_workflow.json              # Agent's customized workflow
-
-client/
-└── email_marketing_manager/
-    ├── config.yaml                    # Generated agent config
-    └── system_prompt.md               # Generated system prompt
+    └── n8n_workflow.json              # Agent's customized workflow (optional)
 ```
 
 **config.yaml**:
@@ -242,7 +236,7 @@ Manage email campaigns and newsletters.
 # ... rest of prompt
 ```
 
-**Agent N8N Workflow** (`agents/email_marketing_manager/n8n_workflow.json`):
+**Agent N8N Workflow** (`agents/email_marketing_manager/n8n_workflow.json`) - **Optional**:
 ```json
 {
   "name": "Email Marketing Manager - Workflow",
@@ -259,15 +253,15 @@ Manage email campaigns and newsletters.
 }
 ```
 
-**Note**: The shared template is updated with each agent's customizations and deployed to N8N.
+**Note**: N8N workflows are optional - agents can function without them.
 
 ---
 
 ## Related Documentation
 
+- **[Agent Creation Scripts](../scripts/README.md)** - Python script for agent creation and management
 - **[Agent Creation Guide](../agents/README.md)** - How to create agents
-- **[N8N Template-Based Creation](./n8n-template-based-agent-creation.md)** - Template-based workflow
-- **[Build Script](../scripts/build-agents.js)** - Agent compilation
+- **[N8N Template-Based Creation](./n8n-template-based-agent-creation.md)** - Template-based workflow guide
 
 ---
 

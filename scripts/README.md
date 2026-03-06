@@ -4,7 +4,7 @@
 
 **Script**: `create-agent-from-template.py`
 
-**This is the ONLY agent creation script.** It creates complete agents by cloning the standard N8N workflow template and generating all necessary files with an interactive wizard.
+**This is the ONLY agent creation and management script.** It creates new agents or edits existing ones by cloning the standard N8N workflow template and generating all necessary files with an interactive wizard.
 
 ### Prerequisites
 
@@ -29,7 +29,10 @@
 python scripts/create-agent-from-template.py
 ```
 
-The script will prompt you for:
+The script will first ask you to:
+- **Select mode**: Create new agent OR Edit existing agent
+
+**For Create New Agent:**
 - Agent name (e.g., "Social Media Manager")
 - Agent ID (auto-generated or custom)
 - Agent purpose (with examples)
@@ -39,6 +42,13 @@ The script will prompt you for:
 - UI customization (emoji, color, tagline)
 - Pinned status
 - Review summary before creation
+
+**For Edit Existing Agent:**
+- Select from list of existing agents
+- All prompts show current values
+- Press Enter to keep existing values
+- Update only what you want to change
+- Choose whether to regenerate N8N workflow
 
 #### Command Line Mode
 
@@ -57,14 +67,23 @@ python scripts/create-agent-from-template.py \
 
 ### What It Does
 
-The script performs 6 steps:
+The script performs different steps based on mode:
 
+**Create Mode:**
 1. **Agent Configuration** - Collects agent details
 2. **Fetch Template** - Downloads N8N workflow template `ijDtq0ljM2atxA0E`
 3. **Process Workflow** - Replaces `<<agent_id>>` placeholders and remaps credentials
 4. **Save Workflow** - Saves customized workflow to `agents/{agent_id}/n8n_workflow.json`
 5. **Generate Files** - Creates `config.yaml` and `system_prompt.md`
 6. **Deploy to N8N** - Optionally deploys workflow to N8N
+
+**Edit Mode:**
+1. **Select Agent** - List and select existing agent
+2. **Load Configuration** - Display current values in all prompts
+3. **Update Configuration** - Modify selected properties
+4. **Save Files** - Update `config.yaml` and `system_prompt.md`
+5. **Optional Workflow** - Ask whether to regenerate N8N workflow
+6. **Deploy** - Optionally deploy updated workflow to N8N
 
 ### Files Created
 
@@ -75,16 +94,22 @@ agents/{agent_id}/
 └── n8n_workflow.json    # Customized N8N workflow
 ```
 
-### Example
+### Example - Create New Agent
 
 ```bash
 $ python scripts/create-agent-from-template.py
 
 ============================================================
-  Squidgy Agent Workflow Cloner
+  Squidgy Agent Manager
   Instance  : https://n8n.theaiteam.uk
   Template  : ijDtq0ljM2atxA0E
 ============================================================
+
+Select mode:
+  1. Create new agent
+  2. Edit existing agent
+
+Mode (1-2): 1
 
 [1/6] Agent Configuration
 ────────────────────────────────────────────────────────────
@@ -159,13 +184,93 @@ $ python scripts/create-agent-from-template.py
   3. Click Publish to activate
 ```
 
-### After Creation
+### Example - Edit Existing Agent
 
-1. **Open workflow in N8N** - Click the Editor URL
+```bash
+$ python scripts/create-agent-from-template.py
+
+============================================================
+  Squidgy Agent Manager
+  Instance  : https://n8n.theaiteam.uk
+  Template  : ijDtq0ljM2atxA0E
+============================================================
+
+Select mode:
+  1. Create new agent
+  2. Edit existing agent
+
+Mode (1-2): 2
+
+  Existing agents:
+    1. brandy
+    2. weather_advisor
+    3. social_media_manager
+
+  Select agent (1-3): 1
+
+  ✓ Loaded config for: brandy
+
+[1/6] Agent Configuration
+────────────────────────────────────────────────────────────
+  Agent name [current: Brandy | Brand Advisor] (press Enter to keep): Brandy
+  
+  Agent purpose [current: Build your anti-brand or get brand guidance] (press Enter to keep): 
+  
+  Current category: MARKETING
+  
+  Select new category (or press Enter to keep):
+    1. MARKETING  2. SALES  3. HR  4. SUPPORT  5. OPERATIONS  6. GENERAL
+  Category (1-6, or Enter): 
+  
+  Personality Configuration [current: friendly/supportive/consultative]
+  Communication Tone (or press Enter to keep):
+    1. professional  2. friendly  3. casual  4. enthusiastic  5. formal
+  Select tone (1-5, current: friendly): 
+  
+  Current Capabilities:
+    1. Brand foundation building
+    2. Brand document import and parsing
+    3. Brand voice refinement and guidance
+    
+  Edit capabilities? (y/n): n
+  
+  UI Customization:
+  Emoji [current: 🎨] (press Enter to keep): 
+  Tagline [current: Define. Refine. Align.] (press Enter to keep): 
+  Pin to top? (y/n, current: no): 
+  Enabled? (y/n, current: yes): 
+
+  ✓ Config and system prompt saved to agents/brandy/
+
+  Generate/update N8N workflow? (y/n): n
+
+============================================================
+  Done!
+  Agent ID      : brandy
+
+  Files Updated:
+    ✓ agents/brandy/config.yaml
+    ✓ agents/brandy/system_prompt.md
+============================================================
+```
+
+### After Creation/Update
+
+1. **Open workflow in N8N** - Click the Editor URL (if workflow was generated)
 2. **Set credentials** - Configure OpenRouter, Neon Postgres, Supabase
 3. **Publish workflow** - Click "Publish" to activate
-4. **Build agent** - Run `node scripts/build-agents.js` to compile
+4. **Build agent** - Run build process to compile agents
 5. **Test agent** - Use the agent in your application
+
+### Editing Existing Agents
+
+The script now supports full agent lifecycle management:
+
+- **List existing agents** - Shows all agents in `agents/` folder
+- **Load current config** - Displays existing values in all prompts
+- **Selective updates** - Press Enter to keep values, type to change
+- **Optional workflow regeneration** - Choose whether to update N8N workflow
+- **Preserved functionality** - All existing creation features remain
 
 ### Credential Mapping
 
@@ -181,7 +286,7 @@ CREDENTIAL_MAP = {
 
 To find your credential IDs, run:
 ```bash
-python scripts/List_n8n_ids.py
+python scripts/list_n8n_credentials.py
 ```
 
 ### Troubleshooting
@@ -205,8 +310,8 @@ python scripts/List_n8n_ids.py
 
 ### Related Scripts
 
-- `List_n8n_ids.py` - List all credential IDs from your N8N instance
-- `build-agents.js` - Compile agents and upload to Neon database
+- `list_n8n_credentials.py` - List all credential IDs from your N8N instance
+- Build process scripts - Compile agents and upload to database
 
 ### Documentation
 

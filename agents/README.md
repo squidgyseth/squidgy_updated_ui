@@ -27,7 +27,29 @@ agents/
 
 ## 🔧 Creating a New Agent
 
-### Step 1: Create Agent Folder
+### Recommended: Use the Python Script
+
+The easiest way to create agents is with the Python agent management script:
+
+```bash
+python scripts/create-agent-from-template.py
+```
+
+This script:
+- ✅ Guides you through interactive prompts
+- ✅ Generates all required files automatically
+- ✅ Creates proper folder structure
+- ✅ Optionally generates N8N workflows
+- ✅ Handles all YAML formatting and validation
+- ✅ Supports editing existing agents
+
+See **[Agent Creation Scripts](../scripts/README.md)** for detailed usage.
+
+### Manual Creation (Advanced)
+
+If you prefer to create agents manually:
+
+#### Step 1: Create Agent Folder
 
 Create a new folder with your agent's ID (use snake_case):
 
@@ -35,7 +57,7 @@ Create a new folder with your agent's ID (use snake_case):
 mkdir agents/your_agent_id
 ```
 
-### Step 2: Create `config.yaml`
+#### Step 2: Create `config.yaml`
 
 Copy the template and customize:
 
@@ -63,7 +85,7 @@ personality:
   approach: proactive                  # proactive, reactive, collaborative
 ```
 
-### Step 3: Create `system_prompt.md`
+#### Step 3: Create `system_prompt.md`
 
 Create agent-specific instructions:
 
@@ -121,21 +143,22 @@ Specific instructions for using tools unique to this agent.
 When to route to other agents or escalate.
 ```
 
-### Step 4: Build and Deploy
+#### Step 4: Build and Deploy
 
-Run the build script to compile agents and sync to database:
+Run the build process to compile agents and sync to database:
 
 ```bash
-node scripts/build-agents.js
+# Use the build process for your platform
+[build command for your system]
 ```
 
-This script will:
-- ✅ Compile all YAML configs into `client/data/agents.ts`
-- ✅ Sync agents to Supabase `agents` table
+This will:
+- ✅ Compile all YAML configs
+- ✅ Sync agents to database
 - ✅ Combine `base_system_prompt.md` + `system_prompt.md`
-- ✅ Upload compiled prompts to Neon database
+- ✅ Upload compiled prompts
 
-### Step 5: Restart Dev Server
+#### Step 5: Restart Dev Server
 
 ```bash
 npm run dev
@@ -255,7 +278,7 @@ Current agents in the system:
 
 3. **Rebuild agents:**
    ```bash
-   node scripts/build-agents.js
+   [build command for your system]
    ```
 
 ### System prompt not updating?
@@ -263,10 +286,10 @@ Current agents in the system:
 The system prompt is compiled during build. After editing `system_prompt.md`:
 
 ```bash
-node scripts/build-agents.js
+[build command for your system]
 ```
 
-This syncs the updated prompt to Neon database.
+This syncs the updated prompt to database.
 
 ### Agent showing duplicate content?
 
@@ -276,12 +299,13 @@ Check if you're duplicating base prompt rules in your `system_prompt.md`. Remove
 
 ## 📚 Related Documentation
 
+- **[Agent Creation Scripts](../scripts/README.md)** - Python script for agent creation and management
 - **[Agent Template](./shared/agent_template.yaml)** - YAML configuration template
 - **[Base System Prompt](./shared/base_system_prompt.md)** - Shared prompt for all agents
-- **[Build Script](../scripts/build-agents.js)** - Agent compilation and sync
-- **[N8N Agent Setup](../docs/n8n-agent-setup.md)** - N8N workflow configuration
+- **[N8N Template-Based Agent Creation](../docs/n8n-template-based-agent-creation.md)** - Workflow integration guide
 - **[Agent Architecture](../docs/AGENT_ARCHITECTURE_PLAN.md)** - System architecture overview
+- **[Agent Folder Structure](../docs/agent-folder-structure.md)** - Detailed file organization
 
 ---
 
-**Last Updated:** 2026-02-23
+**Last Updated:** 2026-03-06

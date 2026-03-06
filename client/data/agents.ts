@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-03-04T12:05:31.476Z
+// Generated on: 2026-03-06T14:47:04.213Z
 
 export interface AgentConfig {
   agent: {
@@ -207,14 +207,8 @@ export const ALL_AGENTS: AgentConfig[] = [
       "name": "Brandy | Brand Advisor",
       "category": "MARKETING",
       "description": "Build your anti-brand or get brand guidance",
-      "specialization": "Brand Strategist",
-      "tagline": "Define. Refine. Align.",
-      "avatar": "/Squidgy AI Assistants Avatars/7.png",
-      "pinned": true,
+      "pinned": false,
       "enabled": true,
-      "uses_conversation_state": true,
-      "initial_message": "Hey! 🎨 I'm Brandy, your brand advisor.<br><br>I help you build authentic brands that actually sound like you - no corporate BS.<br><br>Want to:<br><br><b>1. Build from scratch</b> - I'll guide you through 6 quick questions<br><b>2. Import existing</b> - Got brand docs? Paste them and I'll extract what matters<br><b>3. Just chat</b> - Ask me brand questions and we'll figure it out as we go<br><br>What works for you?",
-      "sidebar_greeting": "Hi! I'm Brandy - your brand strategist. Whether you're building from scratch or refining what you have, I'll help you create a brand that feels real.",
       "capabilities": [
         "Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
         "Brand document import and parsing",
@@ -224,26 +218,20 @@ export const ALL_AGENTS: AgentConfig[] = [
         "Before/after copy transformations"
       ],
       "recent_actions": [
-        "Built brand foundation for SaaS startup",
-        "Imported and refined existing brand docs",
-        "Generated 20 on-brand social hooks",
-        "Reviewed website copy for brand alignment"
-      ]
+        "Completed Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
+        "Generated content or analysis"
+      ],
+      "tagline": "Define. Refine. Align.",
+      "specialization": "Brand Strategist"
     },
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/brandy"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
     },
     "ui_use": {
       "page_type": "single_page",
       "pages": [
         {
-          "name": "Brandy Dashboard",
+          "name": "Brandy | Brand Advisor Dashboard",
           "path": "brandy-dashboard",
           "order": 1,
           "validated": true
@@ -254,205 +242,18 @@ export const ALL_AGENTS: AgentConfig[] = [
       "type": "chat",
       "features": [
         "text_input",
-        "file_upload",
         "suggestion_buttons"
       ]
     },
     "suggestions": [
-      "1 - Build from scratch",
-      "2 - Import existing brand docs",
-      "3 - Just chat"
+      "Help me with Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
+      "What can you do?",
+      "Show me examples"
     ],
     "personality": {
       "tone": "friendly",
-      "style": "direct",
+      "style": "supportive",
       "approach": "consultative"
-    },
-    "brandy_config": {
-      "wizard_phases": [
-        {
-          "id": "assessment",
-          "description": "Check if user has brand data, offer options",
-          "triggers": [
-            "first_interaction",
-            "restart"
-          ]
-        },
-        {
-          "id": "import",
-          "description": "Parse uploaded brand docs or website",
-          "triggers": [
-            "user_uploads_file",
-            "provides_url"
-          ]
-        },
-        {
-          "id": "wizard_build",
-          "description": "6-step brand building process",
-          "steps": [
-            {
-              "id": "atmosphere",
-              "question": "What's the overall vibe/feeling you want people to experience?",
-              "stores_to": "brands.atmosphere"
-            },
-            {
-              "id": "rebellious_edge",
-              "question": "What makes you different? What won't you compromise on?",
-              "stores_to": "brands.rebellious_edge"
-            },
-            {
-              "id": "enemy",
-              "question": "What do you stand against? (industry BS, not competitors)",
-              "stores_to": "brands.enemy_statement"
-            },
-            {
-              "id": "visuals",
-              "question": "Describe your visual vibe (colors, energy, feel)",
-              "stores_to": "brands.visual_direction"
-            },
-            {
-              "id": "hooks",
-              "question": "How do you grab attention? What makes people stop scrolling?",
-              "stores_to": "brands.hook_style"
-            },
-            {
-              "id": "messaging",
-              "question": "How do you sound? What's your authentic voice?",
-              "stores_to": "brands.voice_messaging"
-            }
-          ]
-        },
-        {
-          "id": "summary",
-          "description": "Compile Phase 1 summary",
-          "outputs": "brand_foundation_summary"
-        },
-        {
-          "id": "bible_generation",
-          "description": "Generate full brand bible (Phase 2)",
-          "triggers": [
-            "user_requests_full_bible"
-          ],
-          "outputs": "full_brand_bible"
-        },
-        {
-          "id": "advisor_mode",
-          "description": "Answer questions, generate content, review copy",
-          "triggers": [
-            "brand_exists"
-          ]
-        }
-      ],
-      "database": {
-        "table": "brands",
-        "columns": [
-          {
-            "name": "user_id",
-            "type": "UUID",
-            "required": true
-          },
-          {
-            "name": "atmosphere",
-            "type": "TEXT",
-            "description": "Overall vibe and feeling"
-          },
-          {
-            "name": "rebellious_edge",
-            "type": "TEXT",
-            "description": "What makes them different"
-          },
-          {
-            "name": "enemy_statement",
-            "type": "TEXT",
-            "description": "What they stand against"
-          },
-          {
-            "name": "visual_direction",
-            "type": "TEXT",
-            "description": "Visual vibe description"
-          },
-          {
-            "name": "hook_style",
-            "type": "TEXT",
-            "description": "How they grab attention"
-          },
-          {
-            "name": "voice_messaging",
-            "type": "TEXT",
-            "description": "Authentic voice"
-          },
-          {
-            "name": "signature_phrases",
-            "type": "TEXT[]",
-            "description": "Key phrases they use"
-          },
-          {
-            "name": "full_brand_bible",
-            "type": "JSONB",
-            "description": "Complete brand bible document"
-          },
-          {
-            "name": "created_at",
-            "type": "TIMESTAMP",
-            "default": "NOW()"
-          },
-          {
-            "name": "updated_at",
-            "type": "TIMESTAMP",
-            "default": "NOW()"
-          }
-        ]
-      },
-      "import": {
-        "supported_formats": [
-          ".pdf",
-          ".docx",
-          ".txt",
-          ".md",
-          "website_url"
-        ],
-        "extraction_targets": [
-          "brand_values",
-          "brand_voice",
-          "messaging",
-          "visual_guidelines",
-          "about_page_content",
-          "mission_statement"
-        ]
-      },
-      "knowledge_base": [
-        {
-          "file": "instructions.md",
-          "description": "Core agent behavior and conditional logic"
-        },
-        {
-          "file": "wizard_flow.md",
-          "description": "6-step wizard conversation flow"
-        },
-        {
-          "file": "brand_methodology.md",
-          "description": "Anti-branding methodology (punk branding framework)"
-        },
-        {
-          "file": "import_parser.md",
-          "description": "How to parse and extract from brand docs"
-        }
-      ]
-    },
-    "conversation_state_schema": {
-      "phase": "string",
-      "brand_exists": "boolean",
-      "wizard_step": "number",
-      "wizard_data": {
-        "atmosphere": "string",
-        "rebellious_edge": "string",
-        "enemy_statement": "string",
-        "visual_direction": "string",
-        "hook_style": "string",
-        "voice_messaging": "string"
-      },
-      "import_status": "string",
-      "last_interaction": "timestamp"
     }
   },
   {
@@ -776,8 +577,8 @@ export const ALL_AGENTS: AgentConfig[] = [
       "specialization": "Agent Architect",
       "tagline": "Design. Build. Deploy.",
       "avatar": "/Squidgy AI Assistants Avatars/builder.png",
-      "pinned": true,
-      "enabled": true,
+      "pinned": false,
+      "enabled": false,
       "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I can help you build new AI agents from scratch with:<br>✅ Guided conversation to define your agent<br>✅ Automatic YAML configuration<br>✅ N8N workflow templates<br>✅ Integration setup scripts<br>✅ Testing and validation<br><br>Ready to create your first agent? Let's start with: What will your agent do?",
       "sidebar_greeting": "Hi! I'm Ace - your Agent Builder. I'll guide you through creating custom AI agents with all the integrations, workflows, and configurations you need.",
       "capabilities": [
@@ -799,12 +600,6 @@ export const ALL_AGENTS: AgentConfig[] = [
     },
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/agent_builder"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
     },
     "ui_use": {
       "page_type": "single_page",
@@ -840,176 +635,6 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tone": "professional",
       "style": "educational",
       "approach": "consultative"
-    },
-    "agent_builder_config": {
-      "tiers": [
-        {
-          "name": "Tier 1 - Basic Chat",
-          "description": "Simple conversational agent with N8N webhook",
-          "features": [
-            "Standard chat interface",
-            "Suggestion buttons",
-            "Basic N8N webhook",
-            "Personality configuration"
-          ],
-          "automation_level": "fully_automated"
-        },
-        {
-          "name": "Tier 2 - Platform Integrated",
-          "description": "Multi-platform integration (social media, CRM, etc.)",
-          "features": [
-            "Multi-platform configs",
-            "Media handling",
-            "Account management",
-            "File upload support"
-          ],
-          "automation_level": "semi_automated",
-          "requires": [
-            "OAuth setup (manual)",
-            "Platform API keys (manual)",
-            "Playwright scripts for browser automation"
-          ]
-        },
-        {
-          "name": "Tier 3 - Domain Expert",
-          "description": "Industry-specific with complex calculations and external APIs",
-          "features": [
-            "Custom domain configs",
-            "Calculator widgets",
-            "Map integrations",
-            "Pre-setup pages",
-            "Regional configs"
-          ],
-          "automation_level": "semi_automated",
-          "requires": [
-            "Domain API integrations",
-            "Custom UI components",
-            "Specialized N8N workflows"
-          ]
-        },
-        {
-          "name": "Tier 4 - Multi-Modal",
-          "description": "Figma UI generation with multi-page carousels",
-          "features": [
-            "Figma integration",
-            "Multi-page UI",
-            "Conversation state persistence",
-            "Generated React components"
-          ],
-          "automation_level": "semi_automated",
-          "requires": [
-            "Figma URLs/tokens",
-            "UI generation pipeline",
-            "Component validation"
-          ]
-        }
-      ],
-      "integration_templates": [
-        {
-          "name": "GoHighLevel (GHL)",
-          "type": "crm",
-          "automation_type": "playwright",
-          "capabilities": [
-            "Subaccount creation",
-            "Media management",
-            "Contact management",
-            "Workflow automation"
-          ],
-          "setup_guide": "/guides/integrations/ghl-setup.md"
-        },
-        {
-          "name": "Facebook Business",
-          "type": "social_media",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Page posting",
-            "Story scheduling",
-            "Media upload"
-          ],
-          "setup_guide": "/guides/integrations/facebook-setup.md"
-        },
-        {
-          "name": "Instagram Business",
-          "type": "social_media",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Feed posting",
-            "Story scheduling",
-            "Media upload"
-          ],
-          "setup_guide": "/guides/integrations/instagram-setup.md"
-        },
-        {
-          "name": "LinkedIn",
-          "type": "social_media",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Profile posting",
-            "Company page posting"
-          ],
-          "setup_guide": "/guides/integrations/linkedin-setup.md"
-        },
-        {
-          "name": "Google Calendar",
-          "type": "productivity",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Event creation",
-            "Event listing",
-            "Availability checking"
-          ],
-          "setup_guide": "/guides/integrations/google-calendar-setup.md"
-        },
-        {
-          "name": "Supabase",
-          "type": "database",
-          "automation_type": "api_key",
-          "capabilities": [
-            "Data storage",
-            "Query execution",
-            "Real-time subscriptions"
-          ],
-          "setup_guide": "/guides/integrations/supabase-setup.md"
-        }
-      ],
-      "n8n_components": [
-        {
-          "name": "Webhook Trigger",
-          "type": "trigger",
-          "required": true
-        },
-        {
-          "name": "Supabase Data Fetch",
-          "type": "data",
-          "common": true
-        },
-        {
-          "name": "AI Agent Conversation",
-          "type": "ai",
-          "common": true,
-          "requires_llm": true
-        },
-        {
-          "name": "Structured Output Parser",
-          "type": "parser",
-          "common": true
-        },
-        {
-          "name": "Conditional Logic",
-          "type": "control_flow",
-          "common": true
-        },
-        {
-          "name": "HTTP Request",
-          "type": "action",
-          "common": true
-        },
-        {
-          "name": "Code Node",
-          "type": "transform",
-          "common": true
-        }
-      ]
     }
   },
   {
@@ -1137,8 +762,8 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "specialization": "Agent Architect",
       "tagline": "Design. Build. Deploy.",
       "avatar": "/Squidgy AI Assistants Avatars/builder.png",
-      "pinned": true,
-      "enabled": true,
+      "pinned": false,
+      "enabled": false,
       "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I can help you build new AI agents from scratch with:<br>✅ Guided conversation to define your agent<br>✅ Automatic YAML configuration<br>✅ N8N workflow templates<br>✅ Integration setup scripts<br>✅ Testing and validation<br><br>Ready to create your first agent? Let's start with: What will your agent do?",
       "sidebar_greeting": "Hi! I'm Ace - your Agent Builder. I'll guide you through creating custom AI agents with all the integrations, workflows, and configurations you need.",
       "capabilities": [
@@ -1160,12 +785,6 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     },
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/agent_builder"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
     },
     "ui_use": {
       "page_type": "single_page",
@@ -1201,176 +820,6 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tone": "professional",
       "style": "educational",
       "approach": "consultative"
-    },
-    "agent_builder_config": {
-      "tiers": [
-        {
-          "name": "Tier 1 - Basic Chat",
-          "description": "Simple conversational agent with N8N webhook",
-          "features": [
-            "Standard chat interface",
-            "Suggestion buttons",
-            "Basic N8N webhook",
-            "Personality configuration"
-          ],
-          "automation_level": "fully_automated"
-        },
-        {
-          "name": "Tier 2 - Platform Integrated",
-          "description": "Multi-platform integration (social media, CRM, etc.)",
-          "features": [
-            "Multi-platform configs",
-            "Media handling",
-            "Account management",
-            "File upload support"
-          ],
-          "automation_level": "semi_automated",
-          "requires": [
-            "OAuth setup (manual)",
-            "Platform API keys (manual)",
-            "Playwright scripts for browser automation"
-          ]
-        },
-        {
-          "name": "Tier 3 - Domain Expert",
-          "description": "Industry-specific with complex calculations and external APIs",
-          "features": [
-            "Custom domain configs",
-            "Calculator widgets",
-            "Map integrations",
-            "Pre-setup pages",
-            "Regional configs"
-          ],
-          "automation_level": "semi_automated",
-          "requires": [
-            "Domain API integrations",
-            "Custom UI components",
-            "Specialized N8N workflows"
-          ]
-        },
-        {
-          "name": "Tier 4 - Multi-Modal",
-          "description": "Figma UI generation with multi-page carousels",
-          "features": [
-            "Figma integration",
-            "Multi-page UI",
-            "Conversation state persistence",
-            "Generated React components"
-          ],
-          "automation_level": "semi_automated",
-          "requires": [
-            "Figma URLs/tokens",
-            "UI generation pipeline",
-            "Component validation"
-          ]
-        }
-      ],
-      "integration_templates": [
-        {
-          "name": "GoHighLevel (GHL)",
-          "type": "crm",
-          "automation_type": "playwright",
-          "capabilities": [
-            "Subaccount creation",
-            "Media management",
-            "Contact management",
-            "Workflow automation"
-          ],
-          "setup_guide": "/guides/integrations/ghl-setup.md"
-        },
-        {
-          "name": "Facebook Business",
-          "type": "social_media",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Page posting",
-            "Story scheduling",
-            "Media upload"
-          ],
-          "setup_guide": "/guides/integrations/facebook-setup.md"
-        },
-        {
-          "name": "Instagram Business",
-          "type": "social_media",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Feed posting",
-            "Story scheduling",
-            "Media upload"
-          ],
-          "setup_guide": "/guides/integrations/instagram-setup.md"
-        },
-        {
-          "name": "LinkedIn",
-          "type": "social_media",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Profile posting",
-            "Company page posting"
-          ],
-          "setup_guide": "/guides/integrations/linkedin-setup.md"
-        },
-        {
-          "name": "Google Calendar",
-          "type": "productivity",
-          "automation_type": "oauth",
-          "capabilities": [
-            "Event creation",
-            "Event listing",
-            "Availability checking"
-          ],
-          "setup_guide": "/guides/integrations/google-calendar-setup.md"
-        },
-        {
-          "name": "Supabase",
-          "type": "database",
-          "automation_type": "api_key",
-          "capabilities": [
-            "Data storage",
-            "Query execution",
-            "Real-time subscriptions"
-          ],
-          "setup_guide": "/guides/integrations/supabase-setup.md"
-        }
-      ],
-      "n8n_components": [
-        {
-          "name": "Webhook Trigger",
-          "type": "trigger",
-          "required": true
-        },
-        {
-          "name": "Supabase Data Fetch",
-          "type": "data",
-          "common": true
-        },
-        {
-          "name": "AI Agent Conversation",
-          "type": "ai",
-          "common": true,
-          "requires_llm": true
-        },
-        {
-          "name": "Structured Output Parser",
-          "type": "parser",
-          "common": true
-        },
-        {
-          "name": "Conditional Logic",
-          "type": "control_flow",
-          "common": true
-        },
-        {
-          "name": "HTTP Request",
-          "type": "action",
-          "common": true
-        },
-        {
-          "name": "Code Node",
-          "type": "transform",
-          "common": true
-        }
-      ]
     }
   },
   "brandy": {
@@ -1380,14 +829,8 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "name": "Brandy | Brand Advisor",
       "category": "MARKETING",
       "description": "Build your anti-brand or get brand guidance",
-      "specialization": "Brand Strategist",
-      "tagline": "Define. Refine. Align.",
-      "avatar": "/Squidgy AI Assistants Avatars/7.png",
-      "pinned": true,
+      "pinned": false,
       "enabled": true,
-      "uses_conversation_state": true,
-      "initial_message": "Hey! 🎨 I'm Brandy, your brand advisor.<br><br>I help you build authentic brands that actually sound like you - no corporate BS.<br><br>Want to:<br><br><b>1. Build from scratch</b> - I'll guide you through 6 quick questions<br><b>2. Import existing</b> - Got brand docs? Paste them and I'll extract what matters<br><b>3. Just chat</b> - Ask me brand questions and we'll figure it out as we go<br><br>What works for you?",
-      "sidebar_greeting": "Hi! I'm Brandy - your brand strategist. Whether you're building from scratch or refining what you have, I'll help you create a brand that feels real.",
       "capabilities": [
         "Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
         "Brand document import and parsing",
@@ -1397,26 +840,20 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
         "Before/after copy transformations"
       ],
       "recent_actions": [
-        "Built brand foundation for SaaS startup",
-        "Imported and refined existing brand docs",
-        "Generated 20 on-brand social hooks",
-        "Reviewed website copy for brand alignment"
-      ]
+        "Completed Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
+        "Generated content or analysis"
+      ],
+      "tagline": "Define. Refine. Align.",
+      "specialization": "Brand Strategist"
     },
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/brandy"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
     },
     "ui_use": {
       "page_type": "single_page",
       "pages": [
         {
-          "name": "Brandy Dashboard",
+          "name": "Brandy | Brand Advisor Dashboard",
           "path": "brandy-dashboard",
           "order": 1,
           "validated": true
@@ -1427,205 +864,18 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "type": "chat",
       "features": [
         "text_input",
-        "file_upload",
         "suggestion_buttons"
       ]
     },
     "suggestions": [
-      "1 - Build from scratch",
-      "2 - Import existing brand docs",
-      "3 - Just chat"
+      "Help me with Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
+      "What can you do?",
+      "Show me examples"
     ],
     "personality": {
       "tone": "friendly",
-      "style": "direct",
+      "style": "supportive",
       "approach": "consultative"
-    },
-    "brandy_config": {
-      "wizard_phases": [
-        {
-          "id": "assessment",
-          "description": "Check if user has brand data, offer options",
-          "triggers": [
-            "first_interaction",
-            "restart"
-          ]
-        },
-        {
-          "id": "import",
-          "description": "Parse uploaded brand docs or website",
-          "triggers": [
-            "user_uploads_file",
-            "provides_url"
-          ]
-        },
-        {
-          "id": "wizard_build",
-          "description": "6-step brand building process",
-          "steps": [
-            {
-              "id": "atmosphere",
-              "question": "What's the overall vibe/feeling you want people to experience?",
-              "stores_to": "brands.atmosphere"
-            },
-            {
-              "id": "rebellious_edge",
-              "question": "What makes you different? What won't you compromise on?",
-              "stores_to": "brands.rebellious_edge"
-            },
-            {
-              "id": "enemy",
-              "question": "What do you stand against? (industry BS, not competitors)",
-              "stores_to": "brands.enemy_statement"
-            },
-            {
-              "id": "visuals",
-              "question": "Describe your visual vibe (colors, energy, feel)",
-              "stores_to": "brands.visual_direction"
-            },
-            {
-              "id": "hooks",
-              "question": "How do you grab attention? What makes people stop scrolling?",
-              "stores_to": "brands.hook_style"
-            },
-            {
-              "id": "messaging",
-              "question": "How do you sound? What's your authentic voice?",
-              "stores_to": "brands.voice_messaging"
-            }
-          ]
-        },
-        {
-          "id": "summary",
-          "description": "Compile Phase 1 summary",
-          "outputs": "brand_foundation_summary"
-        },
-        {
-          "id": "bible_generation",
-          "description": "Generate full brand bible (Phase 2)",
-          "triggers": [
-            "user_requests_full_bible"
-          ],
-          "outputs": "full_brand_bible"
-        },
-        {
-          "id": "advisor_mode",
-          "description": "Answer questions, generate content, review copy",
-          "triggers": [
-            "brand_exists"
-          ]
-        }
-      ],
-      "database": {
-        "table": "brands",
-        "columns": [
-          {
-            "name": "user_id",
-            "type": "UUID",
-            "required": true
-          },
-          {
-            "name": "atmosphere",
-            "type": "TEXT",
-            "description": "Overall vibe and feeling"
-          },
-          {
-            "name": "rebellious_edge",
-            "type": "TEXT",
-            "description": "What makes them different"
-          },
-          {
-            "name": "enemy_statement",
-            "type": "TEXT",
-            "description": "What they stand against"
-          },
-          {
-            "name": "visual_direction",
-            "type": "TEXT",
-            "description": "Visual vibe description"
-          },
-          {
-            "name": "hook_style",
-            "type": "TEXT",
-            "description": "How they grab attention"
-          },
-          {
-            "name": "voice_messaging",
-            "type": "TEXT",
-            "description": "Authentic voice"
-          },
-          {
-            "name": "signature_phrases",
-            "type": "TEXT[]",
-            "description": "Key phrases they use"
-          },
-          {
-            "name": "full_brand_bible",
-            "type": "JSONB",
-            "description": "Complete brand bible document"
-          },
-          {
-            "name": "created_at",
-            "type": "TIMESTAMP",
-            "default": "NOW()"
-          },
-          {
-            "name": "updated_at",
-            "type": "TIMESTAMP",
-            "default": "NOW()"
-          }
-        ]
-      },
-      "import": {
-        "supported_formats": [
-          ".pdf",
-          ".docx",
-          ".txt",
-          ".md",
-          "website_url"
-        ],
-        "extraction_targets": [
-          "brand_values",
-          "brand_voice",
-          "messaging",
-          "visual_guidelines",
-          "about_page_content",
-          "mission_statement"
-        ]
-      },
-      "knowledge_base": [
-        {
-          "file": "instructions.md",
-          "description": "Core agent behavior and conditional logic"
-        },
-        {
-          "file": "wizard_flow.md",
-          "description": "6-step wizard conversation flow"
-        },
-        {
-          "file": "brand_methodology.md",
-          "description": "Anti-branding methodology (punk branding framework)"
-        },
-        {
-          "file": "import_parser.md",
-          "description": "How to parse and extract from brand docs"
-        }
-      ]
-    },
-    "conversation_state_schema": {
-      "phase": "string",
-      "brand_exists": "boolean",
-      "wizard_step": "number",
-      "wizard_data": {
-        "atmosphere": "string",
-        "rebellious_edge": "string",
-        "enemy_statement": "string",
-        "visual_direction": "string",
-        "hook_style": "string",
-        "voice_messaging": "string"
-      },
-      "import_status": "string",
-      "last_interaction": "timestamp"
     }
   },
   "content_repurposer": {
@@ -2376,14 +1626,8 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "name": "Brandy | Brand Advisor",
         "category": "MARKETING",
         "description": "Build your anti-brand or get brand guidance",
-        "specialization": "Brand Strategist",
-        "tagline": "Define. Refine. Align.",
-        "avatar": "/Squidgy AI Assistants Avatars/7.png",
-        "pinned": true,
+        "pinned": false,
         "enabled": true,
-        "uses_conversation_state": true,
-        "initial_message": "Hey! 🎨 I'm Brandy, your brand advisor.<br><br>I help you build authentic brands that actually sound like you - no corporate BS.<br><br>Want to:<br><br><b>1. Build from scratch</b> - I'll guide you through 6 quick questions<br><b>2. Import existing</b> - Got brand docs? Paste them and I'll extract what matters<br><b>3. Just chat</b> - Ask me brand questions and we'll figure it out as we go<br><br>What works for you?",
-        "sidebar_greeting": "Hi! I'm Brandy - your brand strategist. Whether you're building from scratch or refining what you have, I'll help you create a brand that feels real.",
         "capabilities": [
           "Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
           "Brand document import and parsing",
@@ -2393,26 +1637,20 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
           "Before/after copy transformations"
         ],
         "recent_actions": [
-          "Built brand foundation for SaaS startup",
-          "Imported and refined existing brand docs",
-          "Generated 20 on-brand social hooks",
-          "Reviewed website copy for brand alignment"
-        ]
+          "Completed Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
+          "Generated content or analysis"
+        ],
+        "tagline": "Define. Refine. Align.",
+        "specialization": "Brand Strategist"
       },
       "n8n": {
         "webhook_url": "https://n8n.theaiteam.uk/webhook/brandy"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "",
-        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
       },
       "ui_use": {
         "page_type": "single_page",
         "pages": [
           {
-            "name": "Brandy Dashboard",
+            "name": "Brandy | Brand Advisor Dashboard",
             "path": "brandy-dashboard",
             "order": 1,
             "validated": true
@@ -2423,205 +1661,18 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "type": "chat",
         "features": [
           "text_input",
-          "file_upload",
           "suggestion_buttons"
         ]
       },
       "suggestions": [
-        "1 - Build from scratch",
-        "2 - Import existing brand docs",
-        "3 - Just chat"
+        "Help me with Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
+        "What can you do?",
+        "Show me examples"
       ],
       "personality": {
         "tone": "friendly",
-        "style": "direct",
+        "style": "supportive",
         "approach": "consultative"
-      },
-      "brandy_config": {
-        "wizard_phases": [
-          {
-            "id": "assessment",
-            "description": "Check if user has brand data, offer options",
-            "triggers": [
-              "first_interaction",
-              "restart"
-            ]
-          },
-          {
-            "id": "import",
-            "description": "Parse uploaded brand docs or website",
-            "triggers": [
-              "user_uploads_file",
-              "provides_url"
-            ]
-          },
-          {
-            "id": "wizard_build",
-            "description": "6-step brand building process",
-            "steps": [
-              {
-                "id": "atmosphere",
-                "question": "What's the overall vibe/feeling you want people to experience?",
-                "stores_to": "brands.atmosphere"
-              },
-              {
-                "id": "rebellious_edge",
-                "question": "What makes you different? What won't you compromise on?",
-                "stores_to": "brands.rebellious_edge"
-              },
-              {
-                "id": "enemy",
-                "question": "What do you stand against? (industry BS, not competitors)",
-                "stores_to": "brands.enemy_statement"
-              },
-              {
-                "id": "visuals",
-                "question": "Describe your visual vibe (colors, energy, feel)",
-                "stores_to": "brands.visual_direction"
-              },
-              {
-                "id": "hooks",
-                "question": "How do you grab attention? What makes people stop scrolling?",
-                "stores_to": "brands.hook_style"
-              },
-              {
-                "id": "messaging",
-                "question": "How do you sound? What's your authentic voice?",
-                "stores_to": "brands.voice_messaging"
-              }
-            ]
-          },
-          {
-            "id": "summary",
-            "description": "Compile Phase 1 summary",
-            "outputs": "brand_foundation_summary"
-          },
-          {
-            "id": "bible_generation",
-            "description": "Generate full brand bible (Phase 2)",
-            "triggers": [
-              "user_requests_full_bible"
-            ],
-            "outputs": "full_brand_bible"
-          },
-          {
-            "id": "advisor_mode",
-            "description": "Answer questions, generate content, review copy",
-            "triggers": [
-              "brand_exists"
-            ]
-          }
-        ],
-        "database": {
-          "table": "brands",
-          "columns": [
-            {
-              "name": "user_id",
-              "type": "UUID",
-              "required": true
-            },
-            {
-              "name": "atmosphere",
-              "type": "TEXT",
-              "description": "Overall vibe and feeling"
-            },
-            {
-              "name": "rebellious_edge",
-              "type": "TEXT",
-              "description": "What makes them different"
-            },
-            {
-              "name": "enemy_statement",
-              "type": "TEXT",
-              "description": "What they stand against"
-            },
-            {
-              "name": "visual_direction",
-              "type": "TEXT",
-              "description": "Visual vibe description"
-            },
-            {
-              "name": "hook_style",
-              "type": "TEXT",
-              "description": "How they grab attention"
-            },
-            {
-              "name": "voice_messaging",
-              "type": "TEXT",
-              "description": "Authentic voice"
-            },
-            {
-              "name": "signature_phrases",
-              "type": "TEXT[]",
-              "description": "Key phrases they use"
-            },
-            {
-              "name": "full_brand_bible",
-              "type": "JSONB",
-              "description": "Complete brand bible document"
-            },
-            {
-              "name": "created_at",
-              "type": "TIMESTAMP",
-              "default": "NOW()"
-            },
-            {
-              "name": "updated_at",
-              "type": "TIMESTAMP",
-              "default": "NOW()"
-            }
-          ]
-        },
-        "import": {
-          "supported_formats": [
-            ".pdf",
-            ".docx",
-            ".txt",
-            ".md",
-            "website_url"
-          ],
-          "extraction_targets": [
-            "brand_values",
-            "brand_voice",
-            "messaging",
-            "visual_guidelines",
-            "about_page_content",
-            "mission_statement"
-          ]
-        },
-        "knowledge_base": [
-          {
-            "file": "instructions.md",
-            "description": "Core agent behavior and conditional logic"
-          },
-          {
-            "file": "wizard_flow.md",
-            "description": "6-step wizard conversation flow"
-          },
-          {
-            "file": "brand_methodology.md",
-            "description": "Anti-branding methodology (punk branding framework)"
-          },
-          {
-            "file": "import_parser.md",
-            "description": "How to parse and extract from brand docs"
-          }
-        ]
-      },
-      "conversation_state_schema": {
-        "phase": "string",
-        "brand_exists": "boolean",
-        "wizard_step": "number",
-        "wizard_data": {
-          "atmosphere": "string",
-          "rebellious_edge": "string",
-          "enemy_statement": "string",
-          "visual_direction": "string",
-          "hook_style": "string",
-          "voice_messaging": "string"
-        },
-        "import_status": "string",
-        "last_interaction": "timestamp"
       }
     },
     {
@@ -2947,8 +1998,8 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "specialization": "Agent Architect",
         "tagline": "Design. Build. Deploy.",
         "avatar": "/Squidgy AI Assistants Avatars/builder.png",
-        "pinned": true,
-        "enabled": true,
+        "pinned": false,
+        "enabled": false,
         "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I can help you build new AI agents from scratch with:<br>✅ Guided conversation to define your agent<br>✅ Automatic YAML configuration<br>✅ N8N workflow templates<br>✅ Integration setup scripts<br>✅ Testing and validation<br><br>Ready to create your first agent? Let's start with: What will your agent do?",
         "sidebar_greeting": "Hi! I'm Ace - your Agent Builder. I'll guide you through creating custom AI agents with all the integrations, workflows, and configurations you need.",
         "capabilities": [
@@ -2970,12 +2021,6 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       },
       "n8n": {
         "webhook_url": "https://n8n.theaiteam.uk/webhook/agent_builder"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "",
-        "figma_token": "figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd"
       },
       "ui_use": {
         "page_type": "single_page",
@@ -3011,176 +2056,6 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "tone": "professional",
         "style": "educational",
         "approach": "consultative"
-      },
-      "agent_builder_config": {
-        "tiers": [
-          {
-            "name": "Tier 1 - Basic Chat",
-            "description": "Simple conversational agent with N8N webhook",
-            "features": [
-              "Standard chat interface",
-              "Suggestion buttons",
-              "Basic N8N webhook",
-              "Personality configuration"
-            ],
-            "automation_level": "fully_automated"
-          },
-          {
-            "name": "Tier 2 - Platform Integrated",
-            "description": "Multi-platform integration (social media, CRM, etc.)",
-            "features": [
-              "Multi-platform configs",
-              "Media handling",
-              "Account management",
-              "File upload support"
-            ],
-            "automation_level": "semi_automated",
-            "requires": [
-              "OAuth setup (manual)",
-              "Platform API keys (manual)",
-              "Playwright scripts for browser automation"
-            ]
-          },
-          {
-            "name": "Tier 3 - Domain Expert",
-            "description": "Industry-specific with complex calculations and external APIs",
-            "features": [
-              "Custom domain configs",
-              "Calculator widgets",
-              "Map integrations",
-              "Pre-setup pages",
-              "Regional configs"
-            ],
-            "automation_level": "semi_automated",
-            "requires": [
-              "Domain API integrations",
-              "Custom UI components",
-              "Specialized N8N workflows"
-            ]
-          },
-          {
-            "name": "Tier 4 - Multi-Modal",
-            "description": "Figma UI generation with multi-page carousels",
-            "features": [
-              "Figma integration",
-              "Multi-page UI",
-              "Conversation state persistence",
-              "Generated React components"
-            ],
-            "automation_level": "semi_automated",
-            "requires": [
-              "Figma URLs/tokens",
-              "UI generation pipeline",
-              "Component validation"
-            ]
-          }
-        ],
-        "integration_templates": [
-          {
-            "name": "GoHighLevel (GHL)",
-            "type": "crm",
-            "automation_type": "playwright",
-            "capabilities": [
-              "Subaccount creation",
-              "Media management",
-              "Contact management",
-              "Workflow automation"
-            ],
-            "setup_guide": "/guides/integrations/ghl-setup.md"
-          },
-          {
-            "name": "Facebook Business",
-            "type": "social_media",
-            "automation_type": "oauth",
-            "capabilities": [
-              "Page posting",
-              "Story scheduling",
-              "Media upload"
-            ],
-            "setup_guide": "/guides/integrations/facebook-setup.md"
-          },
-          {
-            "name": "Instagram Business",
-            "type": "social_media",
-            "automation_type": "oauth",
-            "capabilities": [
-              "Feed posting",
-              "Story scheduling",
-              "Media upload"
-            ],
-            "setup_guide": "/guides/integrations/instagram-setup.md"
-          },
-          {
-            "name": "LinkedIn",
-            "type": "social_media",
-            "automation_type": "oauth",
-            "capabilities": [
-              "Profile posting",
-              "Company page posting"
-            ],
-            "setup_guide": "/guides/integrations/linkedin-setup.md"
-          },
-          {
-            "name": "Google Calendar",
-            "type": "productivity",
-            "automation_type": "oauth",
-            "capabilities": [
-              "Event creation",
-              "Event listing",
-              "Availability checking"
-            ],
-            "setup_guide": "/guides/integrations/google-calendar-setup.md"
-          },
-          {
-            "name": "Supabase",
-            "type": "database",
-            "automation_type": "api_key",
-            "capabilities": [
-              "Data storage",
-              "Query execution",
-              "Real-time subscriptions"
-            ],
-            "setup_guide": "/guides/integrations/supabase-setup.md"
-          }
-        ],
-        "n8n_components": [
-          {
-            "name": "Webhook Trigger",
-            "type": "trigger",
-            "required": true
-          },
-          {
-            "name": "Supabase Data Fetch",
-            "type": "data",
-            "common": true
-          },
-          {
-            "name": "AI Agent Conversation",
-            "type": "ai",
-            "common": true,
-            "requires_llm": true
-          },
-          {
-            "name": "Structured Output Parser",
-            "type": "parser",
-            "common": true
-          },
-          {
-            "name": "Conditional Logic",
-            "type": "control_flow",
-            "common": true
-          },
-          {
-            "name": "HTTP Request",
-            "type": "action",
-            "common": true
-          },
-          {
-            "name": "Code Node",
-            "type": "transform",
-            "common": true
-          }
-        ]
       }
     }
   ],

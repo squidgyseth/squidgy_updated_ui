@@ -1,6 +1,6 @@
 # N8N Template-Based Agent Creation Guide
 
-**Purpose**: Create new agents by downloading, customizing, and deploying N8N workflow templates.
+**Purpose**: Create new agents or edit existing agents using the Python agent management script with N8N workflow template integration.
 
 **Last Updated**: 2026-03-06
 
@@ -23,15 +23,15 @@
 
 ## Overview
 
-The template-based agent creation system allows you to:
+The Python agent management script (`create-agent-from-template.py`) provides a complete solution for:
 
-1. **Download** an existing N8N workflow as a template
-2. **Customize** specific nodes (webhook path, agent name, system prompt)
-3. **Add tool nodes** dynamically based on agent capabilities
-4. **Deploy** the customized workflow back to N8N
-5. **Generate** agent YAML configuration automatically
+1. **Creating new agents** - Interactive wizard to define agent details and generate all files
+2. **Editing existing agents** - Load current configuration and update specific properties
+3. **N8N workflow integration** - Optional template-based workflow generation and deployment
+4. **File management** - Automatic generation of `config.yaml`, `system_prompt.md`, and `n8n_workflow.json`
+5. **Credential handling** - Automatic remapping of template credentials to your instance
 
-This approach is faster and more consistent than manually creating workflows from scratch.
+This approach is faster and more consistent than manually creating workflows from scratch or editing files directly.
 
 ---
 
@@ -39,16 +39,16 @@ This approach is faster and more consistent than manually creating workflows fro
 
 ### Required
 
+- Python 3.10+ with packages: `requests python-dotenv pyyaml`
 - N8N API key configured in `.env` file (`VITE_N8N_TOKEN`)
 - Access to N8N instance at `https://n8n.theaiteam.uk`
-- Node.js and npm installed
-- Template workflow ID: `ijDtq0ljM2atxA0E`
+- Template workflow ID: `ijDtq0ljM2atxA0E` (for N8N workflow generation)
 
 ### Standard Template Workflow
 
 **Template ID**: `ijDtq0ljM2atxA0E`
 
-This is the standard agent template that includes:
+This is the standard agent template used when generating N8N workflows. It includes:
 
 - Webhook trigger
 - AI Agent with tool calling
@@ -57,542 +57,378 @@ This is the standard agent template that includes:
 - Conversation memory
 - Proper response formatting
 
-All agents created with the builder use this template automatically.
+**Note**: Workflow generation is optional - you can create/edit agents without generating N8N workflows.
 
 ---
 
 ## Quick Start
 
-### Using the CLI Tool
+### Using the Python Script
 
 ```bash
-# Run the interactive agent creator
-node scripts/create-agent-from-template.js
+# Run the interactive agent creator/manager
+python scripts/create-agent-from-template.py
 ```
 
 Follow the prompts to:
-1. Template automatically downloaded to `client/shared/`
-2. Configure agent details
-3. Define capabilities
-4. Add tool nodes
-5. Shared template updated with customizations
-6. Deploy to N8N
+1. **Select mode**: Create new agent OR Edit existing agent
+2. **Configure agent details**: Name, purpose, category, personality, capabilities
+3. **Customize UI**: Emoji, tagline, specialization, pinned status
+4. **Choose workflow generation**: Optional N8N workflow creation/update
+5. **Deploy (optional)**: Deploy workflow to N8N if generated
 
-### Manual Process
+### Edit Existing Agent
 
 ```bash
-# 1. Download template
-node -e "
-const { N8NTemplateService } = require('./server/services/n8nTemplateService.ts');
-const service = N8NTemplateService.getInstance();
-service.downloadAndSaveTemplate('TEMPLATE_ID', 'n8n/my_template.json');
-"
-
-# 2. Customize and deploy (see Programmatic Usage section)
-
-# 3. Build agents
-node scripts/build-agents.js
+python scripts/create-agent-from-template.py
+# Select mode 2, choose agent, update properties
 ```
 
 ---
 
-## Template Workflow Setup
+## Agent Configuration Options
 
-### Creating a Template Workflow
+### Mode Selection
 
-Your template workflow should include:
+**Create New Agent:**
+- Agent name (human-readable)
+- Agent ID (auto-generated from name or custom)
+- Agent purpose (what the agent does)
+- Category (MARKETING, SALES, HR, SUPPORT, OPERATIONS, GENERAL)
+- Personality configuration:
+  - Tone: professional, friendly, casual, enthusiastic, formal
+  - Style: helpful, concise, detailed, trendy, supportive
+  - Approach: proactive, consultative, data_driven, solution_focused
+- Capabilities (3-5 recommended)
+- UI customization:
+  - Emoji (default 🤖)
+  - Tagline (optional)
+  - Specialization (optional)
+  - Pinned status
+  - Enabled status
 
-#### 1. **Webhook Node**
-```json
-{
-  "parameters": {
-    "httpMethod": "POST",
-    "path": "TEMPLATE_PATH",
-    "responseMode": "responseNode"
-  },
-  "type": "n8n-nodes-base.webhook",
-  "name": "Webhook"
+**Edit Existing Agent:**
+- List all existing agents from `agents/` folder
+- Load current configuration
+- All prompts show current values
+- Press Enter to keep, type to change
+- Optional workflow regeneration
+
+### Personality Configuration
+
+The script allows detailed personality customization:
+
+- **Tone**: How the agent sounds (professional, friendly, casual, etc.)
+- **Style**: How the agent interacts (helpful, concise, detailed, etc.)
+- **Approach**: How the agent works (proactive, consultative, etc.)
+
+These values are saved to the agent's `config.yaml` and influence the generated system prompt.
+
+---
+
+## Script Workflow
+
+### Agent Creation Flow
+
+1. **Mode Selection** - Choose create new or edit existing
+2. **Agent Configuration** - Interactive prompts for all agent properties
+3. **Summary Review** - Show all configured values before proceeding
+4. **File Generation** - Save `config.yaml` and `system_prompt.md`
+5. **Workflow Choice** - Ask whether to generate N8N workflow
+6. **Template Processing** - If yes: fetch, customize, save workflow
+7. **Optional Deployment** - Deploy to N8N if user chooses
+
+### Agent Editing Flow
+
+1. **List Agents** - Show available agents in `agents/` folder
+2. **Select Agent** - User chooses which agent to edit
+3. **Load Configuration** - Read existing `config.yaml` and `system_prompt.md`
+4. **Interactive Updates** - Show current values, prompt for changes
+5. **File Updates** - Save modified configuration files
+6. **Workflow Choice** - Ask whether to regenerate N8N workflow
+7. **Optional Regeneration** - If yes: process and save new workflow
+
+### File Structure
+
+All agents maintain this structure:
+
+```
+agents/{agent_id}/
+├── config.yaml          # Agent metadata, capabilities, personality
+├── system_prompt.md     # Detailed behavior instructions
+└── n8n_workflow.json    # Optional N8N workflow (if generated)
+```
+
+---
+
+## N8N Workflow Generation (Optional)
+
+The Python script can generate N8N workflows using the standard template. This is **optional** - you can create and edit agents without generating workflows.
+
+### Template Customization
+
+When workflow generation is enabled, the script:
+
+1. **Downloads template** `ijDtq0ljM2atxA0E` from your N8N instance
+2. **Customizes workflow**:
+   - Replaces `<<agent_id>>` placeholders with actual agent ID
+   - Updates webhook path to `/{agent_id}`
+   - Renames workflow to "Squidgy_{Agent_Name}_Workflow"
+3. **Remaps credentials** from template values to your instance
+4. **Saves workflow** to `agents/{agent_id}/n8n_workflow.json`
+5. **Optionally deploys** to N8N with your confirmation
+
+### Credential Mapping
+
+The script automatically remaps credentials:
+
+```python
+CREDENTIAL_MAP = {
+    "Claude_Demo_SMM"  : "your-openrouter-cred-id",
+    "Neon Postgres"    : "your-neon-cred-id",
+    "Supabase account" : "your-supabase-cred-id",
 }
 ```
 
-#### 2. **AI Agent Node**
-```json
-{
-  "parameters": {
-    "promptType": "define",
-    "text": "={{ $json.user_mssg }}",
-    "hasOutputParser": true,
-    "options": {
-      "systemMessage": "TEMPLATE_SYSTEM_PROMPT"
-    }
-  },
-  "type": "@n8n/n8n-nodes-langchain.agent",
-  "name": "AI Agent"
-}
-```
+Update this mapping if your template uses different credential names.
 
-#### 3. **Code Nodes** for data preparation and formatting
+### Manual N8N Steps
 
-#### 4. **Respond to Webhook Node**
-```json
-{
-  "parameters": {
-    "respondWith": "json",
-    "responseBody": "={{ ... }}"
-  },
-  "type": "n8n-nodes-base.respondToWebhook",
-  "name": "Respond to Webhook"
-}
-```
+After automatic deployment, you must:
 
-### Template Placeholders
-
-The customization service will replace:
-
-- `TEMPLATE_PATH` → `agent_id`
-- `TEMPLATE_SYSTEM_PROMPT` → Generated system prompt
-- `agent_name: "template"` → `agent_name: "your_agent_id"`
+1. **Open workflow in N8N editor** - Use the provided URL
+2. **Verify credentials** - Check all flagged nodes
+3. **Publish workflow** - Click "Publish" to activate
+4. **Move to folder** - Place in appropriate Squidgy folder
 
 ---
 
-## Using the CLI Tool
+## Command Line Options
 
-### Step-by-Step Walkthrough
+### Basic Usage
 
-#### Step 1: Template Selection
+```bash
+# Interactive mode (default)
+python scripts/create-agent-from-template.py
 
-```
-Step 1: Using Standard Template
-  Template ID: ijDtq0ljM2atxA0E
-```
-
-The template is automatically selected - no user input needed.
-
-#### Step 2: Agent Configuration
-
-```
-Agent name (e.g., "Social Media Manager"): Content Scheduler
-  Generated ID: content_scheduler
-
-Agent purpose (what does it do?): Schedule and publish content across platforms
-
-Category (MARKETING, SALES, HR, SUPPORT, OPERATIONS, GENERAL): MARKETING
+# With pre-filled values
+python scripts/create-agent-from-template.py \
+  --agent-name "Social Media Manager" \
+  --agent-id "social_media_manager"
 ```
 
-#### Step 3: Capabilities
+### Options
 
-```
-Enter agent capabilities (one per line, empty line to finish):
-  Capability 1: Schedule posts to Facebook
-  Capability 2: Schedule posts to Instagram
-  Capability 3: Manage media library
-  Capability 4: Track post performance
-  Capability 5: [press Enter]
+- `--agent-name` - Human-readable agent name
+- `--agent-id` - Snake_case agent ID (auto-generated if omitted)
+- `--activate` - Activate N8N workflow immediately after creation
+- `--dry-run` - Show what would be created without deploying
 
-✓ 4 capabilities defined
-```
+### Environment Variables
 
-#### Step 4: Tool Nodes
+Required in `.env` file:
 
-```
-Add tool nodes based on capabilities? (yes/no): yes
-
-Generating tool nodes...
-  Generated 3 tool nodes:
-    - Facebook Post Tool (n8n-nodes-base.httpRequestTool)
-    - Get GHL Media (n8n-nodes-base.httpRequestTool)
-    - Search Knowledge Base (n8n-nodes-base.httpRequestTool)
-
-AI Agent node name (default: "AI Agent"): [press Enter]
-
-✓ Tool nodes added to workflow
-```
-
-#### Step 5: Deploy
-
-```
-Deploy workflow to N8N now? (yes/no): yes
-
-Deploying to N8N...
-✓ Workflow deployed!
-  Workflow ID: xyz789
-  URL: https://n8n.theaiteam.uk/workflow/xyz789
-
-⚠️  IMPORTANT: Manual steps required in N8N UI:
-  1. Open the workflow in N8N
-  2. Set credentials (OpenRouter, Supabase, etc.)
-  3. Click "Publish" to activate
-  4. Move to Squidgy folder
+```bash
+VITE_N8N_WEBHOOK_URL=https://n8n.theaiteam.uk
+VITE_N8N_TOKEN=your-n8n-api-token
 ```
 
 ---
 
-## Programmatic Usage
+## File Generation Details
 
-### Download Template
+### config.yaml Structure
 
-```typescript
-import { N8NTemplateService } from './server/services/n8nTemplateService';
+```yaml
+agent:
+  id: agent_id
+  emoji: "🤖"
+  name: "Agent Name"
+  category: "MARKETING"
+  description: "Agent purpose"
+  pinned: false
+  enabled: true
+  capabilities:
+    - "Capability 1"
+    - "Capability 2"
+  tagline: "Optional tagline"
+  specialization: "Optional specialization"
+  recent_actions:
+    - "Recent action 1"
+    - "Recent action 2"
 
-const n8nService = N8NTemplateService.getInstance();
+n8n:
+  webhook_url: "https://n8n.theaiteam.uk/webhook/agent_id"
 
-// Download standard template
-const templateId = 'ijDtq0ljM2atxA0E';
-const template = await n8nService.downloadTemplate(templateId);
+ui_use:
+  page_type: single_page
+  pages:
+    - name: "Agent Dashboard"
+      path: "agent-dashboard"
+      order: 1
+      validated: true
 
-console.log(`Downloaded: ${template.name}`);
-console.log(`Nodes: ${template.nodes.length}`);
+interface:
+  type: chat
+  features:
+    - text_input
+    - suggestion_buttons
+
+suggestions:
+  - "Help me with capability 1"
+  - "What can you do?"
+  - "Show me examples"
+
+personality:
+  tone: "friendly"
+  style: "helpful"
+  approach: "proactive"
 ```
 
-### Customize Workflow
+### system_prompt.md Structure
 
-```typescript
-// Customize for specific agent
-const customized = n8nService.customizeWorkflowForAgent(
-  template,
-  'my_agent_id',
-  'My Agent Name',
-  'System prompt goes here...',
-  'my_agent_id' // webhook path
-);
+Generated based on agent configuration:
+
+```markdown
+# Agent Name | Category
+
+Agent description and purpose
+
+## PRIMARY RESPONSIBILITIES
+
+- Capability 1 description
+- Capability 2 description
+
+## COMMUNICATION STYLE
+
+- Tone: [tone]
+- Style: [style]
+- Approach: [approach]
+
+## WORKFLOW
+
+1. Understand user request
+2. Use available tools when needed
+3. Provide clear, actionable responses
+4. Follow up to ensure satisfaction
 ```
 
-### Add Tool Nodes
+### n8n_workflow.json (Optional)
 
-```typescript
-// Generate tools from capabilities
-const capabilities = [
-  'Post to Facebook',
-  'Search knowledge base',
-  'Calculate metrics'
-];
-
-const toolNodes = n8nService.generateToolNodesFromCapabilities(capabilities);
-
-// Add to workflow
-const withTools = n8nService.addToolNodesToWorkflow(
-  customized,
-  toolNodes,
-  'AI Agent' // AI Agent node name
-);
-```
-
-### Manual Node Modifications
-
-```typescript
-import { N8NNodeModification } from './server/services/n8nTemplateService';
-
-const modifications: N8NNodeModification[] = [
-  {
-    nodeName: 'Webhook',
-    modifications: [
-      { path: 'parameters.path', value: 'custom_path' }
-    ]
-  },
-  {
-    nodeType: 'n8n-nodes-base.code',
-    modifications: [
-      { path: 'parameters.jsCode', value: 'const x = 1; return [{json: {x}}];' }
-    ]
-  }
-];
-
-const modified = n8nService.modifyWorkflowNodes(workflow, modifications);
-```
-
-### Deploy to N8N
-
-```typescript
-// Deploy new workflow
-const deployment = await n8nService.deployWorkflow(
-  customizedWorkflow,
-  'My New Agent Workflow'
-);
-
-console.log(`Deployed: ${deployment.id}`);
-console.log(`URL: ${deployment.url}`);
-
-// Or update existing workflow
-await n8nService.updateWorkflow('EXISTING_ID', customizedWorkflow);
-```
-
----
-
-## Customization Options
-
-### Automatic Customizations
-
-The `customizeWorkflowForAgent()` method automatically updates:
-
-1. **Webhook path** → `/{agent_id}`
-2. **Webhook name** → `{Agent Name} Webhook`
-3. **AI Agent system prompt** → Your custom prompt
-4. **Code node agent_name** → All references updated to new agent ID
-
-### Manual Customizations
-
-Use `modifyWorkflowNodes()` for custom changes:
-
-```typescript
-const mods = [
-  {
-    nodeName: 'OpenRouter Chat Model',
-    modifications: [
-      { path: 'parameters.model', value: 'anthropic/claude-3-5-sonnet' }
-    ]
-  },
-  {
-    nodeName: 'Conversation Memory',
-    modifications: [
-      { path: 'parameters.contextWindowLength', value: 50 }
-    ]
-  }
-];
-
-const customWorkflow = n8nService.modifyWorkflowNodes(template, mods);
-```
-
----
-
-## Tool Node Generation
-
-### Automatic Tool Detection
-
-The system automatically generates tool nodes based on capability keywords:
-
-| Capability Keywords | Generated Tool | Type |
-|---------------------|----------------|------|
-| `facebook`, `post` | Facebook Post Tool | HTTP Request Tool |
-| `ghl`, `gohighlevel`, `media` | Get GHL Media | HTTP Request Tool |
-| `knowledge`, `search`, `rag` | Search Knowledge Base | HTTP Request Tool |
-| `calculat`, `math` | Calculator | LangChain Calculator Tool |
-
-### Custom Tool Nodes
-
-```typescript
-import { N8NToolNode } from './server/services/n8nTemplateService';
-
-const customTools: N8NToolNode[] = [
-  {
-    name: 'Custom API Call',
-    type: 'n8n-nodes-base.httpRequestTool',
-    parameters: {
-      method: 'POST',
-      url: '={{$env.API_URL}}/custom/endpoint',
-      sendBody: true,
-      bodyParameters: {
-        parameters: [
-          { name: 'data', value: '={{$json.data}}' }
-        ]
-      }
-    },
-    description: 'Call custom API endpoint'
-  }
-];
-
-const workflow = n8nService.addToolNodesToWorkflow(
-  template,
-  customTools,
-  'AI Agent'
-);
-```
-
-### Tool Node Positioning
-
-Tools are automatically positioned:
-- **X**: Same as AI Agent node
-- **Y**: Below AI Agent, spaced 100px apart
-- **Connections**: Automatically connected via `ai_tool` connection type
-
----
-
-## Deployment Process
-
-### Full Deployment Workflow
-
-```typescript
-// 1. Download template
-const templateId = 'ijDtq0ljM2atxA0E';
-const template = await n8nService.downloadTemplate(templateId);
-
-// 2. Customize
-let workflow = n8nService.customizeWorkflowForAgent(
-  template,
-  'my_agent',
-  'My Agent',
-  systemPrompt
-);
-
-// 3. Add tools
-const tools = n8nService.generateToolNodesFromCapabilities(capabilities);
-workflow = n8nService.addToolNodesToWorkflow(workflow, tools);
-
-// 4. Update shared template
-const sharedDir = path.join(process.cwd(), 'client', 'shared');
-if (!fs.existsSync(sharedDir)) {
-  fs.mkdirSync(sharedDir, { recursive: true });
-}
-
-fs.writeFileSync(
-  path.join(sharedDir, 'n8n_workflow_template.json'),
-  JSON.stringify(workflow, null, 2)
-);
-
-// 5. Save agent config files
-const clientAgentDir = path.join(process.cwd(), 'client', 'my_agent');
-if (!fs.existsSync(clientAgentDir)) {
-  fs.mkdirSync(clientAgentDir, { recursive: true });
-}
-
-fs.writeFileSync(
-  path.join(clientAgentDir, 'config.yaml'),
-  yamlContent
-);
-
-fs.writeFileSync(
-  path.join(clientAgentDir, 'system_prompt.md'),
-  systemPromptContent
-);
-
-// 5. Deploy to N8N
-const deployment = await n8nService.deployWorkflow(workflow, 'My Agent');
-
-// 6. Manual N8N UI steps (cannot be automated):
-//    - Set credentials
-//    - Publish workflow
-//    - Move to Squidgy folder
-```
-
-### Post-Deployment Checklist
-
-- [ ] Workflow deployed to N8N
-- [ ] Credentials configured in N8N UI
-- [ ] Workflow published (activated)
-- [ ] Workflow moved to Squidgy folder
-- [ ] Agent YAML created in `agents/{agent_id}/config.yaml`
-- [ ] System prompt created in `agents/{agent_id}/system_prompt.md`
-- [ ] `build-agents.js` executed
-- [ ] Agent tested in UI
+Customized template with:
+- Webhook path set to `/{agent_id}`
+- All `<<agent_id>>` placeholders replaced
+- Credentials remapped to your instance
+- Workflow renamed to "Squidgy_{Agent_Name}_Workflow"
 
 ---
 
 ## Troubleshooting
 
-### Issue: API Key Not Found
+### Python Script Issues
 
-**Error**: `Failed to download N8N template: Request failed with status code 401`
+**Error: Missing Python packages**
+```bash
+pip install requests python-dotenv pyyaml
+```
 
-**Solution**:
+**Error: Missing VITE_N8N_TOKEN**
+- Add `VITE_N8N_TOKEN` to your `.env` file
+- Get token from N8N Settings → API
 
-1. **Get your N8N API key**:
-   - Go to https://n8n.theaiteam.uk
-   - Navigate to Settings → API
-   - Generate/Copy your API key
+**Error: Template not found**
+- Verify template ID `ijDtq0ljM2atxA0E` exists in your N8N instance
+- Check you have access to the template
+- This only affects workflow generation (agent creation still works)
 
-2. **Add to `.env` file**:
-   ```bash
-   VITE_N8N_TOKEN=your-n8n-api-key-here
-   ```
+**Error: HTTP 400 from N8N**
+- Credential IDs may be incorrect
+- Update `CREDENTIAL_MAP` with your instance's credential IDs
+- Run `python scripts/list_n8n_credentials.py` to see available credentials
 
-3. **Restart your terminal/script** to load the new environment variable
+### Agent Editing Issues
 
-### Issue: Template Not Found
+**Error: Agent not found in list**
+- Verify agent exists in `agents/` folder
+- Check folder structure matches expected format
 
-**Error**: `Failed to download N8N template: Not found`
+**Error: Config file corrupted**
+- Delete corrupted `config.yaml` and recreate agent
+- Or manually fix YAML syntax errors
 
-**Solution**:
-- Verify workflow ID is correct
-- Check you have access to the workflow
-- List all workflows to find the correct ID:
-  ```bash
-  node -e "
-  const { N8NTemplateService } = require('./server/services/n8nTemplateService.ts');
-  N8NTemplateService.getInstance().listWorkflows().then(console.log);
-  "
-  ```
+### N8N Workflow Issues
 
-### Issue: Node Not Found for Modification
+**Credentials not working in N8N**
+- Open workflow in N8N editor
+- Manually reconnect credentials on flagged nodes
+- Click "Publish" to save
 
-**Warning**: `Node not found for modification: AI Agent`
-
-**Solution**:
-- Check node name matches exactly (case-sensitive)
-- Use `nodeType` instead of `nodeName` if node name varies
-- Inspect template to verify node names:
-  ```bash
-  cat n8n/templates/template.json | grep '"name"'
-  ```
-
-### Issue: Tool Nodes Not Connected
-
-**Problem**: Tool nodes added but not working
-
-**Solution**:
-- Verify AI Agent node name is correct
-- Check connections in workflow JSON:
-  ```json
-  "connections": {
-    "Tool Name": {
-      "ai_tool": [[{"node": "AI Agent", "type": "ai_tool", "index": 0}]]
-    }
-  }
-  ```
-- Manually connect in N8N UI if needed
-
-### Issue: Deployment Fails
-
-**Error**: `Failed to deploy workflow to N8N`
-
-**Solution**:
-- Check N8N API key has write permissions
-- Verify network connectivity to N8N instance
-- Remove `id` field from workflow before deploying (done automatically)
-- Check N8N server logs for detailed error
+**Workflow not triggering**
+- Verify webhook URL matches expected format
+- Check workflow is activated (published)
+- Test with curl or Postman
 
 ---
 
 ## Best Practices
 
-### Template Selection
+### Agent Creation
 
-✅ **Good template characteristics:**
-- Well-structured with clear node names
-- Uses latest node typeVersions
-- Includes proper error handling
-- Has conversation memory configured
-- Uses structured output parser
+✅ **Good agent characteristics:**
+- Clear, specific purpose (not "help with everything")
+- 3-5 well-defined capabilities
+- Consistent personality (tone, style, approach)
+- Appropriate category assignment
+- Meaningful emoji and optional tagline
 
-❌ **Avoid templates with:**
-- Hardcoded credentials
-- Deprecated node types
-- Complex custom code that's hard to modify
-- Missing error handling
+❌ **Avoid agents with:**
+- Vague purposes
+- Too many or too few capabilities
+- Inconsistent personality traits
+- Wrong category assignment
+
+### Agent Editing
+
+✅ **Good editing practices:**
+- Review current values before making changes
+- Update related properties together (e.g., purpose and capabilities)
+- Test changes after editing
+- Keep personality consistent with purpose
+
+❌ **Avoid when editing:**
+- Changing agent ID (breaks references)
+- Making unrelated changes in single edit
+- Forgetting to update dependent files
 
 ### Capability Definition
 
-Be specific with capabilities to get better tool generation:
+Be specific with capabilities:
 
-✅ **Good**: `"Post images to Facebook feed"`
+✅ **Good**: `"Schedule and publish social media posts"`
 ❌ **Vague**: `"Social media"`
 
-✅ **Good**: `"Search user knowledge base with semantic search"`
-❌ **Vague**: `"Find stuff"`
+✅ **Good**: `"Generate brand guidelines and messaging"`
+❌ **Vague**: `"Branding"`
 
 ### System Prompt Generation
 
-Include in your system prompt:
+The script automatically generates system prompts that include:
 - Agent name and purpose
 - List of capabilities
 - Communication style (tone, style, approach)
-- Tool usage instructions
+- Workflow instructions
 - Response format expectations
+
+Review generated prompts and customize if needed.
 
 ---
 
 ## Related Documentation
 
+- **[Agent Creation Scripts](../scripts/README.md)** - Python script usage and examples
+- **[Agent Folder Structure](./agent-folder-structure.md)** - File organization and structure
+- **[Agent Creation Guide](../agents/README.md)** - Manual agent creation process
 - **[N8N Agent Setup](./n8n-agent-setup.md)** - Manual N8N workflow configuration
-- **[Agent Creation Guide](../agents/README.md)** - Standard agent creation process
 - **[Integration Helpers](../integration-helpers/README.md)** - Platform integration automation
 
 ---
