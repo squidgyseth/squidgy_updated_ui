@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-03-06T14:47:04.213Z
+// Generated on: 2026-03-06T15:58:36.397Z
 
 export interface AgentConfig {
   agent: {
@@ -47,11 +47,11 @@ export interface AgentConfig {
 export const ALL_AGENTS: AgentConfig[] = [
   {
     "agent": {
-      "id": "project_architect",
+      "id": "admin",
       "emoji": "🏗️",
-      "name": "Project Architect",
+      "name": "Admin | Platform Assistant",
       "category": "ADMIN",
-      "description": "Discuss architecture, plan features, debug cross-project issues",
+      "description": "Platform architecture, feature planning, and debugging assistant for admins",
       "specialization": "Platform Architecture Advisor",
       "tagline": "Know the codebase. Plan the future.",
       "avatar": "/Squidgy AI Assistants Avatars/3.png",
@@ -59,38 +59,30 @@ export const ALL_AGENTS: AgentConfig[] = [
       "enabled": true,
       "admin_only": true,
       "uses_conversation_state": true,
-      "initial_message": "Hey! I'm your Project Architect - I know the Squidgy platform inside and out.<br><br>I have deep knowledge of all 3 sub-projects, their integrations, and the tribal knowledge that keeps things running.<br><br>I can help with:<br><br><b>1. Architecture questions</b> - How does X work? Where does Y live?<br><b>2. Planning new features</b> - What files need changing? What patterns to follow?<br><b>3. Planning new agents</b> - YAML config, N8N workflow, Pia routing<br><b>4. Debugging</b> - Cross-project issues, N8N problems, integration failures<br><br>What do you need?",
-      "sidebar_greeting": "I know the Squidgy platform architecture. Ask me about how things work, plan new features, or debug cross-project issues.",
+      "initial_message": "Hey! I'm your Admin Assistant - I know the Squidgy platform inside and out.<br><br>I can help with:<br>• Architecture questions<br>• Planning new features<br>• Planning new agents<br>• Debugging cross-project issues<br><br>What do you need?",
+      "sidebar_greeting": "Hi! I'm your Admin Assistant - I help with platform architecture, feature planning, and debugging. How can I assist you today?",
       "capabilities": [
-        "Deep knowledge of frontend (React/Vite/Express), backend (FastAPI/Heroku), and agent builder (CLI/N8N)",
-        "Cross-project integration flow expertise",
-        "N8N workflow pattern guidance (10-node agent pattern, debugging)",
-        "Agent creation pipeline guidance (YAML, N8N, Pia routing)",
-        "Database schema knowledge (Supabase + Neon pgvector)",
-        "Deployment and infrastructure troubleshooting"
+        "Platform architecture knowledge",
+        "Feature planning guidance",
+        "Agent creation pipeline support",
+        "Cross-project debugging",
+        "N8N workflow assistance"
       ],
       "recent_actions": [
-        "Documented full platform architecture",
-        "Mapped all 75 backend API endpoints",
-        "Cataloged N8N workflow patterns and gotchas",
-        "Identified cross-project integration flows"
+        "Documented platform architecture",
+        "Assisted with agent creation",
+        "Debugged N8N workflow issues"
       ]
     },
     "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/project_architect"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": ""
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/admin"
     },
     "ui_use": {
       "page_type": "single_page",
       "pages": [
         {
-          "name": "Project Architect",
-          "path": "project-architect",
+          "name": "Admin Assistant",
+          "path": "admin-dashboard",
           "order": 1,
           "validated": true
         }
@@ -105,33 +97,14 @@ export const ALL_AGENTS: AgentConfig[] = [
     },
     "suggestions": [
       "How does the agent creation pipeline work?",
-      "What files do I need to change for a new feature?",
-      "Help me debug an N8N workflow issue",
-      "Plan a new agent for me"
+      "Help me plan a new feature",
+      "Debug an N8N workflow issue",
+      "Explain the platform architecture"
     ],
     "personality": {
       "tone": "technical",
       "style": "precise",
       "approach": "consultative"
-    },
-    "knowledge_base": [
-      {
-        "file": "system_prompt.md",
-        "description": "Core architecture knowledge from docs-hub"
-      },
-      {
-        "file": "n8n_patterns.md",
-        "description": "N8N workflow patterns, gotchas, and debugging"
-      },
-      {
-        "file": "agent_pipeline.md",
-        "description": "How to create and deploy new agents"
-      }
-    ],
-    "conversation_state_schema": {
-      "topic": "string",
-      "context": "object",
-      "files_discussed": "array"
     }
   },
   {
@@ -207,6 +180,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "name": "Brandy | Brand Advisor",
       "category": "MARKETING",
       "description": "Build your anti-brand or get brand guidance",
+      "avatar": "/Squidgy AI Assistants Avatars/10.png",
       "pinned": false,
       "enabled": true,
       "capabilities": [
@@ -752,6 +726,68 @@ export const ALL_AGENTS: AgentConfig[] = [
 
 // Agents by ID (for fast lookup)
 export const AGENTS_BY_ID: Record<string, AgentConfig> = {
+  "admin": {
+    "agent": {
+      "id": "admin",
+      "emoji": "🏗️",
+      "name": "Admin | Platform Assistant",
+      "category": "ADMIN",
+      "description": "Platform architecture, feature planning, and debugging assistant for admins",
+      "specialization": "Platform Architecture Advisor",
+      "tagline": "Know the codebase. Plan the future.",
+      "avatar": "/Squidgy AI Assistants Avatars/3.png",
+      "pinned": false,
+      "enabled": true,
+      "admin_only": true,
+      "uses_conversation_state": true,
+      "initial_message": "Hey! I'm your Admin Assistant - I know the Squidgy platform inside and out.<br><br>I can help with:<br>• Architecture questions<br>• Planning new features<br>• Planning new agents<br>• Debugging cross-project issues<br><br>What do you need?",
+      "sidebar_greeting": "Hi! I'm your Admin Assistant - I help with platform architecture, feature planning, and debugging. How can I assist you today?",
+      "capabilities": [
+        "Platform architecture knowledge",
+        "Feature planning guidance",
+        "Agent creation pipeline support",
+        "Cross-project debugging",
+        "N8N workflow assistance"
+      ],
+      "recent_actions": [
+        "Documented platform architecture",
+        "Assisted with agent creation",
+        "Debugged N8N workflow issues"
+      ]
+    },
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/admin"
+    },
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Admin Assistant",
+          "path": "admin-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "suggestion_buttons"
+      ]
+    },
+    "suggestions": [
+      "How does the agent creation pipeline work?",
+      "Help me plan a new feature",
+      "Debug an N8N workflow issue",
+      "Explain the platform architecture"
+    ],
+    "personality": {
+      "tone": "technical",
+      "style": "precise",
+      "approach": "consultative"
+    }
+  },
   "agent_builder": {
     "agent": {
       "id": "agent_builder",
@@ -829,6 +865,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "name": "Brandy | Brand Advisor",
       "category": "MARKETING",
       "description": "Build your anti-brand or get brand guidance",
+      "avatar": "/Squidgy AI Assistants Avatars/10.png",
       "pinned": false,
       "enabled": true,
       "capabilities": [
@@ -1070,95 +1107,6 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tone": "professional",
       "style": "helpful",
       "approach": "proactive"
-    }
-  },
-  "project_architect": {
-    "agent": {
-      "id": "project_architect",
-      "emoji": "🏗️",
-      "name": "Project Architect",
-      "category": "ADMIN",
-      "description": "Discuss architecture, plan features, debug cross-project issues",
-      "specialization": "Platform Architecture Advisor",
-      "tagline": "Know the codebase. Plan the future.",
-      "avatar": "/Squidgy AI Assistants Avatars/3.png",
-      "pinned": false,
-      "enabled": true,
-      "admin_only": true,
-      "uses_conversation_state": true,
-      "initial_message": "Hey! I'm your Project Architect - I know the Squidgy platform inside and out.<br><br>I have deep knowledge of all 3 sub-projects, their integrations, and the tribal knowledge that keeps things running.<br><br>I can help with:<br><br><b>1. Architecture questions</b> - How does X work? Where does Y live?<br><b>2. Planning new features</b> - What files need changing? What patterns to follow?<br><b>3. Planning new agents</b> - YAML config, N8N workflow, Pia routing<br><b>4. Debugging</b> - Cross-project issues, N8N problems, integration failures<br><br>What do you need?",
-      "sidebar_greeting": "I know the Squidgy platform architecture. Ask me about how things work, plan new features, or debug cross-project issues.",
-      "capabilities": [
-        "Deep knowledge of frontend (React/Vite/Express), backend (FastAPI/Heroku), and agent builder (CLI/N8N)",
-        "Cross-project integration flow expertise",
-        "N8N workflow pattern guidance (10-node agent pattern, debugging)",
-        "Agent creation pipeline guidance (YAML, N8N, Pia routing)",
-        "Database schema knowledge (Supabase + Neon pgvector)",
-        "Deployment and infrastructure troubleshooting"
-      ],
-      "recent_actions": [
-        "Documented full platform architecture",
-        "Mapped all 75 backend API endpoints",
-        "Cataloged N8N workflow patterns and gotchas",
-        "Identified cross-project integration flows"
-      ]
-    },
-    "n8n": {
-      "webhook_url": "https://n8n.theaiteam.uk/webhook/project_architect"
-    },
-    "ui": {
-      "page_type": "standard",
-      "figma_url": "",
-      "figma_deployed_url": "",
-      "figma_token": ""
-    },
-    "ui_use": {
-      "page_type": "single_page",
-      "pages": [
-        {
-          "name": "Project Architect",
-          "path": "project-architect",
-          "order": 1,
-          "validated": true
-        }
-      ]
-    },
-    "interface": {
-      "type": "chat",
-      "features": [
-        "text_input",
-        "suggestion_buttons"
-      ]
-    },
-    "suggestions": [
-      "How does the agent creation pipeline work?",
-      "What files do I need to change for a new feature?",
-      "Help me debug an N8N workflow issue",
-      "Plan a new agent for me"
-    ],
-    "personality": {
-      "tone": "technical",
-      "style": "precise",
-      "approach": "consultative"
-    },
-    "knowledge_base": [
-      {
-        "file": "system_prompt.md",
-        "description": "Core architecture knowledge from docs-hub"
-      },
-      {
-        "file": "n8n_patterns.md",
-        "description": "N8N workflow patterns, gotchas, and debugging"
-      },
-      {
-        "file": "agent_pipeline.md",
-        "description": "How to create and deploy new agents"
-      }
-    ],
-    "conversation_state_schema": {
-      "topic": "string",
-      "context": "object",
-      "files_discussed": "array"
     }
   },
   "social_media": {
@@ -1462,11 +1410,11 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
   "ADMIN": [
     {
       "agent": {
-        "id": "project_architect",
+        "id": "admin",
         "emoji": "🏗️",
-        "name": "Project Architect",
+        "name": "Admin | Platform Assistant",
         "category": "ADMIN",
-        "description": "Discuss architecture, plan features, debug cross-project issues",
+        "description": "Platform architecture, feature planning, and debugging assistant for admins",
         "specialization": "Platform Architecture Advisor",
         "tagline": "Know the codebase. Plan the future.",
         "avatar": "/Squidgy AI Assistants Avatars/3.png",
@@ -1474,38 +1422,30 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "enabled": true,
         "admin_only": true,
         "uses_conversation_state": true,
-        "initial_message": "Hey! I'm your Project Architect - I know the Squidgy platform inside and out.<br><br>I have deep knowledge of all 3 sub-projects, their integrations, and the tribal knowledge that keeps things running.<br><br>I can help with:<br><br><b>1. Architecture questions</b> - How does X work? Where does Y live?<br><b>2. Planning new features</b> - What files need changing? What patterns to follow?<br><b>3. Planning new agents</b> - YAML config, N8N workflow, Pia routing<br><b>4. Debugging</b> - Cross-project issues, N8N problems, integration failures<br><br>What do you need?",
-        "sidebar_greeting": "I know the Squidgy platform architecture. Ask me about how things work, plan new features, or debug cross-project issues.",
+        "initial_message": "Hey! I'm your Admin Assistant - I know the Squidgy platform inside and out.<br><br>I can help with:<br>• Architecture questions<br>• Planning new features<br>• Planning new agents<br>• Debugging cross-project issues<br><br>What do you need?",
+        "sidebar_greeting": "Hi! I'm your Admin Assistant - I help with platform architecture, feature planning, and debugging. How can I assist you today?",
         "capabilities": [
-          "Deep knowledge of frontend (React/Vite/Express), backend (FastAPI/Heroku), and agent builder (CLI/N8N)",
-          "Cross-project integration flow expertise",
-          "N8N workflow pattern guidance (10-node agent pattern, debugging)",
-          "Agent creation pipeline guidance (YAML, N8N, Pia routing)",
-          "Database schema knowledge (Supabase + Neon pgvector)",
-          "Deployment and infrastructure troubleshooting"
+          "Platform architecture knowledge",
+          "Feature planning guidance",
+          "Agent creation pipeline support",
+          "Cross-project debugging",
+          "N8N workflow assistance"
         ],
         "recent_actions": [
-          "Documented full platform architecture",
-          "Mapped all 75 backend API endpoints",
-          "Cataloged N8N workflow patterns and gotchas",
-          "Identified cross-project integration flows"
+          "Documented platform architecture",
+          "Assisted with agent creation",
+          "Debugged N8N workflow issues"
         ]
       },
       "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/project_architect"
-      },
-      "ui": {
-        "page_type": "standard",
-        "figma_url": "",
-        "figma_deployed_url": "",
-        "figma_token": ""
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/admin"
       },
       "ui_use": {
         "page_type": "single_page",
         "pages": [
           {
-            "name": "Project Architect",
-            "path": "project-architect",
+            "name": "Admin Assistant",
+            "path": "admin-dashboard",
             "order": 1,
             "validated": true
           }
@@ -1520,33 +1460,14 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       },
       "suggestions": [
         "How does the agent creation pipeline work?",
-        "What files do I need to change for a new feature?",
-        "Help me debug an N8N workflow issue",
-        "Plan a new agent for me"
+        "Help me plan a new feature",
+        "Debug an N8N workflow issue",
+        "Explain the platform architecture"
       ],
       "personality": {
         "tone": "technical",
         "style": "precise",
         "approach": "consultative"
-      },
-      "knowledge_base": [
-        {
-          "file": "system_prompt.md",
-          "description": "Core architecture knowledge from docs-hub"
-        },
-        {
-          "file": "n8n_patterns.md",
-          "description": "N8N workflow patterns, gotchas, and debugging"
-        },
-        {
-          "file": "agent_pipeline.md",
-          "description": "How to create and deploy new agents"
-        }
-      ],
-      "conversation_state_schema": {
-        "topic": "string",
-        "context": "object",
-        "files_discussed": "array"
       }
     }
   ],
@@ -1626,6 +1547,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "name": "Brandy | Brand Advisor",
         "category": "MARKETING",
         "description": "Build your anti-brand or get brand guidance",
+        "avatar": "/Squidgy AI Assistants Avatars/10.png",
         "pinned": false,
         "enabled": true,
         "capabilities": [
@@ -2175,7 +2097,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["agent_builder","brandy","content_repurposer","newsletter_multi","personal_assistant","project_architect","social_media","social_media_scheduler","SOL"];
+export const AGENT_IDS: string[] = ["admin","agent_builder","brandy","content_repurposer","newsletter_multi","personal_assistant","social_media","social_media_scheduler","SOL"];
 
 // Total count
 export const TOTAL_AGENTS = 9;

@@ -4,6 +4,7 @@ agent:
   name: Brandy | Brand Advisor
   category: MARKETING
   description: Build your anti-brand or get brand guidance
+  avatar: "/Squidgy AI Assistants Avatars/10.png"
   pinned: false
   enabled: true
   capabilities:

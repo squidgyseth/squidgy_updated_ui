@@ -91,7 +91,7 @@ async function upsertAgentsToSupabase(agents) {
     tagline: agent.agent.tagline || null,
     webhook_url: agent.n8n?.webhook_url || null,
     avatar_url: agent.agent.avatar || null,
-    is_enabled: agent.agent.enabled !== false,
+    is_enabled: agent.agent.enabled === true,
     is_default: agent.agent.id === 'personal_assistant',
     display_order: agent.agent.pinned ? index : index + 100
   }));

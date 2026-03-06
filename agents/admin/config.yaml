@@ -1,0 +1,53 @@
+agent:
+  id: admin
+  emoji: "⚙️"
+  name: "Admin | Platform Assistant"
+  category: ADMIN
+  description: "Platform architecture, feature planning, and debugging assistant for admins"
+  specialization: "Platform Architecture Advisor"
+  tagline: "Know the codebase. Plan the future."
+  avatar: "/Squidgy AI Assistants Avatars/3.png"
+  pinned: false
+  enabled: false
+  admin_only: true
+  uses_conversation_state: true
+  initial_message: "Hey! I'm your Admin Assistant - I know the Squidgy platform inside and out.<br><br>I can help with:<br>• Architecture questions<br>• Planning new features<br>• Planning new agents<br>• Debugging cross-project issues<br><br>What do you need?"
+  sidebar_greeting: "Hi! I'm your Admin Assistant - I help with platform architecture, feature planning, and debugging. How can I assist you today?"
+  capabilities:
+    - "Platform architecture knowledge"
+    - "Feature planning guidance"
+    - "Agent creation pipeline support"
+    - "Cross-project debugging"
+    - "N8N workflow assistance"
+  recent_actions:
+    - "Documented platform architecture"
+    - "Assisted with agent creation"
+    - "Debugged N8N workflow issues"
+
+n8n:
+  webhook_url: https://n8n.theaiteam.uk/webhook/admin
+
+ui_use:
+  page_type: single_page
+  pages:
+    - name: Admin Assistant
+      path: admin-dashboard
+      order: 1
+      validated: true
+
+interface:
+  type: chat
+  features:
+    - text_input
+    - suggestion_buttons
+
+suggestions:
+  - "How does the agent creation pipeline work?"
+  - "Help me plan a new feature"
+  - "Debug an N8N workflow issue"
+  - "Explain the platform architecture"
+
+personality:
+  tone: technical
+  style: precise
+  approach: consultative
