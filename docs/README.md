@@ -30,9 +30,16 @@ These are step-by-step guides for common development tasks:
 
 - **[AI Agents Guide](../agents/README.md)** ⭐ ESSENTIAL
   - Complete guide for creating and managing AI agents
+  - Python agent creation script with N8N workflow generation
   - Agent folder structure and configuration
   - System prompt compilation and best practices
   - Platform and user-level enablement logic
+
+- **[Agent Creation Scripts](../scripts/README.md)** ⭐ ESSENTIAL
+  - Python script for agent lifecycle management
+  - Interactive wizard for creating and editing agents
+  - N8N workflow generation with automatic credential mapping
+  - Environment setup and API key configuration
 
 - **[Agent Architecture Plan](./AGENT_ARCHITECTURE_PLAN.md)**
   - Overview of how agents work in Squidgy
@@ -60,7 +67,7 @@ agents/
 └── README.md                           # AI Agents creation and management guide
 
 scripts/
-└── README.md                           # Python scripts for agent management
+└── README.md                           # Agent creation and management scripts
 ```
 
 ---

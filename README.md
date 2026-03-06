@@ -47,6 +47,7 @@ shared/                   # Types used by both client & server
 └── api.ts                # Shared interfaces for setup wizard
 
 scripts/                  # Build and utility scripts
+├── create-agent-from-template.py  # Agent creation and management script
 └── build-agents.js       # Compile agents and sync to database
 
 docs/                     # Project documentation
@@ -142,12 +143,19 @@ pnpm test          # Run Vitest tests
 
 ### [🤖 AI Agents Guide](agents/README.md)
 Complete guide for creating and managing AI agents:
+- **Python agent creation script** for automated agent management
 - **Agent folder structure** and required files
-- **Creating new agents** step-by-step
+- **Creating new agents** step-by-step with N8N workflow generation
 - **System prompt compilation** (base + agent-specific)
 - **Platform and user-level enablement** logic
 - **Troubleshooting** common agent issues
 - **Build and deployment** process
+
+### [🔧 Agent Creation Scripts](scripts/README.md)
+Python script for agent lifecycle management:
+- **Interactive wizard** for creating and editing agents
+- **N8N workflow generation** with automatic credential mapping
+- **Environment setup** and API key configuration
 
 ### [📋 FRONTEND_BACKEND_ENDPOINT_MAPPING.md](FRONTEND_BACKEND_ENDPOINT_MAPPING.md)
 Complete integration guide between the React frontend and Squidgy backend:

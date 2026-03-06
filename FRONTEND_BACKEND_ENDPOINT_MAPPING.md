@@ -5,6 +5,8 @@ This document provides a clear mapping between the new React frontend design and
 
 **Backend Compatibility: Full** (28 available endpoints, 1 missing endpoint with workaround)
 
+> **📖 Related**: See [Agent Creation Guide](agents/README.md) for creating new AI agents with Python script
+
 ---
 
 ## Frontend Pages Overview

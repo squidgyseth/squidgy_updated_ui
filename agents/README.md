@@ -35,19 +35,38 @@ The easiest way to create agents is with the Python agent management script:
 python scripts/create-agent-from-template.py
 ```
 
-This script:
-- ✅ Guides you through interactive prompts
+**⚠️ Prerequisites:**
+- Add N8N API token to `.env` file:
+  ```
+  N8N_API_KEY=your_n8n_api_token_here
+  ```
+- Install required Python packages (see `scripts/requirements.txt`)
+
+**Features:**
+- ✅ Interactive wizard for agent creation and editing
 - ✅ Generates all required files automatically
 - ✅ Creates proper folder structure
 - ✅ Optionally generates N8N workflows
 - ✅ Handles all YAML formatting and validation
 - ✅ Supports editing existing agents
+- ✅ Deploys workflows to N8N via API
 
-See **[Agent Creation Scripts](../scripts/README.md)** for detailed usage.
+**Usage:**
+```bash
+# Create new agent
+python scripts/create-agent-from-template.py
 
-### Manual Creation (Advanced)
+# Edit existing agent
+python scripts/create-agent-from-template.py --edit
+```
 
-If you prefer to create agents manually:
+See **[Agent Creation Scripts](../scripts/README.md)** for detailed usage and configuration.
+
+### Manual Creation (Not Recommended)
+
+⚠️ **Manual creation is discouraged** - use the Python script above for consistency and automatic workflow generation.
+
+If you must create agents manually:
 
 #### Step 1: Create Agent Folder
 
@@ -148,15 +167,15 @@ When to route to other agents or escalate.
 Run the build process to compile agents and sync to database:
 
 ```bash
-# Use the build process for your platform
-[build command for your system]
+node scripts/build-agents.js
 ```
 
 This will:
-- ✅ Compile all YAML configs
-- ✅ Sync agents to database
+- ✅ Compile all YAML configs to TypeScript
+- ✅ Sync agents to Supabase database
 - ✅ Combine `base_system_prompt.md` + `system_prompt.md`
-- ✅ Upload compiled prompts
+- ✅ Upload compiled prompts to Neon database
+- ✅ Clean up orphaned agents
 
 #### Step 5: Restart Dev Server
 
@@ -248,7 +267,7 @@ Current agents in the system:
 | `social_media` | Sophia \| Social Media Superhero | MARKETING | ✅ |
 | `brandy` | Brandy \| Brand Advisor | MARKETING | ✅ |
 | `agent_builder` | Ace \| Agent Creation Expert | ADMIN | ✅ |
-| `project_architect` | Project Architect | OPERATIONS | ✅ |
+| `admin` | Admin | Platform Assistant | ADMIN | ⚠️ |
 | `content_repurposer` | Rita \| Repurposing Maestro | MARKETING | ⚠️ |
 | `newsletter_multi` | Nina \| Newsletter Specialist | MARKETING | ⚠️ |
 | `social_media_scheduler` | Social Media Scheduler | MARKETING | ⚠️ |
@@ -278,7 +297,7 @@ Current agents in the system:
 
 3. **Rebuild agents:**
    ```bash
-   [build command for your system]
+   node scripts/build-agents.js
    ```
 
 ### System prompt not updating?
@@ -286,10 +305,10 @@ Current agents in the system:
 The system prompt is compiled during build. After editing `system_prompt.md`:
 
 ```bash
-[build command for your system]
+node scripts/build-agents.js
 ```
 
-This syncs the updated prompt to database.
+This syncs the updated prompt to Neon database.
 
 ### Agent showing duplicate content?
 

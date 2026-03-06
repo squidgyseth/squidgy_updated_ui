@@ -1,7 +1,8 @@
 # Squidgy Frontend Coding Standards & Architecture
 
-## Overview
 This document outlines the sophisticated coding standards and architectural patterns used in the Squidgy frontend, designed for clarity, maintainability, and professional-grade development practices.
+
+> **📖 Related**: See [Agent Creation Guide](agents/README.md) for creating new AI agents with Python script
 
 ---
 

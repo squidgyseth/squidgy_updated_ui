@@ -315,6 +315,6 @@ python scripts/list_n8n_credentials.py
 
 ### Documentation
 
-- [Agent Folder Structure](../docs/agent-folder-structure.md)
-- [N8N Template-Based Agent Creation](../docs/n8n-template-based-agent-creation.md)
-- [Agent Creation Guide](../agents/README.md)
+- **[Agent Creation Guide](../agents/README.md)** - Complete agent management overview
+- [Agent Folder Structure](../docs/agent-folder-structure.md) - File organization
+- [N8N Template-Based Agent Creation](../docs/n8n-template-based-agent-creation.md) - Workflow integration
