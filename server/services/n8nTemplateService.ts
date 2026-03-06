@@ -40,8 +40,12 @@ export class N8NTemplateService {
   private baseUrl: string = 'https://n8n.theaiteam.uk/api/v1';
 
   private constructor() {
-    // Load API key from environment or file
-    this.apiKey = process.env.N8N_API_KEY || this.loadApiKeyFromFile();
+    // Load API key from environment variable
+    this.apiKey = process.env.VITE_N8N_TOKEN || process.env.N8N_API_KEY || '';
+    
+    if (!this.apiKey) {
+      console.warn('⚠️  N8N API key not found. Set VITE_N8N_TOKEN in .env file');
+    }
   }
 
   static getInstance(): N8NTemplateService {
@@ -51,20 +55,6 @@ export class N8NTemplateService {
     return N8NTemplateService.instance;
   }
 
-  /**
-   * Load N8N API key from file
-   */
-  private loadApiKeyFromFile(): string {
-    try {
-      const keyPath = path.join(process.cwd(), '.n8n-api-key');
-      if (fs.existsSync(keyPath)) {
-        return fs.readFileSync(keyPath, 'utf8').trim();
-      }
-    } catch (error) {
-      console.warn('Could not load N8N API key from file');
-    }
-    return '';
-  }
 
   /**
    * Download workflow template from N8N by workflow ID
@@ -186,59 +176,78 @@ export class N8NTemplateService {
 
   /**
    * Update agent-specific fields in workflow
+   * Note: System prompt is NOT inserted here - it's fetched from Neon database during execution
    */
   customizeWorkflowForAgent(
     workflow: N8NWorkflowTemplate,
     agentId: string,
     agentName: string,
-    systemPrompt: string,
     webhookPath?: string
   ): N8NWorkflowTemplate {
-    const modifications: N8NNodeModification[] = [
-      // Update webhook path
-      {
-        nodeName: 'Webhook',
-        modifications: [
-          { path: 'parameters.path', value: webhookPath || agentId }
-        ]
-      },
-      // Update workflow name
-      {
-        nodeName: 'Webhook',
-        modifications: [
-          { path: 'name', value: `${agentName} Webhook` }
-        ]
-      }
-    ];
+    const modifications: N8NNodeModification[] = [];
 
-    // Update AI Agent system prompt if exists
-    const aiAgentNode = workflow.nodes.find((node: any) => 
-      node.type === '@n8n/n8n-nodes-langchain.agent' || 
-      node.name.includes('AI Agent')
+    // Find webhook node by type
+    const webhookNode = workflow.nodes.find((node: any) => 
+      node.type === 'n8n-nodes-base.webhook'
     );
 
-    if (aiAgentNode) {
+    if (webhookNode) {
+      // Update webhook path
       modifications.push({
-        nodeName: aiAgentNode.name,
+        nodeName: webhookNode.name,
         modifications: [
-          { path: 'parameters.options.systemMessage', value: systemPrompt }
+          { path: 'parameters.path', value: webhookPath || agentId }
         ]
       });
     }
 
-    // Update all agent_name references in code nodes
+    // Note: System prompt is NOT inserted into the AI Agent node
+    // It's stored in agents/{agent_id}/system_prompt.md and uploaded to Neon database
+    // The workflow fetches it dynamically using the "Get system prompt" Postgres node
+
+    // Update all agent_id placeholders and agent_name references
     workflow.nodes.forEach((node: any) => {
+      // Update code nodes
       if (node.type === 'n8n-nodes-base.code' && node.parameters?.jsCode) {
-        const updatedCode = node.parameters.jsCode.replace(
-          /agent_name:\s*["'][\w_]+["']/g,
-          `agent_name: "${agentId}"`
-        );
+        let updatedCode = node.parameters.jsCode
+          .replace(/agent_name:\s*["'][\w_]+["']/g, `agent_name: "${agentId}"`)
+          .replace(/<<agent_id>>/g, agentId);
 
         modifications.push({
           nodeId: node.id,
           modifications: [
             { path: 'parameters.jsCode', value: updatedCode }
           ]
+        });
+      }
+
+      // Update HTTP Request tool nodes with <<agent_id>> placeholders
+      if (node.type === 'n8n-nodes-base.httpRequest' && node.parameters?.bodyParameters) {
+        const bodyParams = node.parameters.bodyParameters.parameters || [];
+        bodyParams.forEach((param: any, index: number) => {
+          if (param.value && typeof param.value === 'string' && param.value.includes('<<agent_id>>')) {
+            modifications.push({
+              nodeId: node.id,
+              modifications: [
+                { path: `parameters.bodyParameters.parameters[${index}].value`, value: param.value.replace(/<<agent_id>>/g, agentId) }
+              ]
+            });
+          }
+        });
+      }
+
+      // Update Postgres nodes with <<agent_id>> placeholders
+      if (node.type === 'n8n-nodes-base.postgres' && node.parameters?.where) {
+        const whereValues = node.parameters.where.values || [];
+        whereValues.forEach((where: any, index: number) => {
+          if (where.value && typeof where.value === 'string' && where.value.includes('<<agent_id>>')) {
+            modifications.push({
+              nodeId: node.id,
+              modifications: [
+                { path: `parameters.where.values[${index}].value`, value: where.value.replace(/<<agent_id>>/g, agentId) }
+              ]
+            });
+          }
         });
       }
     });
@@ -254,13 +263,31 @@ export class N8NTemplateService {
     workflowName?: string
   ): Promise<{ id: string; url: string }> {
     try {
-      // Remove id for new workflow creation
-      const workflowData = { ...workflow };
-      delete workflowData.id;
-
-      if (workflowName) {
-        workflowData.name = workflowName;
-      }
+      // Clean workflow data for new workflow creation
+      const workflowData: any = {
+        name: workflowName || workflow.name,
+        nodes: workflow.nodes.map((node: any) => {
+          const cleanNode: any = {
+            parameters: node.parameters || {},
+            type: node.type,
+            typeVersion: node.typeVersion,
+            position: node.position,
+            name: node.name
+          };
+          
+          // Remove node IDs - N8N will generate new ones
+          // Remove credentials - they need to be set manually in N8N UI
+          // Keep webhookId if it exists
+          if (node.webhookId) {
+            cleanNode.webhookId = node.webhookId;
+          }
+          
+          return cleanNode;
+        }),
+        connections: workflow.connections || {},
+        settings: workflow.settings || {},
+        staticData: null
+      };
 
       const response = await axios.post(`${this.baseUrl}/workflows`, workflowData, {
         headers: {

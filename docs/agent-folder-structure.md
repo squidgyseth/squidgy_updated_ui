@@ -15,17 +15,26 @@ All agent files are organized in the `client/{agent_id}/` directory structure. T
 ## Folder Structure
 
 ```
-client/
+agents/
 ├── shared/                              # Shared resources
-│   └── n8n_workflow_template.json       # N8N workflow template (updated for each agent)
+│   ├── base_system_prompt.md           # Base prompt for all agents
+│   ├── agent_template.yaml              # Template for new agents
+│   └── n8n_workflow_template.json       # N8N workflow template (source)
 │
 ├── {agent_id}/                          # Agent-specific folder
 │   ├── config.yaml                      # Agent YAML configuration
-│   └── system_prompt.md                 # Agent system prompt
+│   ├── system_prompt.md                 # Agent system prompt
+│   └── n8n_workflow.json                # Agent's customized N8N workflow
 │
-├── another_agent/
-│   ├── config.yaml
-│   └── system_prompt.md
+└── another_agent/
+    ├── config.yaml
+    ├── system_prompt.md
+    └── n8n_workflow.json
+
+client/
+├── {agent_id}/                          # Agent-specific folder (for build output)
+│   ├── config.yaml                      # Generated agent config
+│   └── system_prompt.md                 # Generated system prompt
 │
 └── [other client files]
 ```
@@ -34,21 +43,32 @@ client/
 
 ## File Descriptions
 
-### `client/shared/n8n_workflow_template.json`
+### `agents/shared/n8n_workflow_template.json`
 
-**Shared N8N workflow template** that is downloaded from N8N and updated when creating new agents.
+**Shared N8N workflow template** that is downloaded from N8N and used as a base for new agents.
+
+This is the **source template** that contains:
+- Base workflow structure
+- Standard nodes (webhook, AI agent, memory, etc.)
+- Placeholder values (e.g., `<<agent_id>>`)
+
+**Location**: `agents/shared/n8n_workflow_template.json`
+
+**Note**: This file is NOT modified. It's used as a template to create agent-specific workflows.
+
+### `agents/{agent_id}/n8n_workflow.json`
+
+**Agent-specific N8N workflow** customized for this particular agent.
 
 This file contains:
-- Workflow nodes configuration
-- Node connections
-- Webhook configuration
-- AI agent settings
-- Tool nodes
-- Response formatting
+- Customized webhook path (`/{agent_id}`)
+- Agent-specific tool nodes
+- Replaced `<<agent_id>>` placeholders
+- Agent-specific configurations
 
-**Location**: `client/shared/n8n_workflow_template.json`
+**Example location**: `agents/weather_advisor/n8n_workflow.json`
 
-**Note**: This template is customized for each agent and deployed to N8N. The shared file is updated with the latest customizations.
+**Note**: This is the workflow that gets deployed to N8N for this agent.
 
 ### `config.yaml`
 
@@ -184,14 +204,21 @@ Update any scripts or documentation that reference the old paths.
 ## Example: Complete Agent Structure
 
 ```
-client/
+agents/
 ├── shared/
-│   └── n8n_workflow_template.json     # Shared N8N template (updated per agent)
+│   ├── base_system_prompt.md         # Base prompt for all agents
+│   ├── agent_template.yaml            # Template for new agents
+│   └── n8n_workflow_template.json     # Source N8N template
 │
 └── email_marketing_manager/
     ├── config.yaml                    # Agent configuration
     ├── system_prompt.md               # Agent-specific prompt
-    └── README.md                      # Optional: Agent documentation
+    └── n8n_workflow.json              # Agent's customized workflow
+
+client/
+└── email_marketing_manager/
+    ├── config.yaml                    # Generated agent config
+    └── system_prompt.md               # Generated system prompt
 ```
 
 **config.yaml**:
@@ -215,7 +242,7 @@ Manage email campaigns and newsletters.
 # ... rest of prompt
 ```
 
-**Shared N8N Template** (`client/shared/n8n_workflow_template.json`):
+**Agent N8N Workflow** (`agents/email_marketing_manager/n8n_workflow.json`):
 ```json
 {
   "name": "Email Marketing Manager - Workflow",

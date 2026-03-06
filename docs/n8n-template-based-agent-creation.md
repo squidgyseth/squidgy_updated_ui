@@ -39,10 +39,10 @@ This approach is faster and more consistent than manually creating workflows fro
 
 ### Required
 
-- N8N API key configured (`.n8n-api-key` file or `N8N_API_KEY` env var)
+- N8N API key configured in `.env` file (`VITE_N8N_TOKEN`)
 - Access to N8N instance at `https://n8n.theaiteam.uk`
 - Node.js and npm installed
-- Existing N8N workflow to use as template
+- Template workflow ID: `ijDtq0ljM2atxA0E`
 
 ### Standard Template Workflow
 
@@ -480,16 +480,21 @@ const deployment = await n8nService.deployWorkflow(workflow, 'My Agent');
 
 ### Issue: API Key Not Found
 
-**Error**: `Failed to download N8N template: Unauthorized`
+**Error**: `Failed to download N8N template: Request failed with status code 401`
 
 **Solution**:
-```bash
-# Create .n8n-api-key file
-echo "your-api-key-here" > .n8n-api-key
 
-# Or set environment variable
-export N8N_API_KEY="your-api-key-here"
-```
+1. **Get your N8N API key**:
+   - Go to https://n8n.theaiteam.uk
+   - Navigate to Settings → API
+   - Generate/Copy your API key
+
+2. **Add to `.env` file**:
+   ```bash
+   VITE_N8N_TOKEN=your-n8n-api-key-here
+   ```
+
+3. **Restart your terminal/script** to load the new environment variable
 
 ### Issue: Template Not Found
 

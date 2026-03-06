@@ -11,8 +11,8 @@ agent:
   specialization: "Agent Architect"
   tagline: "Design. Build. Deploy."
   avatar: "/Squidgy AI Assistants Avatars/builder.png"
-  pinned: true
-  enabled: true
+  pinned: false
+  enabled: false
 
   initial_message: 'Hey! 👋 I''m Ace, your Agent Creation Expert.<br><br>I can help you build new AI agents from scratch with:<br>✅ Guided conversation to define your agent<br>✅ Automatic YAML configuration<br>✅ N8N workflow templates<br>✅ Integration setup scripts<br>✅ Testing and validation<br><br>Ready to create your first agent? Let''s start with: What will your agent do?'
 
@@ -34,18 +34,9 @@ agent:
     - "Built Playwright script for GHL subaccount setup"
     - "Validated and deployed Social Media Scheduler agent"
 
-# N8N Webhook Configuration
 n8n:
   webhook_url: https://n8n.theaiteam.uk/webhook/agent_builder
 
-# UI Configuration
-ui:
-  page_type: "standard"
-  figma_url: ''
-  figma_deployed_url: ''
-  figma_token: figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd
-
-# UI Configuration - Generated
 ui_use:
   page_type: single_page
   pages:
@@ -74,148 +65,7 @@ suggestions:
   - "Test my agent configuration"
   - "Show agent creation guide"
 
-# Agent personality
 personality:
   tone: professional
   style: educational
   approach: consultative
-
-# Agent Builder Specific Configuration
-agent_builder_config:
-  # Agent complexity tiers
-  tiers:
-    - name: "Tier 1 - Basic Chat"
-      description: "Simple conversational agent with N8N webhook"
-      features:
-        - "Standard chat interface"
-        - "Suggestion buttons"
-        - "Basic N8N webhook"
-        - "Personality configuration"
-      automation_level: "fully_automated"
-
-    - name: "Tier 2 - Platform Integrated"
-      description: "Multi-platform integration (social media, CRM, etc.)"
-      features:
-        - "Multi-platform configs"
-        - "Media handling"
-        - "Account management"
-        - "File upload support"
-      automation_level: "semi_automated"
-      requires:
-        - "OAuth setup (manual)"
-        - "Platform API keys (manual)"
-        - "Playwright scripts for browser automation"
-
-    - name: "Tier 3 - Domain Expert"
-      description: "Industry-specific with complex calculations and external APIs"
-      features:
-        - "Custom domain configs"
-        - "Calculator widgets"
-        - "Map integrations"
-        - "Pre-setup pages"
-        - "Regional configs"
-      automation_level: "semi_automated"
-      requires:
-        - "Domain API integrations"
-        - "Custom UI components"
-        - "Specialized N8N workflows"
-
-    - name: "Tier 4 - Multi-Modal"
-      description: "Figma UI generation with multi-page carousels"
-      features:
-        - "Figma integration"
-        - "Multi-page UI"
-        - "Conversation state persistence"
-        - "Generated React components"
-      automation_level: "semi_automated"
-      requires:
-        - "Figma URLs/tokens"
-        - "UI generation pipeline"
-        - "Component validation"
-
-  # Available integration templates
-  integration_templates:
-    - name: "GoHighLevel (GHL)"
-      type: "crm"
-      automation_type: "playwright"
-      capabilities:
-        - "Subaccount creation"
-        - "Media management"
-        - "Contact management"
-        - "Workflow automation"
-      setup_guide: "/guides/integrations/ghl-setup.md"
-
-    - name: "Facebook Business"
-      type: "social_media"
-      automation_type: "oauth"
-      capabilities:
-        - "Page posting"
-        - "Story scheduling"
-        - "Media upload"
-      setup_guide: "/guides/integrations/facebook-setup.md"
-
-    - name: "Instagram Business"
-      type: "social_media"
-      automation_type: "oauth"
-      capabilities:
-        - "Feed posting"
-        - "Story scheduling"
-        - "Media upload"
-      setup_guide: "/guides/integrations/instagram-setup.md"
-
-    - name: "LinkedIn"
-      type: "social_media"
-      automation_type: "oauth"
-      capabilities:
-        - "Profile posting"
-        - "Company page posting"
-      setup_guide: "/guides/integrations/linkedin-setup.md"
-
-    - name: "Google Calendar"
-      type: "productivity"
-      automation_type: "oauth"
-      capabilities:
-        - "Event creation"
-        - "Event listing"
-        - "Availability checking"
-      setup_guide: "/guides/integrations/google-calendar-setup.md"
-
-    - name: "Supabase"
-      type: "database"
-      automation_type: "api_key"
-      capabilities:
-        - "Data storage"
-        - "Query execution"
-        - "Real-time subscriptions"
-      setup_guide: "/guides/integrations/supabase-setup.md"
-
-  # N8N workflow components
-  n8n_components:
-    - name: "Webhook Trigger"
-      type: "trigger"
-      required: true
-
-    - name: "Supabase Data Fetch"
-      type: "data"
-      common: true
-
-    - name: "AI Agent Conversation"
-      type: "ai"
-      common: true
-      requires_llm: true
-
-    - name: "Structured Output Parser"
-      type: "parser"
-      common: true
-
-    - name: "Conditional Logic"
-      type: "control_flow"
-      common: true
-
-    - name: "HTTP Request"
-      type: "action"
-      common: true
-
-    - name: "Code Node"
-      type: "transform"
-      common: true
