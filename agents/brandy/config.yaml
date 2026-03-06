@@ -1,0 +1,224 @@
+# ===========================================
+# BRANDY - BRAND ADVISOR AGENT
+# ===========================================
+# A wizard-style agent that guides users through brand building
+# or acts as a brand advisor if brand is already defined
+
+agent:
+  id: brandy
+  emoji: "🎨"
+  name: "Brandy | Brand Advisor"
+  category: MARKETING
+  description: "Build your anti-brand or get brand guidance"
+  specialization: "Brand Strategist"
+  tagline: "Define. Refine. Align."
+  avatar: "/Squidgy AI Assistants Avatars/7.png"
+  pinned: true
+  enabled: true
+
+  # Brandy uses conversation state to track wizard progress
+  uses_conversation_state: true
+
+  initial_message: 'Hey! 🎨 I''m Brandy, your brand advisor.<br><br>I help you build authentic brands that actually sound like you - no corporate BS.<br><br>Want to:<br><br><b>1. Build from scratch</b> - I''ll guide you through 6 quick questions<br><b>2. Import existing</b> - Got brand docs? Paste them and I''ll extract what matters<br><b>3. Just chat</b> - Ask me brand questions and we''ll figure it out as we go<br><br>What works for you?'
+
+  sidebar_greeting: "Hi! I'm Brandy - your brand strategist. Whether you're building from scratch or refining what you have, I'll help you create a brand that feels real."
+
+  capabilities:
+    - "Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)"
+    - "Brand document import and parsing"
+    - "Brand voice refinement and guidance"
+    - "Content review against brand guidelines"
+    - "Hook and headline generation"
+    - "Before/after copy transformations"
+
+  recent_actions:
+    - "Built brand foundation for SaaS startup"
+    - "Imported and refined existing brand docs"
+    - "Generated 20 on-brand social hooks"
+    - "Reviewed website copy for brand alignment"
+
+# N8N Webhook Configuration
+n8n:
+  webhook_url: https://n8n.theaiteam.uk/webhook/brandy
+
+# UI Configuration
+ui:
+  page_type: "standard"
+  figma_url: ''
+  figma_deployed_url: ''
+  figma_token: figd_VBNaIIUBmyE1DNKT5SdAUXnRLBWjczDJ30N0DXkd
+
+# UI Configuration - Generated
+ui_use:
+  page_type: single_page
+  pages:
+    - name: Brandy Dashboard
+      path: brandy-dashboard
+      order: 1
+      validated: true
+
+# Interface Configuration
+interface:
+  type: chat
+  features:
+    - text_input
+    - file_upload      # For brand doc imports
+    - suggestion_buttons
+
+# Suggestion buttons (context-aware in N8N)
+suggestions:
+  - "1 - Build from scratch"
+  - "2 - Import existing brand docs"
+  - "3 - Just chat"
+
+# Agent personality
+personality:
+  tone: friendly
+  style: direct
+  approach: consultative
+
+# Brandy-specific configuration
+brandy_config:
+  # Wizard flow for brand building
+  wizard_phases:
+    - id: "assessment"
+      description: "Check if user has brand data, offer options"
+      triggers: ["first_interaction", "restart"]
+
+    - id: "import"
+      description: "Parse uploaded brand docs or website"
+      triggers: ["user_uploads_file", "provides_url"]
+
+    - id: "wizard_build"
+      description: "6-step brand building process"
+      steps:
+        - id: "atmosphere"
+          question: "What's the overall vibe/feeling you want people to experience?"
+          stores_to: "brands.atmosphere"
+
+        - id: "rebellious_edge"
+          question: "What makes you different? What won't you compromise on?"
+          stores_to: "brands.rebellious_edge"
+
+        - id: "enemy"
+          question: "What do you stand against? (industry BS, not competitors)"
+          stores_to: "brands.enemy_statement"
+
+        - id: "visuals"
+          question: "Describe your visual vibe (colors, energy, feel)"
+          stores_to: "brands.visual_direction"
+
+        - id: "hooks"
+          question: "How do you grab attention? What makes people stop scrolling?"
+          stores_to: "brands.hook_style"
+
+        - id: "messaging"
+          question: "How do you sound? What's your authentic voice?"
+          stores_to: "brands.voice_messaging"
+
+    - id: "summary"
+      description: "Compile Phase 1 summary"
+      outputs: "brand_foundation_summary"
+
+    - id: "bible_generation"
+      description: "Generate full brand bible (Phase 2)"
+      triggers: ["user_requests_full_bible"]
+      outputs: "full_brand_bible"
+
+    - id: "advisor_mode"
+      description: "Answer questions, generate content, review copy"
+      triggers: ["brand_exists"]
+
+  # Supabase integration
+  database:
+    table: "brands"
+    columns:
+      - name: "user_id"
+        type: "UUID"
+        required: true
+
+      - name: "atmosphere"
+        type: "TEXT"
+        description: "Overall vibe and feeling"
+
+      - name: "rebellious_edge"
+        type: "TEXT"
+        description: "What makes them different"
+
+      - name: "enemy_statement"
+        type: "TEXT"
+        description: "What they stand against"
+
+      - name: "visual_direction"
+        type: "TEXT"
+        description: "Visual vibe description"
+
+      - name: "hook_style"
+        type: "TEXT"
+        description: "How they grab attention"
+
+      - name: "voice_messaging"
+        type: "TEXT"
+        description: "Authentic voice"
+
+      - name: "signature_phrases"
+        type: "TEXT[]"
+        description: "Key phrases they use"
+
+      - name: "full_brand_bible"
+        type: "JSONB"
+        description: "Complete brand bible document"
+
+      - name: "created_at"
+        type: "TIMESTAMP"
+        default: "NOW()"
+
+      - name: "updated_at"
+        type: "TIMESTAMP"
+        default: "NOW()"
+
+  # Import capabilities
+  import:
+    supported_formats:
+      - ".pdf"
+      - ".docx"
+      - ".txt"
+      - ".md"
+      - "website_url"
+
+    extraction_targets:
+      - "brand_values"
+      - "brand_voice"
+      - "messaging"
+      - "visual_guidelines"
+      - "about_page_content"
+      - "mission_statement"
+
+  # Knowledge base files
+  knowledge_base:
+    - file: "instructions.md"
+      description: "Core agent behavior and conditional logic"
+
+    - file: "wizard_flow.md"
+      description: "6-step wizard conversation flow"
+
+    - file: "brand_methodology.md"
+      description: "Anti-branding methodology (punk branding framework)"
+
+    - file: "import_parser.md"
+      description: "How to parse and extract from brand docs"
+
+# Conversation state schema
+conversation_state_schema:
+  phase: "string"                    # assessment|import|wizard|summary|bible|advisor
+  brand_exists: "boolean"            # Does user have brand data?
+  wizard_step: "number"              # Current step (1-6) in wizard
+  wizard_data:                       # Collected wizard responses
+    atmosphere: "string"
+    rebellious_edge: "string"
+    enemy_statement: "string"
+    visual_direction: "string"
+    hook_style: "string"
+    voice_messaging: "string"
+  import_status: "string"            # pending|processing|complete
+  last_interaction: "timestamp"

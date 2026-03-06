@@ -1,318 +1,204 @@
 # N8N Conversation State Integration
 
-This document explains how to integrate conversation state persistence with your N8N agent workflows.
+**Purpose**: How multi-turn conversation state works end-to-end in Squidgy agents.
 
-## Enabling State Persistence for an Agent
+**Last Updated**: 2026-02-21
 
-To enable conversation state persistence for any agent, add this to the agent's YAML config:
+---
 
+## Quick Setup
+
+To enable conversation state for any agent, you need ALL of these:
+
+1. **Agent YAML** (`/agents/configs/agent-name.yaml`):
 ```yaml
 agent:
-  id: your_agent_id
-  name: Your Agent Name
-  # ... other config ...
-  uses_conversation_state: true  # <-- Add this line
+  uses_conversation_state: true
 ```
 
-Currently enabled for:
-- `newsletter` - Single-topic newsletter
+2. **Rebuild agents**: `node scripts/build-agents.js`
+
+3. **DynamicAgentDashboard.tsx** (line ~163) - `agentInfo` must include:
+```typescript
+uses_conversation_state: agentConfig.agent.uses_conversation_state || false
+```
+
+4. **N8N workflow** must read state from body and return state in response
+
+If ANY of these are missing, state will silently not work and the agent will reset every message.
+
+---
+
+## Currently Enabled Agents
+
+- `brandy` - Brand advisor wizard (6-step flow)
 - `newsletter_multi` - Multi-topic newsletter
-- `content_repurposer` - Content repurposer
 - `content_repurposer_multi` - Multi-topic content repurposer
 
-To add more agents, simply add `uses_conversation_state: true` to their YAML config and run `npm run build:agents`.
+---
 
-## Overview
+## How State Flows (End-to-End)
 
-The `agent_conversation_state` table stores the conversation state between messages, allowing the AI to maintain context across multiple turns.
+```
+1. User sends message
+   Frontend: sendToN8nWorkflowStreaming() in n8nService.ts
+   Payload includes: { ..., state: conversationStateRef.current }
+   (state is undefined on first message, populated on subsequent)
+
+2. N8N receives POST
+   Code node reads: data.state || data.conversation_state
+   Processes message based on current state
+   Returns updated state in response
+
+3. Frontend receives response
+   N8nChatInterface.tsx line ~582:
+   if (response.state && isMultiTurnAgent()) {
+     setConversationState(response.state);           // React state
+     conversationStateRef.current = response.state;  // Ref (immediate)
+     // Also saves to Supabase for persistence
+   }
+
+4. User sends next message
+   conversationStateRef.current now has the updated state
+   Gets included in next POST payload as "state"
+```
+
+---
 
 ## Database Table
 
-The table is created by running the migration: `supabase/migrations/20250116_agent_conversation_state.sql`
+Table: `agent_conversation_state`
 
 ```sql
--- Key columns:
 session_id    TEXT    -- Unique session identifier
-agent_id      TEXT    -- Agent identifier (e.g., 'newsletter_multi')
+agent_id      TEXT    -- Agent identifier (e.g., 'brandy')
 firm_user_id  UUID    -- User ID
-state         JSONB   -- The conversation state
+state         JSONB   -- The conversation state (any structure)
 status        TEXT    -- 'active', 'completed', or 'abandoned'
+created_at    TIMESTAMP
+updated_at    TIMESTAMP
+expires_at    TIMESTAMP
 ```
 
-## N8N Workflow Structure
-
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐     ┌──────────────────┐
-│  Webhook        │ --> │  Get State       │ --> │   AI Agent      │ --> │  Save State      │
-│  (Receive Msg)  │     │  (Code Node)     │     │  (Newsletter)   │     │  (Code Node)     │
-└─────────────────┘     └──────────────────┘     └─────────────────┘     └──────────────────┘
-```
+Migration: `supabase/migrations/20250116_agent_conversation_state.sql`
 
 ---
 
-## Code Node 1: Get Previous State (BEFORE AI Agent)
-
-Add this Code node after your Webhook and before the AI Agent node.
+## N8N Code Node: Reading State
 
 ```javascript
-// Get Previous Conversation State
-// Place this BEFORE the AI Agent node
+const data = $input.first().json.body;
 
-const { createClient } = require('@supabase/supabase-js');
-
-// Supabase credentials (add these to your N8N credentials or environment)
-const supabaseUrl = $env.SUPABASE_URL || 'YOUR_SUPABASE_URL';
-const supabaseServiceKey = $env.SUPABASE_SERVICE_KEY || 'YOUR_SERVICE_ROLE_KEY';
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Get input from webhook
-const input = $input.first().json;
-const session_id = input.session_id;
-const agent_id = input.agent_id || 'newsletter_multi';
-const user_id = input.user_id || input.firm_user_id;
-const user_message = input.user_mssg || input.message;
-
-// Default state for this agent type
-const defaultState = {
-  phase: 'topic_selection',
-  selected_topics: [],
-  current_topic_index: 0,
-  current_question_index: 0,
-  answers: {}
-};
-
-let conversationState = defaultState;
-
+// Read state from BOTH possible field names (frontend sends as "state")
+let conversationState = {};
 try {
-  // Query for existing state
-  const { data, error } = await supabase
-    .from('agent_conversation_state')
-    .select('state, status')
-    .eq('session_id', session_id)
-    .eq('agent_id', agent_id)
-    .eq('status', 'active')
-    .single();
-
-  if (data && !error) {
-    conversationState = data.state;
-    console.log('Found existing state:', conversationState);
-  } else {
-    // Create new state record
-    await supabase
-      .from('agent_conversation_state')
-      .insert({
-        session_id: session_id,
-        agent_id: agent_id,
-        firm_user_id: user_id,
-        state: defaultState,
-        status: 'active'
-      });
-    console.log('Created new state record');
+  const rawState = data.state || data.conversation_state;
+  if (rawState) {
+    conversationState = typeof rawState === 'string'
+      ? JSON.parse(rawState)
+      : rawState;
   }
-} catch (err) {
-  console.error('Error getting state:', err);
+} catch(e) {
+  conversationState = {};
 }
 
-// Pass everything to the next node
-return {
-  json: {
-    ...input,
-    session_id: session_id,
-    agent_id: agent_id,
-    user_id: user_id,
-    user_mssg: user_message,
-    conversation_state: conversationState
-  }
-};
+// Use state
+let phase = conversationState.phase || 'default';
+let step = conversationState.step || 0;
 ```
 
 ---
 
-## Code Node 2: Save New State (AFTER AI Agent)
-
-Add this Code node after your AI Agent node to save the new state.
+## N8N Code Node: Returning State
 
 ```javascript
-// Save Conversation State After AI Response
-// Place this AFTER the AI Agent node
+const state = {
+  phase: 'wizard',
+  wizard_step: 2,
+  wizard_data: { atmosphere: 'energised' }
+};
 
-const { createClient } = require('@supabase/supabase-js');
-
-// Supabase credentials
-const supabaseUrl = $env.SUPABASE_URL || 'YOUR_SUPABASE_URL';
-const supabaseServiceKey = $env.SUPABASE_SERVICE_KEY || 'YOUR_SERVICE_ROLE_KEY';
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Get input (includes original data + AI response)
-const input = $input.first().json;
-const session_id = input.session_id;
-const agent_id = input.agent_id || 'newsletter_multi';
-
-// Get AI output - adjust based on your AI Agent node output
-let aiOutput = input.output || input.response || input.text;
-
-// Parse AI response to extract state
-let newState = null;
-let aiStatus = 'Waiting';
-let responseText = '';
-
-try {
-  // If AI output is a string, try to parse as JSON
-  if (typeof aiOutput === 'string') {
-    // Try to extract JSON from the response
-    const jsonMatch = aiOutput.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      newState = parsed.state;
-      aiStatus = parsed.Status || 'Waiting';
-      responseText = parsed.response || aiOutput;
-    }
-  } else if (typeof aiOutput === 'object') {
-    newState = aiOutput.state;
-    aiStatus = aiOutput.Status || 'Waiting';
-    responseText = aiOutput.response || '';
-  }
-} catch (parseError) {
-  console.error('Error parsing AI response:', parseError);
-  responseText = aiOutput;
-}
-
-// Save state if we have one
-if (newState) {
-  try {
-    const status = aiStatus === 'Ready' ? 'completed' : 'active';
-
-    await supabase
-      .from('agent_conversation_state')
-      .update({
-        state: newState,
-        status: status,
-        updated_at: new Date().toISOString()
-      })
-      .eq('session_id', session_id)
-      .eq('agent_id', agent_id);
-
-    console.log('State saved successfully:', newState);
-    console.log('Conversation status:', status);
-  } catch (saveError) {
-    console.error('Error saving state:', saveError);
-  }
-}
-
-// Return the response to send back to the user
-return {
+return [{
   json: {
-    response: responseText,
-    status: aiStatus,
-    state: newState,
-    session_id: session_id,
-    agent_id: agent_id
+    user_id: data.user_id,
+    session_id: data.session_id,
+    agent_name: 'agent-name',
+    timestamp_of_call_made: new Date().toISOString(),
+    request_id: data.request_id,
+    agent_response: 'Your response text here',
+    agent_status: 'Waiting',
+    state: state  // Frontend saves this and sends it back next message
   }
-};
+}];
 ```
 
 ---
 
-## Frontend Integration
+## Frontend Files
 
-The frontend already has `conversationStateService.ts` that can be used to:
-
-1. **Get or create state when starting a conversation:**
-```typescript
-import { conversationStateService } from './services/conversationStateService';
-
-// When user opens chat
-const state = await conversationStateService.getOrCreateState(
-  sessionId,
-  'newsletter_multi',
-  userId
-);
-```
-
-2. **Save state after receiving AI response:**
-```typescript
-// After receiving webhook response
-await conversationStateService.saveStateFromAIResponse(
-  sessionId,
-  'newsletter_multi',
-  aiResponse
-);
-```
-
-3. **Include session_id in webhook calls:**
-```typescript
-// When sending message to N8N
-const payload = {
-  session_id: sessionId,
-  agent_id: 'newsletter_multi',
-  user_id: userId,
-  user_mssg: userMessage,
-  // ... other data
-};
-```
+| File | Role |
+|------|------|
+| `client/lib/n8nService.ts` line ~425 | Includes `state` in POST payload: `...(conversationState && { state: conversationState })` |
+| `client/components/chat/N8nChatInterface.tsx` line ~65 | `conversationStateRef` - ref for immediate state access |
+| `client/components/chat/N8nChatInterface.tsx` line ~129 | `isMultiTurnAgent()` - checks `agent.uses_conversation_state` |
+| `client/components/chat/N8nChatInterface.tsx` line ~582 | Saves response state to ref + Supabase |
+| `client/pages/DynamicAgentDashboard.tsx` line ~163 | `agentInfo` object - MUST include `uses_conversation_state` |
+| `client/services/conversationStateService.ts` | Supabase CRUD for state persistence |
 
 ---
 
-## Webhook Payload Structure
-
-Ensure your webhook includes these fields:
+## Brandy State Schema (Example)
 
 ```json
 {
-  "session_id": "user123_newsletter_multi_1705123456789_abc123",
-  "agent_id": "newsletter_multi",
-  "user_id": "uuid-of-user",
-  "user_mssg": "User's message here",
-  "website_url": "https://example.com",
-  "knowledge_base_summary": "...",
-  "available_topics_display": "..."
+  "phase": "assessment|wizard|import|summary|bible|advisor",
+  "brand_exists": false,
+  "wizard_step": 0,
+  "wizard_data": {
+    "atmosphere": "energised and hopeful",
+    "rebellious_edge": "we use AI to code 100x faster",
+    "enemy_statement": "agencies that overcharge",
+    "visual_direction": "bold, neon, dark backgrounds",
+    "hook_style": "provocative questions",
+    "voice_messaging": "direct, no fluff"
+  },
+  "import_status": null
 }
 ```
 
 ---
 
-## State Structure
+## Debugging State Issues
 
-The state object follows this structure:
+### Check 1: Is isMultiTurnAgent true?
 
-```json
-{
-  "phase": "topic_selection | gathering | ready",
-  "selected_topics": ["industry_insights", "education", "events"],
-  "current_topic_index": 0,
-  "current_question_index": 1,
-  "answers": {
-    "industry_insights": {
-      "q1": "SaaS and cloud computing",
-      "q2": "CTOs and technical leaders"
-    },
-    "education": {},
-    "events": {}
-  }
-}
+Open browser console, look for:
+```
+BRANDY DEBUG: isMultiTurnAgent: true
+```
+
+If `false`: `uses_conversation_state` is not being passed in `agentInfo`.
+
+### Check 2: Is state being sent?
+
+Browser console:
+```
+BRANDY DEBUG: Sending message with state: {"phase":"wizard",...}
+```
+
+If `undefined`: state is not being saved from previous response.
+
+### Check 3: Is N8N receiving state?
+
+Check execution data via API:
+```bash
+curl -s -H "X-N8N-API-KEY: $KEY" \
+  "https://n8n.theaiteam.uk/api/v1/executions/$ID?includeData=true" | \
+  python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps(d['data']['resultData']['runData']['Webhook'][0]['data']['main'][0][0]['json']['body']))"
 ```
 
 ---
 
-## Environment Variables for N8N
+## Version History
 
-Add these to your N8N environment:
-
-```
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_KEY=your-service-role-key
-```
-
-Note: Use the **service role key** (not anon key) in N8N so it can bypass RLS policies.
-
----
-
-## Testing
-
-1. Run the SQL migration to create the table
-2. Set up the N8N workflow with the code nodes
-3. Start a conversation - you should see a new row in `agent_conversation_state`
-4. Send follow-up messages - the state should update
-5. Check that the AI receives the correct `conversation_state` on each turn
+- **2026-02-21**: Complete rewrite. Documented end-to-end state flow, DynamicAgentDashboard bug, debugging steps, Brandy state schema.

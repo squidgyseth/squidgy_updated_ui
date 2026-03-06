@@ -64,6 +64,7 @@ export default function N8nChatInterface({
   const [existingHistoryId, setExistingHistoryId] = useState<string | null>(null);
   const [activeInteractiveButtons, setActiveInteractiveButtons] = useState<string[]>([]);
   const [conversationState, setConversationState] = useState<Record<string, unknown> | undefined>(undefined); // State for multi-turn agents like newsletter_multi
+  const conversationStateRef = useRef<Record<string, unknown> | undefined>(undefined); // Ref to always have latest state for closures
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const currentSessionRef = useRef<string>(sessionId); // Track current session to prevent stale updates
@@ -136,8 +137,10 @@ export default function N8nChatInterface({
       const state = await conversationStateService.getState(sessionId, agent.id);
       if (state) {
         setConversationState(state);
+        conversationStateRef.current = state;
       } else {
         setConversationState(undefined);
+        conversationStateRef.current = undefined;
       }
     } catch (error) {
       console.error('❌ Error loading conversation state:', error);
@@ -482,6 +485,9 @@ export default function N8nChatInterface({
       setMessages(prev => [...prev, tempStreamingMessage]);
       
       // Send to n8n workflow with streaming updates
+      const currentState = conversationStateRef.current;
+      console.log('🔵 BRANDY DEBUG: Sending message with state:', JSON.stringify(currentState));
+      console.log('🔵 BRANDY DEBUG: conversationState useState:', JSON.stringify(conversationState));
       const response = await sendToN8nWorkflowStreaming(
         userId,
         messageContent, // Send the full message content including file info
@@ -499,7 +505,7 @@ export default function N8nChatInterface({
         userMessage.id,
         webhookUrl, // Pass the webhook URL from agent config
         (agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') ? selectedNewsletterId || undefined : undefined, // Include newsletter_id for content_repurposer
-        conversationState // Pass conversation state for multi-turn agents like newsletter_multi
+        currentState // Use ref for latest state (avoids stale closure issue)
       );
 
       if (response) {
@@ -606,8 +612,12 @@ export default function N8nChatInterface({
         }
 
         // Store conversation state for multi-turn agents (like newsletter_multi)
+        console.log('🟢 BRANDY DEBUG: Response state:', JSON.stringify(response.state));
+        console.log('🟢 BRANDY DEBUG: isMultiTurnAgent:', isMultiTurnAgent());
         if (response.state && isMultiTurnAgent()) {
+          console.log('🟢 BRANDY DEBUG: SAVING state to ref and useState');
           setConversationState(response.state);
+          conversationStateRef.current = response.state; // Update ref immediately for next message closure
 
           // Persist state to database for multi-turn agents
           try {

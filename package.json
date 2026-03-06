@@ -22,6 +22,9 @@
     "typecheck": "tsc",
     "agent:import": "node scripts/import-agent.js",
     "agent:create": "node scripts/create-agent-template.js",
+    "agent:create:interactive": "npx tsx scripts/create-agent-interactive.js",
+    "agent:validate": "npx tsx scripts/validate-agent.js",
+    "integration:ghl": "npx tsx integration-helpers/playwright/ghl-setup.ts",
     "sync-instructions": "curl -X POST ${N8N_LOAD_INSTRUCTIONS_URL} || echo 'Warning: Could not sync instructions'"
   },
   "dependencies": {

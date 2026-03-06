@@ -33,6 +33,23 @@ nova-realm/
 nova-realm_updated/
 
 # N8N workflows (contain API keys and secrets)
-n8n_workflows/
-.vercel
-.env*.local
+n8n_workflows/.bmad
+
+# Temporary debugging scripts
+fix_*.py
+test_*.py
+activate_*.py
+deploy_*.py
+upload_*.py
+*_proxy.py
+check_*.py
+debug_*.py
+
+# Temporary documentation
+*_FIX_*.md
+*_DEPLOYMENT_STATUS.md
+*_FIXED.md
+
+# Workflow backups (keep in n8n/backups/ instead)
+*_BROKEN_*.json
+*_LAST_GOOD_*.json
