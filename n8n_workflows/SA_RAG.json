@@ -1,0 +1,223 @@
+{
+  "name": "SA_RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## SA_RAG Workflow (Smart Save)\n\nGranular KB storage with smart duplicate detection:\n1. Receives query, userID, category\n2. Finds semantically similar existing entries\n3. Deletes ONLY matching content (not whole category)\n4. Generates embedding and inserts new entry\n\n### Table: user_vector_knowledge_base\n- user_id (explicit column)\n- document\n- category (explicit column)\n- embedding\n- source\n\n### Called By:\n- Personal Assistant (Save to KB tool)\n- Other agents that need to store information",
+        "height": 504,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1088,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "5552e1d1-3b30-4308-9794-9969062ec146",
+      "name": "Overview"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query"
+            },
+            {
+              "name": "userID"
+            },
+            {
+              "name": "category"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -576,
+        320
+      ],
+      "id": "6049e9f6-e05b-412a-8269-ad80471b4b0d",
+      "name": "When Called"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract key terms for smart matching\nconst input = $input.first().json;\nconst query = input.query || '';\n\n// Extract potential key identifiers (names, locations, numbers, etc.)\n// This helps find semantically similar existing entries\nconst keyTerms = query\n  .toLowerCase()\n  .replace(/[^a-z0-9\\s]/g, ' ')\n  .split(/\\s+/)\n  .filter(word => word.length > 3)\n  .slice(0, 10)\n  .join(' ');\n\nreturn {\n  json: {\n    ...input,\n    keyTerms: keyTerms\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        320
+      ],
+      "id": "e3bb48fa-5c5b-4353-b2e0-77a5ac9ebf15",
+      "name": "Extract Key Terms"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Smart delete: Find and remove semantically similar entries\n-- Uses text similarity to find matching content in same category\nWITH similar_entries AS (\n  SELECT id, document,\n    similarity(LOWER(document), LOWER('{{ $json.keyTerms }}')) as sim_score\n  FROM public.user_vector_knowledge_base\n  WHERE user_id = '{{ $json.userID }}'\n    AND category = '{{ $json.category }}'\n    AND LOWER(document) % LOWER('{{ $json.keyTerms }}')\n)\nDELETE FROM public.user_vector_knowledge_base\nWHERE id IN (\n  SELECT id FROM similar_entries WHERE sim_score > 0.3\n)\nRETURNING id, LEFT(document, 100) as deleted_preview;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -96,
+        320
+      ],
+      "id": "51a0d0a5-640f-435a-bf7b-8da56dc8adf1",
+      "name": "Smart Delete (Similar Only)",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "openai/text-embedding-3-small"
+            },
+            {
+              "name": "input",
+              "value": "={{ $('When Called').item.json.query }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        128,
+        320
+      ],
+      "id": "288eadad-b66d-4ce4-8ecd-192dd9cf2dc1",
+      "name": "Get Embedding (OpenRouter)"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.user_vector_knowledge_base (user_id, document, category, embedding, source)\nVALUES (\n  '{{ $('When Called').item.json.userID }}',\n  '{{ $('When Called').item.json.query.replace(/'/g, \"''\") }}',\n  '{{ $('When Called').item.json.category }}',\n  '{{ JSON.stringify($json.data[0].embedding) }}',\n  'N8N-agent'\n)\nRETURNING id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        352,
+        320
+      ],
+      "id": "a7a03df3-60f4-4165-99ea-39c43f083c11",
+      "name": "Insert New Entry",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build response with details of what was done\nconst trigger = $('When Called').first().json;\nconst deleted = $('Smart Delete (Similar Only)').first().json;\nconst inserted = $input.first().json;\n\nconst deletedCount = Array.isArray(deleted) ? deleted.length : 0;\n\nreturn {\n  json: {\n    success: true,\n    action: 'kb_save',\n    user_id: trigger.userID,\n    category: trigger.category,\n    duplicates_removed: deletedCount,\n    inserted_id: inserted?.id || null,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        320
+      ],
+      "id": "ce38ae79-0158-47ed-bd42-c2059d560de4",
+      "name": "Response"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called": {
+      "main": [
+        [
+          {
+            "node": "Extract Key Terms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Key Terms": {
+      "main": [
+        [
+          {
+            "node": "Smart Delete (Similar Only)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert New Entry": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Delete (Similar Only)": {
+      "main": [
+        [
+          {
+            "node": "Get Embedding (OpenRouter)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Embedding (OpenRouter)": {
+      "main": [
+        [
+          {
+            "node": "Insert New Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f73e0341-0652-4830-80fc-1a871c9c05a9",
+  "meta": {
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "7BTVETTR7FRURw9D",
+  "tags": []
+}
