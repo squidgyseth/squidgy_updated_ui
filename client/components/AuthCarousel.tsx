@@ -119,8 +119,8 @@ export default function AuthCarousel({ hideGameSlide = false }: AuthCarouselProp
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         {slides[currentSlide].type === 'game' ? (
-          /* Game Slide - Fill available space */
-          <div className="w-full h-full flex flex-col px-4 md:px-8 pt-4 pb-2">
+          /* Game Slide - Reduced size (70% of original) */
+          <div className="w-[70%] h-[70%] flex flex-col px-4 md:px-8 pt-4 pb-2 mx-auto">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 md:mb-4 leading-tight font-['Open_Sans']">
               {slides[currentSlide].title}
             </h2>
