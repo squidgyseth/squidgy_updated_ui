@@ -223,7 +223,7 @@ const App = () => (
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/test-email-check" element={<TestEmailCheck />} />
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<Register />} />
           <Route path="/welcome" element={
             <ProtectedRoute>
               <Index />
