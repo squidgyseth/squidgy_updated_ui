@@ -267,7 +267,7 @@ export class AuthService {
             };
 
             // TODO: Track referral if referralCode was provided
-            // If userData.referralCode exists and is not "SQUIDWINS":
+            // If userData.referralCode exists:
             //   1. Look up the referrer's user_id from referral_codes table
             //   2. Create entry in referrals table linking referrer to referee (userId)
 

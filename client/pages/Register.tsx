@@ -306,8 +306,7 @@ export default function Register() {
                 required
               />
               <p className="mt-2 text-xs text-[#6A7282] font-['Open_Sans']">
-                💡 <span className="font-semibold">SQUIDWINS</span> is a master code that anyone can use for unlimited signups.
-                You can also use a personal referral code from a friend!
+                💡 Enter a valid referral code from a friend to create your account.
               </p>
             </div>
 

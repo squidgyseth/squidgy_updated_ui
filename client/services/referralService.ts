@@ -860,19 +860,12 @@ class ReferralService {
 
   /**
    * Validate a referral code
-   * Returns true if:
-   * - Code is "SQUIDWINS" (master code), OR
-   * - Code exists in referral_codes table and is active
+   * Returns true if code exists in referral_codes table and is active
    */
   async validateReferralCode(code: string): Promise<boolean> {
     try {
       // Trim and uppercase the code for comparison
       const trimmedCode = code.trim().toUpperCase();
-
-      // Check if it's the master code
-      if (trimmedCode === 'SQUIDWINS') {
-        return true;
-      }
 
       // Check if code exists in database
       const { data, error } = await supabase
