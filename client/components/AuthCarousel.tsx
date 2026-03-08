@@ -156,7 +156,7 @@ export default function AuthCarousel({ hideGameSlide = false }: AuthCarouselProp
       </div>
 
       {/* Navigation and Trust Indicators */}
-      <div>
+      <div className="-mt-[10%]">
         {/* Navigation Controls */}
         <div className="flex justify-center gap-4 mb-8">
           <button
