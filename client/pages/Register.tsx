@@ -306,7 +306,7 @@ export default function Register() {
                 required
               />
               <p className="mt-2 text-xs text-[#6A7282] font-['Open_Sans']">
-                💡 Enter a valid referral code from a friend to create your account.
+                💡 Enter a valid referral code
               </p>
             </div>
 
