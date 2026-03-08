@@ -860,17 +860,17 @@ class ReferralService {
 
   /**
    * Validate a referral code
-   * Returns true if code exists in referral_codes table and is active
+   * Returns true if code exists in referral_codes table, is active, and hasn't been used
    */
   async validateReferralCode(code: string): Promise<boolean> {
     try {
       // Trim and uppercase the code for comparison
       const trimmedCode = code.trim().toUpperCase();
 
-      // Check if code exists in database
+      // Check if code exists in database and is active
       const { data, error } = await supabase
         .from('referral_codes')
-        .select('code')
+        .select('code, id, used_at')
         .eq('code', trimmedCode)
         .eq('is_active', true)
         .single();
@@ -879,9 +879,42 @@ class ReferralService {
         return false;
       }
 
+      // Check if code has already been used (one-time use)
+      if (data.used_at) {
+        return false;
+      }
+
       return true;
     } catch (error) {
       console.error('Error validating referral code:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Mark a referral code as used
+   */
+  async markCodeAsUsed(code: string, usedByUserId: string): Promise<boolean> {
+    try {
+      const trimmedCode = code.trim().toUpperCase();
+
+      const { error } = await supabase
+        .from('referral_codes')
+        .update({
+          used_at: new Date().toISOString(),
+          used_by_user_id: usedByUserId,
+          is_active: false
+        })
+        .eq('code', trimmedCode);
+
+      if (error) {
+        console.error('Error marking code as used:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error marking code as used:', error);
       return false;
     }
   }

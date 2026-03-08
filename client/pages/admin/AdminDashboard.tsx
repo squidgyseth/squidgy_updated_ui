@@ -313,7 +313,7 @@ export default function AdminDashboard() {
               {/* Info */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  💡 This code can be used unlimited times by different users to register for Squidgy.
+                  💡 This code can only be used once. After a user registers with this code, it will be deactivated.
                 </p>
               </div>
 
