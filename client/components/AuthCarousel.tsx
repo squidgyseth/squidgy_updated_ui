@@ -51,10 +51,10 @@ interface CarouselState {
 }
 
 const carouselStates: CarouselState[] = [
-  // {
-  //   type: 'game',
-  //   title: "Reclaim Your Time",
-  // },
+  {
+    type: 'game',
+    title: "Reclaim Your Time",
+  },
   {
     type: 'content',
     icon: <TeamIcon />,
@@ -75,15 +75,24 @@ const carouselStates: CarouselState[] = [
   }
 ];
 
-export default function AuthCarousel() {
+interface AuthCarouselProps {
+  hideGameSlide?: boolean;
+}
+
+export default function AuthCarousel({ hideGameSlide = false }: AuthCarouselProps) {
+  // Filter out game slide if hideGameSlide is true
+  const slides = hideGameSlide
+    ? carouselStates.filter(slide => slide.type !== 'game')
+    : carouselStates;
+
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % carouselStates.length);
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + carouselStates.length) % carouselStates.length);
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
   const goToSlide = (index: number) => {
@@ -94,7 +103,7 @@ export default function AuthCarousel() {
     <div className="flex-1 flex flex-col min-h-[100vh] md:min-h-screen bg-gradient-to-br from-[#FB252A] via-[#A61D92] to-[#6017E8] p-6 md:p-12 justify-between">
       {/* Carousel Indicators */}
       <div className="flex justify-center gap-2 mb-8">
-        {carouselStates.map((_, index) => (
+        {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
@@ -109,11 +118,11 @@ export default function AuthCarousel() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center text-center">
-        {carouselStates[currentSlide].type === 'game' ? (
+        {slides[currentSlide].type === 'game' ? (
           /* Game Slide - Fill available space */
           <div className="w-full h-full flex flex-col px-4 md:px-8 pt-4 pb-2">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 md:mb-4 leading-tight font-['Open_Sans']">
-              {carouselStates[currentSlide].title}
+              {slides[currentSlide].title}
             </h2>
             <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl">
               <iframe
@@ -130,16 +139,16 @@ export default function AuthCarousel() {
           <div className="relative mb-12">
             {/* Icon Container */}
             <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-6">
-              {carouselStates[currentSlide].icon}
+              {slides[currentSlide].icon}
             </div>
 
             {/* Title and Description */}
             <div className="max-w-[453px]">
               <h2 className="text-4xl font-bold text-white mb-4 leading-[45px] font-['Open_Sans']">
-                {carouselStates[currentSlide].title}
+                {slides[currentSlide].title}
               </h2>
               <p className="text-lg text-white/90 leading-7 font-['Open_Sans'] max-w-[448px]">
-                {carouselStates[currentSlide].description}
+                {slides[currentSlide].description}
               </p>
             </div>
           </div>
@@ -165,7 +174,7 @@ export default function AuthCarousel() {
         </div>
 
         {/* Trust Indicators - Hidden for game slide */}
-        {carouselStates[currentSlide].type !== 'game' && (
+        {slides[currentSlide].type !== 'game' && (
           <div>
             <p className="text-center text-white/80 text-[15px] mb-4 font-['Open_Sans']">
               Trusted by teams worldwide

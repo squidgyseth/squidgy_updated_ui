@@ -365,7 +365,7 @@ export default function Login() {
       </div>
 
       {/* Right Side - Carousel */}
-      <AuthCarousel />
+      <AuthCarousel hideGameSlide={true} />
 
     </div>
   );
