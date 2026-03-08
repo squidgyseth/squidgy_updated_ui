@@ -356,14 +356,14 @@ export default function Register() {
               </label>
 
               {/* Marketing Communications - Optional */}
-              <label className="flex items-start gap-2 cursor-pointer group">
+              <label className="flex items-start gap-2 cursor-pointer group bg-gray-50 p-3 rounded-lg border border-gray-200">
                 <input
                   type="checkbox"
                   checked={marketingConsent}
                   onChange={(e) => setMarketingConsent(e.target.checked)}
                   className="mt-0.5 h-4 w-4 rounded border-gray-400 text-gray-500 focus:ring-gray-400 cursor-pointer"
                 />
-                <span className="text-[13px] text-gray-500 leading-snug font-['Open_Sans']">
+                <span className="text-[13px] text-gray-600 leading-snug font-['Open_Sans']">
                   I'd like to receive marketing communications and product updates (optional)
                 </span>
               </label>
