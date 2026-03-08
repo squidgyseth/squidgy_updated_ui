@@ -121,7 +121,7 @@ export default function AuthCarousel({ hideGameSlide = false }: AuthCarouselProp
         {slides[currentSlide].type === 'game' ? (
           /* Game Slide - Pushed up from bottom by 15% */
           <div className="w-full h-full flex flex-col px-4 md:px-8 pt-4 pb-2 mb-[15%]">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 md:mb-4 leading-tight font-['Open_Sans']">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-[5%] leading-tight font-['Open_Sans']">
               {slides[currentSlide].title}
             </h2>
             <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl">
