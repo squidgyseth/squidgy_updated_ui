@@ -82,11 +82,6 @@ export default function Register() {
     }
 
     // Validate required consents
-    if (!termsScrolledToBottom || !privacyScrolledToBottom) {
-      toast.error('You must read through the entire Beta User Agreement and Privacy Policy before accepting');
-      return;
-    }
-
     if (!termsAccepted) {
       toast.error('You must accept the Terms and Privacy Policy to continue');
       return;
@@ -107,11 +102,7 @@ export default function Register() {
         referralCode: referralCode.trim() || undefined,
         termsAccepted,
         aiProcessingConsent: aiConsentAccepted,
-        marketingConsent,
-        termsViewed: termsScrolledToBottom,
-        termsScrolledToBottom,
-        privacyViewed: privacyScrolledToBottom,
-        privacyScrolledToBottom
+        marketingConsent
       });
 
       if (response.needsEmailConfirmation) {
@@ -313,25 +304,19 @@ export default function Register() {
             {/* Consent Checkboxes */}
             <div className="space-y-3 pt-2">
               {/* Instructional message */}
-              {(!termsScrolledToBottom || !privacyScrolledToBottom) && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                  <p className="text-xs text-blue-800 font-medium">
-                    📖 Please click and read through the complete{' '}
-                    {!termsScrolledToBottom && !privacyScrolledToBottom ? 'Beta User Agreement and Privacy Policy' :
-                     !termsScrolledToBottom ? 'Beta User Agreement' : 'Privacy Policy'}{' '}
-                    before you can accept. Scroll to the bottom of each document to enable the checkboxes.
-                  </p>
-                </div>
-              )}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                <p className="text-xs text-blue-800 font-medium">
+                  📖 Please click and read through the complete Beta User Agreement and Privacy Policy before you can accept.
+                </p>
+              </div>
 
               {/* Terms and Privacy Policy - Required */}
-              <label className={`flex items-start gap-2 ${termsScrolledToBottom && privacyScrolledToBottom ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} group`}>
+              <label className="flex items-start gap-2 cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
-                  disabled={!termsScrolledToBottom || !privacyScrolledToBottom}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer"
                   required
                 />
                 <span className="text-[13px] text-[#4A5565] leading-snug font-['Open_Sans']">
@@ -339,17 +324,17 @@ export default function Register() {
                   <button
                     type="button"
                     onClick={openBetaAgreementModal}
-                    className={`text-[#5E17EB] hover:underline font-semibold ${termsScrolledToBottom ? 'text-green-600' : ''}`}
+                    className="text-[#5E17EB] hover:underline font-semibold"
                   >
-                    Beta User Agreement {termsScrolledToBottom && '✓'}
+                    Beta User Agreement
                   </button>
                   {' '}and{' '}
                   <button
                     type="button"
                     onClick={openPrivacyModal}
-                    className={`text-[#5E17EB] hover:underline font-semibold ${privacyScrolledToBottom ? 'text-green-600' : ''}`}
+                    className="text-[#5E17EB] hover:underline font-semibold"
                   >
-                    Privacy Policy {privacyScrolledToBottom && '✓'}
+                    Privacy Policy
                   </button>
                   <span className="text-red-500 ml-1">*</span>
                 </span>
@@ -376,9 +361,9 @@ export default function Register() {
                   type="checkbox"
                   checked={marketingConsent}
                   onChange={(e) => setMarketingConsent(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-400 text-gray-500 focus:ring-gray-400 cursor-pointer"
                 />
-                <span className="text-[13px] text-[#4A5565] leading-snug font-['Open_Sans']">
+                <span className="text-[13px] text-gray-500 leading-snug font-['Open_Sans']">
                   I'd like to receive marketing communications and product updates (optional)
                 </span>
               </label>
