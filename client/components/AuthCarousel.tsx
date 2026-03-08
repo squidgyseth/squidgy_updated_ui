@@ -51,10 +51,10 @@ interface CarouselState {
 }
 
 const carouselStates: CarouselState[] = [
-  {
-    type: 'game',
-    title: "Reclaim Your Time",
-  },
+  // {
+  //   type: 'game',
+  //   title: "Reclaim Your Time",
+  // },
   {
     type: 'content',
     icon: <TeamIcon />,
