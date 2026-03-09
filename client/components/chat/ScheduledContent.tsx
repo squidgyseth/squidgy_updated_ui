@@ -95,13 +95,15 @@ const EditPostModal: React.FC<{
         <div className="p-4 space-y-4">
           {/* Content */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Post Content</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Post Content {!summary && post.media && post.media.length > 0 && <span className="text-xs text-gray-500">(Media-only post)</span>}
+            </label>
             <textarea
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
               rows={6}
-              placeholder="Enter your post content..."
+              placeholder={post.media && post.media.length > 0 ? "Add caption (optional for media posts)..." : "Enter your post content..."}
             />
           </div>
           
@@ -148,18 +150,33 @@ const EditPostModal: React.FC<{
           </div>
           
           {/* Media preview (read-only) */}
-          {post.media && post.media.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Media (cannot be changed)</label>
-              <div className="w-20 h-20 rounded overflow-hidden bg-gray-100">
-                <img 
-                  src={post.media[0]?.url} 
-                  alt="Post media" 
-                  className="w-full h-full object-cover"
-                />
+          {post.media && post.media.length > 0 && (() => {
+            const mediaUrl = post.media[0]?.url || '';
+            const isVideo = mediaUrl.match(/\.(mp4|mov|avi|webm|mkv)$/i) || post.media[0]?.type?.includes('video');
+            
+            return (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Media (cannot be changed) {isVideo && <span className="text-xs text-purple-600">• Video</span>}
+                </label>
+                <div className="w-32 h-32 rounded overflow-hidden bg-gray-100">
+                  {isVideo ? (
+                    <video 
+                      src={mediaUrl}
+                      className="w-full h-full object-cover"
+                      controls
+                    />
+                  ) : (
+                    <img 
+                      src={mediaUrl}
+                      alt="Post media" 
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
         
         {/* Footer */}
@@ -191,7 +208,7 @@ const EditPostModal: React.FC<{
             </button>
             <button
               onClick={handleSave}
-              disabled={isSaving || isPostponing || !summary.trim() || selectedAccountIds.length === 0}
+              disabled={isSaving || isPostponing || (!summary.trim() && (!post.media || post.media.length === 0)) || selectedAccountIds.length === 0}
               className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isSaving ? (
@@ -253,39 +270,65 @@ const PostPreviewModal: React.FC<{ post: any; onClose: () => void; onDelete: (po
         </div>
         
         {/* Media with overlaid user info */}
-        {hasMedia ? (
-          <div className="relative">
-            {/* User info overlay on top of image */}
-            <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
-                  <span className="text-gray-600 text-xs font-bold">U</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-xs text-white">Your Business</p>
-                  <p className="text-[10px] text-white/80">{dateStr}</p>
+        {hasMedia ? (() => {
+          const mediaUrl = media[0]?.url || '';
+          const isVideo = mediaUrl.match(/\.(mp4|mov|avi|webm|mkv)$/i) || media[0]?.type?.includes('video');
+          
+          return (
+            <div className="relative">
+              {/* User info overlay on top of media */}
+              <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
+                    <span className="text-gray-600 text-xs font-bold">U</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-xs text-white">Your Business</p>
+                    <p className="text-[10px] text-white/80">{dateStr}</p>
+                  </div>
                 </div>
               </div>
+              
+              {/* Media (Image or Video) */}
+              {isVideo ? (
+                <video 
+                  src={mediaUrl}
+                  className="w-full object-contain max-h-[350px] bg-black"
+                  controls
+                  playsInline
+                />
+              ) : (
+                <img 
+                  src={mediaUrl}
+                  alt="Post media" 
+                  className="w-full object-contain max-h-[350px] bg-black"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              )}
+              
+              {/* Actions overlay - different for video vs image */}
+              {isVideo ? (
+                /* Black frame below video for actions */
+                <div className="bg-black px-3 py-3">
+                  <div className="flex items-center gap-4 text-white text-xs">
+                    <span className="hover:text-white/80 cursor-pointer">❤️ Like</span>
+                    <span className="hover:text-white/80 cursor-pointer">💬 Comment</span>
+                    <span className="hover:text-white/80 cursor-pointer">↗️ Share</span>
+                  </div>
+                </div>
+              ) : (
+                /* Overlay on image */
+                <div className="absolute bottom-0 left-0 right-0 px-3 py-3 bg-gradient-to-t from-black/60 to-transparent">
+                  <div className="flex items-center gap-4 text-white text-xs">
+                    <span className="hover:text-white/80 cursor-pointer">❤️ Like</span>
+                    <span className="hover:text-white/80 cursor-pointer">💬 Comment</span>
+                    <span className="hover:text-white/80 cursor-pointer">↗️ Share</span>
+                  </div>
+                </div>
+              )}
             </div>
-            
-            {/* Image */}
-            <img 
-              src={media[0]?.url} 
-              alt="Post media" 
-              className="w-full object-contain max-h-[350px] bg-black"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            />
-            
-            {/* Actions overlay on bottom of image */}
-            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
-              <div className="flex items-center gap-4 text-white text-xs">
-                <span className="hover:text-white/80 cursor-pointer">❤️ Like</span>
-                <span className="hover:text-white/80 cursor-pointer">💬 Comment</span>
-                <span className="hover:text-white/80 cursor-pointer">↗️ Share</span>
-              </div>
-            </div>
-          </div>
-        ) : (
+          );
+        })() : (
           /* No media - show user info normally */
           <div className="p-3 border-b border-gray-100">
             <div className="flex items-center gap-2">
@@ -326,6 +369,16 @@ const PostPreviewModal: React.FC<{ post: any; onClose: () => void; onDelete: (po
             </span>
             <span className="text-xs text-gray-500">{dateStr}</span>
           </div>
+          
+          {/* Error reason for failed posts */}
+          {post.status?.toLowerCase() === 'failed' && (post.failureReason || post.error || post.errorMessage) && (
+            <div className="mb-2 px-2 py-1.5 bg-red-50 border border-red-200 rounded">
+              <p className="text-[10px] text-red-700">
+                <span className="font-semibold">Error: </span>
+                {post.failureReason || post.error || post.errorMessage}
+              </p>
+            </div>
+          )}
           
           {/* Action buttons - only show for non-published posts */}
           {post.status?.toLowerCase() !== 'published' && (
@@ -611,18 +664,34 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
             >
               <div className="flex gap-2">
                 {/* Media thumbnail */}
-                {hasMedia && mediaUrl && (
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded overflow-hidden bg-gray-100">
-                      <img 
-                        src={mediaUrl} 
-                        alt="Post media" 
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
+                {hasMedia && mediaUrl && (() => {
+                  const isVideo = mediaUrl.match(/\.(mp4|mov|avi|webm|mkv)$/i) || postData.media?.[0]?.type?.includes('video');
+                  
+                  return (
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 rounded overflow-hidden bg-gray-100 relative">
+                        {isVideo ? (
+                          <>
+                            <video 
+                              src={mediaUrl}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <span className="text-white text-xl">▶</span>
+                            </div>
+                          </>
+                        ) : (
+                          <img 
+                            src={mediaUrl} 
+                            alt="Post media" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
                 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
@@ -635,11 +704,22 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
                   </div>
                   
                   {/* Post content preview */}
-                  {content && (
+                  {content ? (
                     <p className="text-[11px] text-gray-700 line-clamp-2 leading-snug mb-1.5">
                       {content}
                     </p>
-                  )}
+                  ) : !hasMedia ? (
+                    <p className="text-[10px] text-gray-400 italic mb-1.5">
+                      No content
+                    </p>
+                  ) : (() => {
+                    const isVideo = mediaUrl?.match(/\.(mp4|mov|avi|webm|mkv)$/i) || postData.media?.[0]?.type?.includes('video');
+                    return (
+                      <p className="text-[10px] text-gray-500 italic mb-1.5">
+                        {isVideo ? '🎥 Video post' : '📷 Media post'}
+                      </p>
+                    );
+                  })()}
                   
                   {/* Date and time */}
                   <div className="flex items-center gap-1 text-gray-400">
