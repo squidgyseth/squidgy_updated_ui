@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Clock, Calendar, RefreshCw, Facebook, Instagram, Linkedin, Twitter, X, ChevronDown, ChevronUp, Pencil, Trash2, Archive } from 'lucide-react';
+import { Clock, Calendar, RefreshCw, Facebook, Instagram, Linkedin, Twitter, X, ChevronDown, ChevronUp, Pencil, Trash2, Archive, Play } from 'lucide-react';
 import scheduledPostsService, { ScheduledPost } from '../../services/scheduledPostsService';
 import { useUser } from '../../hooks/useUser';
 import { supabase } from '../../lib/supabase';
@@ -676,8 +676,8 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
                               src={mediaUrl}
                               className="w-full h-full object-cover"
                             />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                              <span className="text-white text-xl">▶</span>
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                              <Play size={20} className="text-white fill-white" />
                             </div>
                           </>
                         ) : (
