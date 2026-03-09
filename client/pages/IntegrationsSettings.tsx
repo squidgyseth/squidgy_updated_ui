@@ -396,14 +396,6 @@ export default function IntegrationsSettings() {
       return;
     }
     
-    // Check if token is expired before making API call
-    if (isFirebaseTokenExpired(firebaseToken)) {
-      setCheckingCalendar(false);
-      await refreshFirebaseToken();
-      startTokenPolling();
-      return;
-    }
-    
     setCheckingCalendar(true);
     try {
       
