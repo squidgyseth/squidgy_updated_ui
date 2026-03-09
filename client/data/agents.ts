@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-03-06T15:58:36.397Z
+// Generated on: 2026-03-09T10:20:03.132Z
 
 export interface AgentConfig {
   agent: {
@@ -48,7 +48,7 @@ export const ALL_AGENTS: AgentConfig[] = [
   {
     "agent": {
       "id": "admin",
-      "emoji": "🏗️",
+      "emoji": "⚙️",
       "name": "Admin | Platform Assistant",
       "category": "ADMIN",
       "description": "Platform architecture, feature planning, and debugging assistant for admins",
@@ -56,7 +56,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tagline": "Know the codebase. Plan the future.",
       "avatar": "/Squidgy AI Assistants Avatars/3.png",
       "pinned": false,
-      "enabled": true,
+      "enabled": false,
       "admin_only": true,
       "uses_conversation_state": true,
       "initial_message": "Hey! I'm your Admin Assistant - I know the Squidgy platform inside and out.<br><br>I can help with:<br>• Architecture questions<br>• Planning new features<br>• Planning new agents<br>• Debugging cross-project issues<br><br>What do you need?",
@@ -729,7 +729,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
   "admin": {
     "agent": {
       "id": "admin",
-      "emoji": "🏗️",
+      "emoji": "⚙️",
       "name": "Admin | Platform Assistant",
       "category": "ADMIN",
       "description": "Platform architecture, feature planning, and debugging assistant for admins",
@@ -737,7 +737,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tagline": "Know the codebase. Plan the future.",
       "avatar": "/Squidgy AI Assistants Avatars/3.png",
       "pinned": false,
-      "enabled": true,
+      "enabled": false,
       "admin_only": true,
       "uses_conversation_state": true,
       "initial_message": "Hey! I'm your Admin Assistant - I know the Squidgy platform inside and out.<br><br>I can help with:<br>• Architecture questions<br>• Planning new features<br>• Planning new agents<br>• Debugging cross-project issues<br><br>What do you need?",
@@ -1411,7 +1411,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
     {
       "agent": {
         "id": "admin",
-        "emoji": "🏗️",
+        "emoji": "⚙️",
         "name": "Admin | Platform Assistant",
         "category": "ADMIN",
         "description": "Platform architecture, feature planning, and debugging assistant for admins",
@@ -1419,7 +1419,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "tagline": "Know the codebase. Plan the future.",
         "avatar": "/Squidgy AI Assistants Avatars/3.png",
         "pinned": false,
-        "enabled": true,
+        "enabled": false,
         "admin_only": true,
         "uses_conversation_state": true,
         "initial_message": "Hey! I'm your Admin Assistant - I know the Squidgy platform inside and out.<br><br>I can help with:<br>• Architecture questions<br>• Planning new features<br>• Planning new agents<br>• Debugging cross-project issues<br><br>What do you need?",

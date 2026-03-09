@@ -3,7 +3,7 @@
     {
       "agent": {
         "id": "admin",
-        "emoji": "🏗️",
+        "emoji": "⚙️",
         "name": "Admin | Platform Assistant",
         "category": "ADMIN",
         "description": "Platform architecture, feature planning, and debugging assistant for admins",
@@ -11,7 +11,7 @@
         "tagline": "Know the codebase. Plan the future.",
         "avatar": "/Squidgy AI Assistants Avatars/3.png",
         "pinned": false,
-        "enabled": true,
+        "enabled": false,
         "admin_only": true,
         "uses_conversation_state": true,
         "initial_message": "Hey! I'm your Admin Assistant - I know the Squidgy platform inside and out.<br><br>I can help with:<br>• Architecture questions<br>• Planning new features<br>• Planning new agents<br>• Debugging cross-project issues<br><br>What do you need?",
@@ -682,7 +682,7 @@
     "admin": {
       "agent": {
         "id": "admin",
-        "emoji": "🏗️",
+        "emoji": "⚙️",
         "name": "Admin | Platform Assistant",
         "category": "ADMIN",
         "description": "Platform architecture, feature planning, and debugging assistant for admins",
@@ -690,7 +690,7 @@
         "tagline": "Know the codebase. Plan the future.",
         "avatar": "/Squidgy AI Assistants Avatars/3.png",
         "pinned": false,
-        "enabled": true,
+        "enabled": false,
         "admin_only": true,
         "uses_conversation_state": true,
         "initial_message": "Hey! I'm your Admin Assistant - I know the Squidgy platform inside and out.<br><br>I can help with:<br>• Architecture questions<br>• Planning new features<br>• Planning new agents<br>• Debugging cross-project issues<br><br>What do you need?",
@@ -1362,7 +1362,7 @@
       {
         "agent": {
           "id": "admin",
-          "emoji": "🏗️",
+          "emoji": "⚙️",
           "name": "Admin | Platform Assistant",
           "category": "ADMIN",
           "description": "Platform architecture, feature planning, and debugging assistant for admins",
@@ -1370,7 +1370,7 @@
           "tagline": "Know the codebase. Plan the future.",
           "avatar": "/Squidgy AI Assistants Avatars/3.png",
           "pinned": false,
-          "enabled": true,
+          "enabled": false,
           "admin_only": true,
           "uses_conversation_state": true,
           "initial_message": "Hey! I'm your Admin Assistant - I know the Squidgy platform inside and out.<br><br>I can help with:<br>• Architecture questions<br>• Planning new features<br>• Planning new agents<br>• Debugging cross-project issues<br><br>What do you need?",
@@ -2048,6 +2048,6 @@
   },
   "meta": {
     "total": 9,
-    "buildTime": "2026-03-06T15:58:36.399Z"
+    "buildTime": "2026-03-09T10:20:03.135Z"
   }
 }

@@ -1930,8 +1930,15 @@ export default function IntegrationsSettings() {
           accountType = 'profile';
         }
         
+        // Extract originId - ensure it's a string (same fix as Facebook/Instagram path)
+        const originId = String(page.originId || page.id || '').trim();
+        
+        if (!originId) {
+          throw new Error(`${socialMediaPlatform === 'linkedin' ? 'Profile' : 'Account'} originId is missing`);
+        }
+        
         const requestBody = {
-          originId: page.id,
+          originId: originId,
           type: accountType,
           name: page.name,
           avatar: page.avatar,
