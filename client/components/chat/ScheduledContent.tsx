@@ -212,19 +212,28 @@ const EditPostModal: React.FC<{
 
 // Platform-specific post preview modal
 const PostPreviewModal: React.FC<{ post: any; onClose: () => void; onDelete: (postId: string) => Promise<void>; onEdit: () => void; isDeleting: boolean }> = ({ post, onClose, onDelete, onEdit, isDeleting }) => {
-  const platform = post.platform?.toLowerCase() || 'facebook';
+  // Debug: Log the full post object to see what platform value we're getting
+  console.log('📱 PostPreviewModal - Full post data:', post);
+  console.log('📱 PostPreviewModal - Platform value:', post.platform);
+  console.log('📱 PostPreviewModal - AccountIds:', post.accountIds);
+  
+  const platform = post.platform?.toLowerCase().trim() || 'facebook';
   const content = post.summary || '';
   const media = post.media || [];
   const hasMedia = media.length > 0;
   const dateStr = scheduledPostsService.formatPostDate(post as ScheduledPost);
   
   const getPlatformColors = () => {
-    switch (platform) {
-      case 'instagram': return { bg: 'bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400', header: 'Instagram' };
-      case 'linkedin': return { bg: 'bg-blue-700', header: 'LinkedIn' };
-      case 'twitter': return { bg: 'bg-sky-500', header: 'Twitter / X' };
-      default: return { bg: 'bg-blue-600', header: 'Facebook' };
-    }
+    const normalizedPlatform = platform.toLowerCase().trim();
+    console.log('🎨 Getting colors for platform:', normalizedPlatform);
+    
+    if (normalizedPlatform.includes('facebook')) return { bg: 'bg-blue-600', header: 'Facebook' };
+    if (normalizedPlatform.includes('instagram')) return { bg: 'bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400', header: 'Instagram' };
+    if (normalizedPlatform.includes('linkedin')) return { bg: 'bg-blue-700', header: 'LinkedIn' };
+    if (normalizedPlatform.includes('twitter') || normalizedPlatform.includes('x')) return { bg: 'bg-sky-500', header: 'Twitter / X' };
+    
+    console.warn('⚠️ Unknown platform, using default:', normalizedPlatform);
+    return { bg: 'bg-gray-600', header: platform.charAt(0).toUpperCase() + platform.slice(1) };
   };
   
   const { bg, header } = getPlatformColors();
