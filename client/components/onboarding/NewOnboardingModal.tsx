@@ -63,9 +63,9 @@ export default function NewOnboardingModal({ isOpen, onClose }: NewOnboardingMod
             {/* Avatar with Sparkle Badge - Smaller size */}
             <div className="relative">
               <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-purple-100">
-                <img 
-                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop"
-                  alt="Assistant Avatar"
+                <img
+                  src="/Squidgy AI Assistants Avatars/1.png"
+                  alt="Peter - Personal Assistant"
                   className="w-full h-full object-cover"
                 />
               </div>
