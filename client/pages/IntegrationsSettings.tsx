@@ -1747,7 +1747,7 @@ export default function IntegrationsSettings() {
     }
   };
 
-  const fetchSocialMediaAccounts = async (platform: 'facebook' | 'instagram' | 'linkedin' = 'facebook') => {
+  const fetchSocialMediaAccounts = async (platform: 'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky' | 'teams' | 'slack' = 'facebook') => {
     if (!locationId || !firebaseToken || !accessToken) {
       toast.error('Missing authentication tokens. Please ensure you are logged in.');
       return;
@@ -1962,8 +1962,11 @@ export default function IntegrationsSettings() {
 
         toast.success(`Connected ${page.name} successfully!`);
         
-        // Refresh the accounts list
-        fetchSocialMediaAccountsWithOAuthId(socialMediaOAuthId, socialMediaPlatform);
+        // Close the selection modal
+        setShowSocialMediaPages(false);
+        
+        // Reset loading state
+        setSocialMediaLoading(false);
         
         // Refresh connected accounts to update the UI
         fetchConnectedSocialMediaAccounts();
@@ -2030,9 +2033,9 @@ export default function IntegrationsSettings() {
 
       if (data.success) {
         toast.success(data.message || `Connected ${page.name} successfully!`);
-        // Refresh the accounts list
-        fetchSocialMediaAccountsWithOAuthId(socialMediaOAuthId, socialMediaPlatform);
-        // Also refresh the connected accounts
+        // Close the selection modal
+        setShowSocialMediaPages(false);
+        // Refresh the connected accounts
         fetchConnectedSocialMediaAccounts();
       }
     } catch (error: any) {
@@ -2083,6 +2086,9 @@ export default function IntegrationsSettings() {
 
       toast.success(`Successfully deleted ${account.name}`);
 
+      // Close the manage modal
+      setShowManageModal(false);
+
       // Refresh the connected accounts list
       fetchConnectedSocialMediaAccounts();
 
@@ -2124,6 +2130,9 @@ export default function IntegrationsSettings() {
       }
 
       toast.success(`Successfully disconnected ${integration.name}`);
+
+      // Close the manage modal
+      setShowManageModal(false);
 
       // Refresh the Slack integrations list
       fetchSlackIntegrations();
@@ -2398,7 +2407,7 @@ export default function IntegrationsSettings() {
                 <div className="text-center space-y-4">
                   <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
                     <img 
-                      src="https://static.vecteezy.com/system/resources/previews/018/930/413/non_2x/instagram-logo-instagram-icon-transparent-free-png.png" 
+                      src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" 
                       alt="Instagram"
                       className="w-full h-full object-contain"
                     />
