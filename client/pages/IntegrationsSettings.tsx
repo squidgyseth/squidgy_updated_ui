@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +44,12 @@ export default function IntegrationsSettings() {
   const { user, userId, isImpersonating } = useUser();
   const [ghlIntegrations, setGhlIntegrations] = useState<GHLIntegration[]>([]);
   const [loading, setLoading] = useState(true);
+  const isLoadingUserRef = useRef(false);
+  
+  // Debug: Track loading state changes
+  useEffect(() => {
+    console.log('🔍 Loading state changed:', loading);
+  }, [loading]);
   const [error, setError] = useState<string | null>(null);
   const [locationId, setLocationId] = useState<string | null>(null);
   const [ghlUserId, setGhlUserId] = useState<string | null>(null);
@@ -91,11 +97,8 @@ export default function IntegrationsSettings() {
   const [teamsIntegrations, setTeamsIntegrations] = useState<any[]>([]);
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
 
-  // Templates states
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [templatesLoading, setTemplatesLoading] = useState(false);
-  const [templatesError, setTemplatesError] = useState<string | null>(null);
-  const [togglingTemplateId, setTogglingTemplateId] = useState<string | null>(null);
+  // Templates states - REMOVED: Not used on IntegrationsSettings page
+  // Templates are only needed on the ScheduledContent/Social Media posting pages
 
   // Helper function to decode Firebase token and extract user_id
   const decodeFirebaseToken = (token: string): string | null => {
@@ -143,8 +146,12 @@ export default function IntegrationsSettings() {
   };
 
   useEffect(() => {
-    getUserFirmId();
-  }, [user]);
+    // Only fetch user firm ID once when user is available and we don't already have it
+    // Don't re-run on tab switches or user object changes
+    if (user && !firmUserId) {
+      getUserFirmId();
+    }
+  }, [user?.email]); // Only depend on email, not the entire user object
 
   useEffect(() => {
     if (firmUserId) {
@@ -163,27 +170,23 @@ export default function IntegrationsSettings() {
     }
   }, [firebaseToken]);
 
-  useEffect(() => {
-    // Auto-fetch Facebook pages and ad accounts when tokens are available
-    if (locationId && firebaseToken && accessToken && !refreshingToken) {
-      Promise.all([
-        fetchFacebookPagesFromGHL().catch(err => {
-        }),
-        fetchFacebookAdAccountsFromGHL().catch(err => {
-        })
-      ]);
-    }
-  }, [locationId, firebaseToken, accessToken, refreshingToken]);
+  // REMOVED: Auto-fetch of Facebook pages/ad accounts on page load
+  // These caused unnecessary 404 errors when no Facebook integration exists
+  // Facebook pages/ad accounts are now fetched only when:
+  // 1. User explicitly connects Facebook (in handleFacebookAccountConnect)
+  // 2. User disconnects/reconnects a page (in handleDisconnectPage/handleConnectPages)
+  // This prevents console clutter with expected 404s
 
   useEffect(() => {
     // Auto-fetch connected social media accounts and integrations when tokens are available
     if (locationId && firebaseToken && accessToken) {
       fetchConnectedSocialMediaAccounts();
     }
-    // Slack and Teams use backend endpoints with firmUserId
+    // Slack uses backend endpoint with firmUserId
     if (firmUserId) {
       fetchSlackIntegrations();
-      fetchTeamsIntegrations();
+      // Teams auto-fetch REMOVED: API endpoint returns 404 (not fully implemented by GHL)
+      // Teams will be fetched only when user explicitly connects Teams
     }
   }, [locationId, firebaseToken, accessToken, firmUserId]);
 
@@ -397,6 +400,13 @@ export default function IntegrationsSettings() {
     }
     
     setCheckingCalendar(true);
+    
+    // Safety timeout: Force reset checking state after 15 seconds to prevent stuck buttons
+    const safetyTimeout = setTimeout(() => {
+      console.warn('⚠️ Calendar check timeout - resetting state');
+      setCheckingCalendar(false);
+    }, 15000); // 15 seconds
+    
     try {
       
       const calendarUrl = `https://services.leadconnectorhq.com/calendars/connections/calendars?locationId=${locationId}&userId=${userIdToUse}`;
@@ -461,6 +471,7 @@ export default function IntegrationsSettings() {
     } catch (error: any) {
       console.error('❌ Error checking Google Calendar:', error);
     } finally {
+      clearTimeout(safetyTimeout);
       setCheckingCalendar(false);
     }
   };
@@ -486,6 +497,10 @@ export default function IntegrationsSettings() {
       });
       
       if (!response.ok) {
+        // 404 is expected when no Facebook integration exists yet - don't show error
+        if (response.status !== 404) {
+          console.error('❌ Facebook ad accounts API error:', response.status);
+        }
         setFacebookAdAccounts([]);
         return;
       }
@@ -496,6 +511,10 @@ export default function IntegrationsSettings() {
       setFacebookAdAccounts(adAccounts);
     } catch (error: any) {
       console.error('❌ Error fetching Facebook ad accounts:', error);
+      // Don't show error toast for network issues during auto-fetch
+      if (error.name !== 'TypeError' && !error.message.includes('fetch') && !error.message.includes('NetworkError')) {
+        toast.error('Failed to fetch Facebook ad accounts');
+      }
       setFacebookAdAccounts([]);
     }
   };
@@ -508,6 +527,13 @@ export default function IntegrationsSettings() {
     }
     
     setFacebookLoading(true);
+    
+    // Safety timeout: Force reset loading state after 30 seconds to prevent stuck buttons
+    const safetyTimeout = setTimeout(() => {
+      console.warn('⚠️ Facebook loading timeout - resetting state');
+      setFacebookLoading(false);
+    }, 30000); // 30 seconds
+    
     try {
       
       // First, fetch connected pages
@@ -544,8 +570,12 @@ export default function IntegrationsSettings() {
       });
       
       if (!allPagesResponse.ok) {
+        // 404 is expected when no Facebook integration exists yet - don't show error
+        if (allPagesResponse.status !== 404) {
+          console.error('❌ Facebook pages API error:', allPagesResponse.status);
+        }
         setFacebookPages([]);
-        return;
+        return; // This return is now inside try block, so finally will still execute
       }
       
       const allPagesData = await allPagesResponse.json();
@@ -558,15 +588,26 @@ export default function IntegrationsSettings() {
       setFacebookPages(pages);
     } catch (error: any) {
       console.error('❌ Error fetching Facebook pages:', error);
-      if (!refreshingToken) {
+      // Don't show error toast for network issues during auto-fetch or token refresh
+      if (!refreshingToken && error.name !== 'TypeError' && !error.message.includes('fetch')) {
         toast.error(error.message || 'Failed to fetch Facebook pages');
       }
+      setFacebookPages([]);
     } finally {
+      clearTimeout(safetyTimeout);
       setFacebookLoading(false);
     }
   };
 
   const getUserFirmId = async () => {
+    // Prevent duplicate calls using ref only (not loading state, as that would block the flow)
+    if (isLoadingUserRef.current) {
+      console.log('⚠️ getUserFirmId already running, skipping duplicate call');
+      return;
+    }
+    
+    isLoadingUserRef.current = true;
+    console.log('📝 getUserFirmId: Setting loading to true');
     setLoading(true);
     
     // When in impersonation mode, fetch the impersonated user's profile directly
@@ -574,112 +615,57 @@ export default function IntegrationsSettings() {
       try {
         const { data: profile } = await profilesApi.getById(userId);
         if (profile?.user_id) {
+          console.log('📝 getUserFirmId: Setting firmUserId (impersonation mode):', profile.user_id);
           setFirmUserId(profile.user_id);
         } else {
           console.warn('No user_id found in impersonated user profile, using userId directly');
+          console.log('📝 getUserFirmId: Setting firmUserId (fallback):', userId);
           setFirmUserId(userId);
         }
       } catch (error) {
         console.error('Error getting impersonated user profile:', error);
         // Fallback to using userId directly
+        console.log('📝 getUserFirmId: Setting firmUserId (error fallback):', userId);
         setFirmUserId(userId);
+      } finally {
+        isLoadingUserRef.current = false;
       }
+      // IMPORTANT: Don't set loading to false here - let fetchGHLIntegrations handle it
+      // which is triggered by the firmUserId change
       return;
     }
     
     if (!user?.email) {
+      console.log('📝 getUserFirmId: Setting loading to false (no user email)');
       setLoading(false);
+      isLoadingUserRef.current = false;
       return;
     }
     
     try {
       const { data: profile } = await profilesApi.getByEmail(user.email);
       if (profile?.user_id) {
+        console.log('📝 getUserFirmId: Setting firmUserId (normal mode):', profile.user_id);
         setFirmUserId(profile.user_id);
       } else {
         console.warn('No user_id found in profile');
+        console.log('📝 getUserFirmId: Setting loading to false (no user_id)');
         setLoading(false);
       }
     } catch (error) {
       console.error('Error getting firm user ID:', error);
+      console.log('📝 getUserFirmId: Setting loading to false (error)');
       setLoading(false);
+    } finally {
+      isLoadingUserRef.current = false;
     }
   };
 
-  // Fetch templates from Templated.io
-  const fetchTemplates = async () => {
-    if (!firmUserId) return;
-    
-    setTemplatesLoading(true);
-    setTemplatesError(null);
-    
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/templated/templates/${firmUserId}`);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch templates: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setTemplates(data.templates || []);
-        console.log(`✅ Loaded ${data.templates?.length || 0} templates (${data.enabledCount || 0} enabled)`);
-      } else {
-        throw new Error(data.message || 'Failed to fetch templates');
-      }
-    } catch (error: any) {
-      console.error('❌ Error fetching templates:', error);
-      setTemplatesError(error.message || 'Failed to load templates');
-    } finally {
-      setTemplatesLoading(false);
-    }
-  };
+  // fetchTemplates - REMOVED: Not needed on IntegrationsSettings page
+  // Templates are fetched only on pages that use them (ScheduledContent, etc.)
 
-  // Toggle template enabled/disabled for user
-  const handleToggleTemplate = async (templateId: string, enable: boolean) => {
-    if (!firmUserId) {
-      toast.error('User ID not available');
-      return;
-    }
-    
-    setTogglingTemplateId(templateId);
-    
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/templated/templates/toggle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          template_id: templateId,
-          user_id: firmUserId,
-          enable: enable
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to update template: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Update local state
-        setTemplates(prev => prev.map(t => 
-          t.id === templateId ? { ...t, isEnabled: enable } : t
-        ));
-        toast.success(`Template ${enable ? 'enabled' : 'disabled'}`);
-      } else {
-        throw new Error(data.message || 'Failed to update template');
-      }
-    } catch (error: any) {
-      console.error('❌ Error toggling template:', error);
-      toast.error(error.message || 'Failed to update template');
-    } finally {
-      setTogglingTemplateId(null);
-    }
-  };
+  // handleToggleTemplate - REMOVED: Not needed on IntegrationsSettings page
+  // Template toggling is handled on pages that display templates
 
   useEffect(() => {
     if (locationId) {
@@ -687,12 +673,8 @@ export default function IntegrationsSettings() {
     }
   }, [locationId]);
 
-  // Fetch templates when firmUserId is available
-  useEffect(() => {
-    if (firmUserId) {
-      fetchTemplates();
-    }
-  }, [firmUserId]);
+  // Templates useEffect - REMOVED: Not needed on IntegrationsSettings page
+  // Templates are only fetched on pages that display them
 
   useEffect(() => {
     // Listen for OAuth callback messages from popup
@@ -706,12 +688,31 @@ export default function IntegrationsSettings() {
       }
     };
 
-    // Listen for window focus to refresh status when user returns from OAuth popup
-    const handleWindowFocus = () => {
-      if (locationId && pitToken) {
-        setTimeout(() => {
-          checkGoogleCalendarConnection();
-        }, 1000);
+    // Debounce timer for window focus to prevent excessive checks
+    let focusDebounceTimer: NodeJS.Timeout | null = null;
+    
+    // Listen for window focus to check token expiration when user returns
+    const handleWindowFocus = async () => {
+      // Clear any existing timer
+      if (focusDebounceTimer) {
+        clearTimeout(focusDebounceTimer);
+      }
+      
+      // Only check Firebase token expiration when switching tabs (valid for 1 hour)
+      if (firmUserId && firebaseToken) {
+        focusDebounceTimer = setTimeout(async () => {
+          // Check if token is expired (older than 1 hour)
+          if (isFirebaseTokenExpired(firebaseToken)) {
+            console.log('⚠️ Firebase token expired, starting refresh process...');
+            // Trigger the same flow as page reload
+            await refreshFirebaseToken();
+            // After token refresh completes, reload integrations and accounts
+            // This happens automatically via the polling mechanism in startTokenPolling
+            // which calls fetchTokensFromDatabase, triggering the useEffect chain
+          } else {
+            console.log('✅ Firebase token still valid');
+          }
+        }, 1000); // Wait 1 second after focus
       }
     };
 
@@ -721,17 +722,28 @@ export default function IntegrationsSettings() {
     return () => {
       window.removeEventListener('message', handleOAuthCallback);
       window.removeEventListener('focus', handleWindowFocus);
+      if (focusDebounceTimer) {
+        clearTimeout(focusDebounceTimer);
+      }
     };
   }, [locationId, pitToken]);
 
   const fetchGHLIntegrations = async () => {
     if (!firmUserId) {
+      console.log('📝 fetchGHLIntegrations: Setting loading to false (no firmUserId)');
       setLoading(false);
       return;
     }
 
     try {
+      console.log('📝 fetchGHLIntegrations: Setting loading to true');
       setLoading(true);
+      
+      // Safety timeout: Force reset loading state after 30 seconds to prevent stuck buttons
+      const safetyTimeout = setTimeout(() => {
+        console.warn('⚠️ GHL integrations loading timeout - resetting state');
+        setLoading(false);
+      }, 30000); // 30 seconds
 
       // Query Supabase for ALL GHL integrations to display in table
       const { data: allData, error: allError } = await supabase
@@ -767,9 +779,19 @@ export default function IntegrationsSettings() {
         setGhlUserId(solData.soma_ghl_user_id || null);
         setPitToken(solData.pit_token || null);
       }
+      
+      clearTimeout(safetyTimeout);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load integrations');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load integrations';
+      setError(errorMessage);
+      // Check for network errors
+      if (err instanceof Error && (err.name === 'TypeError' || err.message.includes('fetch') || err.message.includes('NetworkError'))) {
+        toast.error('Network error: Please check your internet connection and try again.');
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
+      console.log('📝 fetchGHLIntegrations: Setting loading to false (finally)');
       setLoading(false);
     }
   };
@@ -1614,12 +1636,10 @@ export default function IntegrationsSettings() {
 
   const fetchSlackIntegrations = async () => {
     if (!firmUserId) {
-      console.log('⚠️ Skipping Slack fetch: missing firmUserId');
       return;
     }
 
     try {
-      console.log('🔵 Fetching Slack integrations for firmUserId:', firmUserId);
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
       const response = await fetch(`${backendUrl}/api/social/slack/connected-workspaces`, {
@@ -1634,7 +1654,10 @@ export default function IntegrationsSettings() {
       });
 
       if (!response.ok) {
-        console.error('❌ Slack API error:', response.status);
+        // Only log non-404 errors (404 is expected when no Slack integration exists)
+        if (response.status !== 404) {
+          console.error('❌ Slack API error:', response.status);
+        }
         setSlackIntegrations([]);
         return;
       }
@@ -1643,13 +1666,18 @@ export default function IntegrationsSettings() {
 
       if (data.success && data.integrations && Array.isArray(data.integrations)) {
         setSlackIntegrations(data.integrations);
-        console.log('🟣 Slack integrations loaded:', data.integrations.length, 'workspace(s)');
+        // Only log when integrations are found to reduce console noise
+        if (data.integrations.length > 0) {
+          console.log('🟣 Slack integrations loaded:', data.integrations.length, 'workspace(s)');
+        }
       } else {
         setSlackIntegrations([]);
-        console.log('🟣 No Slack integrations found');
       }
     } catch (error: any) {
-      console.error('❌ Error fetching Slack integrations:', error);
+      // Only log non-network errors
+      if (error.name !== 'TypeError' && !error.message.includes('fetch') && !error.message.includes('NetworkError')) {
+        console.error('❌ Error fetching Slack integrations:', error);
+      }
       setSlackIntegrations([]);
     }
   };
@@ -1674,7 +1702,10 @@ export default function IntegrationsSettings() {
       });
 
       if (!response.ok) {
-        console.error('❌ Teams API error:', response.status);
+        // 404 is expected when no Teams integration exists yet - don't show error
+        if (response.status !== 404) {
+          console.error('❌ Teams API error:', response.status);
+        }
         setTeamsIntegrations([]);
         return;
       }
@@ -1683,12 +1714,19 @@ export default function IntegrationsSettings() {
 
       if (data.integrations && Array.isArray(data.integrations)) {
         setTeamsIntegrations(data.integrations);
-        console.log('🔵 Teams integrations loaded:', data.integrations);
+        // Only log when integrations are found to reduce console noise
+        if (data.integrations.length > 0) {
+          console.log('🔵 Teams integrations loaded:', data.integrations.length, 'team(s)');
+        }
       } else {
         setTeamsIntegrations([]);
       }
     } catch (error: any) {
       console.error('❌ Error fetching Teams integrations:', error);
+      // Don't show error toast for network issues during auto-fetch
+      if (error.name !== 'TypeError' && !error.message.includes('fetch') && !error.message.includes('NetworkError')) {
+        toast.error('Failed to fetch Teams integrations');
+      }
       setTeamsIntegrations([]);
     }
   };
@@ -1716,6 +1754,10 @@ export default function IntegrationsSettings() {
 
       if (!response.ok) {
         console.error('❌ GHL API error:', response.status);
+        // Don't show error toast for 404s as they're expected when no accounts exist
+        if (response.status !== 404) {
+          toast.error('Failed to load social media accounts. Please refresh the page.');
+        }
         return;
       }
 
@@ -1744,6 +1786,10 @@ export default function IntegrationsSettings() {
 
     } catch (error: any) {
       console.error('❌ Error fetching connected social media accounts from GHL:', error);
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        toast.error('Network error: Please check your internet connection and try again.');
+      }
     }
   };
 
@@ -1756,6 +1802,13 @@ export default function IntegrationsSettings() {
     setSocialMediaLoading(true);
     setShowSocialMediaPages(true);
     setSocialMediaPlatform(platform);
+
+    // Safety timeout: Force reset loading state after 2 minutes to prevent stuck buttons
+    const safetyTimeout = setTimeout(() => {
+      console.warn('⚠️ Social media loading timeout - resetting state');
+      setSocialMediaLoading(false);
+      toast.error('Request timed out. Please try again.');
+    }, 120000); // 2 minutes
 
     let attempts = 0;
     const maxAttempts = 12; // 12 attempts * 5 seconds = 1 minute max
@@ -1796,6 +1849,7 @@ export default function IntegrationsSettings() {
               const oAuthId = platformAccounts[0].oauthId;
               
               if (oAuthId) {
+                clearTimeout(safetyTimeout);
                 await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
                 setSocialMediaLoading(false);
                 return; // Stop polling
@@ -1811,6 +1865,7 @@ export default function IntegrationsSettings() {
         if (attempts < maxAttempts) {
           setTimeout(pollForAccounts, 5000); // Poll every 5 seconds
         } else {
+          clearTimeout(safetyTimeout);
           toast.info(`OAuth completed. Please click "Connect ${platform === 'facebook' ? 'Facebook' : 'Instagram'}" again to see available ${platform === 'facebook' ? 'pages' : 'accounts'}.`);
           setSocialMediaLoading(false);
         }
@@ -1820,7 +1875,13 @@ export default function IntegrationsSettings() {
         if (attempts < maxAttempts) {
           setTimeout(pollForAccounts, 5000); // Continue polling on error
         } else {
-          toast.error('Failed to fetch accounts. Please try again.');
+          clearTimeout(safetyTimeout);
+          // Check for network errors
+          if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+            toast.error('Network error: Please check your internet connection and try again.');
+          } else {
+            toast.error('Failed to fetch accounts. Please try again.');
+          }
           setSocialMediaLoading(false);
         }
       }
@@ -1887,7 +1948,12 @@ export default function IntegrationsSettings() {
       }
     } catch (error: any) {
       console.error(`❌ Error fetching ${platform} accounts from GHL:`, error);
-      toast.error(error.message || `Failed to fetch ${platform} accounts`);
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        toast.error('Network error: Please check your internet connection and try again.');
+      } else {
+        toast.error(error.message || `Failed to fetch ${platform} accounts`);
+      }
     } finally {
       setSocialMediaLoading(false);
     }

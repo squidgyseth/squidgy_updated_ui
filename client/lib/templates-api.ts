@@ -167,6 +167,13 @@ class TemplatesApiService {
       return { data, error: null };
     } catch (error: any) {
       console.error('❌ Error fetching templates:', error);
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        return {
+          data: null,
+          error: { message: 'Network error: Please check your internet connection and try again.' }
+        };
+      }
       return {
         data: null,
         error: { message: error.message || 'Failed to load templates' }
@@ -221,6 +228,13 @@ class TemplatesApiService {
       return { data, error: null };
     } catch (error: any) {
       console.error('❌ Error toggling template:', error);
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        return {
+          data: null,
+          error: { message: 'Network error: Please check your internet connection and try again.' }
+        };
+      }
       return {
         data: null,
         error: { message: error.message || 'Failed to update template' }
@@ -278,6 +292,13 @@ class TemplatesApiService {
       return { data, error: null };
     } catch (error: any) {
       console.error('❌ Error bulk toggling templates:', error);
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        return {
+          data: null,
+          error: { message: 'Network error: Please check your internet connection and try again.' }
+        };
+      }
       return {
         data: null,
         error: { message: error.message || 'Failed to update templates' }

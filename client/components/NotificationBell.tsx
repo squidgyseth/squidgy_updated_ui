@@ -74,9 +74,11 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
       
       setNotifications(response.notifications);
       setUnreadCount(response.unread_count);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading notifications:', error);
-      toast.error('Failed to load notifications');
+      // Show the actual error message (e.g., network error message from notifications-api)
+      const errorMessage = error?.message || 'Failed to load notifications';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
