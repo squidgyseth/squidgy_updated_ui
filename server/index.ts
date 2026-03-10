@@ -1,16 +1,12 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import { createServer as createHttpServer } from "http";
-import { WebSocketServer } from "ws";
 import { handleDemo } from "./routes/demo";
 import { analyzeWebsite, captureScreenshot, getFavicon } from "./routes/website";
 import { createSubaccountAndUser } from "./routes/ghl";
 import agentsRouter from "./routes/agents";
 import storageProxyRouter from "./routes/storage-proxy";
 import googleCalendarRouter from "./routes/googleCalendar";
-import notificationsRouter from "./routes/notifications";
-import templatedRouter from "./routes/templated";
 
 export function createServer() {
   const app = express();
@@ -44,12 +40,6 @@ export function createServer() {
 
   // Google Calendar integration routes
   app.use("/api/google/calendar", googleCalendarRouter);
-
-  // Notifications API routes
-  app.use("/api/notifications", notificationsRouter);
-
-  // Templated API routes
-  app.use("/api/templated", templatedRouter);
 
   return app;
 }
