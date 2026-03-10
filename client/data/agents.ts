@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-03-09T15:07:50.388Z
+// Generated on: 2026-03-10T11:13:11.760Z
 
 export interface AgentConfig {
   agent: {
