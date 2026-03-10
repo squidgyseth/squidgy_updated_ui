@@ -91,6 +91,7 @@ import AdminActivity from "./pages/admin/AdminActivity";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import { AdminRoute } from "./components/AdminRoute";
 import ImpersonationBanner from "./components/ImpersonationBanner";
+import { RootRedirect } from "./components/RootRedirect";
 
 const queryClient = new QueryClient();
 
@@ -223,7 +224,7 @@ const App = () => (
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/test-email-check" element={<TestEmailCheck />} />
-          <Route path="/" element={<Register />} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/welcome" element={
             <ProtectedRoute>
               <Index />
