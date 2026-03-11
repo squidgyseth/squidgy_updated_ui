@@ -1062,7 +1062,7 @@ export default function N8nChatInterface({
     // Create file input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.pdf,.txt,.docx,.png,.jpg,.jpeg';
+    fileInput.accept = '.pdf,.txt,.docx,.png,.jpg,.jpeg,.mp4,.mov,.webm';
     fileInput.style.display = 'none';
 
     fileInput.onchange = async (e) => {
@@ -1078,10 +1078,13 @@ export default function N8nChatInterface({
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'image/png',
         'image/jpeg',
-        'image/jpg'
+        'image/jpg',
+        'video/mp4',
+        'video/quicktime',
+        'video/webm'
       ];
       if (!allowedTypes.includes(file.type)) {
-        alert('Only PDF, TXT, DOCX, PNG, JPG, and JPEG files are supported');
+        alert('Only PDF, TXT, DOCX, PNG, JPG, JPEG, MP4, MOV, and WEBM files are supported');
         return;
       }
       
@@ -1219,9 +1222,11 @@ export default function N8nChatInterface({
     // Track the file upload for status monitoring
     const fileId = result.data?.file_id;
     
-    // Detect if file is an image
+    // Detect if file is an image or video
     const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.tiff', '.ico', '.heic', '.heif'];
+    const videoExtensions = ['.mp4', '.mov', '.webm', '.avi', '.mkv', '.flv', '.wmv', '.m4v'];
     const isImage = imageExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+    const isVideo = videoExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
     
     // User visible message (saved to chat history)
     const userVisibleMessage = `I've uploaded a file: ${fileName}`;
@@ -1229,6 +1234,15 @@ export default function N8nChatInterface({
     if (isImage) {
       // For images: send URL with analysis instruction immediately (no need to wait for KB processing)
       const agentInstruction = `I've uploaded an image: ${fileUrl}. Please analyze this image and tell me what you see in it. Describe the content, objects, text, or any relevant information you can extract from the image.`;
+      await handleSendMessage(userVisibleMessage, fileUrl, fileName, agentInstruction);
+      
+      // Still monitor for UI updates
+      if (fileId) {
+        monitorFileStatus(fileId, fileName);
+      }
+    } else if (isVideo) {
+      // For videos: send URL directly to agent (no text extraction needed)
+      const agentInstruction = `I've uploaded a video: ${fileUrl}. This video file is now available for use in social media posts or other content.`;
       await handleSendMessage(userVisibleMessage, fileUrl, fileName, agentInstruction);
       
       // Still monitor for UI updates

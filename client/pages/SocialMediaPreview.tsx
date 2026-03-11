@@ -533,7 +533,7 @@ export default function SocialMediaPreview() {
     // Create file input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = 'image/*';
+    fileInput.accept = 'image/*,video/mp4,video/quicktime,video/webm';
     fileInput.style.display = 'none';
 
     fileInput.onchange = async (e) => {

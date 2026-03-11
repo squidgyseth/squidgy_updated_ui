@@ -21,6 +21,9 @@ export interface ScheduledPost {
   created_at?: string;
   accountId?: string;
   accountName?: string;
+  failureReason?: string;
+  error?: string;
+  errorMessage?: string;
 }
 
 export interface ScheduledPostsResponse {

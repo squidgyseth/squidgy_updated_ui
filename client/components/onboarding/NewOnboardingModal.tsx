@@ -63,9 +63,9 @@ export default function NewOnboardingModal({ isOpen, onClose }: NewOnboardingMod
             {/* Avatar with Sparkle Badge - Smaller size */}
             <div className="relative">
               <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-purple-100">
-                <img 
-                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop"
-                  alt="Assistant Avatar"
+                <img
+                  src="/Squidgy AI Assistants Avatars/1.png"
+                  alt="Peter - Personal Assistant"
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -78,7 +78,7 @@ export default function NewOnboardingModal({ isOpen, onClose }: NewOnboardingMod
             {/* Welcome Text - Smaller font sizes */}
             <div className="space-y-3">
               <h1 className="text-2xl font-bold text-gray-900">
-                Hello, {userName}! I'm your Squidgy personal assistant
+                Hello, {userName}! I'm Peter, your personal assistant
               </h1>
               <p className="text-base text-gray-600 max-w-sm">
                 I'll help you set up your account, but first I need some info from you!

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +44,12 @@ export default function IntegrationsSettings() {
   const { user, userId, isImpersonating } = useUser();
   const [ghlIntegrations, setGhlIntegrations] = useState<GHLIntegration[]>([]);
   const [loading, setLoading] = useState(true);
+  const isLoadingUserRef = useRef(false);
+  
+  // Debug: Track loading state changes
+  useEffect(() => {
+    console.log('🔍 Loading state changed:', loading);
+  }, [loading]);
   const [error, setError] = useState<string | null>(null);
   const [locationId, setLocationId] = useState<string | null>(null);
   const [ghlUserId, setGhlUserId] = useState<string | null>(null);
@@ -91,11 +97,8 @@ export default function IntegrationsSettings() {
   const [teamsIntegrations, setTeamsIntegrations] = useState<any[]>([]);
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
 
-  // Templates states
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [templatesLoading, setTemplatesLoading] = useState(false);
-  const [templatesError, setTemplatesError] = useState<string | null>(null);
-  const [togglingTemplateId, setTogglingTemplateId] = useState<string | null>(null);
+  // Templates states - REMOVED: Not used on IntegrationsSettings page
+  // Templates are only needed on the ScheduledContent/Social Media posting pages
 
   // Helper function to decode Firebase token and extract user_id
   const decodeFirebaseToken = (token: string): string | null => {
@@ -143,8 +146,12 @@ export default function IntegrationsSettings() {
   };
 
   useEffect(() => {
-    getUserFirmId();
-  }, [user]);
+    // Only fetch user firm ID once when user is available and we don't already have it
+    // Don't re-run on tab switches or user object changes
+    if (user && !firmUserId) {
+      getUserFirmId();
+    }
+  }, [user?.email]); // Only depend on email, not the entire user object
 
   useEffect(() => {
     if (firmUserId) {
@@ -163,27 +170,23 @@ export default function IntegrationsSettings() {
     }
   }, [firebaseToken]);
 
-  useEffect(() => {
-    // Auto-fetch Facebook pages and ad accounts when tokens are available
-    if (locationId && firebaseToken && accessToken && !refreshingToken) {
-      Promise.all([
-        fetchFacebookPagesFromGHL().catch(err => {
-        }),
-        fetchFacebookAdAccountsFromGHL().catch(err => {
-        })
-      ]);
-    }
-  }, [locationId, firebaseToken, accessToken, refreshingToken]);
+  // REMOVED: Auto-fetch of Facebook pages/ad accounts on page load
+  // These caused unnecessary 404 errors when no Facebook integration exists
+  // Facebook pages/ad accounts are now fetched only when:
+  // 1. User explicitly connects Facebook (in handleFacebookAccountConnect)
+  // 2. User disconnects/reconnects a page (in handleDisconnectPage/handleConnectPages)
+  // This prevents console clutter with expected 404s
 
   useEffect(() => {
     // Auto-fetch connected social media accounts and integrations when tokens are available
     if (locationId && firebaseToken && accessToken) {
       fetchConnectedSocialMediaAccounts();
     }
-    // Slack and Teams use backend endpoints with firmUserId
+    // Slack uses backend endpoint with firmUserId
     if (firmUserId) {
       fetchSlackIntegrations();
-      fetchTeamsIntegrations();
+      // Teams auto-fetch REMOVED: API endpoint returns 404 (not fully implemented by GHL)
+      // Teams will be fetched only when user explicitly connects Teams
     }
   }, [locationId, firebaseToken, accessToken, firmUserId]);
 
@@ -396,15 +399,14 @@ export default function IntegrationsSettings() {
       return;
     }
     
-    // Check if token is expired before making API call
-    if (isFirebaseTokenExpired(firebaseToken)) {
-      setCheckingCalendar(false);
-      await refreshFirebaseToken();
-      startTokenPolling();
-      return;
-    }
-    
     setCheckingCalendar(true);
+    
+    // Safety timeout: Force reset checking state after 15 seconds to prevent stuck buttons
+    const safetyTimeout = setTimeout(() => {
+      console.warn('⚠️ Calendar check timeout - resetting state');
+      setCheckingCalendar(false);
+    }, 15000); // 15 seconds
+    
     try {
       
       const calendarUrl = `https://services.leadconnectorhq.com/calendars/connections/calendars?locationId=${locationId}&userId=${userIdToUse}`;
@@ -469,6 +471,7 @@ export default function IntegrationsSettings() {
     } catch (error: any) {
       console.error('❌ Error checking Google Calendar:', error);
     } finally {
+      clearTimeout(safetyTimeout);
       setCheckingCalendar(false);
     }
   };
@@ -494,6 +497,10 @@ export default function IntegrationsSettings() {
       });
       
       if (!response.ok) {
+        // 404 is expected when no Facebook integration exists yet - don't show error
+        if (response.status !== 404) {
+          console.error('❌ Facebook ad accounts API error:', response.status);
+        }
         setFacebookAdAccounts([]);
         return;
       }
@@ -504,6 +511,10 @@ export default function IntegrationsSettings() {
       setFacebookAdAccounts(adAccounts);
     } catch (error: any) {
       console.error('❌ Error fetching Facebook ad accounts:', error);
+      // Don't show error toast for network issues during auto-fetch
+      if (error.name !== 'TypeError' && !error.message.includes('fetch') && !error.message.includes('NetworkError')) {
+        toast.error('Failed to fetch Facebook ad accounts');
+      }
       setFacebookAdAccounts([]);
     }
   };
@@ -516,6 +527,13 @@ export default function IntegrationsSettings() {
     }
     
     setFacebookLoading(true);
+    
+    // Safety timeout: Force reset loading state after 30 seconds to prevent stuck buttons
+    const safetyTimeout = setTimeout(() => {
+      console.warn('⚠️ Facebook loading timeout - resetting state');
+      setFacebookLoading(false);
+    }, 30000); // 30 seconds
+    
     try {
       
       // First, fetch connected pages
@@ -552,8 +570,12 @@ export default function IntegrationsSettings() {
       });
       
       if (!allPagesResponse.ok) {
+        // 404 is expected when no Facebook integration exists yet - don't show error
+        if (allPagesResponse.status !== 404) {
+          console.error('❌ Facebook pages API error:', allPagesResponse.status);
+        }
         setFacebookPages([]);
-        return;
+        return; // This return is now inside try block, so finally will still execute
       }
       
       const allPagesData = await allPagesResponse.json();
@@ -566,15 +588,26 @@ export default function IntegrationsSettings() {
       setFacebookPages(pages);
     } catch (error: any) {
       console.error('❌ Error fetching Facebook pages:', error);
-      if (!refreshingToken) {
+      // Don't show error toast for network issues during auto-fetch or token refresh
+      if (!refreshingToken && error.name !== 'TypeError' && !error.message.includes('fetch')) {
         toast.error(error.message || 'Failed to fetch Facebook pages');
       }
+      setFacebookPages([]);
     } finally {
+      clearTimeout(safetyTimeout);
       setFacebookLoading(false);
     }
   };
 
   const getUserFirmId = async () => {
+    // Prevent duplicate calls using ref only (not loading state, as that would block the flow)
+    if (isLoadingUserRef.current) {
+      console.log('⚠️ getUserFirmId already running, skipping duplicate call');
+      return;
+    }
+    
+    isLoadingUserRef.current = true;
+    console.log('📝 getUserFirmId: Setting loading to true');
     setLoading(true);
     
     // When in impersonation mode, fetch the impersonated user's profile directly
@@ -582,112 +615,57 @@ export default function IntegrationsSettings() {
       try {
         const { data: profile } = await profilesApi.getById(userId);
         if (profile?.user_id) {
+          console.log('📝 getUserFirmId: Setting firmUserId (impersonation mode):', profile.user_id);
           setFirmUserId(profile.user_id);
         } else {
           console.warn('No user_id found in impersonated user profile, using userId directly');
+          console.log('📝 getUserFirmId: Setting firmUserId (fallback):', userId);
           setFirmUserId(userId);
         }
       } catch (error) {
         console.error('Error getting impersonated user profile:', error);
         // Fallback to using userId directly
+        console.log('📝 getUserFirmId: Setting firmUserId (error fallback):', userId);
         setFirmUserId(userId);
+      } finally {
+        isLoadingUserRef.current = false;
       }
+      // IMPORTANT: Don't set loading to false here - let fetchGHLIntegrations handle it
+      // which is triggered by the firmUserId change
       return;
     }
     
     if (!user?.email) {
+      console.log('📝 getUserFirmId: Setting loading to false (no user email)');
       setLoading(false);
+      isLoadingUserRef.current = false;
       return;
     }
     
     try {
       const { data: profile } = await profilesApi.getByEmail(user.email);
       if (profile?.user_id) {
+        console.log('📝 getUserFirmId: Setting firmUserId (normal mode):', profile.user_id);
         setFirmUserId(profile.user_id);
       } else {
         console.warn('No user_id found in profile');
+        console.log('📝 getUserFirmId: Setting loading to false (no user_id)');
         setLoading(false);
       }
     } catch (error) {
       console.error('Error getting firm user ID:', error);
+      console.log('📝 getUserFirmId: Setting loading to false (error)');
       setLoading(false);
+    } finally {
+      isLoadingUserRef.current = false;
     }
   };
 
-  // Fetch templates from Templated.io
-  const fetchTemplates = async () => {
-    if (!firmUserId) return;
-    
-    setTemplatesLoading(true);
-    setTemplatesError(null);
-    
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/templated/templates/${firmUserId}`);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch templates: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setTemplates(data.templates || []);
-        console.log(`✅ Loaded ${data.templates?.length || 0} templates (${data.enabledCount || 0} enabled)`);
-      } else {
-        throw new Error(data.message || 'Failed to fetch templates');
-      }
-    } catch (error: any) {
-      console.error('❌ Error fetching templates:', error);
-      setTemplatesError(error.message || 'Failed to load templates');
-    } finally {
-      setTemplatesLoading(false);
-    }
-  };
+  // fetchTemplates - REMOVED: Not needed on IntegrationsSettings page
+  // Templates are fetched only on pages that use them (ScheduledContent, etc.)
 
-  // Toggle template enabled/disabled for user
-  const handleToggleTemplate = async (templateId: string, enable: boolean) => {
-    if (!firmUserId) {
-      toast.error('User ID not available');
-      return;
-    }
-    
-    setTogglingTemplateId(templateId);
-    
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/templated/templates/toggle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          template_id: templateId,
-          user_id: firmUserId,
-          enable: enable
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to update template: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Update local state
-        setTemplates(prev => prev.map(t => 
-          t.id === templateId ? { ...t, isEnabled: enable } : t
-        ));
-        toast.success(`Template ${enable ? 'enabled' : 'disabled'}`);
-      } else {
-        throw new Error(data.message || 'Failed to update template');
-      }
-    } catch (error: any) {
-      console.error('❌ Error toggling template:', error);
-      toast.error(error.message || 'Failed to update template');
-    } finally {
-      setTogglingTemplateId(null);
-    }
-  };
+  // handleToggleTemplate - REMOVED: Not needed on IntegrationsSettings page
+  // Template toggling is handled on pages that display templates
 
   useEffect(() => {
     if (locationId) {
@@ -695,12 +673,8 @@ export default function IntegrationsSettings() {
     }
   }, [locationId]);
 
-  // Fetch templates when firmUserId is available
-  useEffect(() => {
-    if (firmUserId) {
-      fetchTemplates();
-    }
-  }, [firmUserId]);
+  // Templates useEffect - REMOVED: Not needed on IntegrationsSettings page
+  // Templates are only fetched on pages that display them
 
   useEffect(() => {
     // Listen for OAuth callback messages from popup
@@ -714,12 +688,31 @@ export default function IntegrationsSettings() {
       }
     };
 
-    // Listen for window focus to refresh status when user returns from OAuth popup
-    const handleWindowFocus = () => {
-      if (locationId && pitToken) {
-        setTimeout(() => {
-          checkGoogleCalendarConnection();
-        }, 1000);
+    // Debounce timer for window focus to prevent excessive checks
+    let focusDebounceTimer: NodeJS.Timeout | null = null;
+    
+    // Listen for window focus to check token expiration when user returns
+    const handleWindowFocus = async () => {
+      // Clear any existing timer
+      if (focusDebounceTimer) {
+        clearTimeout(focusDebounceTimer);
+      }
+      
+      // Only check Firebase token expiration when switching tabs (valid for 1 hour)
+      if (firmUserId && firebaseToken) {
+        focusDebounceTimer = setTimeout(async () => {
+          // Check if token is expired (older than 1 hour)
+          if (isFirebaseTokenExpired(firebaseToken)) {
+            console.log('⚠️ Firebase token expired, starting refresh process...');
+            // Trigger the same flow as page reload
+            await refreshFirebaseToken();
+            // After token refresh completes, reload integrations and accounts
+            // This happens automatically via the polling mechanism in startTokenPolling
+            // which calls fetchTokensFromDatabase, triggering the useEffect chain
+          } else {
+            console.log('✅ Firebase token still valid');
+          }
+        }, 1000); // Wait 1 second after focus
       }
     };
 
@@ -729,17 +722,28 @@ export default function IntegrationsSettings() {
     return () => {
       window.removeEventListener('message', handleOAuthCallback);
       window.removeEventListener('focus', handleWindowFocus);
+      if (focusDebounceTimer) {
+        clearTimeout(focusDebounceTimer);
+      }
     };
   }, [locationId, pitToken]);
 
   const fetchGHLIntegrations = async () => {
     if (!firmUserId) {
+      console.log('📝 fetchGHLIntegrations: Setting loading to false (no firmUserId)');
       setLoading(false);
       return;
     }
 
     try {
+      console.log('📝 fetchGHLIntegrations: Setting loading to true');
       setLoading(true);
+      
+      // Safety timeout: Force reset loading state after 30 seconds to prevent stuck buttons
+      const safetyTimeout = setTimeout(() => {
+        console.warn('⚠️ GHL integrations loading timeout - resetting state');
+        setLoading(false);
+      }, 30000); // 30 seconds
 
       // Query Supabase for ALL GHL integrations to display in table
       const { data: allData, error: allError } = await supabase
@@ -775,9 +779,19 @@ export default function IntegrationsSettings() {
         setGhlUserId(solData.soma_ghl_user_id || null);
         setPitToken(solData.pit_token || null);
       }
+      
+      clearTimeout(safetyTimeout);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load integrations');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load integrations';
+      setError(errorMessage);
+      // Check for network errors
+      if (err instanceof Error && (err.name === 'TypeError' || err.message.includes('fetch') || err.message.includes('NetworkError'))) {
+        toast.error('Network error: Please check your internet connection and try again.');
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
+      console.log('📝 fetchGHLIntegrations: Setting loading to false (finally)');
       setLoading(false);
     }
   };
@@ -1622,12 +1636,10 @@ export default function IntegrationsSettings() {
 
   const fetchSlackIntegrations = async () => {
     if (!firmUserId) {
-      console.log('⚠️ Skipping Slack fetch: missing firmUserId');
       return;
     }
 
     try {
-      console.log('🔵 Fetching Slack integrations for firmUserId:', firmUserId);
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
       const response = await fetch(`${backendUrl}/api/social/slack/connected-workspaces`, {
@@ -1642,7 +1654,10 @@ export default function IntegrationsSettings() {
       });
 
       if (!response.ok) {
-        console.error('❌ Slack API error:', response.status);
+        // Only log non-404 errors (404 is expected when no Slack integration exists)
+        if (response.status !== 404) {
+          console.error('❌ Slack API error:', response.status);
+        }
         setSlackIntegrations([]);
         return;
       }
@@ -1651,13 +1666,18 @@ export default function IntegrationsSettings() {
 
       if (data.success && data.integrations && Array.isArray(data.integrations)) {
         setSlackIntegrations(data.integrations);
-        console.log('🟣 Slack integrations loaded:', data.integrations.length, 'workspace(s)');
+        // Only log when integrations are found to reduce console noise
+        if (data.integrations.length > 0) {
+          console.log('🟣 Slack integrations loaded:', data.integrations.length, 'workspace(s)');
+        }
       } else {
         setSlackIntegrations([]);
-        console.log('🟣 No Slack integrations found');
       }
     } catch (error: any) {
-      console.error('❌ Error fetching Slack integrations:', error);
+      // Only log non-network errors
+      if (error.name !== 'TypeError' && !error.message.includes('fetch') && !error.message.includes('NetworkError')) {
+        console.error('❌ Error fetching Slack integrations:', error);
+      }
       setSlackIntegrations([]);
     }
   };
@@ -1682,7 +1702,10 @@ export default function IntegrationsSettings() {
       });
 
       if (!response.ok) {
-        console.error('❌ Teams API error:', response.status);
+        // 404 is expected when no Teams integration exists yet - don't show error
+        if (response.status !== 404) {
+          console.error('❌ Teams API error:', response.status);
+        }
         setTeamsIntegrations([]);
         return;
       }
@@ -1691,12 +1714,19 @@ export default function IntegrationsSettings() {
 
       if (data.integrations && Array.isArray(data.integrations)) {
         setTeamsIntegrations(data.integrations);
-        console.log('🔵 Teams integrations loaded:', data.integrations);
+        // Only log when integrations are found to reduce console noise
+        if (data.integrations.length > 0) {
+          console.log('🔵 Teams integrations loaded:', data.integrations.length, 'team(s)');
+        }
       } else {
         setTeamsIntegrations([]);
       }
     } catch (error: any) {
       console.error('❌ Error fetching Teams integrations:', error);
+      // Don't show error toast for network issues during auto-fetch
+      if (error.name !== 'TypeError' && !error.message.includes('fetch') && !error.message.includes('NetworkError')) {
+        toast.error('Failed to fetch Teams integrations');
+      }
       setTeamsIntegrations([]);
     }
   };
@@ -1724,6 +1754,10 @@ export default function IntegrationsSettings() {
 
       if (!response.ok) {
         console.error('❌ GHL API error:', response.status);
+        // Don't show error toast for 404s as they're expected when no accounts exist
+        if (response.status !== 404) {
+          toast.error('Failed to load social media accounts. Please refresh the page.');
+        }
         return;
       }
 
@@ -1752,10 +1786,14 @@ export default function IntegrationsSettings() {
 
     } catch (error: any) {
       console.error('❌ Error fetching connected social media accounts from GHL:', error);
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        toast.error('Network error: Please check your internet connection and try again.');
+      }
     }
   };
 
-  const fetchSocialMediaAccounts = async (platform: 'facebook' | 'instagram' | 'linkedin' = 'facebook') => {
+  const fetchSocialMediaAccounts = async (platform: 'facebook' | 'instagram' | 'linkedin' | 'threads' | 'gbp' | 'tiktok' | 'youtube' | 'pinterest' | 'community' | 'bluesky' | 'teams' | 'slack' = 'facebook') => {
     if (!locationId || !firebaseToken || !accessToken) {
       toast.error('Missing authentication tokens. Please ensure you are logged in.');
       return;
@@ -1764,6 +1802,13 @@ export default function IntegrationsSettings() {
     setSocialMediaLoading(true);
     setShowSocialMediaPages(true);
     setSocialMediaPlatform(platform);
+
+    // Safety timeout: Force reset loading state after 2 minutes to prevent stuck buttons
+    const safetyTimeout = setTimeout(() => {
+      console.warn('⚠️ Social media loading timeout - resetting state');
+      setSocialMediaLoading(false);
+      toast.error('Request timed out. Please try again.');
+    }, 120000); // 2 minutes
 
     let attempts = 0;
     const maxAttempts = 12; // 12 attempts * 5 seconds = 1 minute max
@@ -1804,6 +1849,7 @@ export default function IntegrationsSettings() {
               const oAuthId = platformAccounts[0].oauthId;
               
               if (oAuthId) {
+                clearTimeout(safetyTimeout);
                 await fetchSocialMediaAccountsWithOAuthId(oAuthId, platform);
                 setSocialMediaLoading(false);
                 return; // Stop polling
@@ -1819,6 +1865,7 @@ export default function IntegrationsSettings() {
         if (attempts < maxAttempts) {
           setTimeout(pollForAccounts, 5000); // Poll every 5 seconds
         } else {
+          clearTimeout(safetyTimeout);
           toast.info(`OAuth completed. Please click "Connect ${platform === 'facebook' ? 'Facebook' : 'Instagram'}" again to see available ${platform === 'facebook' ? 'pages' : 'accounts'}.`);
           setSocialMediaLoading(false);
         }
@@ -1828,7 +1875,13 @@ export default function IntegrationsSettings() {
         if (attempts < maxAttempts) {
           setTimeout(pollForAccounts, 5000); // Continue polling on error
         } else {
-          toast.error('Failed to fetch accounts. Please try again.');
+          clearTimeout(safetyTimeout);
+          // Check for network errors
+          if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+            toast.error('Network error: Please check your internet connection and try again.');
+          } else {
+            toast.error('Failed to fetch accounts. Please try again.');
+          }
           setSocialMediaLoading(false);
         }
       }
@@ -1895,7 +1948,12 @@ export default function IntegrationsSettings() {
       }
     } catch (error: any) {
       console.error(`❌ Error fetching ${platform} accounts from GHL:`, error);
-      toast.error(error.message || `Failed to fetch ${platform} accounts`);
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        toast.error('Network error: Please check your internet connection and try again.');
+      } else {
+        toast.error(error.message || `Failed to fetch ${platform} accounts`);
+      }
     } finally {
       setSocialMediaLoading(false);
     }
@@ -1930,8 +1988,15 @@ export default function IntegrationsSettings() {
           accountType = 'profile';
         }
         
+        // Extract originId - ensure it's a string (same fix as Facebook/Instagram path)
+        const originId = String(page.originId || page.id || '').trim();
+        
+        if (!originId) {
+          throw new Error(`${socialMediaPlatform === 'linkedin' ? 'Profile' : 'Account'} originId is missing`);
+        }
+        
         const requestBody = {
-          originId: page.id,
+          originId: originId,
           type: accountType,
           name: page.name,
           avatar: page.avatar,
@@ -1963,8 +2028,11 @@ export default function IntegrationsSettings() {
 
         toast.success(`Connected ${page.name} successfully!`);
         
-        // Refresh the accounts list
-        fetchSocialMediaAccountsWithOAuthId(socialMediaOAuthId, socialMediaPlatform);
+        // Close the selection modal
+        setShowSocialMediaPages(false);
+        
+        // Reset loading state
+        setSocialMediaLoading(false);
         
         // Refresh connected accounts to update the UI
         fetchConnectedSocialMediaAccounts();
@@ -2031,9 +2099,9 @@ export default function IntegrationsSettings() {
 
       if (data.success) {
         toast.success(data.message || `Connected ${page.name} successfully!`);
-        // Refresh the accounts list
-        fetchSocialMediaAccountsWithOAuthId(socialMediaOAuthId, socialMediaPlatform);
-        // Also refresh the connected accounts
+        // Close the selection modal
+        setShowSocialMediaPages(false);
+        // Refresh the connected accounts
         fetchConnectedSocialMediaAccounts();
       }
     } catch (error: any) {
@@ -2084,6 +2152,9 @@ export default function IntegrationsSettings() {
 
       toast.success(`Successfully deleted ${account.name}`);
 
+      // Close the manage modal
+      setShowManageModal(false);
+
       // Refresh the connected accounts list
       fetchConnectedSocialMediaAccounts();
 
@@ -2126,6 +2197,9 @@ export default function IntegrationsSettings() {
 
       toast.success(`Successfully disconnected ${integration.name}`);
 
+      // Close the manage modal
+      setShowManageModal(false);
+
       // Refresh the Slack integrations list
       fetchSlackIntegrations();
 
@@ -2151,545 +2225,6 @@ export default function IntegrationsSettings() {
   return (
     <SettingsLayout title="Integrations">
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Integrations</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage your connected services and integrations
-          </p>
-        </div>
-
-        {/* Integration Cards Grid */}
-        <div className="relative">
-          {(refreshingToken || pollingForToken) && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
-              <div className="text-center">
-                <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
-                <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
-                <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
-                <p className="text-xs text-gray-400 mt-1">This may take up to 2 minutes</p>
-              </div>
-            </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Google Account Integration */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center">
-                  <svg className="w-12 h-12" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900">Google Account</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Connect your location's Google Account
-                  </p>
-                </div>
-                <Button 
-                  className="w-full"
-                  variant="outline"
-                  onClick={handleGoogleAccountConnect}
-                  disabled={loading || !locationId || !ghlUserId}
-                >
-                  <svg className="w-4 h-4 mr-2" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                  </svg>
-                  {loading ? 'Loading...' : 'Sign in with Google'}
-                </Button>
-                {!loading && (!locationId || !ghlUserId) && (
-                  <p className="text-xs text-red-500">
-                    Please set up a GHL subaccount first
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Google Calendar Integration */}
-          <Card className="hover:shadow-lg transition-shadow bg-white">
-            <CardContent className="pt-6 bg-white">
-              <div className="text-center space-y-4">
-                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 relative">
-                  <img 
-                    src="https://w7.pngwing.com/pngs/44/943/png-transparent-google-calendar-logo-icon.png" 
-                    alt="Google Calendar"
-                    className="w-full h-full object-contain"
-                  />
-                  {googleCalendarConnected && (
-                    <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1">
-                      <CheckCircle className="w-4 h-4 text-white" />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <div className="flex items-center justify-center gap-2">
-                    <h3 className="font-semibold text-lg text-gray-900">Google Calendar</h3>
-                    {googleCalendarConnected && (
-                      <Badge variant="default" className="bg-green-500">Connected</Badge>
-                    )}
-                  </div>
-                  {googleCalendarConnected ? (
-                    <div className="text-sm text-gray-600 mt-1">
-                      <p className="font-medium">{ghlUserName}</p>
-                      <p className="text-xs text-gray-500">{googleCalendarEmail || ghlUserEmail}</p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 mt-1">
-                      Connect your Google Calendar to sync events and appointments
-                    </p>
-                  )}
-                </div>
-                <Button 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  onClick={handleGoogleCalendarConnect}
-                  disabled={loading || !locationId || !ghlUserId || checkingCalendar}
-                >
-                  {checkingCalendar ? 'Checking...' : loading ? 'Loading...' : googleCalendarConnected ? 'Reconnect Google Calendar' : 'Connect Google Calendar'}
-                </Button>
-                {!loading && (!locationId || !ghlUserId) && (
-                  <p className="text-xs text-red-500">
-                    Please set up a GHL subaccount first
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Facebook / Instagram Integration */}
-          <Card className="hover:shadow-lg transition-shadow relative">
-            <CardContent className="pt-6">
-              {refreshingToken && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
-                  <RefreshCw className="w-8 h-8 text-purple-600 animate-spin" />
-                </div>
-              )}
-              <div className="text-center space-y-4">
-                <div className="w-20 h-20 mx-auto rounded-lg flex overflow-hidden relative">
-                  <div className="w-1/2 bg-blue-600 flex items-center justify-center">
-                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                    </svg>
-                  </div>
-                  <div className="w-1/2 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
-                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                    </svg>
-                  </div>
-                  {(facebookPages.length > 0 || facebookAdAccounts.length > 0) && (
-                    <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1">
-                      <CheckCircle className="w-4 h-4 text-white" />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900">Facebook/Instagram Ads</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Connect your Facebook account and Instagram for ads management
-                  </p>
-                  {(facebookPages.length > 0 || facebookAdAccounts.length > 0) && (
-                    <div className="mt-3 space-y-2">
-                      <Badge variant="default" className="bg-green-500">
-                        {facebookPages.length + facebookAdAccounts.length} Connected
-                      </Badge>
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-gray-700">Ad Accounts:</p>
-                        <div className="space-y-2">
-                          {facebookAdAccounts.map((account) => (
-                            <div key={account.id || account.adAccountId} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                              <img 
-                                src="https://techstory.in/wp-content/uploads/2023/09/Facebook_Logo_2019-1024x1024.png" 
-                                alt="Facebook"
-                                className="w-8 h-8 rounded-full"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-gray-900 truncate">{account.name || account.adAccountName}</p>
-                                <p className="text-xs text-gray-500">Ad Account</p>
-                              </div>
-                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-gray-700">Pages:</p>
-                        <div className="space-y-2">
-                          {facebookPages.filter(page => page.isConnected).map((page) => {
-                            const pageId = page.facebookPageId || page.id;
-                            const pageName = page.facebookPageName || page.name;
-                            return (
-                              <div key={pageId} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                                <img 
-                                  src="https://techstory.in/wp-content/uploads/2023/09/Facebook_Logo_2019-1024x1024.png" 
-                                  alt="Facebook"
-                                  className="w-8 h-8 rounded-full"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-gray-900 truncate">{pageName}</p>
-                                  <p className="text-xs text-gray-500">Facebook Page</p>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0"
-                                  onClick={() => handleFacebookPageDisconnect(page)}
-                                  disabled={facebookLoading}
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-                    onClick={() => {
-                      if (locationId && ghlUserId) {
-                        const oauthUrl = `https://backend.leadconnectorhq.com/integrations/oauth/start?locationId=${locationId}&userId=${ghlUserId}&type=facebook`;
-                        window.open(oauthUrl, 'facebook-oauth', 'width=600,height=700');
-                      }
-                    }}
-                    disabled={loading || !locationId || !ghlUserId || facebookLoading}
-                  >
-                    {facebookLoading ? 'Loading...' : 'Add New Account'}
-                  </Button>
-                  {(facebookPages.length > 0 || facebookAdAccounts.length > 0) && (
-                    <Button 
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setShowFacebookPages(true)}
-                    >
-                      Manage
-                    </Button>
-                  )}
-                </div>
-                {!loading && !locationId && (
-                  <p className="text-xs text-red-500">
-                    Please set up a GHL subaccount first
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Facebook Management Modal/Section */}
-        {showFacebookPages && (
-          <Card className="mt-6">
-            <CardContent className="pt-6">
-              {!facebookDidLogin ? (
-                <div className="max-w-4xl mx-auto space-y-6">
-                  <div>
-                    <p className="font-semibold text-gray-800 mb-4">Select the Facebook pages you want to connect</p>
-                    <div className="space-y-3">
-                      {facebookPages.map((page) => {
-                        const pageId = page.facebookPageId || page.id;
-                        const pageName = page.facebookPageName || page.name;
-                        return (
-                          <div 
-                            key={pageId} 
-                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                          >
-                            <div className="flex items-start gap-3 flex-1">
-                              <img 
-                                src="https://techstory.in/wp-content/uploads/2023/09/Facebook_Logo_2019-1024x1024.png" 
-                                alt="Facebook"
-                                className="w-12 h-12 rounded-full"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <p className="font-medium text-gray-900">{pageName}</p>
-                                  {page.isConnected ? (
-                                    <Badge variant="default" className="bg-green-500 text-xs">
-                                      Active
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="secondary" className="text-xs">
-                                      Not Connected
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-500 mb-2">ID: {pageId}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {page.isConnected ? (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => handleFacebookPageDisconnect(page)}
-                                    disabled={facebookLoading}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                                </>
-                              ) : (
-                                <input
-                                  type="checkbox"
-                                  checked={selectedFacebookPages.includes(pageId)}
-                                  onChange={() => handleFacebookPageToggle(pageId)}
-                                  className="w-4 h-4 text-purple-500 cursor-pointer"
-                                />
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <Button 
-                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
-                    onClick={handleFacebookConnectFinish}
-                    disabled={facebookLoading || selectedFacebookPages.length === 0}
-                  >
-                    {facebookLoading ? 'Connecting...' : `Connect ${selectedFacebookPages.length} Page${selectedFacebookPages.length !== 1 ? 's' : ''}`}
-                  </Button>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Integration Cards Grid - Continued */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Outlook Calendar Integration */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 relative">
-                  <img 
-                    src="https://img.icons8.com/color/480/outlook-calendar.png" 
-                    alt="Outlook Calendar"
-                    className="w-full h-full object-contain"
-                  />
-                  {outlookCalendarConnected && (
-                    <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1">
-                      <CheckCircle className="w-4 h-4 text-white" />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <div className="flex items-center justify-center gap-2">
-                    <h3 className="font-semibold text-lg text-gray-900">Outlook Calendar</h3>
-                    {outlookCalendarConnected && (
-                      <Badge variant="default" className="bg-green-500">Connected</Badge>
-                    )}
-                  </div>
-                  {outlookCalendarConnected ? (
-                    <div className="text-sm text-gray-600 mt-1">
-                      <p className="text-xs text-gray-500">{outlookCalendarEmail}</p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 mt-1">
-                      Connect your Outlook Calendar to sync events and appointments
-                    </p>
-                  )}
-                </div>
-                <Button 
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-                  onClick={handleOutlookCalendarConnect}
-                  disabled={loading || !locationId || !ghlUserId || checkingCalendar}
-                >
-                  {checkingCalendar ? 'Checking...' : loading ? 'Loading...' : outlookCalendarConnected ? 'Reconnect Outlook Calendar' : 'Connect Outlook Calendar'}
-                </Button>
-                {!loading && (!locationId || !ghlUserId) && (
-                  <p className="text-xs text-red-500">
-                    Please set up a GHL subaccount first
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Slack Integration */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg"
-                    alt="Slack"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900">Slack</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Connect Slack workspaces for team collaboration
-                  </p>
-                  {slackIntegrations.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                      <Badge variant="default" className="bg-green-500">
-                        {slackIntegrations.length} Workspace{slackIntegrations.length !== 1 ? 's' : ''} Connected
-                      </Badge>
-                      <div className="space-y-2 max-h-32 overflow-y-auto">
-                        {slackIntegrations.map((integration) => (
-                          <div key={integration.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
-                            <img
-                              src={getPlaceholderAvatar('slack', integration.name)}
-                              alt={integration.name}
-                              className="w-8 h-8 rounded-full"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium text-gray-900 truncate">{integration.name}</p>
-                              <p className="text-xs text-gray-500">Slack Workspace</p>
-                            </div>
-                            <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <Button
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                  onClick={handleSlackOAuth}
-                  disabled={loading || !locationId || !firmUserId}
-                >
-                  {loading ? 'Loading...' : slackIntegrations.length > 0 ? 'Add Another Workspace' : 'Connect Workspace'}
-                </Button>
-                {slackIntegrations.length > 0 && (
-                  <Button
-                    variant="outline"
-                    className="w-full mt-2"
-                    onClick={() => {
-                      setManagePlatform('slack');
-                      setShowManageModal(true);
-                    }}
-                  >
-                    Manage Workspaces
-                  </Button>
-                )}
-                {!loading && (!locationId || !ghlUserId) && (
-                  <p className="text-xs text-red-500">
-                    Please set up a GHL subaccount first
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Microsoft Teams Integration - Coming Soon */}
-          <Card className="relative opacity-60 cursor-not-allowed">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <div className="absolute top-4 right-4">
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
-                    Coming Soon
-                  </Badge>
-                </div>
-                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 grayscale">
-                  <img
-                    src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg"
-                    alt="Microsoft Teams"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-500">Microsoft Teams</h3>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Connect Microsoft Teams for collaboration
-                  </p>
-                </div>
-                <Button
-                  className="w-full bg-gray-300 text-gray-500 cursor-not-allowed"
-                  disabled
-                >
-                  Coming Soon
-                </Button>
-                <p className="text-xs text-gray-400">
-                  Microsoft Teams integration will be available soon
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Show manage modal for Slack workspaces */}
-          {showManageModal && managePlatform === 'slack' && (
-            <Card className="col-span-full">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Manage Slack Workspaces</CardTitle>
-                    <CardDescription>View and manage all connected workspaces</CardDescription>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowManageModal(false)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {slackIntegrations.map((integration) => {
-                    const dateAdded = integration.dateAdded ? new Date(integration.dateAdded) : null;
-
-                    return (
-                      <div
-                        key={integration.id}
-                        className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
-                      >
-                        <div className="flex items-start gap-3 flex-1">
-                          <img
-                            src={getPlaceholderAvatar('slack', integration.name)}
-                            alt={integration.name}
-                            className="w-12 h-12 rounded-full"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-medium text-gray-900">{integration.name}</p>
-                              <Badge variant="default" className="bg-green-500 text-xs">
-                                Active
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-gray-500 mb-2">ID: {integration.id}</p>
-                            {dateAdded && (
-                              <p className="text-xs text-gray-400">
-                                Connected: {dateAdded.toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => disconnectSlackWorkspace(integration)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          </div>
-        </div>
 
         {/* Social Media Integrations Section */}
         <div className="mt-8">
@@ -2938,7 +2473,7 @@ export default function IntegrationsSettings() {
                 <div className="text-center space-y-4">
                   <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
                     <img 
-                      src="https://static.vecteezy.com/system/resources/previews/018/930/413/non_2x/instagram-logo-instagram-icon-transparent-free-png.png" 
+                      src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" 
                       alt="Instagram"
                       className="w-full h-full object-contain"
                     />
@@ -4188,6 +3723,546 @@ export default function IntegrationsSettings() {
             )}
 
             </div>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Integrations</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Manage your connected services and integrations
+          </p>
+        </div>
+
+        {/* Integration Cards Grid */}
+        <div className="relative">
+          {(refreshingToken || pollingForToken) && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-lg">
+              <div className="text-center">
+                <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-3" />
+                <p className="text-sm font-medium text-gray-700">Refreshing authentication...</p>
+                <p className="text-xs text-gray-500 mt-1">Please wait while we update your tokens</p>
+                <p className="text-xs text-gray-400 mt-1">This may take up to 2 minutes</p>
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Google Account Integration */}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center">
+                  <svg className="w-12 h-12" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-900">Google Account</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Connect your location's Google Account
+                  </p>
+                </div>
+                <Button 
+                  className="w-full"
+                  variant="outline"
+                  onClick={handleGoogleAccountConnect}
+                  disabled={loading || !locationId || !ghlUserId}
+                >
+                  <svg className="w-4 h-4 mr-2" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                  </svg>
+                  {loading ? 'Loading...' : 'Sign in with Google'}
+                </Button>
+                {!loading && (!locationId || !ghlUserId) && (
+                  <p className="text-xs text-red-500">
+                    Please set up a GHL subaccount first
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Google Calendar Integration */}
+          <Card className="hover:shadow-lg transition-shadow bg-white">
+            <CardContent className="pt-6 bg-white">
+              <div className="text-center space-y-4">
+                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 relative">
+                  <img 
+                    src="https://w7.pngwing.com/pngs/44/943/png-transparent-google-calendar-logo-icon.png" 
+                    alt="Google Calendar"
+                    className="w-full h-full object-contain"
+                  />
+                  {googleCalendarConnected && (
+                    <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center justify-center gap-2">
+                    <h3 className="font-semibold text-lg text-gray-900">Google Calendar</h3>
+                    {googleCalendarConnected && (
+                      <Badge variant="default" className="bg-green-500">Connected</Badge>
+                    )}
+                  </div>
+                  {googleCalendarConnected ? (
+                    <div className="text-sm text-gray-600 mt-1">
+                      <p className="font-medium">{ghlUserName}</p>
+                      <p className="text-xs text-gray-500">{googleCalendarEmail || ghlUserEmail}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect your Google Calendar to sync events and appointments
+                    </p>
+                  )}
+                </div>
+                <Button 
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={handleGoogleCalendarConnect}
+                  disabled={loading || !locationId || !ghlUserId || checkingCalendar}
+                >
+                  {checkingCalendar ? 'Checking...' : loading ? 'Loading...' : googleCalendarConnected ? 'Reconnect Google Calendar' : 'Connect Google Calendar'}
+                </Button>
+                {!loading && (!locationId || !ghlUserId) && (
+                  <p className="text-xs text-red-500">
+                    Please set up a GHL subaccount first
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Facebook / Instagram Integration */}
+          <Card className="hover:shadow-lg transition-shadow relative">
+            <CardContent className="pt-6">
+              {refreshingToken && (
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
+                  <RefreshCw className="w-8 h-8 text-purple-600 animate-spin" />
+                </div>
+              )}
+              <div className="text-center space-y-4">
+                <div className="w-20 h-20 mx-auto rounded-lg flex overflow-hidden relative">
+                  <div className="w-1/2 bg-blue-600 flex items-center justify-center">
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                  </div>
+                  <div className="w-1/2 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                  </div>
+                  {(facebookPages.length > 0 || facebookAdAccounts.length > 0) && (
+                    <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-900">Facebook/Instagram Ads</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Connect your Facebook account and Instagram for ads management
+                  </p>
+                  {(facebookPages.length > 0 || facebookAdAccounts.length > 0) && (
+                    <div className="mt-3 space-y-2">
+                      <Badge variant="default" className="bg-green-500">
+                        {facebookPages.length + facebookAdAccounts.length} Connected
+                      </Badge>
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-gray-700">Ad Accounts:</p>
+                        <div className="space-y-2">
+                          {facebookAdAccounts.map((account) => (
+                            <div key={account.id || account.adAccountId} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                              <img 
+                                src="https://techstory.in/wp-content/uploads/2023/09/Facebook_Logo_2019-1024x1024.png" 
+                                alt="Facebook"
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 truncate">{account.name || account.adAccountName}</p>
+                                <p className="text-xs text-gray-500">Ad Account</p>
+                              </div>
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-gray-700">Pages:</p>
+                        <div className="space-y-2">
+                          {facebookPages.filter(page => page.isConnected).map((page) => {
+                            const pageId = page.facebookPageId || page.id;
+                            const pageName = page.facebookPageName || page.name;
+                            return (
+                              <div key={pageId} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                                <img 
+                                  src="https://techstory.in/wp-content/uploads/2023/09/Facebook_Logo_2019-1024x1024.png" 
+                                  alt="Facebook"
+                                  className="w-8 h-8 rounded-full"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-gray-900 truncate">{pageName}</p>
+                                  <p className="text-xs text-gray-500">Facebook Page</p>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0"
+                                  onClick={() => handleFacebookPageDisconnect(page)}
+                                  disabled={facebookLoading}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                    onClick={() => {
+                      if (locationId && ghlUserId) {
+                        const oauthUrl = `https://backend.leadconnectorhq.com/integrations/oauth/start?locationId=${locationId}&userId=${ghlUserId}&type=facebook`;
+                        window.open(oauthUrl, 'facebook-oauth', 'width=600,height=700');
+                      }
+                    }}
+                    disabled={loading || !locationId || !ghlUserId || facebookLoading}
+                  >
+                    {facebookLoading ? 'Loading...' : 'Add New Account'}
+                  </Button>
+                  {(facebookPages.length > 0 || facebookAdAccounts.length > 0) && (
+                    <Button 
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setShowFacebookPages(true)}
+                    >
+                      Manage
+                    </Button>
+                  )}
+                </div>
+                {!loading && !locationId && (
+                  <p className="text-xs text-red-500">
+                    Please set up a GHL subaccount first
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Facebook Management Modal/Section */}
+        {showFacebookPages && (
+          <Card className="mt-6">
+            <CardContent className="pt-6">
+              {!facebookDidLogin ? (
+                <div className="max-w-4xl mx-auto space-y-6">
+                  <div>
+                    <p className="font-semibold text-gray-800 mb-4">Select the Facebook pages you want to connect</p>
+                    <div className="space-y-3">
+                      {facebookPages.map((page) => {
+                        const pageId = page.facebookPageId || page.id;
+                        const pageName = page.facebookPageName || page.name;
+                        return (
+                          <div 
+                            key={pageId} 
+                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                          >
+                            <div className="flex items-start gap-3 flex-1">
+                              <img 
+                                src="https://techstory.in/wp-content/uploads/2023/09/Facebook_Logo_2019-1024x1024.png" 
+                                alt="Facebook"
+                                className="w-12 h-12 rounded-full"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-medium text-gray-900">{pageName}</p>
+                                  {page.isConnected ? (
+                                    <Badge variant="default" className="bg-green-500 text-xs">
+                                      Active
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Not Connected
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 mb-2">ID: {pageId}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {page.isConnected ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => handleFacebookPageDisconnect(page)}
+                                    disabled={facebookLoading}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                                </>
+                              ) : (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedFacebookPages.includes(pageId)}
+                                  onChange={() => handleFacebookPageToggle(pageId)}
+                                  className="w-4 h-4 text-purple-500 cursor-pointer"
+                                />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Button 
+                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                    onClick={handleFacebookConnectFinish}
+                    disabled={facebookLoading || selectedFacebookPages.length === 0}
+                  >
+                    {facebookLoading ? 'Connecting...' : `Connect ${selectedFacebookPages.length} Page${selectedFacebookPages.length !== 1 ? 's' : ''}`}
+                  </Button>
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Integration Cards Grid - Continued */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Outlook Calendar Integration */}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 relative">
+                  <img 
+                    src="https://img.icons8.com/color/480/outlook-calendar.png" 
+                    alt="Outlook Calendar"
+                    className="w-full h-full object-contain"
+                  />
+                  {outlookCalendarConnected && (
+                    <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center justify-center gap-2">
+                    <h3 className="font-semibold text-lg text-gray-900">Outlook Calendar</h3>
+                    {outlookCalendarConnected && (
+                      <Badge variant="default" className="bg-green-500">Connected</Badge>
+                    )}
+                  </div>
+                  {outlookCalendarConnected ? (
+                    <div className="text-sm text-gray-600 mt-1">
+                      <p className="text-xs text-gray-500">{outlookCalendarEmail}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Connect your Outlook Calendar to sync events and appointments
+                    </p>
+                  )}
+                </div>
+                <Button 
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                  onClick={handleOutlookCalendarConnect}
+                  disabled={loading || !locationId || !ghlUserId || checkingCalendar}
+                >
+                  {checkingCalendar ? 'Checking...' : loading ? 'Loading...' : outlookCalendarConnected ? 'Reconnect Outlook Calendar' : 'Connect Outlook Calendar'}
+                </Button>
+                {!loading && (!locationId || !ghlUserId) && (
+                  <p className="text-xs text-red-500">
+                    Please set up a GHL subaccount first
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Slack Integration */}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg"
+                    alt="Slack"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-900">Slack</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Connect Slack workspaces for team collaboration
+                  </p>
+                  {slackIntegrations.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <Badge variant="default" className="bg-green-500">
+                        {slackIntegrations.length} Workspace{slackIntegrations.length !== 1 ? 's' : ''} Connected
+                      </Badge>
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {slackIntegrations.map((integration) => (
+                          <div key={integration.id} className="flex items-center gap-2 text-left bg-gray-50 p-2 rounded">
+                            <img
+                              src={getPlaceholderAvatar('slack', integration.name)}
+                              alt={integration.name}
+                              className="w-8 h-8 rounded-full"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-gray-900 truncate">{integration.name}</p>
+                              <p className="text-xs text-gray-500">Slack Workspace</p>
+                            </div>
+                            <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  onClick={handleSlackOAuth}
+                  disabled={loading || !locationId || !firmUserId}
+                >
+                  {loading ? 'Loading...' : slackIntegrations.length > 0 ? 'Add Another Workspace' : 'Connect Workspace'}
+                </Button>
+                {slackIntegrations.length > 0 && (
+                  <Button
+                    variant="outline"
+                    className="w-full mt-2"
+                    onClick={() => {
+                      setManagePlatform('slack');
+                      setShowManageModal(true);
+                    }}
+                  >
+                    Manage Workspaces
+                  </Button>
+                )}
+                {!loading && (!locationId || !ghlUserId) && (
+                  <p className="text-xs text-red-500">
+                    Please set up a GHL subaccount first
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Microsoft Teams Integration - Coming Soon */}
+          <Card className="relative opacity-60 cursor-not-allowed">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="absolute top-4 right-4">
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
+                    Coming Soon
+                  </Badge>
+                </div>
+                <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center p-2 grayscale">
+                  <img
+                    src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg"
+                    alt="Microsoft Teams"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-500">Microsoft Teams</h3>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Connect Microsoft Teams for collaboration
+                  </p>
+                </div>
+                <Button
+                  className="w-full bg-gray-300 text-gray-500 cursor-not-allowed"
+                  disabled
+                >
+                  Coming Soon
+                </Button>
+                <p className="text-xs text-gray-400">
+                  Microsoft Teams integration will be available soon
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Show manage modal for Slack workspaces */}
+          {showManageModal && managePlatform === 'slack' && (
+            <Card className="col-span-full">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Manage Slack Workspaces</CardTitle>
+                    <CardDescription>View and manage all connected workspaces</CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowManageModal(false)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {slackIntegrations.map((integration) => {
+                    const dateAdded = integration.dateAdded ? new Date(integration.dateAdded) : null;
+
+                    return (
+                      <div
+                        key={integration.id}
+                        className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-start gap-3 flex-1">
+                          <img
+                            src={getPlaceholderAvatar('slack', integration.name)}
+                            alt={integration.name}
+                            className="w-12 h-12 rounded-full"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-gray-900">{integration.name}</p>
+                              <Badge variant="default" className="bg-green-500 text-xs">
+                                Active
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-gray-500 mb-2">ID: {integration.id}</p>
+                            {dateAdded && (
+                              <p className="text-xs text-gray-400">
+                                Connected: {dateAdded.toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => disconnectSlackWorkspace(integration)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
           </div>
         </div>
 

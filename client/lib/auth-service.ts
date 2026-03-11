@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 import { Profile } from './supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { profilesApi } from './supabase-api';
+import ReferralService from '../services/referralService';
 
 interface SignUpData {
   email: string;
@@ -266,11 +267,6 @@ export class AuthService {
               updated_at: new Date().toISOString()
             };
 
-            // TODO: Track referral if referralCode was provided
-            // If userData.referralCode exists and is not "SQUIDWINS":
-            //   1. Look up the referrer's user_id from referral_codes table
-            //   2. Create entry in referrals table linking referrer to referee (userId)
-
             const response = await fetch(url, {
               method: 'POST',
               headers: {
@@ -285,6 +281,18 @@ export class AuthService {
             if (response.ok) {
               const createdProfiles = await response.json();
               profile = createdProfiles && createdProfiles.length > 0 ? createdProfiles[0] : profileData;
+
+              // Mark referral code as used (one-time use)
+              if (userData.referralCode && userId) {
+                try {
+                  const referralService = ReferralService.getInstance();
+                  await referralService.markCodeAsUsed(userData.referralCode, userId);
+                  console.log('✅ AUTH_SERVICE: Referral code marked as used:', userData.referralCode, 'by user:', userId);
+                } catch (error) {
+                  console.error('⚠️ AUTH_SERVICE: Failed to mark referral code as used:', error);
+                  // Don't fail signup if code marking fails
+                }
+              }
             } else {
               const errorText = await response.text();
               console.error('❌ AUTH_SERVICE: Profile creation API call failed:', response.status, errorText);
