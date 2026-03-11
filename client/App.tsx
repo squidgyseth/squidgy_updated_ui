@@ -62,6 +62,7 @@ import NewsletterPreview from "./pages/NewsletterPreview";
 import SocialMediaPreview from "./pages/SocialMediaPreview";
 import HistoricalNewsletters from "./pages/HistoricalNewsletters";
 import HistoricalSocialPosts from "./pages/HistoricalSocialPosts";
+import SocialPostAction from "./pages/SocialPostAction";
 
 // AI Onboarding Pages
 import BusinessTypeSelection from "./pages/onboarding/BusinessTypeSelection";
@@ -375,6 +376,7 @@ const App = () => (
               <HistoricalSocialPosts />
             </ProtectedRoute>
           } />
+          <Route path="/social-post-action" element={<SocialPostAction />} />
           
           {/* AI Onboarding Routes */}
           <Route path="/ai-onboarding/business-type" element={
