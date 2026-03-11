@@ -15,8 +15,8 @@
 
 2. **Environment variables** in `.env`:
    ```bash
-   VITE_N8N_WEBHOOK_URL=https://n8n.theaiteam.uk
-   VITE_N8N_TOKEN=your-n8n-api-token
+   N8N_WEBHOOK_URL=https://n8n.theaiteam.uk
+   N8N_TOKEN=your-n8n-api-token
    ```
 
 3. **N8N Template**: Template ID `ijDtq0ljM2atxA0E` must exist in your N8N instance
@@ -291,8 +291,8 @@ python scripts/list_n8n_credentials.py
 
 ### Troubleshooting
 
-**Error: Missing VITE_N8N_TOKEN**
-- Add `VITE_N8N_TOKEN` to your `.env` file
+**Error: Missing N8N_TOKEN**
+- Add `N8N_TOKEN` to your `.env` file
 - Get token from N8N Settings → API
 
 **Error: Template not found**

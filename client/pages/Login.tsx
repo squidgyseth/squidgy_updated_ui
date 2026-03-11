@@ -9,6 +9,7 @@ import { onboardingRouter } from "@/services/onboardingRouter";
 import { linkScoresToUser, getGameHistory } from '@/services/anonymousPlayer';
 import AuthFooterLinks from '../components/AuthFooterLinks';
 import AuthCarousel from '../components/AuthCarousel';
+import { getFrontendUrl } from '@/lib/envConfig';
 
 // SVG Icons from the design
 const GoogleIcon = () => (
@@ -98,7 +99,7 @@ export default function Login() {
         email: email.toLowerCase(),
         options: {
           shouldCreateUser: false,
-          emailRedirectTo: `${import.meta.env.VITE_FRONTEND_URL}/login`
+          emailRedirectTo: `${getFrontendUrl()}/login`
         }
       });
       

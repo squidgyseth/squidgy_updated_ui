@@ -3,7 +3,9 @@
  * Provides a reusable interface for querying Supabase tables via backend API
  */
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+import { getBackendUrl } from '@/lib/envConfig';
+
+const backendUrl = getBackendUrl();
 
 export type FilterOperator = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'in';
 

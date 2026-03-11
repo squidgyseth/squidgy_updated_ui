@@ -1,6 +1,7 @@
 // test-email-check.ts - Isolated email existence check test
 import { supabase } from './supabase';
 import { profilesApi } from './supabase-api';
+import { getSupabaseConfig, getBackendUrl, getFrontendUrl } from './envConfig';
 
 interface EmailCheckResult {
   exists: boolean;
@@ -125,10 +126,10 @@ export const testSupabaseConnection = async (): Promise<void> => {
 export const testDirectApiCall = async (email: string): Promise<EmailCheckResult> => {
   
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    
+    const supabaseUrl = getSupabaseConfig().url;
+    const supabaseKey = getSupabaseConfig().anonKey;
+
+
     const url = `${supabaseUrl}/rest/v1/profiles?email=eq.${email.toLowerCase()}&select=id`;
     
     

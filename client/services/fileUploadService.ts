@@ -1,3 +1,5 @@
+import { getBackendUrl } from '@/lib/envConfig';
+
 // File upload service for managing uploaded files
 export interface UploadedFile {
   file_id: string;
@@ -43,7 +45,7 @@ export class FileUploadService {
    */
   async getUserFiles(firmUserId: string, agentId?: string): Promise<UploadedFile[]> {
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = getBackendUrl();
       const url = agentId 
         ? `${backendUrl}/api/files/user/${firmUserId}?agent_id=${agentId}`
         : `${backendUrl}/api/files/user/${firmUserId}`;
@@ -67,7 +69,7 @@ export class FileUploadService {
    */
   async getFileStatus(fileId: string): Promise<UploadedFile | null> {
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/file/status/${fileId}`);
       
       if (!response.ok) {

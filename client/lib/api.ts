@@ -10,9 +10,10 @@ import {
   solarSetupApi,
   businessDetailsApi
 } from './supabase-api';
+import { getBackendUrl, getN8nWebhookUrl } from './envConfig';
 
-// API client for Squidgy backend
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+// API client for Squidgy backend (environment-specific)
+const BACKEND_URL = getBackendUrl();
 
 interface ApiResponse<T = any> {
   data?: T;
@@ -861,8 +862,8 @@ interface N8NWebhookResponse {
 export const callN8NWebhook = async (data: N8NWebhookRequest): Promise<N8NWebhookResponse> => {
   try {
     // Use the N8N webhook URL from environment variables
-    const n8nUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
-    
+    const n8nUrl = getN8nWebhookUrl();
+
     const response = await fetch(n8nUrl, {
       method: 'POST',
       headers: {
@@ -1310,7 +1311,7 @@ export const saveBusinessDetails = async (data: BusinessDetailsData): Promise<{ 
 // Admin Impersonation APIs
 export const adminApi = {
   impersonateUser: async (targetUserId: string, adminUserId: string): Promise<{ success: boolean; profile: any; impersonation_data: any; message: string }> => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://squidgy-backend.onrender.com';
+    const backendUrl = getBackendUrl();
     const response = await fetch(`${backendUrl}/admin/impersonate-user`, {
       method: 'POST',
       headers: {

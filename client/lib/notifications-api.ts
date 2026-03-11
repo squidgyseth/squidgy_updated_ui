@@ -4,8 +4,9 @@
  */
 
 import { supabase } from './supabase';
+import { getBackendUrl } from './envConfig';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = getBackendUrl();
 
 // Notification types - Updated to match new database schema and webhook payload
 export interface Notification {

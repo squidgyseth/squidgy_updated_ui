@@ -25,12 +25,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-N8N_BASE_URL = os.getenv("VITE_N8N_WEBHOOK_URL", "").rstrip("/")
-N8N_TOKEN    = os.getenv("VITE_N8N_TOKEN", "")
+N8N_BASE_URL = os.getenv("N8N_WEBHOOK_URL", "").rstrip("/")
+N8N_TOKEN    = os.getenv("N8N_TOKEN", "")
 TEMPLATE_ID  = "ijDtq0ljM2atxA0E"
 
 if not N8N_BASE_URL or not N8N_TOKEN:
-    raise EnvironmentError("Missing VITE_N8N_WEBHOOK_URL or VITE_N8N_TOKEN in .env")
+    raise EnvironmentError("Missing N8N_WEBHOOK_URL or N8N_TOKEN in .env")
 
 if "/webhook" in N8N_BASE_URL:
     N8N_BASE_URL = N8N_BASE_URL.split("/webhook")[0]

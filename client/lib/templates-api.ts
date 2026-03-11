@@ -1,7 +1,9 @@
 // templates-api.ts - Service for Templated.io API calls via our backend
 // Follows the same pattern as supabase-api.ts for consistency
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { getBackendUrl } from './envConfig';
+
+const BACKEND_URL = getBackendUrl();
 
 interface TemplateLayer {
   name: string;

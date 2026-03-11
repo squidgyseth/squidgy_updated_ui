@@ -1,4 +1,6 @@
 // Google Calendar API Integration
+import { getGoogleClientId } from './envConfig';
+
 interface GoogleCalendarEvent {
   id?: string;
   summary: string;
@@ -78,10 +80,10 @@ class GoogleCalendarService {
   }
 
   public getAuthUrl(): string {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const clientId = getGoogleClientId();
     const redirectUri = `${window.location.origin}/auth/google/callback`;
     const scopes = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events';
-    
+
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,

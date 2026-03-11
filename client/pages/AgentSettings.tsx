@@ -4,6 +4,7 @@ import { useUser } from '../hooks/useUser';
 import { AgentConfigService } from '../services/agentConfigService';
 import { Mic, Upload, Send, File, X, ArrowLeft, Trash2, FileText, Loader2, CheckCircle, Loader, AlertCircle, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { getSupabaseConfig, getBackendUrl, getFrontendUrl } from '@/lib/envConfig';
 
 interface PreviousFile {
   id: string;
@@ -101,7 +102,7 @@ export default function AgentSettings() {
 
     try {
       setLoadingCustomInstructions(true);
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       const response = await fetch(`${backendUrl}/api/knowledge-base/instructions/${userId}/${agentId}`);
 
@@ -129,7 +130,7 @@ export default function AgentSettings() {
 
     try {
       if (showLoading) setLoadingPreviousFiles(true);
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       // Use unified endpoint that fetches from both Supabase (chat uploads) and Neon (agent settings uploads)
       const response = await fetch(`${backendUrl}/api/files/unified/${userId}/${agentId}`);
@@ -298,7 +299,7 @@ export default function AgentSettings() {
 
   // Subscribe to SSE for file processing status updates
   const subscribeToFileStatus = (fileId: string, fileIndex: number) => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    const backendUrl = getBackendUrl();
     const eventSource = new EventSource(`${backendUrl}/api/file/status-stream/${fileId}`);
     
     eventSourcesRef.current.set(fileId, eventSource);
@@ -346,7 +347,7 @@ export default function AgentSettings() {
 
     setDeletingFileId(fileId);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       // Delete from Neon database and Supabase storage via backend API
       const response = await fetch(`${backendUrl}/api/knowledge-base/file/${fileId}`, {
@@ -385,7 +386,7 @@ export default function AgentSettings() {
     let totalOperations = 0;
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       // Handle text input - UPDATE if exists, INSERT if new
       if (currentText.trim()) {

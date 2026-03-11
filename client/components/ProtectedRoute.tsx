@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
+import { getSupabaseConfig } from '@/lib/envConfig';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -23,9 +24,10 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   // Check if user is authenticated
-  const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                       !import.meta.env.VITE_SUPABASE_URL || 
-                       import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co';
+  const supabaseConfig = getSupabaseConfig();
+  const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' ||
+                       !supabaseConfig.url ||
+                       supabaseConfig.url === 'https://your-project.supabase.co';
 
   // Only redirect to login AFTER we're sure auth check is complete (isReady = true)
   if (!isAuthenticated && !isDevelopment) {

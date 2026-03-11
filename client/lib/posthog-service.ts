@@ -1,6 +1,7 @@
 // PostHog Service - Identify users with correct user_id from profiles table
 
 import posthog from 'posthog-js';
+import { getPostHogConfig } from './envConfig';
 
 class PostHogService {
   private initialized = false;
@@ -19,12 +20,11 @@ class PostHogService {
     }
 
     // If not loaded by GTM, initialize manually (fallback)
-    const posthogKey = import.meta.env.VITE_POSTHOG_KEY;
-    const posthogHost = import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com';
+    const config = getPostHogConfig();
 
-    if (posthogKey) {
-      posthog.init(posthogKey, {
-        api_host: posthogHost,
+    if (config.key) {
+      posthog.init(config.key, {
+        api_host: config.host,
         person_profiles: 'identified_only',
         capture_pageview: false, // We'll manually capture pageviews
         capture_pageleave: true,

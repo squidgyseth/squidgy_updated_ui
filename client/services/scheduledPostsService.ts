@@ -3,7 +3,9 @@
  * Fetches scheduled/pending posts from GHL social media posting API
  */
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { getBackendUrl } from '@/lib/envConfig';
+
+const BACKEND_URL = getBackendUrl();
 
 export interface ScheduledPost {
   id: string;
