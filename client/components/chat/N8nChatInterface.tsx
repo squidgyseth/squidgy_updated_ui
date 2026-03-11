@@ -639,15 +639,26 @@ export default function N8nChatInterface({
         // Parse response to handle structured JSON format
         let displayMessage = response.agent_response || response.response || 'I received your message but encountered an issue processing the response.';
         
-        // Extract only the final response - n8n concatenates streaming "thinking" text with final response
-        // Find the LAST occurrence of '...' and extract everything after it
-        const lastEllipsisIndex = displayMessage.lastIndexOf('...');
-        if (lastEllipsisIndex !== -1 && lastEllipsisIndex < displayMessage.length - 3) {
-          // There's content after the last '...'
-          const afterEllipsis = displayMessage.substring(lastEllipsisIndex + 3).trim();
-          if (afterEllipsis) {
-            console.log('[Final Response] Extracted:', afterEllipsis.substring(0, 100) + (afterEllipsis.length > 100 ? '...' : ''));
-            displayMessage = afterEllipsis;
+        // Extract only the final response - agent sends =clear= marker to separate prefinal steps from final response
+        // Check for =clear= marker first (new behavior)
+        const clearMarkerIndex = displayMessage.indexOf('=clear=');
+        if (clearMarkerIndex !== -1) {
+          // Extract everything after =clear= marker
+          const afterClear = displayMessage.substring(clearMarkerIndex + 7).trim();
+          if (afterClear) {
+            console.log('[Final Response] Extracted after =clear=:', afterClear.substring(0, 100) + (afterClear.length > 100 ? '...' : ''));
+            displayMessage = afterClear;
+          }
+        } else {
+          // Fallback: Find the LAST occurrence of '...' and extract everything after it (legacy behavior)
+          const lastEllipsisIndex = displayMessage.lastIndexOf('...');
+          if (lastEllipsisIndex !== -1 && lastEllipsisIndex < displayMessage.length - 3) {
+            // There's content after the last '...'
+            const afterEllipsis = displayMessage.substring(lastEllipsisIndex + 3).trim();
+            if (afterEllipsis) {
+              console.log('[Final Response] Extracted:', afterEllipsis.substring(0, 100) + (afterEllipsis.length > 100 ? '...' : ''));
+              displayMessage = afterEllipsis;
+            }
           }
         }
         
