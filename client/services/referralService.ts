@@ -49,18 +49,21 @@ class ReferralService {
       */
 
       // Database implementation
-      // First check if user already has a code
-      const { data: existingCode, error: fetchError } = await supabase
+      // Get user's FIRST (oldest) active code - their personal referral code
+      // Order by created_at to always return the original/first code
+      // This handles cases where admins have multiple codes
+      const { data: existingCodes, error: fetchError } = await supabase
         .from('referral_codes')
         .select('code, referral_link')
         .eq('user_id', userId)
         .eq('is_active', true)
-        .single();
+        .order('created_at', { ascending: true })
+        .limit(1);
 
-      if (existingCode && !fetchError) {
+      if (existingCodes && existingCodes.length > 0 && !fetchError) {
         return {
-          code: existingCode.code,
-          link: existingCode.referral_link
+          code: existingCodes[0].code,
+          link: existingCodes[0].referral_link
         };
       }
 

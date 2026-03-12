@@ -310,13 +310,32 @@ export default function ReferralHub() {
                     >
                       🏆 View Leaderboard
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full"
                       onClick={async () => {
                         try {
-                          await navigator.clipboard.writeText(referralCode);
-                          toast.success('Referral code copied to clipboard!');
+                          // Validate code before copying
+                          const { data: codeCheck } = await supabase
+                            .from('referral_codes')
+                            .select('is_active, used_at')
+                            .eq('code', referralCode)
+                            .single();
+
+                          // If code is inactive or used, get a new one
+                          if (!codeCheck || !codeCheck.is_active || codeCheck.used_at) {
+                            toast.info('⚠️ Code has been used! Generating new one...');
+
+                            const newCodeData = await referralService.getUserReferralCode(userId!);
+                            setReferralCode(newCodeData.code);
+                            setReferralLink(newCodeData.link);
+
+                            await navigator.clipboard.writeText(newCodeData.code);
+                            toast.success('✅ New code generated and copied!');
+                          } else {
+                            await navigator.clipboard.writeText(referralCode);
+                            toast.success('Referral code copied to clipboard!');
+                          }
                         } catch (error) {
                           toast.error('Failed to copy referral code');
                         }
@@ -341,11 +360,15 @@ export default function ReferralHub() {
 
             <TabsContent value="share" className="space-y-6">
               {shareStats && (
-                <ShareAndEarn 
+                <ShareAndEarn
                   referralCode={referralCode}
                   referralLink={referralLink}
                   onShare={handleShare}
                   shareStats={shareStats}
+                  onCodeUpdate={(newCode, newLink) => {
+                    setReferralCode(newCode);
+                    setReferralLink(newLink);
+                  }}
                 />
               )}
             </TabsContent>

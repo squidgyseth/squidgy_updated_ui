@@ -161,7 +161,7 @@ export default function AdminDashboard() {
       color: 'bg-blue-100 text-blue-600',
     },
     {
-      title: 'Create Referral Code',
+      title: 'Instant Referral Code',
       description: 'Generate a referral code to share',
       icon: Ticket,
       action: handleCreateReferralCode,

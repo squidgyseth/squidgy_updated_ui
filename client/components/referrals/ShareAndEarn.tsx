@@ -7,6 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShareStats } from '@/types/referral.types';
 import ReferralFlowLoader from '@/services/referralFlowLoader';
+import ReferralService from '@/services/referralService';
+import { supabase } from '@/lib/supabase';
+import { useUser } from '@/hooks/useUser';
 import { getPlatformIcon, getPlatformColor, getPlatformName } from '@/utils/platformIcons';
 import { toast } from 'sonner';
 
@@ -15,14 +18,19 @@ interface ShareAndEarnProps {
   referralLink: string;
   onShare: (channel: string) => void;
   shareStats: ShareStats;
+  onCodeUpdate?: (code: string, link: string) => void;
 }
 
-export function ShareAndEarn({ referralCode, referralLink, onShare, shareStats }: ShareAndEarnProps) {
+export function ShareAndEarn({ referralCode, referralLink, onShare, shareStats, onCodeUpdate }: ShareAndEarnProps) {
   const [sharingConfig, setSharingConfig] = useState<any>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [customMessage, setCustomMessage] = useState<string>('');
-  
+  const [currentCode, setCurrentCode] = useState(referralCode);
+  const [currentLink, setCurrentLink] = useState(referralLink);
+
+  const { userId } = useUser();
   const referralLoader = ReferralFlowLoader.getInstance();
+  const referralService = ReferralService.getInstance();
 
   // Default message template
   const defaultMessage = `Hey! I've been using Squidgy AI to automate my workflow and it's incredible! 🚀
@@ -37,25 +45,36 @@ Perfect for agencies, freelancers, and growing businesses. They're limiting acce
 #SquidgyAI #AIAutomation #ProductivityHack`;
 
   useEffect(() => {
-    if (referralCode) {
+    setCurrentCode(referralCode);
+    setCurrentLink(referralLink);
+  }, [referralCode, referralLink]);
+
+  useEffect(() => {
+    if (currentCode) {
       const message = `Hey! I've been using Squidgy AI to automate my workflow and it's incredible! 🚀
 
 It's like having an entire AI team working for you - from content creation to customer support, everything is automated.
 
-Get 30 days free with my exclusive code: ${referralCode}
-${referralLink}
+Get 30 days free with my exclusive code: ${currentCode}
+${currentLink}
 
 Perfect for agencies, freelancers, and growing businesses. They're limiting access right now, but this code gets you in!
 
 #SquidgyAI #AIAutomation #ProductivityHack`;
       setCustomMessage(message);
     }
-  }, [referralCode, referralLink]);
+  }, [currentCode, currentLink]);
 
   useEffect(() => {
     loadSharingConfig();
-    generateQRCode();
   }, []);
+
+  // Auto-regenerate QR code when link changes (after code refresh)
+  useEffect(() => {
+    if (currentLink) {
+      generateQRCode();
+    }
+  }, [currentLink]);
 
   const loadSharingConfig = async () => {
     try {
@@ -67,14 +86,62 @@ Perfect for agencies, freelancers, and growing businesses. They're limiting acce
   };
 
   const generateQRCode = () => {
-    // Generate QR code using a service like qr-server.com
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(referralLink)}`;
+    // Generate QR code using CURRENT link (updates when code refreshes)
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentLink)}`;
     setQrCodeUrl(qrUrl);
+  };
+
+  const validateAndRefreshCode = async (): Promise<{ code: string; link: string } | null> => {
+    if (!userId) return null;
+
+    try {
+      // Check if current code is still active
+      const { data: codeCheck } = await supabase
+        .from('referral_codes')
+        .select('is_active, used_at')
+        .eq('code', currentCode)
+        .single();
+
+      // If code is inactive or used, get a new one
+      if (!codeCheck || !codeCheck.is_active || codeCheck.used_at) {
+        toast.info('⚠️ Code has been used! Generating new one...');
+
+        const newCodeData = await referralService.getUserReferralCode(userId);
+
+        // Update local state
+        setCurrentCode(newCodeData.code);
+        setCurrentLink(newCodeData.link);
+
+        // Notify parent component
+        if (onCodeUpdate) {
+          onCodeUpdate(newCodeData.code, newCodeData.link);
+        }
+
+        toast.success('✅ New code generated!');
+        return newCodeData;
+      }
+
+      return { code: currentCode, link: currentLink };
+    } catch (error) {
+      console.error('Error validating code:', error);
+      return { code: currentCode, link: currentLink };
+    }
   };
 
   const copyToClipboard = async (text: string, type: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      // Validate code before copying
+      const validCode = await validateAndRefreshCode();
+
+      if (validCode && (type === 'Code' || type === 'Link')) {
+        // If copying code or link, use the validated one
+        const textToCopy = type === 'Code' ? validCode.code : validCode.link;
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        // For messages, just copy as-is (message will have updated code from useEffect)
+        await navigator.clipboard.writeText(text);
+      }
+
       toast.success(`${type} copied to clipboard!`);
     } catch (error) {
       toast.error('Failed to copy to clipboard');
@@ -273,9 +340,13 @@ Perfect for agencies, freelancers, and growing businesses. They're limiting acce
             {/* Editable Message */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Your Referral Message</label>
-              <Textarea 
+              <Textarea
                 value={customMessage}
                 onChange={(e) => setCustomMessage(e.target.value)}
+                onFocus={async () => {
+                  // Validate code before allowing user to edit message
+                  await validateAndRefreshCode();
+                }}
                 placeholder="Enter your custom referral message..."
                 rows={8}
                 className="resize-none"
