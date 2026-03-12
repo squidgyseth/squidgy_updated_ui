@@ -123,6 +123,50 @@ class ReferralService {
   }
 
   /**
+   * Create a NEW referral code (for admins creating multiple codes)
+   * Always creates a fresh code regardless of existing codes
+   */
+  async createNewReferralCode(userId: string): Promise<{ code: string; link: string }> {
+    try {
+      // Get user email for code generation
+      const { data: userData } = await supabase.auth.getUser();
+      const userEmail = userData?.user?.email || '';
+
+      // Generate UNIQUE code with timestamp to ensure uniqueness
+      const emailPrefix = userEmail.split('@')[0].substring(0, 3).toUpperCase();
+
+      // Use timestamp + random for uniqueness (not deterministic like getUserReferralCode)
+      const timestamp = Date.now().toString(36).toUpperCase();
+      const random = Math.random().toString(36).substring(2, 7).toUpperCase();
+      const year = new Date().getFullYear();
+
+      const code = `SQUID${emailPrefix}${timestamp}${random}${year}`;
+      const link = `https://app.squidgy.ai/register?ref=${code}`;
+
+      // Insert new code
+      const { data: newCode, error: insertError } = await supabase
+        .from('referral_codes')
+        .insert({
+          user_id: userId,
+          code,
+          referral_link: link
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      return {
+        code: newCode.code,
+        link: newCode.referral_link
+      };
+    } catch (error) {
+      console.error('Error creating new referral code:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get user's referral statistics
    */
   async getUserReferralStats(userId: string): Promise<ReferralStats> {
