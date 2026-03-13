@@ -20,6 +20,20 @@ agent:
   - Generated content or analysis
   tagline: Define. Refine. Align.
   specialization: Brand Strategist
+
+skills:
+  - name: Brand Foundation
+    description: >
+      Defining atmosphere, finding rebellious edge, or naming the enemy.
+      Building the core brand identity elements.
+    file: brand_foundation.md
+
+  - name: Content Creation
+    description: >
+      Creating visuals, hooks, or messaging for any brand asset.
+      Applying the three pillars framework.
+    file: content_creation.md
+
 n8n:
   webhook_url: https://n8n.theaiteam.uk/webhook/brandy
 ui_use:

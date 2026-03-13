@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-03-13T13:23:13.059Z
+// Generated on: 2026-03-13T14:02:32.783Z
 
 export interface AgentConfig {
   agent: {
@@ -212,6 +212,18 @@ export const ALL_AGENTS: AgentConfig[] = [
       "tagline": "Define. Refine. Align.",
       "specialization": "Brand Strategist"
     },
+    "skills": [
+      {
+        "name": "Brand Foundation",
+        "description": "Defining atmosphere, finding rebellious edge, or naming the enemy. Building the core brand identity elements.\n",
+        "file": "brand_foundation.md"
+      },
+      {
+        "name": "Content Creation",
+        "description": "Creating visuals, hooks, or messaging for any brand asset. Applying the three pillars framework.\n",
+        "file": "content_creation.md"
+      }
+    ],
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/brandy"
     },
@@ -919,6 +931,18 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tagline": "Define. Refine. Align.",
       "specialization": "Brand Strategist"
     },
+    "skills": [
+      {
+        "name": "Brand Foundation",
+        "description": "Defining atmosphere, finding rebellious edge, or naming the enemy. Building the core brand identity elements.\n",
+        "file": "brand_foundation.md"
+      },
+      {
+        "name": "Content Creation",
+        "description": "Creating visuals, hooks, or messaging for any brand asset. Applying the three pillars framework.\n",
+        "file": "content_creation.md"
+      }
+    ],
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/brandy"
     },
@@ -1651,6 +1675,18 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "tagline": "Define. Refine. Align.",
         "specialization": "Brand Strategist"
       },
+      "skills": [
+        {
+          "name": "Brand Foundation",
+          "description": "Defining atmosphere, finding rebellious edge, or naming the enemy. Building the core brand identity elements.\n",
+          "file": "brand_foundation.md"
+        },
+        {
+          "name": "Content Creation",
+          "description": "Creating visuals, hooks, or messaging for any brand asset. Applying the three pillars framework.\n",
+          "file": "content_creation.md"
+        }
+      ],
       "n8n": {
         "webhook_url": "https://n8n.theaiteam.uk/webhook/brandy"
       },
