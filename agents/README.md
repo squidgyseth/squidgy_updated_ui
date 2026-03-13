@@ -12,15 +12,22 @@ Each agent **MUST** have its own folder with the following structure:
 agents/
 ├── shared/                          # Shared resources for all agents
 │   ├── base_system_prompt.md        # Base prompt automatically added to ALL agents
-│   └── agent_template.yaml          # Template for creating new agents
+│   ├── agent_template.yaml          # Template for creating new agents
+│   └── skills/                       # Shared skills for all agents
+│       └── shared_skill.md          # Reusable skill documentation
 │
 ├── your_agent_id/                   # Individual agent folder
 │   ├── config.yaml                  # Agent configuration (REQUIRED)
-│   └── system_prompt.md             # Agent-specific instructions (REQUIRED)
+│   ├── system_prompt.md             # Agent-specific instructions (REQUIRED)
+│   └── skills/                       # Agent-specific skills
+│       ├── skill_name.md           # Skill documentation files
+│       └── another_skill.md
 │
 └── another_agent/
     ├── config.yaml
-    └── system_prompt.md
+    ├── system_prompt.md
+    └── skills/
+        └── agent_skill.md
 ```
 
 ---
@@ -94,6 +101,14 @@ agent:
   description: "What this agent does"  # Brief description
   avatar: "/path/to/avatar.png"        # Avatar image path
   enabled: true                        # Platform-level enable/disable
+  
+# Skills that this agent uses (optional)
+skills:
+  - name: Skill Name                   # Display name of the skill
+    description: >
+      Brief description of when this skill is used.
+      Keep it concise and action-oriented.
+    file: skill_file.md                # Path to skill file in skills/ folder
   
 n8n:
   webhook_url: https://n8n.theaiteam.uk/webhook/your_agent_id
@@ -173,6 +188,8 @@ node scripts/build-agents.js
 This will:
 - ✅ Compile all YAML configs to TypeScript
 - ✅ Sync agents to Supabase database
+- ✅ Update system prompts with skills tables
+- ✅ Upload skills to Neon database
 - ✅ Combine `base_system_prompt.md` + `system_prompt.md`
 - ✅ Upload compiled prompts to Neon database
 - ✅ Clean up orphaned agents
@@ -228,6 +245,99 @@ Agents appear in the UI only if **BOTH** conditions are met:
 - ✅ User-enabled (`assistant_personalizations.is_enabled = true`)
 
 **Exception:** `personal_assistant` is always shown (hardcoded in frontend).
+
+---
+
+## 🎯 Skills System
+
+### What are Skills?
+
+Skills are reusable best-practice documents that contain detailed instructions for specific tasks. Each agent can have multiple skills that define how to perform different aspects of their work.
+
+### Skills Structure
+
+```yaml
+skills:
+  - name: Post Creation Workflow
+    description: >
+      Creating, scheduling, or publishing any post or story.
+      The primary orchestration skill — consult first.
+    file: post_creation_workflow.md
+  
+  - name: Caption & Copywriting
+    description: >
+      Writing captions, hooks, CTAs, headlines, carousel slide copy,
+      or any text on/alongside a post.
+    file: caption_copywriting.md
+```
+
+### Skill Files
+
+Each skill has a corresponding markdown file in the agent's `skills/` folder:
+
+```
+agents/social_media/skills/
+├── post_creation_workflow.md
+├── caption_copywriting.md
+├── template_image_generation.md
+└── content_strategy_design.md
+```
+
+**Skill file structure:**
+```markdown
+# Skill Name
+
+Brief description of what this skill covers.
+
+=======================================================================
+## SECTION NAME
+
+Detailed instructions and best practices...
+```
+
+### Skills in System Prompts
+
+During build, skills are automatically injected into the agent's system prompt as a table:
+
+```markdown
+=======================================================================
+## SKILLS
+
+The agent has skills containing best practices for each area of responsibility. Before executing a task, consult the relevant skill file and follow its instructions. Multiple skills may apply to a single task.
+
+| Skill_name | Use When |
+|-------|----------|
+| Post Creation Workflow | Creating, scheduling, or publishing any post or story. The primary orchestration skill — consult first. |
+| Caption & Copywriting | Writing captions, hooks, CTAs, headlines, carousel slide copy, or any text on/alongside a post. |
+```
+
+### Skills Database Storage
+
+Skills are also stored in the `agent_skills` table in Neon database:
+
+```sql
+CREATE TABLE agent_skills (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  skill_name TEXT NOT NULL,
+  brief TEXT NOT NULL,
+  skill_content TEXT NOT NULL,
+  agent_id TEXT NOT NULL,
+  is_global BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### Shared Skills
+
+Skills can be shared across multiple agents by placing them in `agents/shared/skills/` and referencing them from multiple agent configs.
+
+### Skills Narration
+
+Agents must narrate when consulting skills (per base system prompt):
+- "Let me review my best practices for this..."
+- "Checking my workflow guide..."
+- "Loading my design strategy notes..."
 
 ---
 
@@ -327,4 +437,4 @@ Check if you're duplicating base prompt rules in your `system_prompt.md`. Remove
 
 ---
 
-**Last Updated:** 2026-03-06
+**Last Updated:** 2026-03-13

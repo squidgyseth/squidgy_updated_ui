@@ -18,11 +18,18 @@ This application guides solar sales agents through a comprehensive setup process
 agents/                   # AI Agent configurations (see agents/README.md)
 ├── shared/               # Shared resources for all agents
 │   ├── base_system_prompt.md  # Base prompt for all agents
-│   └── agent_template.yaml    # Template for new agents
+│   ├── agent_template.yaml    # Template for new agents
+│   └── skills/                # Shared skills for all agents
+│       └── shared_skill.md     # Reusable skill documentation
 ├── personal_assistant/   # Individual agent folders
 │   ├── config.yaml       # Agent configuration
-│   └── system_prompt.md  # Agent-specific instructions
+│   ├── system_prompt.md  # Agent-specific instructions
+│   └── skills/           # Agent-specific skills
+│       └── skill.md      # Skill documentation files
 └── [other_agents]/       # Each agent has its own folder
+    ├── config.yaml
+    ├── system_prompt.md
+    └── skills/           # Skills folder with markdown files
 
 client/                   # React SPA frontend
 ├── pages/                # Setup wizard pages
@@ -146,7 +153,8 @@ Complete guide for creating and managing AI agents:
 - **Python agent creation script** for automated agent management
 - **Agent folder structure** and required files
 - **Creating new agents** step-by-step with N8N workflow generation
-- **System prompt compilation** (base + agent-specific)
+- **Skills system** for reusable best practices and agent capabilities
+- **System prompt compilation** (base + agent-specific + skills)
 - **Platform and user-level enablement** logic
 - **Troubleshooting** common agent issues
 - **Build and deployment** process
