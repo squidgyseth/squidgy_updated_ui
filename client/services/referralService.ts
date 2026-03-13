@@ -953,24 +953,26 @@ class ReferralService {
       const trimmedCode = code.trim().toUpperCase();
 
       // Master code is reusable - don't mark it as used
-      // But track the registration in referrals table for analytics
+      // But track the user in referrals table with placeholder referrer
       if (trimmedCode === 'SQUIDWINS') {
-        // Log master code usage (optional - for tracking)
+        // Log master code usage for tracking
         console.log(`Master code SQUIDWINS used by user: ${usedByUserId}`);
 
-        // Create a referral tracking entry with master code indicator
+        // Create referral entry with placeholder referrer_id
+        // Using special UUID to indicate master code (00000000-0000-0000-0000-000000000001)
         await supabase
           .from('referrals')
           .insert({
-            referrer_id: null, // No specific referrer for master code
+            referrer_id: '00000000-0000-0000-0000-000000000001', // Placeholder for master code
             referee_id: usedByUserId,
-            referral_code: 'SQUIDWINS',
+            referral_code_id: null,
             status: 'completed',
+            referral_source: 'SQUIDWINS',
             signed_up_at: new Date().toISOString(),
             activated_at: new Date().toISOString()
           });
 
-        return true; // Success, but code remains valid
+        return true; // Success, code remains valid
       }
 
       // Regular code - mark as used (one-time use)
