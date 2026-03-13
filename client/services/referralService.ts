@@ -958,14 +958,40 @@ class ReferralService {
         // Log master code usage for tracking
         console.log(`Master code SQUIDWINS used by user: ${usedByUserId}`);
 
-        // Create referral entry with placeholder referrer_id
-        // Using special UUID to indicate master code (00000000-0000-0000-0000-000000000001)
+        // Get or create SQUIDWINS code entry in referral_codes table
+        let squidwinsCodeId: string | null = null;
+
+        const { data: existingCode } = await supabase
+          .from('referral_codes')
+          .select('id')
+          .eq('code', 'SQUIDWINS')
+          .maybeSingle();
+
+        if (existingCode) {
+          squidwinsCodeId = existingCode.id;
+        } else {
+          // Create SQUIDWINS code entry if it doesn't exist
+          const { data: newCode } = await supabase
+            .from('referral_codes')
+            .insert({
+              user_id: '00000000-0000-0000-0000-000000000001', // System user placeholder
+              code: 'SQUIDWINS',
+              referral_link: 'https://app.squidgy.ai/register?ref=SQUIDWINS',
+              is_active: true
+            })
+            .select('id')
+            .single();
+
+          squidwinsCodeId = newCode?.id || null;
+        }
+
+        // Create referral entry with actual referral_code_id
         await supabase
           .from('referrals')
           .insert({
             referrer_id: '00000000-0000-0000-0000-000000000001', // Placeholder for master code
             referee_id: usedByUserId,
-            referral_code_id: null,
+            referral_code_id: squidwinsCodeId, // Actual code ID from referral_codes table
             status: 'completed',
             referral_source: 'SQUIDWINS',
             signed_up_at: new Date().toISOString(),
