@@ -316,28 +316,29 @@ export default function ReferralHub() {
                       onClick={async () => {
                         try {
                           // Validate code before copying
-                          const { data: codeCheck } = await supabase
+                          const { data: codeCheck, error: checkError } = await supabase
                             .from('referral_codes')
                             .select('is_active, used_at')
                             .eq('code', referralCode)
-                            .single();
+                            .maybeSingle();
 
-                          // If code is inactive or used, get a new one
-                          if (!codeCheck || !codeCheck.is_active || codeCheck.used_at) {
-                            toast.info('⚠️ Code has been used! Generating new one...');
+                          // If code is inactive, used, or doesn't exist, get a new one
+                          if (checkError || !codeCheck || !codeCheck.is_active || codeCheck.used_at) {
+                            toast.info('⚠️ Refreshing your referral code...');
 
                             const newCodeData = await referralService.getUserReferralCode(userId!);
                             setReferralCode(newCodeData.code);
                             setReferralLink(newCodeData.link);
 
                             await navigator.clipboard.writeText(newCodeData.code);
-                            toast.success('✅ New code generated and copied!');
+                            toast.success('✅ Code copied to clipboard!');
                           } else {
                             await navigator.clipboard.writeText(referralCode);
                             toast.success('Referral code copied to clipboard!');
                           }
                         } catch (error) {
-                          toast.error('Failed to copy referral code');
+                          console.error('Error copying referral code:', error);
+                          toast.error('Failed to copy referral code. Please try again.');
                         }
                       }}
                     >

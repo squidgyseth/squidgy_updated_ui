@@ -96,15 +96,15 @@ Perfect for agencies, freelancers, and growing businesses. They're limiting acce
 
     try {
       // Check if current code is still active
-      const { data: codeCheck } = await supabase
+      const { data: codeCheck, error: checkError } = await supabase
         .from('referral_codes')
         .select('is_active, used_at')
         .eq('code', currentCode)
-        .single();
+        .maybeSingle();
 
-      // If code is inactive or used, get a new one
-      if (!codeCheck || !codeCheck.is_active || codeCheck.used_at) {
-        toast.info('⚠️ Code has been used! Generating new one...');
+      // If code is inactive, used, or doesn't exist, get a new one
+      if (checkError || !codeCheck || !codeCheck.is_active || codeCheck.used_at) {
+        toast.info('⚠️ Refreshing your referral code...');
 
         const newCodeData = await referralService.getUserReferralCode(userId);
 
@@ -117,13 +117,14 @@ Perfect for agencies, freelancers, and growing businesses. They're limiting acce
           onCodeUpdate(newCodeData.code, newCodeData.link);
         }
 
-        toast.success('✅ New code generated!');
+        toast.success('✅ Code refreshed!');
         return newCodeData;
       }
 
       return { code: currentCode, link: currentLink };
     } catch (error) {
       console.error('Error validating code:', error);
+      // On error, just return current code (fail gracefully)
       return { code: currentCode, link: currentLink };
     }
   };
