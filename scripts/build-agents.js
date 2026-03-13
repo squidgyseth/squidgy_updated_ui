@@ -275,6 +275,198 @@ async function syncSystemPromptsToNeon(agents) {
 }
 
 /**
+ * Read skills from config.yaml and update system_prompt.md with skills table
+ * Reads: agents/<agent_id>/config.yaml (skills section)
+ * Updates: agents/<agent_id>/system_prompt.md (injects/updates SKILLS section)
+ */
+async function syncSkillsToSystemPrompts(agents) {
+  const agentsDir = path.join(__dirname, '../agents');
+  console.log('📚 Syncing skills to system prompts...');
+
+  let successCount = 0;
+  let skippedCount = 0;
+
+  for (const agent of agents) {
+    const agentId = agent.agent.id;
+    const skills = agent.skills || [];
+
+    // Skip if no skills defined
+    if (skills.length === 0) {
+      skippedCount++;
+      continue;
+    }
+
+    const systemPromptPath = path.join(agentsDir, agentId, 'system_prompt.md');
+
+    try {
+      // Read existing system prompt
+      let systemPrompt = await fs.readFile(systemPromptPath, 'utf8');
+
+      // Generate skills table
+      const skillsSection = `=======================================================================
+## SKILLS
+
+The agent has skills containing best practices for each area of responsibility. Before executing a task, consult the relevant skill file and follow its instructions. Multiple skills may apply to a single task.
+
+| Skill_name | Use When |
+|-------|----------|
+${skills.map(skill => `| ${skill.name} | ${skill.description} |`).join('\n')}
+`;
+
+      // Check if SKILLS section already exists
+      const skillsSectionRegex = /={7,}\n## SKILLS\n[\s\S]*?(?=\n={7,}|\n##[^#]|$)/;
+      
+      if (skillsSectionRegex.test(systemPrompt)) {
+        // Replace existing SKILLS section
+        systemPrompt = systemPrompt.replace(skillsSectionRegex, skillsSection.trim());
+      } else {
+        // Insert SKILLS section after the first section (usually after PRINCIPLE or RULES)
+        const firstSectionEnd = systemPrompt.search(/\n={7,}\n## /);
+        if (firstSectionEnd !== -1) {
+          // Find the end of the first section
+          const secondSectionStart = systemPrompt.indexOf('\n=======', firstSectionEnd + 1);
+          if (secondSectionStart !== -1) {
+            systemPrompt = 
+              systemPrompt.slice(0, secondSectionStart) + 
+              '\n\n' + skillsSection + 
+              systemPrompt.slice(secondSectionStart);
+          } else {
+            // No second section, append at the end
+            systemPrompt += '\n\n' + skillsSection;
+          }
+        } else {
+          // No sections found, append at the end
+          systemPrompt += '\n\n' + skillsSection;
+        }
+      }
+
+      // Write updated system prompt
+      await fs.writeFile(systemPromptPath, systemPrompt, 'utf8');
+      console.log(`  ✅ ${agentId} (${skills.length} skills)`);
+      successCount++;
+    } catch (err) {
+      console.error(`  ❌ ${agentId}: ${err.message}`);
+    }
+  }
+
+  if (skippedCount > 0) {
+    console.log(`  ⏭️  Skipped ${skippedCount} agents with no skills`);
+  }
+  console.log(`✅ Updated ${successCount} system prompts with skills`);
+}
+
+/**
+ * Upload agent skills to Neon database
+ * Reads: agents/<agent_id>/config.yaml (skills section)
+ * Writes: agent_skills table in Neon
+ */
+async function syncSkillsToNeon(agents) {
+  const connectionString = getNeonConnectionString();
+
+  if (!connectionString) {
+    console.log('⚠️ Neon DB credentials not found, skipping skills sync to database');
+    return;
+  }
+
+  const sql = neon(connectionString);
+  const agentsDir = path.join(__dirname, '../agents');
+  console.log('💾 Syncing skills to Neon database...');
+
+  let successCount = 0;
+  let totalSkills = 0;
+
+  for (const agent of agents) {
+    const agentId = agent.agent.id;
+    const skills = agent.skills || [];
+
+    if (skills.length === 0) {
+      continue;
+    }
+
+    for (const skill of skills) {
+      try {
+        // Read skill content from markdown file
+        let skillContent = skill.description; // Fallback to description
+        
+        if (skill.file) {
+          // Try agent-specific skills folder first
+          let skillFilePath = path.join(agentsDir, agentId, 'skills', skill.file);
+          
+          try {
+            skillContent = await fs.readFile(skillFilePath, 'utf8');
+          } catch (err) {
+            // Try shared skills folder
+            skillFilePath = path.join(agentsDir, 'shared', 'skills', skill.file);
+            try {
+              skillContent = await fs.readFile(skillFilePath, 'utf8');
+            } catch (sharedErr) {
+              console.warn(`  ⚠️  Skill file not found: ${skill.file} for ${agentId}, using description as content`);
+            }
+          }
+        }
+
+        await sql`
+          INSERT INTO agent_skills (agent_id, skill_name, brief, skill_content, is_global)
+          VALUES (
+            ${agentId},
+            ${skill.name},
+            ${skill.description},
+            ${skillContent},
+            false
+          )
+          ON CONFLICT (skill_name, agent_id) DO UPDATE SET
+            brief = EXCLUDED.brief,
+            skill_content = EXCLUDED.skill_content,
+            updated_at = NOW()
+        `;
+        totalSkills++;
+      } catch (err) {
+        console.error(`  ❌ Error syncing skill "${skill.name}" for ${agentId}:`, err.message);
+      }
+    }
+
+    console.log(`  ✅ ${agentId} (${skills.length} skills)`);
+    successCount++;
+  }
+
+  // Clean up orphaned skills (skills removed from config but still in DB)
+  const agentIds = agents.map(a => a.agent.id);
+  const allSkillNames = agents.flatMap(a => 
+    (a.skills || []).map(s => ({ agent_id: a.agent.id, skill_name: s.name }))
+  );
+
+  try {
+    // Get all skills from database
+    const dbSkills = await sql`
+      SELECT agent_id, skill_name FROM agent_skills
+    `;
+
+    // Find orphaned skills
+    const orphanedSkills = dbSkills.filter(dbSkill => 
+      !allSkillNames.some(s => 
+        s.agent_id === dbSkill.agent_id && s.skill_name === dbSkill.skill_name
+      )
+    );
+
+    if (orphanedSkills.length > 0) {
+      console.log(`🧹 Cleaning up ${orphanedSkills.length} orphaned skills...`);
+      for (const orphan of orphanedSkills) {
+        await sql`
+          DELETE FROM agent_skills
+          WHERE agent_id = ${orphan.agent_id}
+            AND skill_name = ${orphan.skill_name}
+        `;
+        console.log(`  🗑️  Deleted: ${orphan.agent_id} - ${orphan.skill_name}`);
+      }
+    }
+  } catch (err) {
+    console.error('  ❌ Error cleaning up orphaned skills:', err.message);
+  }
+
+  console.log(`✅ Synced ${totalSkills} skills from ${successCount} agents to Neon`);
+}
+
+/**
  * Build-time script to pre-compile all YAML agents into optimized JSON
  * This eliminates runtime YAML parsing and reduces HTTP requests
  */
@@ -412,6 +604,12 @@ export const TOTAL_AGENTS = ${agents.length};
 
     // Sync agents to Supabase database
     await upsertAgentsToSupabase(agents);
+
+    // Update system prompts with skills table
+    await syncSkillsToSystemPrompts(agents);
+
+    // Upload skills to Neon database
+    await syncSkillsToNeon(agents);
 
     // Compile and sync system prompts to Neon
     await syncSystemPromptsToNeon(agents);

@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-03-11T17:00:43.829Z
+// Generated on: 2026-03-13T12:09:18.368Z
 
 export interface AgentConfig {
   agent: {
@@ -539,7 +539,29 @@ export const ALL_AGENTS: AgentConfig[] = [
       "supported_video_types": [
         "video/mp4"
       ]
-    }
+    },
+    "skills": [
+      {
+        "name": "Post Creation Workflow",
+        "description": "Creating, scheduling, or publishing any post or story. The primary orchestration skill consult first.\n",
+        "file": "post_creation_workflow.md"
+      },
+      {
+        "name": "Template & Image Generation",
+        "description": "Generating branded images, rendering templates, retrieving previous renders, searching Unsplash, fetching logos, or verifying URLs.\n",
+        "file": "template_image_generation.md"
+      },
+      {
+        "name": "Caption & Copywriting",
+        "description": "Writing captions, hooks, CTAs, headlines, carousel slide copy, or any text on/alongside a post.\n",
+        "file": "caption_copywriting.md"
+      },
+      {
+        "name": "Content Strategy & Design",
+        "description": "Planning campaigns, selecting template types, choosing brand colors, adapting content across platforms, or deciding image sizes.\n",
+        "file": "content_strategy_design.md"
+      }
+    ]
   },
   {
     "agent": {
@@ -1223,7 +1245,29 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "supported_video_types": [
         "video/mp4"
       ]
-    }
+    },
+    "skills": [
+      {
+        "name": "Post Creation Workflow",
+        "description": "Creating, scheduling, or publishing any post or story. The primary orchestration skill consult first.\n",
+        "file": "post_creation_workflow.md"
+      },
+      {
+        "name": "Template & Image Generation",
+        "description": "Generating branded images, rendering templates, retrieving previous renders, searching Unsplash, fetching logos, or verifying URLs.\n",
+        "file": "template_image_generation.md"
+      },
+      {
+        "name": "Caption & Copywriting",
+        "description": "Writing captions, hooks, CTAs, headlines, carousel slide copy, or any text on/alongside a post.\n",
+        "file": "caption_copywriting.md"
+      },
+      {
+        "name": "Content Strategy & Design",
+        "description": "Planning campaigns, selecting template types, choosing brand colors, adapting content across platforms, or deciding image sizes.\n",
+        "file": "content_strategy_design.md"
+      }
+    ]
   },
   "social_media_scheduler": {
     "agent": {
@@ -1906,7 +1950,29 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "supported_video_types": [
           "video/mp4"
         ]
-      }
+      },
+      "skills": [
+        {
+          "name": "Post Creation Workflow",
+          "description": "Creating, scheduling, or publishing any post or story. The primary orchestration skill consult first.\n",
+          "file": "post_creation_workflow.md"
+        },
+        {
+          "name": "Template & Image Generation",
+          "description": "Generating branded images, rendering templates, retrieving previous renders, searching Unsplash, fetching logos, or verifying URLs.\n",
+          "file": "template_image_generation.md"
+        },
+        {
+          "name": "Caption & Copywriting",
+          "description": "Writing captions, hooks, CTAs, headlines, carousel slide copy, or any text on/alongside a post.\n",
+          "file": "caption_copywriting.md"
+        },
+        {
+          "name": "Content Strategy & Design",
+          "description": "Planning campaigns, selecting template types, choosing brand colors, adapting content across platforms, or deciding image sizes.\n",
+          "file": "content_strategy_design.md"
+        }
+      ]
     }
   ],
   "OPERATIONS": [
