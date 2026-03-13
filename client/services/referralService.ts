@@ -908,11 +908,17 @@ class ReferralService {
   /**
    * Validate a referral code
    * Returns true if code exists in referral_codes table, is active, and hasn't been used
+   * OR if code is the master code "SQUIDWINS"
    */
   async validateReferralCode(code: string): Promise<boolean> {
     try {
       // Trim and uppercase the code for comparison
       const trimmedCode = code.trim().toUpperCase();
+
+      // Check for master code (never expires, always valid)
+      if (trimmedCode === 'SQUIDWINS') {
+        return true;
+      }
 
       // Check if code exists in database and is active
       const { data, error } = await supabase
@@ -940,11 +946,62 @@ class ReferralService {
 
   /**
    * Mark a referral code as used
+   * Master code "SQUIDWINS" is never marked as used (reusable)
    */
   async markCodeAsUsed(code: string, usedByUserId: string): Promise<boolean> {
     try {
       const trimmedCode = code.trim().toUpperCase();
 
+      // Master code is reusable - don't mark it as used
+      // But track the user in referrals table with placeholder referrer
+      if (trimmedCode === 'SQUIDWINS') {
+        // Log master code usage for tracking
+        console.log(`Master code SQUIDWINS used by user: ${usedByUserId}`);
+
+        // Get or create SQUIDWINS code entry in referral_codes table
+        let squidwinsCodeId: string | null = null;
+
+        const { data: existingCode } = await supabase
+          .from('referral_codes')
+          .select('id')
+          .eq('code', 'SQUIDWINS')
+          .maybeSingle();
+
+        if (existingCode) {
+          squidwinsCodeId = existingCode.id;
+        } else {
+          // Create SQUIDWINS code entry if it doesn't exist
+          const { data: newCode } = await supabase
+            .from('referral_codes')
+            .insert({
+              user_id: '00000000-0000-0000-0000-000000000001', // System user placeholder
+              code: 'SQUIDWINS',
+              referral_link: 'https://app.squidgy.ai/register?ref=SQUIDWINS',
+              is_active: true
+            })
+            .select('id')
+            .single();
+
+          squidwinsCodeId = newCode?.id || null;
+        }
+
+        // Create referral entry with actual referral_code_id
+        await supabase
+          .from('referrals')
+          .insert({
+            referrer_id: '00000000-0000-0000-0000-000000000001', // Placeholder for master code
+            referee_id: usedByUserId,
+            referral_code_id: squidwinsCodeId, // Actual code ID from referral_codes table
+            status: 'completed',
+            referral_source: 'SQUIDWINS',
+            signed_up_at: new Date().toISOString(),
+            activated_at: new Date().toISOString()
+          });
+
+        return true; // Success, code remains valid
+      }
+
+      // Regular code - mark as used (one-time use)
       const { error } = await supabase
         .from('referral_codes')
         .update({
