@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-03-13T12:09:18.368Z
+// Generated on: 2026-03-13T13:23:13.059Z
 
 export interface AgentConfig {
   agent: {
@@ -136,6 +136,20 @@ export const ALL_AGENTS: AgentConfig[] = [
         "Enabled notifications and calendar integration"
       ]
     },
+    "skills": [
+      {
+        "name": "Onboarding Flow",
+        "description": "Running first-time or returning user onboarding, website analysis, agent selection, brand voice/target audience setup, or enabling agents.\n"
+      },
+      {
+        "name": "Knowledge Base & Saving",
+        "description": "Saving any user-provided info, correcting existing data, searching before saving, or deciding categories/sources.\n"
+      },
+      {
+        "name": "Agent Routing",
+        "description": "User wants to use or access a specialised agent, matching intent to enabled agents, redirecting, or handling requests that belong to another agent.\n"
+      }
+    ],
     "ui_use": {
       "page_type": "single_page",
       "pages": [
@@ -1094,6 +1108,20 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
         "Enabled notifications and calendar integration"
       ]
     },
+    "skills": [
+      {
+        "name": "Onboarding Flow",
+        "description": "Running first-time or returning user onboarding, website analysis, agent selection, brand voice/target audience setup, or enabling agents.\n"
+      },
+      {
+        "name": "Knowledge Base & Saving",
+        "description": "Saving any user-provided info, correcting existing data, searching before saving, or deciding categories/sources.\n"
+      },
+      {
+        "name": "Agent Routing",
+        "description": "User wants to use or access a specialised agent, matching intent to enabled agents, redirecting, or handling requests that belong to another agent.\n"
+      }
+    ],
     "ui_use": {
       "page_type": "single_page",
       "pages": [
@@ -1545,6 +1573,20 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
           "Enabled notifications and calendar integration"
         ]
       },
+      "skills": [
+        {
+          "name": "Onboarding Flow",
+          "description": "Running first-time or returning user onboarding, website analysis, agent selection, brand voice/target audience setup, or enabling agents.\n"
+        },
+        {
+          "name": "Knowledge Base & Saving",
+          "description": "Saving any user-provided info, correcting existing data, searching before saving, or deciding categories/sources.\n"
+        },
+        {
+          "name": "Agent Routing",
+          "description": "User wants to use or access a specialised agent, matching intent to enabled agents, redirecting, or handling requests that belong to another agent.\n"
+        }
+      ],
       "ui_use": {
         "page_type": "single_page",
         "pages": [
