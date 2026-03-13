@@ -103,3 +103,16 @@ The agent has skills containing best practices for each area of responsibility. 
  |
 | Content Creation | Creating visuals, hooks, or messaging for any brand asset. Applying the three pillars framework.
  |
+
+
+=======================================================================
+## SKILLS
+
+The agent has skills containing best practices for each area of responsibility. Before executing a task, consult the relevant skill file and follow its instructions. Multiple skills may apply to a single task.
+
+| Skill_name | Use When |
+|-------|----------|
+| Brand Foundation | Defining atmosphere, finding rebellious edge, or naming the enemy. Building the core brand identity elements.
+ |
+| Content Creation | Creating visuals, hooks, or messaging for any brand asset. Applying the three pillars framework.
+ |

@@ -3,6 +3,8 @@ import { Send, Loader, Users, Bot } from 'lucide-react';
 import GroupChatService, { type GroupChat, type GroupChatMessage } from '../../services/groupChatService';
 import OptimizedAgentService from '../../services/optimizedAgentService';
 import OnboardingService from '../../services/onboardingService';
+import { useUser } from '../../hooks/useUser';
+import { useAdmin } from '../../hooks/useAdmin';
 import { supabase } from '../../lib/supabase';
 import { sendToN8nWorkflow, generateRequestId } from '../../lib/n8nService';
 import StreamingChatMessage from './StreamingChatMessage';
@@ -36,7 +38,8 @@ export default function GroupChatInterface({
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [userId, setUserId] = useState<string>('');
+  const { userId } = useUser();
+  const { isAdmin } = useAdmin();
   const [agents, setAgents] = useState<Map<string, AgentConfig>>(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -48,7 +51,7 @@ export default function GroupChatInterface({
   useEffect(() => {
     getCurrentUser();
     loadAgents();
-  }, []);
+  }, [isAdmin]); // Reload when admin status changes
 
   useEffect(() => {
     if (groupId && userId) {
@@ -87,9 +90,7 @@ export default function GroupChatInterface({
 
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      setUserId(user.id);
-    }
+    // userId is already available from useUser hook
   };
 
   const loadAgents = async () => {
@@ -146,9 +147,20 @@ export default function GroupChatInterface({
       platformEnabledIds.add('personal_assistant');
 
       // Filter configs to only show agents that are BOTH platform-enabled AND user-enabled
-      const enabledConfigs = allAgentConfigs.filter(config =>
-        enabledAgentIds.has(config.agent.id) && platformEnabledIds.has(config.agent.id)
-      );
+      // Exception: Admin-only agents bypass user enablement check for admin users
+      const enabledConfigs = allAgentConfigs.filter(config => {
+        const isAdminOnly = config.agent.admin_only === true;
+        const isPlatformEnabled = platformEnabledIds.has(config.agent.id);
+        const isUserEnabled = enabledAgentIds.has(config.agent.id);
+        
+        // Admin-only agents: show if user is admin AND platform-enabled
+        if (isAdminOnly) {
+          return isAdmin && isPlatformEnabled;
+        }
+        
+        // Regular agents: must be both platform-enabled AND user-enabled
+        return isPlatformEnabled && isUserEnabled;
+      });
 
       const agentMap = new Map<string, AgentConfig>();
 

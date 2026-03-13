@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
 import { supabase } from '../lib/supabase';
 import OnboardingService from '../services/onboardingService';
+import { useAdmin } from '../hooks/useAdmin';
 
 interface Agent {
   id: string;
@@ -29,7 +30,8 @@ type AssistantTone = 'friendly' | 'professional' | 'casual';
 export default function PersonalisationSettings() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile, isReady, isAuthenticated } = useUser();
+  const { user, userId, profile, isReady, isAuthenticated } = useUser();
+  const { isAdmin } = useAdmin();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   
@@ -106,9 +108,20 @@ export default function PersonalisationSettings() {
           platformEnabledIds.add('personal_assistant');
 
           // Filter agents to only show those that are BOTH platform-enabled AND user-enabled
+          // Exception: Admin-only agents bypass user enablement check for admin users
           const filteredAgents = agentsData.agents.filter((agentData: any) => {
             const agentId = agentData.agent.id;
-            return enabledAgentIds.has(agentId) && platformEnabledIds.has(agentId);
+            const isAdminOnly = agentData.agent.admin_only === true;
+            const isPlatformEnabled = platformEnabledIds.has(agentId);
+            const isUserEnabled = enabledAgentIds.has(agentId);
+            
+            // Admin-only agents: show if user is admin AND platform-enabled
+            if (isAdminOnly) {
+              return isAdmin && isPlatformEnabled;
+            }
+            
+            // Regular agents: must be both platform-enabled AND user-enabled
+            return isPlatformEnabled && isUserEnabled;
           });
 
           const formattedAgents: Agent[] = filteredAgents.map((agentData: any) => ({
@@ -178,7 +191,7 @@ export default function PersonalisationSettings() {
     if (isReady && isAuthenticated) {
       loadAgents();
     }
-  }, [isReady, isAuthenticated, location.state]);
+  }, [isReady, isAuthenticated, location.state, isAdmin]); // Reload when admin status changes
 
   // Redirect if not authenticated
   useEffect(() => {

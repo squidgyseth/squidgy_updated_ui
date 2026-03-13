@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-03-13T14:02:32.783Z
+// Generated on: 2026-03-13T16:02:55.286Z
 
 export interface AgentConfig {
   agent: {
@@ -13,6 +13,7 @@ export interface AgentConfig {
     avatar?: string;
     pinned?: boolean;
     enabled?: boolean;
+    admin_only?: boolean;
     uses_conversation_state?: boolean;
     initial_message?: string;
     sidebar_greeting?: string;
@@ -119,6 +120,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "avatar": "/Squidgy AI Assistants Avatars/1.png",
       "pinned": true,
       "enabled": true,
+      "admin_only": false,
       "initial_message": "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.",
       "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
       "capabilities": [
@@ -197,6 +199,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "avatar": "/Squidgy AI Assistants Avatars/10.png",
       "pinned": false,
       "enabled": true,
+      "admin_only": false,
       "capabilities": [
         "Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
         "Brand document import and parsing",
@@ -268,6 +271,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "avatar": "/Squidgy AI Assistants Avatars/7.png",
       "pinned": false,
       "enabled": false,
+      "admin_only": false,
       "uses_conversation_state": true,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "sidebar_greeting": "Hi! I'm your Newsletter Specialist - I help you create engaging multi-topic newsletters. How can I assist you today?",
@@ -332,6 +336,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "avatar": "/Squidgy AI Assistants Avatars/15.png",
       "pinned": false,
       "enabled": false,
+      "admin_only": false,
       "uses_conversation_state": true,
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "sidebar_greeting": "Hi! I'm your Content Repurposer - I transform your existing content into fresh formats for different platforms. How can I assist you today?",
@@ -395,6 +400,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "avatar": "/Squidgy AI Assistants Avatars/6.png",
       "pinned": false,
       "enabled": false,
+      "admin_only": false,
       "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
       "capabilities": [
         "Schedule posts across multiple social media platforms",
@@ -463,6 +469,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "avatar": "/Squidgy AI Assistants Avatars/16.png",
       "pinned": false,
       "enabled": true,
+      "admin_only": false,
       "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
       "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
       "capabilities": [
@@ -598,28 +605,61 @@ export const ALL_AGENTS: AgentConfig[] = [
       "description": "Build and configure new AI agents with guided setup",
       "specialization": "Agent Architect",
       "tagline": "Design. Build. Deploy.",
-      "avatar": "/Squidgy AI Assistants Avatars/builder.png",
-      "pinned": false,
-      "enabled": false,
-      "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I can help you build new AI agents from scratch with:<br>✅ Guided conversation to define your agent<br>✅ Automatic YAML configuration<br>✅ N8N workflow templates<br>✅ Integration setup scripts<br>✅ Testing and validation<br><br>Ready to create your first agent? Let's start with: What will your agent do?",
-      "sidebar_greeting": "Hi! I'm Ace - your Agent Builder. I'll guide you through creating custom AI agents with all the integrations, workflows, and configurations you need.",
+      "avatar": "/Squidgy AI Assistants Avatars/14.png",
+      "pinned": true,
+      "enabled": true,
+      "admin_only": true,
+      "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I automatically create complete AI agents with minimal input:<br>✅ Just tell me what your agent should do<br>✅ I'll infer category, capabilities, and personality<br>✅ Generate config, system prompt, and N8N workflow<br>✅ Package everything in a downloadable zip file<br>✅ Upload to Supabase for easy deployment<br><br>Ready to create an agent? Simply describe what it should do!",
+      "sidebar_greeting": "Hi! I'm Ace - your automated Agent Builder. Just tell me what your agent should do, and I'll create a complete, production-ready package with all files and deployment instructions.",
       "capabilities": [
-        "Conversational agent design and planning",
-        "YAML configuration generation",
-        "N8N workflow template creation",
-        "Integration helper scripts (Playwright automation)",
-        "API wrapper generation for CRM/platforms",
-        "Agent testing and validation",
-        "Tier detection (simple to complex agents)",
-        "Figma UI integration setup"
+        "Automated agent creation from minimal user input",
+        "Intelligent requirement inference and smart defaults",
+        "Complete YAML configuration generation",
+        "System prompt and skills file generation",
+        "N8N workflow JSON creation",
+        "Agent package zip file creation",
+        "Supabase storage upload and public URL generation",
+        "Deployment documentation and guides"
       ],
       "recent_actions": [
-        "Created Solar Sales Agent with calculator integrations",
-        "Generated N8N workflow for Newsletter Multi agent",
-        "Built Playwright script for GHL subaccount setup",
-        "Validated and deployed Social Media Scheduler agent"
+        "Auto-generated Email Marketing Agent package in 30 seconds",
+        "Created complete Customer Support Agent with skills and workflow",
+        "Built HR Onboarding Agent with automated deployment package",
+        "Generated Social Media Manager with zip file uploaded to Supabase"
       ]
     },
+    "skills": [
+      {
+        "name": "Intelligent Inference",
+        "description": "Automatically infer agent requirements from minimal user input using keyword detection, category mapping, capability extraction, and smart defaults for personality and configuration.\n",
+        "file": "intelligent_inference.md"
+      },
+      {
+        "name": "Configuration Generation",
+        "description": "Generate complete config.yaml files with all required fields, proper YAML formatting, interface features, suggestion buttons, and validation.\n",
+        "file": "config_generation.md"
+      },
+      {
+        "name": "System Prompt Generation",
+        "description": "Create comprehensive system_prompt.md files with agent-specific workflows, responsibilities, tool usage, and communication style without duplicating base prompt content.\n",
+        "file": "system_prompt_generation.md"
+      },
+      {
+        "name": "Skills Generation",
+        "description": "Create detailed skill files for Tier 2+ agents with complex workflows, multi-step processes, specialized knowledge, and integration-heavy operations.\n",
+        "file": "skills_generation.md"
+      },
+      {
+        "name": "N8N Workflow Generation",
+        "description": "Generate complete N8N workflow JSON files with proper node configuration, connections, credentials, and conditional logic based on agent complexity tier.\n",
+        "file": "n8n_workflow_generation.md"
+      },
+      {
+        "name": "Package & Deployment",
+        "description": "Create complete agent packages with all files, generate deployment README, create zip file, upload to Supabase storage, and provide download link with instructions.\n",
+        "file": "package_deployment.md"
+      }
+    ],
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/agent_builder"
     },
@@ -647,11 +687,11 @@ export const ALL_AGENTS: AgentConfig[] = [
       "Create a new agent",
       "Build a marketing agent",
       "Build a sales agent",
-      "Add GHL integration",
-      "Generate N8N workflow",
-      "Create Playwright automation script",
-      "Test my agent configuration",
-      "Show agent creation guide"
+      "Create a customer support agent",
+      "Generate an HR agent",
+      "Build a content creation agent",
+      "What can you create?",
+      "Show me an example"
     ],
     "personality": {
       "tone": "professional",
@@ -671,6 +711,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "avatar": "/Squidgy AI Assistants Avatars/5.png",
       "pinned": true,
       "enabled": false,
+      "admin_only": false,
       "presetup_required": true,
       "presetup_page": "/solar-config",
       "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href='/solar-config' target='_blank' style='color: #7c3aed; text-decoration: underline;'>Complete Solar Setup</a> - Configure your solar offer details.",
@@ -845,28 +886,61 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "description": "Build and configure new AI agents with guided setup",
       "specialization": "Agent Architect",
       "tagline": "Design. Build. Deploy.",
-      "avatar": "/Squidgy AI Assistants Avatars/builder.png",
-      "pinned": false,
-      "enabled": false,
-      "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I can help you build new AI agents from scratch with:<br>✅ Guided conversation to define your agent<br>✅ Automatic YAML configuration<br>✅ N8N workflow templates<br>✅ Integration setup scripts<br>✅ Testing and validation<br><br>Ready to create your first agent? Let's start with: What will your agent do?",
-      "sidebar_greeting": "Hi! I'm Ace - your Agent Builder. I'll guide you through creating custom AI agents with all the integrations, workflows, and configurations you need.",
+      "avatar": "/Squidgy AI Assistants Avatars/14.png",
+      "pinned": true,
+      "enabled": true,
+      "admin_only": true,
+      "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I automatically create complete AI agents with minimal input:<br>✅ Just tell me what your agent should do<br>✅ I'll infer category, capabilities, and personality<br>✅ Generate config, system prompt, and N8N workflow<br>✅ Package everything in a downloadable zip file<br>✅ Upload to Supabase for easy deployment<br><br>Ready to create an agent? Simply describe what it should do!",
+      "sidebar_greeting": "Hi! I'm Ace - your automated Agent Builder. Just tell me what your agent should do, and I'll create a complete, production-ready package with all files and deployment instructions.",
       "capabilities": [
-        "Conversational agent design and planning",
-        "YAML configuration generation",
-        "N8N workflow template creation",
-        "Integration helper scripts (Playwright automation)",
-        "API wrapper generation for CRM/platforms",
-        "Agent testing and validation",
-        "Tier detection (simple to complex agents)",
-        "Figma UI integration setup"
+        "Automated agent creation from minimal user input",
+        "Intelligent requirement inference and smart defaults",
+        "Complete YAML configuration generation",
+        "System prompt and skills file generation",
+        "N8N workflow JSON creation",
+        "Agent package zip file creation",
+        "Supabase storage upload and public URL generation",
+        "Deployment documentation and guides"
       ],
       "recent_actions": [
-        "Created Solar Sales Agent with calculator integrations",
-        "Generated N8N workflow for Newsletter Multi agent",
-        "Built Playwright script for GHL subaccount setup",
-        "Validated and deployed Social Media Scheduler agent"
+        "Auto-generated Email Marketing Agent package in 30 seconds",
+        "Created complete Customer Support Agent with skills and workflow",
+        "Built HR Onboarding Agent with automated deployment package",
+        "Generated Social Media Manager with zip file uploaded to Supabase"
       ]
     },
+    "skills": [
+      {
+        "name": "Intelligent Inference",
+        "description": "Automatically infer agent requirements from minimal user input using keyword detection, category mapping, capability extraction, and smart defaults for personality and configuration.\n",
+        "file": "intelligent_inference.md"
+      },
+      {
+        "name": "Configuration Generation",
+        "description": "Generate complete config.yaml files with all required fields, proper YAML formatting, interface features, suggestion buttons, and validation.\n",
+        "file": "config_generation.md"
+      },
+      {
+        "name": "System Prompt Generation",
+        "description": "Create comprehensive system_prompt.md files with agent-specific workflows, responsibilities, tool usage, and communication style without duplicating base prompt content.\n",
+        "file": "system_prompt_generation.md"
+      },
+      {
+        "name": "Skills Generation",
+        "description": "Create detailed skill files for Tier 2+ agents with complex workflows, multi-step processes, specialized knowledge, and integration-heavy operations.\n",
+        "file": "skills_generation.md"
+      },
+      {
+        "name": "N8N Workflow Generation",
+        "description": "Generate complete N8N workflow JSON files with proper node configuration, connections, credentials, and conditional logic based on agent complexity tier.\n",
+        "file": "n8n_workflow_generation.md"
+      },
+      {
+        "name": "Package & Deployment",
+        "description": "Create complete agent packages with all files, generate deployment README, create zip file, upload to Supabase storage, and provide download link with instructions.\n",
+        "file": "package_deployment.md"
+      }
+    ],
     "n8n": {
       "webhook_url": "https://n8n.theaiteam.uk/webhook/agent_builder"
     },
@@ -894,11 +968,11 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "Create a new agent",
       "Build a marketing agent",
       "Build a sales agent",
-      "Add GHL integration",
-      "Generate N8N workflow",
-      "Create Playwright automation script",
-      "Test my agent configuration",
-      "Show agent creation guide"
+      "Create a customer support agent",
+      "Generate an HR agent",
+      "Build a content creation agent",
+      "What can you create?",
+      "Show me an example"
     ],
     "personality": {
       "tone": "professional",
@@ -916,6 +990,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "avatar": "/Squidgy AI Assistants Avatars/10.png",
       "pinned": false,
       "enabled": true,
+      "admin_only": false,
       "capabilities": [
         "Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
         "Brand document import and parsing",
@@ -987,6 +1062,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "avatar": "/Squidgy AI Assistants Avatars/15.png",
       "pinned": false,
       "enabled": false,
+      "admin_only": false,
       "uses_conversation_state": true,
       "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
       "sidebar_greeting": "Hi! I'm your Content Repurposer - I transform your existing content into fresh formats for different platforms. How can I assist you today?",
@@ -1051,6 +1127,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "avatar": "/Squidgy AI Assistants Avatars/7.png",
       "pinned": false,
       "enabled": false,
+      "admin_only": false,
       "uses_conversation_state": true,
       "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
       "sidebar_greeting": "Hi! I'm your Newsletter Specialist - I help you create engaging multi-topic newsletters. How can I assist you today?",
@@ -1115,6 +1192,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "avatar": "/Squidgy AI Assistants Avatars/1.png",
       "pinned": true,
       "enabled": true,
+      "admin_only": false,
       "initial_message": "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.",
       "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
       "capabilities": [
@@ -1195,6 +1273,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "avatar": "/Squidgy AI Assistants Avatars/16.png",
       "pinned": false,
       "enabled": true,
+      "admin_only": false,
       "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
       "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
       "capabilities": [
@@ -1332,6 +1411,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "avatar": "/Squidgy AI Assistants Avatars/6.png",
       "pinned": false,
       "enabled": false,
+      "admin_only": false,
       "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
       "capabilities": [
         "Schedule posts across multiple social media platforms",
@@ -1400,6 +1480,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "avatar": "/Squidgy AI Assistants Avatars/5.png",
       "pinned": true,
       "enabled": false,
+      "admin_only": false,
       "presetup_required": true,
       "presetup_page": "/solar-config",
       "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href='/solar-config' target='_blank' style='color: #7c3aed; text-decoration: underline;'>Complete Solar Setup</a> - Configure your solar offer details.",
@@ -1580,6 +1661,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "avatar": "/Squidgy AI Assistants Avatars/1.png",
         "pinned": true,
         "enabled": true,
+        "admin_only": false,
         "initial_message": "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.",
         "sidebar_greeting": "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?",
         "capabilities": [
@@ -1660,6 +1742,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "avatar": "/Squidgy AI Assistants Avatars/10.png",
         "pinned": false,
         "enabled": true,
+        "admin_only": false,
         "capabilities": [
           "Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)",
           "Brand document import and parsing",
@@ -1731,6 +1814,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "avatar": "/Squidgy AI Assistants Avatars/7.png",
         "pinned": false,
         "enabled": false,
+        "admin_only": false,
         "uses_conversation_state": true,
         "initial_message": "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?",
         "sidebar_greeting": "Hi! I'm your Newsletter Specialist - I help you create engaging multi-topic newsletters. How can I assist you today?",
@@ -1795,6 +1879,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "avatar": "/Squidgy AI Assistants Avatars/15.png",
         "pinned": false,
         "enabled": false,
+        "admin_only": false,
         "uses_conversation_state": true,
         "initial_message": "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!",
         "sidebar_greeting": "Hi! I'm your Content Repurposer - I transform your existing content into fresh formats for different platforms. How can I assist you today?",
@@ -1858,6 +1943,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "avatar": "/Squidgy AI Assistants Avatars/6.png",
         "pinned": false,
         "enabled": false,
+        "admin_only": false,
         "initial_message": "Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!",
         "capabilities": [
           "Schedule posts across multiple social media platforms",
@@ -1926,6 +2012,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "avatar": "/Squidgy AI Assistants Avatars/16.png",
         "pinned": false,
         "enabled": true,
+        "admin_only": false,
         "initial_message": "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?",
         "sidebar_greeting": "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?",
         "capabilities": [
@@ -2063,28 +2150,61 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "description": "Build and configure new AI agents with guided setup",
         "specialization": "Agent Architect",
         "tagline": "Design. Build. Deploy.",
-        "avatar": "/Squidgy AI Assistants Avatars/builder.png",
-        "pinned": false,
-        "enabled": false,
-        "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I can help you build new AI agents from scratch with:<br>✅ Guided conversation to define your agent<br>✅ Automatic YAML configuration<br>✅ N8N workflow templates<br>✅ Integration setup scripts<br>✅ Testing and validation<br><br>Ready to create your first agent? Let's start with: What will your agent do?",
-        "sidebar_greeting": "Hi! I'm Ace - your Agent Builder. I'll guide you through creating custom AI agents with all the integrations, workflows, and configurations you need.",
+        "avatar": "/Squidgy AI Assistants Avatars/14.png",
+        "pinned": true,
+        "enabled": true,
+        "admin_only": true,
+        "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I automatically create complete AI agents with minimal input:<br>✅ Just tell me what your agent should do<br>✅ I'll infer category, capabilities, and personality<br>✅ Generate config, system prompt, and N8N workflow<br>✅ Package everything in a downloadable zip file<br>✅ Upload to Supabase for easy deployment<br><br>Ready to create an agent? Simply describe what it should do!",
+        "sidebar_greeting": "Hi! I'm Ace - your automated Agent Builder. Just tell me what your agent should do, and I'll create a complete, production-ready package with all files and deployment instructions.",
         "capabilities": [
-          "Conversational agent design and planning",
-          "YAML configuration generation",
-          "N8N workflow template creation",
-          "Integration helper scripts (Playwright automation)",
-          "API wrapper generation for CRM/platforms",
-          "Agent testing and validation",
-          "Tier detection (simple to complex agents)",
-          "Figma UI integration setup"
+          "Automated agent creation from minimal user input",
+          "Intelligent requirement inference and smart defaults",
+          "Complete YAML configuration generation",
+          "System prompt and skills file generation",
+          "N8N workflow JSON creation",
+          "Agent package zip file creation",
+          "Supabase storage upload and public URL generation",
+          "Deployment documentation and guides"
         ],
         "recent_actions": [
-          "Created Solar Sales Agent with calculator integrations",
-          "Generated N8N workflow for Newsletter Multi agent",
-          "Built Playwright script for GHL subaccount setup",
-          "Validated and deployed Social Media Scheduler agent"
+          "Auto-generated Email Marketing Agent package in 30 seconds",
+          "Created complete Customer Support Agent with skills and workflow",
+          "Built HR Onboarding Agent with automated deployment package",
+          "Generated Social Media Manager with zip file uploaded to Supabase"
         ]
       },
+      "skills": [
+        {
+          "name": "Intelligent Inference",
+          "description": "Automatically infer agent requirements from minimal user input using keyword detection, category mapping, capability extraction, and smart defaults for personality and configuration.\n",
+          "file": "intelligent_inference.md"
+        },
+        {
+          "name": "Configuration Generation",
+          "description": "Generate complete config.yaml files with all required fields, proper YAML formatting, interface features, suggestion buttons, and validation.\n",
+          "file": "config_generation.md"
+        },
+        {
+          "name": "System Prompt Generation",
+          "description": "Create comprehensive system_prompt.md files with agent-specific workflows, responsibilities, tool usage, and communication style without duplicating base prompt content.\n",
+          "file": "system_prompt_generation.md"
+        },
+        {
+          "name": "Skills Generation",
+          "description": "Create detailed skill files for Tier 2+ agents with complex workflows, multi-step processes, specialized knowledge, and integration-heavy operations.\n",
+          "file": "skills_generation.md"
+        },
+        {
+          "name": "N8N Workflow Generation",
+          "description": "Generate complete N8N workflow JSON files with proper node configuration, connections, credentials, and conditional logic based on agent complexity tier.\n",
+          "file": "n8n_workflow_generation.md"
+        },
+        {
+          "name": "Package & Deployment",
+          "description": "Create complete agent packages with all files, generate deployment README, create zip file, upload to Supabase storage, and provide download link with instructions.\n",
+          "file": "package_deployment.md"
+        }
+      ],
       "n8n": {
         "webhook_url": "https://n8n.theaiteam.uk/webhook/agent_builder"
       },
@@ -2112,11 +2232,11 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "Create a new agent",
         "Build a marketing agent",
         "Build a sales agent",
-        "Add GHL integration",
-        "Generate N8N workflow",
-        "Create Playwright automation script",
-        "Test my agent configuration",
-        "Show agent creation guide"
+        "Create a customer support agent",
+        "Generate an HR agent",
+        "Build a content creation agent",
+        "What can you create?",
+        "Show me an example"
       ],
       "personality": {
         "tone": "professional",
@@ -2138,6 +2258,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "avatar": "/Squidgy AI Assistants Avatars/5.png",
         "pinned": true,
         "enabled": false,
+        "admin_only": false,
         "presetup_required": true,
         "presetup_page": "/solar-config",
         "initial_message": "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href='/solar-config' target='_blank' style='color: #7c3aed; text-decoration: underline;'>Complete Solar Setup</a> - Configure your solar offer details.",

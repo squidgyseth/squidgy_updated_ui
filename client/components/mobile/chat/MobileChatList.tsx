@@ -10,6 +10,8 @@ import { cn } from '../../../lib/utils';
 import OptimizedAgentService from '../../../services/optimizedAgentService';
 import OnboardingService from '../../../services/onboardingService';
 import { supabase } from '../../../lib/supabase';
+import { useUser } from '../../../hooks/useUser';
+import { useAdmin } from '../../../hooks/useAdmin';
 
 interface Agent {
   id: string;
@@ -33,13 +35,15 @@ export function MobileChatList({
   onAgentSelect,
   onCreateAgent,
 }: MobileChatListProps) {
+  const { userId } = useUser();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [agents, setAgents] = useState<Agent[]>([]);
 
   useEffect(() => {
     loadEnabledAgents();
-  }, []);
+  }, [isAdmin]); // Reload when admin status changes
 
   const loadEnabledAgents = async () => {
     try {
@@ -96,9 +100,20 @@ export function MobileChatList({
       platformEnabledIds.add('personal_assistant');
 
       // Filter configs to only show agents that are BOTH platform-enabled AND user-enabled
-      const enabledConfigs = allAgentConfigs.filter(config =>
-        enabledAgentIds.has(config.agent.id) && platformEnabledIds.has(config.agent.id)
-      );
+      // Exception: Admin-only agents bypass user enablement check for admin users
+      const enabledConfigs = allAgentConfigs.filter(config => {
+        const isAdminOnly = config.agent.admin_only === true;
+        const isPlatformEnabled = platformEnabledIds.has(config.agent.id);
+        const isUserEnabled = enabledAgentIds.has(config.agent.id);
+        
+        // Admin-only agents: show if user is admin AND platform-enabled
+        if (isAdminOnly) {
+          return isAdmin && isPlatformEnabled;
+        }
+        
+        // Regular agents: must be both platform-enabled AND user-enabled
+        return isPlatformEnabled && isUserEnabled;
+      });
 
       // Transform configs to match mobile format
       const loadedAgents: Agent[] = enabledConfigs.map((config) => {

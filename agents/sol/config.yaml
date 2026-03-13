@@ -9,6 +9,7 @@ agent:
   avatar: "/Squidgy AI Assistants Avatars/5.png"
   pinned: true
   enabled: false
+  admin_only: false
   presetup_required: true
   presetup_page: /solar-config
   initial_message: "Hi! I'm SOL Bot, your solar energy expert. 🌞<br><br>I specialize in solar panel systems, ROI calculations, and helping you go green while saving green!<br><br>📋 <a href='/solar-config' target='_blank' style='color: #7c3aed; text-decoration: underline;'>Complete Solar Setup</a> - Configure your solar offer details."

@@ -9,6 +9,7 @@ agent:
   avatar: "/Squidgy AI Assistants Avatars/16.png"
   pinned: false
   enabled: true
+  admin_only: false
   initial_message: "Hey! 👋 I'm your Social Media Manager, here to help you create, schedule, and manage content across Facebook, Instagram, and LinkedIn.<br><br>I follow a simple workflow: <strong>Consult</strong> (generate ideas), <strong>Confirm</strong> (get your approval), and <strong>Execute</strong> (schedule posts).<br><br>What would you like to work on today?"
   sidebar_greeting: "Hi! I'm your Social Media Manager - your dedicated assistant for scheduling and managing social media content across multiple platforms. I can help with Facebook, Instagram, and LinkedIn posts. How can I assist you today?"
   capabilities:

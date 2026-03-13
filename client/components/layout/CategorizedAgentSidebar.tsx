@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
+import { useAdmin } from '../../hooks/useAdmin';
 import CreateGroupChatModal from '../modals/CreateGroupChatModal';
 import OptimizedAgentService from '../../services/optimizedAgentService';
 import OnboardingService from '../../services/onboardingService';
@@ -27,13 +28,14 @@ export default function CategorizedAgentSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { userId, profile, isImpersonating } = useUser();
+  const { isAdmin } = useAdmin();
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [categories, setCategories] = useState<AssistantCategory[]>([]);
   const [selectedAssistant, setSelectedAssistant] = useState<string | null>(null);
 
   useEffect(() => {
     loadAgentsFromYAML();
-  }, [userId, profile, isImpersonating]); // Refresh when user data changes (including impersonation)
+  }, [userId, profile, isImpersonating, isAdmin]); // Refresh when user data or admin status changes
 
   // Refresh agents when needed (can be called from outside)
   const refreshAgents = () => {
@@ -189,9 +191,20 @@ export default function CategorizedAgentSidebar() {
       platformEnabledIds.add('personal_assistant');
       
       // Filter configs to only show agents that are BOTH platform-enabled AND user-enabled
-      const enabledConfigs = allAgentConfigs.filter(config => 
-        enabledAgentIds.has(config.agent.id) && platformEnabledIds.has(config.agent.id)
-      );
+      // Exception: Admin-only agents bypass user enablement check for admin users
+      const enabledConfigs = allAgentConfigs.filter(config => {
+        const isAdminOnly = config.agent.admin_only === true;
+        const isPlatformEnabled = platformEnabledIds.has(config.agent.id);
+        const isUserEnabled = enabledAgentIds.has(config.agent.id);
+        
+        // Admin-only agents: show if user is admin AND platform-enabled
+        if (isAdminOnly) {
+          return isAdmin && isPlatformEnabled;
+        }
+        
+        // Regular agents: must be both platform-enabled AND user-enabled
+        return isPlatformEnabled && isUserEnabled;
+      });
       
       
       // Transform configs to match sidebar format

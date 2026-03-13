@@ -98,6 +98,37 @@ export class OptimizedAgentService {
   getCategories(): string[] {
     return Object.keys(AGENTS_BY_CATEGORY);
   }
+
+  /**
+   * Get agents visible to regular users (excludes admin_only agents) - O(n) but cached
+   */
+  getVisibleAgents(): AgentConfig[] {
+    return ALL_AGENTS.filter(agent => agent.agent.admin_only !== true);
+  }
+
+  /**
+   * Get agents by category, filtered for regular users (excludes admin_only) - O(n)
+   */
+  getVisibleAgentsByCategory(): Record<string, AgentConfig[]> {
+    const visibleCategories: Record<string, AgentConfig[]> = {};
+    
+    Object.entries(AGENTS_BY_CATEGORY).forEach(([category, agents]) => {
+      const visibleAgents = agents.filter(agent => agent.agent.admin_only !== true);
+      if (visibleAgents.length > 0) {
+        visibleCategories[category] = visibleAgents;
+      }
+    });
+    
+    return visibleCategories;
+  }
+
+  /**
+   * Get visible agents in specific category (excludes admin_only) - O(n)
+   */
+  getVisibleAgentsInCategory(category: string): AgentConfig[] {
+    const agents = AGENTS_BY_CATEGORY[category.toUpperCase()] || [];
+    return agents.filter(agent => agent.agent.admin_only !== true);
+  }
 }
 
 export default OptimizedAgentService;

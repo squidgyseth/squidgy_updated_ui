@@ -9,6 +9,7 @@ agent:
   avatar: "/Squidgy AI Assistants Avatars/1.png"
   pinned: true
   enabled: true
+  admin_only: false
   initial_message: "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you."
   sidebar_greeting: "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?"
   capabilities:

@@ -9,6 +9,7 @@ agent:
   avatar: "/Squidgy AI Assistants Avatars/7.png"
   pinned: false
   enabled: false
+  admin_only: false
   uses_conversation_state: true
   initial_message: "Hey there! 👋 I'm here to help you create amazing newsletters. Whether you need to write content, design layouts, or analyze performance - I've got you covered. What would you like to work on today?"
   sidebar_greeting: "Hi! I'm your Newsletter Specialist - I help you create engaging multi-topic newsletters. How can I assist you today?"

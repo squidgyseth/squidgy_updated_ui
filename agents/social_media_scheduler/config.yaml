@@ -8,6 +8,7 @@ agent:
   avatar: /Squidgy AI Assistants Avatars/6.png
   pinned: false
   enabled: false
+  admin_only: false
   initial_message: 'Hey! 👋 I''m your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let''s get started!'
   capabilities:
     - "Schedule posts across multiple social media platforms"

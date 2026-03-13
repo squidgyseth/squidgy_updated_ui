@@ -10,29 +10,67 @@ agent:
   description: "Build and configure new AI agents with guided setup"
   specialization: "Agent Architect"
   tagline: "Design. Build. Deploy."
-  avatar: "/Squidgy AI Assistants Avatars/builder.png"
-  pinned: false
-  enabled: false
+  avatar: "/Squidgy AI Assistants Avatars/14.png"
+  pinned: true
+  enabled: true
+  admin_only: true
 
-  initial_message: 'Hey! 👋 I''m Ace, your Agent Creation Expert.<br><br>I can help you build new AI agents from scratch with:<br>✅ Guided conversation to define your agent<br>✅ Automatic YAML configuration<br>✅ N8N workflow templates<br>✅ Integration setup scripts<br>✅ Testing and validation<br><br>Ready to create your first agent? Let''s start with: What will your agent do?'
+  initial_message: 'Hey! 👋 I''m Ace, your Agent Creation Expert.<br><br>I automatically create complete AI agents with minimal input:<br>✅ Just tell me what your agent should do<br>✅ I''ll infer category, capabilities, and personality<br>✅ Generate config, system prompt, and N8N workflow<br>✅ Package everything in a downloadable zip file<br>✅ Upload to Supabase for easy deployment<br><br>Ready to create an agent? Simply describe what it should do!'
 
-  sidebar_greeting: "Hi! I'm Ace - your Agent Builder. I'll guide you through creating custom AI agents with all the integrations, workflows, and configurations you need."
+  sidebar_greeting: "Hi! I'm Ace - your automated Agent Builder. Just tell me what your agent should do, and I'll create a complete, production-ready package with all files and deployment instructions."
 
   capabilities:
-    - "Conversational agent design and planning"
-    - "YAML configuration generation"
-    - "N8N workflow template creation"
-    - "Integration helper scripts (Playwright automation)"
-    - "API wrapper generation for CRM/platforms"
-    - "Agent testing and validation"
-    - "Tier detection (simple to complex agents)"
-    - "Figma UI integration setup"
+    - "Automated agent creation from minimal user input"
+    - "Intelligent requirement inference and smart defaults"
+    - "Complete YAML configuration generation"
+    - "System prompt and skills file generation"
+    - "N8N workflow JSON creation"
+    - "Agent package zip file creation"
+    - "Supabase storage upload and public URL generation"
+    - "Deployment documentation and guides"
 
   recent_actions:
-    - "Created Solar Sales Agent with calculator integrations"
-    - "Generated N8N workflow for Newsletter Multi agent"
-    - "Built Playwright script for GHL subaccount setup"
-    - "Validated and deployed Social Media Scheduler agent"
+    - "Auto-generated Email Marketing Agent package in 30 seconds"
+    - "Created complete Customer Support Agent with skills and workflow"
+    - "Built HR Onboarding Agent with automated deployment package"
+    - "Generated Social Media Manager with zip file uploaded to Supabase"
+
+skills:
+  - name: Intelligent Inference
+    description: >
+      Automatically infer agent requirements from minimal user input using keyword detection,
+      category mapping, capability extraction, and smart defaults for personality and configuration.
+    file: intelligent_inference.md
+  
+  - name: Configuration Generation
+    description: >
+      Generate complete config.yaml files with all required fields, proper YAML formatting,
+      interface features, suggestion buttons, and validation.
+    file: config_generation.md
+  
+  - name: System Prompt Generation
+    description: >
+      Create comprehensive system_prompt.md files with agent-specific workflows, responsibilities,
+      tool usage, and communication style without duplicating base prompt content.
+    file: system_prompt_generation.md
+  
+  - name: Skills Generation
+    description: >
+      Create detailed skill files for Tier 2+ agents with complex workflows, multi-step processes,
+      specialized knowledge, and integration-heavy operations.
+    file: skills_generation.md
+  
+  - name: N8N Workflow Generation
+    description: >
+      Generate complete N8N workflow JSON files with proper node configuration, connections,
+      credentials, and conditional logic based on agent complexity tier.
+    file: n8n_workflow_generation.md
+  
+  - name: Package & Deployment
+    description: >
+      Create complete agent packages with all files, generate deployment README, create zip file,
+      upload to Supabase storage, and provide download link with instructions.
+    file: package_deployment.md
 
 n8n:
   webhook_url: https://n8n.theaiteam.uk/webhook/agent_builder
@@ -59,11 +97,11 @@ suggestions:
   - "Create a new agent"
   - "Build a marketing agent"
   - "Build a sales agent"
-  - "Add GHL integration"
-  - "Generate N8N workflow"
-  - "Create Playwright automation script"
-  - "Test my agent configuration"
-  - "Show agent creation guide"
+  - "Create a customer support agent"
+  - "Generate an HR agent"
+  - "Build a content creation agent"
+  - "What can you create?"
+  - "Show me an example"
 
 personality:
   tone: professional

@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS agents (
   
   -- Platform Control
   is_enabled BOOLEAN DEFAULT true NOT NULL,
+  admin_only BOOLEAN DEFAULT false NOT NULL,
   
   -- Metadata
   created_at TIMESTAMP DEFAULT NOW(),
@@ -42,6 +43,7 @@ CREATE TABLE IF NOT EXISTS agent_conversations (
 -- Indexes for performance
 CREATE INDEX idx_agents_category ON agents(category);
 CREATE INDEX idx_agents_is_enabled ON agents(is_enabled);
+CREATE INDEX idx_agents_admin_only ON agents(admin_only);
 CREATE INDEX idx_conversations_session ON agent_conversations(session_id);
 CREATE INDEX idx_conversations_timestamp ON agent_conversations(session_id, timestamp);
 CREATE INDEX idx_conversations_sender ON agent_conversations(is_user_message);
