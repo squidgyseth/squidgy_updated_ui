@@ -1,65 +1,86 @@
 # System Prompt Generation
 
-Create comprehensive system_prompt.md files that define agent behavior, workflows, and responsibilities.
+**CRITICAL: The system_prompt.md file is the BRAIN of the agent. It defines HOW the agent thinks, acts, and responds to users.**
 
 =======================================================================
-## CORE PRINCIPLES
+## WHY SYSTEM_PROMPT.MD IS ESSENTIAL
 
-**DO NOT DUPLICATE** base_system_prompt.md content:
-- Core principles (KB FIRST, SILENT EXECUTION)
-- Response format rules
+The system_prompt.md file is the agent's:
+
+1. **Instruction Manual** - Tells the agent exactly what to do and how to do it
+2. **Personality Definition** - Defines communication style and approach
+3. **Workflow Guide** - Step-by-step processes for handling requests
+4. **Decision Framework** - Rules for routing, escalation, and error handling
+5. **Behavioral Blueprint** - How to interact with users and tools
+
+**Without system_prompt.md:**
+- ❌ Agent won't know its purpose or responsibilities
+- ❌ No clear workflows to follow
+- ❌ Inconsistent behavior and responses
+- ❌ Can't make proper decisions
+- ❌ Agent is essentially a generic chatbot
+
+=======================================================================
+## CRITICAL: CONSULT BASE SYSTEM PROMPT REFERENCE SKILL
+
+**BEFORE creating system_prompt.md, you MUST review the "Base System Prompt Reference" skill.**
+
+The Base System Prompt Reference contains:
+- Core principles (KB FIRST, NARRATE THEN EXECUTE, COMPLETE ACTIONS)
+- Response format rules (buttons, markdown, streaming)
 - Security guidelines
-- General behavior patterns
+- Tone & behavior standards
 - Error handling patterns
 
+**DO NOT DUPLICATE** anything from the base prompt. It's automatically added to ALL agents.
+
 **ONLY INCLUDE** agent-specific content:
-- Agent role and responsibilities
-- Unique workflows and processes
-- Specialized tool usage
+- Agent's unique role and responsibilities
+- Specific workflows and processes
+- Specialized tool usage instructions
 - Domain-specific knowledge
 - Agent-specific routing rules
+- Skills references (if agent has skills)
 
 =======================================================================
-## STANDARD STRUCTURE
+## HOW TO CREATE SYSTEM_PROMPT.MD
 
-```markdown
-# [Agent Name]
+**STEP 1: Review Base System Prompt Reference Skill**
 
-[Expanded description of agent purpose and role - 2-3 sentences]
+Before writing anything, **ALWAYS** consult the "Base System Prompt Reference" skill to understand:
+- What's already covered in the base prompt
+- What you should NOT duplicate
+- What formatting standards to follow
 
-=======================================================================
-## PRIMARY RESPONSIBILITIES
+**STEP 2: Keep It Minimal (50-100 lines)**
 
-[List 4-6 specific responsibilities derived from capabilities]
+If the agent has **skills**, the system prompt should be MINIMAL:
+- High-level purpose and responsibilities
+- Reference to skills for detailed processes
+- Key rules and constraints
 
-=======================================================================
-## WORKFLOWS
+If the agent has **NO skills**, the system prompt can be longer (100-200 lines):
+- Detailed workflows and processes
+- Comprehensive tool usage instructions
+- Extensive examples and best practices
 
-### [Workflow Name 1]
-[Step-by-step process for main capability]
+**STEP 3: Structure the Content**
 
-### [Workflow Name 2]
-[Step-by-step process for secondary capability]
+Include these sections (in order):
+1. **Agent Name & Description** (2-3 sentences)
+2. **PRIMARY RESPONSIBILITIES** (4-6 bullet points)
+3. **WORKFLOWS** (2-4 high-level workflows) OR **SKILLS** (if agent has skills)
+4. **TOOL USAGE** (specific tools and how to use them)
+5. **COMMUNICATION STYLE** (tone, style, approach from config)
+6. **KEY RULES** (5-7 agent-specific rules)
 
-=======================================================================
-## TOOL USAGE
+**STEP 4: Use Inferred Data**
 
-[Specific instructions for tools this agent should use]
-[Include database queries, API calls, file handling as needed]
-
-=======================================================================
-## COMMUNICATION STYLE
-
-- Tone: [personality.tone]
-- Style: [personality.style]
-- Approach: [personality.approach]
-- Language: [Appropriate for target audience]
-
-=======================================================================
-## KEY RULES
-
-[5-7 agent-specific rules and constraints]
-```
+Use data from "Intelligent Inference" skill:
+- Agent name and purpose
+- Capabilities (convert to responsibilities)
+- Personality traits (for communication style)
+- Category (affects focus areas)
 
 =======================================================================
 ## SECTION GUIDELINES
@@ -207,19 +228,28 @@ Create 5-7 agent-specific rules:
 =======================================================================
 ## LENGTH GUIDELINES
 
-**Target Length:**
-- Total: 100-200 lines
+**With Skills (Recommended):**
+- Total: 50-100 lines
 - PRIMARY RESPONSIBILITIES: 4-6 items
-- WORKFLOWS: 2-4 workflows with 4-8 steps each
-- TOOL USAGE: 10-30 lines depending on complexity
+- SKILLS SECTION: Reference to skill files
+- TOOL USAGE: 10-20 lines (basics only)
 - COMMUNICATION STYLE: 5-8 lines
 - KEY RULES: 5-7 rules
 
-**Keep it Concise:**
-- Avoid redundancy with base_system_prompt.md
-- Focus on unique, agent-specific content
-- Use clear, actionable language
-- Remove generic advice
+**Without Skills:**
+- Total: 100-200 lines
+- PRIMARY RESPONSIBILITIES: 4-6 items
+- WORKFLOWS: 2-4 workflows with 4-8 steps each
+- TOOL USAGE: 10-30 lines (detailed)
+- COMMUNICATION STYLE: 5-8 lines
+- KEY RULES: 5-7 rules
+
+**Critical Rules:**
+- ❌ Do NOT duplicate base_system_prompt.md content
+- ❌ Do NOT include core principles, response format, security (already in base)
+- ✅ Focus ONLY on agent-specific content
+- ✅ Keep it minimal if agent has skills
+- ✅ Use clear, actionable language
 
 =======================================================================
 ## EXAMPLES BY CATEGORY
@@ -243,16 +273,48 @@ Focus on: task management, workflow automation, resource allocation, scheduling,
 Focus on: versatility, routing to specialists, general assistance, information retrieval
 
 =======================================================================
+## GENERATION PROCESS
+
+**Follow this exact sequence:**
+
+1. **Review Base System Prompt Reference skill** - Understand what NOT to duplicate
+2. **Check if agent has skills** - Determines if system prompt should be minimal or detailed
+3. **Gather inferred data** - From Intelligent Inference skill (capabilities, personality, category)
+4. **Write agent name & description** - 2-3 sentences about purpose
+5. **List primary responsibilities** - Convert capabilities into detailed responsibilities
+6. **Add workflows OR skills section** - Workflows if no skills, skills reference if has skills
+7. **Specify tool usage** - Database queries, APIs, file handling specific to this agent
+8. **Define communication style** - Use personality traits from config
+9. **Create key rules** - Agent-specific constraints, error handling, escalation
+10. **Validate** - Check length, no duplication, all sections present
+
+=======================================================================
 ## VALIDATION CHECKLIST
 
 Before finalizing system_prompt.md:
-- ✅ No duplication of base_system_prompt.md content
-- ✅ All sections present and complete
-- ✅ Responsibilities match capabilities from config
-- ✅ Workflows are specific and actionable
-- ✅ Tool usage is detailed and relevant
+
+**Base Prompt Compliance:**
+- ✅ Reviewed "Base System Prompt Reference" skill
+- ✅ No duplication of base prompt content (core principles, response format, security)
+- ✅ Only agent-specific content included
+
+**Content Quality:**
+- ✅ All required sections present (responsibilities, workflows/skills, tool usage, style, rules)
+- ✅ Responsibilities match capabilities from config.yaml
+- ✅ Workflows are specific and actionable (or skills are referenced)
+- ✅ Tool usage is detailed and relevant to agent's purpose
 - ✅ Communication style matches personality config
-- ✅ Key rules are agent-specific
-- ✅ Length is appropriate (100-200 lines)
+- ✅ Key rules are agent-specific (not generic)
+
+**Length & Structure:**
+- ✅ Length is appropriate (50-100 lines with skills, 100-200 without)
+- ✅ System prompt is MINIMAL if agent has skills
 - ✅ Markdown formatting is correct
 - ✅ UTF-8 encoding
+
+**Skills Integration (if applicable):**
+- ✅ Skills section references all skill files
+- ✅ System prompt doesn't duplicate skill content
+- ✅ Clear guidance on when to consult each skill
+
+**REMEMBER:** The base prompt is automatically added. Focus only on what makes THIS agent unique.

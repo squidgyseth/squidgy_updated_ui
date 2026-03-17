@@ -315,32 +315,22 @@ The agent has skills containing best practices for each area of responsibility. 
 ${skills.map(skill => `| ${skill.name} | ${skill.description} |`).join('\n')}
 `;
 
-      // Check if SKILLS section already exists
-      const skillsSectionRegex = /={7,}\n## SKILLS\n[\s\S]*?(?=\n={7,}|\n##[^#]|$)/;
+      // Remove ALL existing SKILLS sections (handles duplicates)
+      // Match pattern: optional newlines, then ======= followed by ## SKILLS, then everything until next section or end
+      let cleanedPrompt = systemPrompt;
       
-      if (skillsSectionRegex.test(systemPrompt)) {
-        // Replace existing SKILLS section
-        systemPrompt = systemPrompt.replace(skillsSectionRegex, skillsSection.trim());
-      } else {
-        // Insert SKILLS section after the first section (usually after PRINCIPLE or RULES)
-        const firstSectionEnd = systemPrompt.search(/\n={7,}\n## /);
-        if (firstSectionEnd !== -1) {
-          // Find the end of the first section
-          const secondSectionStart = systemPrompt.indexOf('\n=======', firstSectionEnd + 1);
-          if (secondSectionStart !== -1) {
-            systemPrompt = 
-              systemPrompt.slice(0, secondSectionStart) + 
-              '\n\n' + skillsSection + 
-              systemPrompt.slice(secondSectionStart);
-          } else {
-            // No second section, append at the end
-            systemPrompt += '\n\n' + skillsSection;
-          }
-        } else {
-          // No sections found, append at the end
-          systemPrompt += '\n\n' + skillsSection;
-        }
+      // Keep removing SKILLS sections until none are found
+      while (true) {
+        const skillsMatch = cleanedPrompt.match(/\n*={7,}\n## SKILLS\n[\s\S]*?(?=\n={7,}\n##|$)/);
+        if (!skillsMatch) break;
+        cleanedPrompt = cleanedPrompt.replace(skillsMatch[0], '');
       }
+      
+      // Remove trailing whitespace and extra newlines
+      cleanedPrompt = cleanedPrompt.trimEnd();
+      
+      // Append the new SKILLS section at the end
+      systemPrompt = cleanedPrompt + '\n\n' + skillsSection;
 
       // Write updated system prompt
       await fs.writeFile(systemPromptPath, systemPrompt, 'utf8');
@@ -387,6 +377,11 @@ async function syncSkillsToNeon(agents) {
 
     for (const skill of skills) {
       try {
+        // Skip special skills that are uploaded separately
+        if (skill.file === 'base_system_prompt.md' || skill.file === 'agent_template.yaml') {
+          continue;
+        }
+
         // Read skill content from markdown file
         let skillContent = skill.description; // Fallback to description
         
@@ -431,11 +426,94 @@ async function syncSkillsToNeon(agents) {
     successCount++;
   }
 
+  // ============================================
+  // SPECIAL: Upload base_system_prompt.md as a skill for agent_builder
+  // ============================================
+  try {
+    const basePromptPath = path.join(agentsDir, 'shared', 'base_system_prompt.md');
+    const basePromptContent = await fs.readFile(basePromptPath, 'utf8');
+    
+    await sql`
+      INSERT INTO agent_skills (agent_id, skill_name, brief, skill_content, is_global)
+      VALUES (
+        'agent_builder',
+        'Base System Prompt Reference',
+        'Reference for base system prompt content that is automatically added to ALL agents. When creating agent system prompts, avoid duplicating or overwriting anything already mentioned in this base prompt (core principles, response format, security, tone, error handling).',
+        ${basePromptContent},
+        false
+      )
+      ON CONFLICT (skill_name, agent_id) DO UPDATE SET
+        brief = EXCLUDED.brief,
+        skill_content = EXCLUDED.skill_content,
+        updated_at = NOW()
+    `;
+    
+    console.log(`  ✅ agent_builder (base_system_prompt.md uploaded as skill)`);
+    totalSkills++;
+  } catch (err) {
+    console.error(`  ❌ Error uploading base_system_prompt.md for agent_builder:`, err.message);
+  }
+
+  // ============================================
+  // SPECIAL: Upload agent_template.yaml as a skill for agent_builder
+  // ============================================
+  try {
+    const templatePath = path.join(agentsDir, 'shared', 'agent_template.yaml');
+    const templateContent = await fs.readFile(templatePath, 'utf8');
+    
+    // Convert YAML to markdown format for better readability
+    const templateMarkdown = `# Agent Configuration Template
+
+This is the standard template for all agent config.yaml files. When creating a new agent's config.yaml, review this template and customize it based on user requirements.
+
+## Template Structure
+
+\`\`\`yaml
+${templateContent}
+\`\`\`
+
+## Key Points
+
+- **Required Fields**: id, emoji, name, category, description, capabilities
+- **Optional Fields**: specialization, tagline, avatar, pinned, enabled, admin_only
+- **Skills Section**: Define agent-specific skills with name, description, and file reference
+- **UI Configuration**: page_type, pages, interface features
+- **N8N Integration**: webhook_url pointing to the agent's N8N workflow
+- **Personality**: tone, style, approach for agent behavior
+
+When generating config.yaml, use this template as the base structure and fill in values based on the agent's purpose and inferred requirements.
+`;
+    
+    await sql`
+      INSERT INTO agent_skills (agent_id, skill_name, brief, skill_content, is_global)
+      VALUES (
+        'agent_builder',
+        'Agent Configuration Template',
+        'Standard template for agent config.yaml files. When creating config.yaml, review this template and customize all fields based on user requirements and inferred agent characteristics.',
+        ${templateMarkdown},
+        false
+      )
+      ON CONFLICT (skill_name, agent_id) DO UPDATE SET
+        brief = EXCLUDED.brief,
+        skill_content = EXCLUDED.skill_content,
+        updated_at = NOW()
+    `;
+    
+    console.log(`  ✅ agent_builder (agent_template.yaml uploaded as skill)`);
+    totalSkills++;
+  } catch (err) {
+    console.error(`  ❌ Error uploading agent_template.yaml for agent_builder:`, err.message);
+  }
+
   // Clean up orphaned skills (skills removed from config but still in DB)
   const agentIds = agents.map(a => a.agent.id);
   const allSkillNames = agents.flatMap(a => 
     (a.skills || []).map(s => ({ agent_id: a.agent.id, skill_name: s.name }))
   );
+  
+  // Add the special agent_builder skills to the list so they don't get cleaned up
+  allSkillNames.push({ agent_id: 'agent_builder', skill_name: 'Base System Prompt Reference' });
+  allSkillNames.push({ agent_id: 'agent_builder', skill_name: 'Agent Configuration Template' });
 
   try {
     // Get all skills from database

@@ -17,7 +17,7 @@ agent:
   description: Brief description of what this agent does.
   specialization: "Expert Title"
   tagline: "Action. Create. Deliver."
-  avatar: "/Squidgy AI Assistants Avatars/1.png"
+  avatar: "/Squidgy AI Assistants Avatars/1.png" # select a number beetween 1 to 18 randomly
   pinned: false
   enabled: false
   initial_message: "Hey! I'm your Agent Name. Ready to help you today!"

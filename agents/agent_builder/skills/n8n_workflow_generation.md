@@ -1,375 +1,180 @@
 # N8N Workflow Generation
 
-Generate complete N8N workflow JSON files with proper node configuration and connections.
+Create N8N workflows by calling the backend API endpoint that clones and deploys workflows directly to N8N.
 
 =======================================================================
-## WORKFLOW STRUCTURE
+## WORKFLOW CREATION PROCESS
 
-Every N8N workflow must have:
-1. **Metadata** - Name, nodes, connections, settings
-2. **Webhook Trigger** - Entry point for agent requests
-3. **System Prompt Loader** - Fetch agent's system prompt
-4. **AI Agent Node** - Main conversation handler
-5. **Response Formatter** - Structure output for frontend
-6. **Conditional Nodes** - Based on agent capabilities
+**CRITICAL: Use the API endpoint, NOT file generation!**
 
-=======================================================================
-## BASIC TEMPLATE
+Instead of generating JSON files, call the backend endpoint:
+- **Endpoint:** `POST /api/n8n/clone-workflow`
+- **Backend URL:** Use the automation service URL from environment
+- **Method:** HTTP POST request
 
-```json
-{
-  "name": "Squidgy_[Agent_Name]_Workflow",
-  "nodes": [
-    {
-      "parameters": {
-        "path": "<<agent_id>>",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "id": "webhook-trigger",
-      "name": "Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1.1,
-      "position": [240, 300]
-    },
-    {
-      "parameters": {
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "postgresApi",
-        "operation": "executeQuery",
-        "query": "SELECT system_prompt FROM agent_system_prompts WHERE agent_id = '<<agent_id>>'"
-      },
-      "id": "load-system-prompt",
-      "name": "Load System Prompt",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.4,
-      "position": [460, 300],
-      "credentials": {
-        "postgresApi": {
-          "id": "9VZuQcfK90oMX16w",
-          "name": "Neon Postgres"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "options": {
-          "systemMessage": "={{ $json.system_prompt }}"
-        }
-      },
-      "id": "ai-agent",
-      "name": "AI Agent",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.6,
-      "position": [680, 300],
-      "credentials": {
-        "openRouterApi": {
-          "id": "7hB3eGzzdDVoxaV5",
-          "name": "Claude_Demo_SMM"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"response\": $json.output, \"agent_id\": \"<<agent_id>>\" } }}"
-      },
-      "id": "response-formatter",
-      "name": "Response",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [900, 300]
-    }
-  ],
-  "connections": {
-    "Webhook": {
-      "main": [[{ "node": "Load System Prompt", "type": "main", "index": 0 }]]
-    },
-    "Load System Prompt": {
-      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
-    },
-    "AI Agent": {
-      "main": [[{ "node": "Response", "type": "main", "index": 0 }]]
-    }
-  },
-  "settings": {
-    "executionOrder": "v1"
-  }
-}
-```
+Every N8N workflow automatically includes:
+1. **Webhook Trigger** - Entry point for agent requests at `/webhook/{agent_id}`
+2. **System Prompt Loader** - Fetches agent's system prompt from database
+3. **AI Agent Node** - Main conversation handler with Claude
+4. **Response Formatter** - Structures output for frontend
+5. **Credential Mapping** - Automatically remaps credentials to your instance
 
 =======================================================================
-## NODE TYPES
+## API REQUEST FORMAT
 
-### Required Nodes
+Call the endpoint with minimal parameters:
 
-**1. Webhook Trigger**
 ```json
+POST /api/n8n/clone-workflow
+Content-Type: application/json
+
 {
-  "parameters": {
-    "path": "<<agent_id>>",
-    "responseMode": "responseNode",
-    "options": {}
-  },
-  "name": "Webhook",
-  "type": "n8n-nodes-base.webhook",
-  "typeVersion": 1.1,
-  "position": [240, 300]
+  "agent_id": "social_media_manager",
+  "agent_name": "Social Media Manager",
+  "activate": false
 }
 ```
 
-**2. System Prompt Loader (Postgres)**
-```json
-{
-  "parameters": {
-    "authentication": "predefinedCredentialType",
-    "nodeCredentialType": "postgresApi",
-    "operation": "executeQuery",
-    "query": "SELECT system_prompt FROM agent_system_prompts WHERE agent_id = '<<agent_id>>'"
-  },
-  "name": "Load System Prompt",
-  "type": "n8n-nodes-base.postgres",
-  "typeVersion": 2.4,
-  "credentials": {
-    "postgresApi": {
-      "id": "9VZuQcfK90oMX16w",
-      "name": "Neon Postgres"
-    }
-  }
-}
-```
+**Required Parameters:**
+- `agent_id` (string) - Snake_case agent identifier
+- `agent_name` (string) - Human-readable agent name
+- `activate` (boolean) - Whether to activate workflow immediately (default: false)
 
-**3. AI Agent Node**
-```json
-{
-  "parameters": {
-    "options": {
-      "systemMessage": "={{ $json.system_prompt }}"
-    }
-  },
-  "name": "AI Agent",
-  "type": "@n8n/n8n-nodes-langchain.agent",
-  "typeVersion": 1.6,
-  "credentials": {
-    "openRouterApi": {
-      "id": "7hB3eGzzdDVoxaV5",
-      "name": "Claude_Demo_SMM"
-    }
-  }
-}
-```
-
-**4. Response Formatter**
-```json
-{
-  "parameters": {
-    "respondWith": "json",
-    "responseBody": "={{ { \"response\": $json.output, \"agent_id\": \"<<agent_id>>\" } }}"
-  },
-  "name": "Response",
-  "type": "n8n-nodes-base.respondToWebhook",
-  "typeVersion": 1.1
-}
-```
-
-### Conditional Nodes
-
-**Supabase Data Fetch** (for agents needing user data):
-```json
-{
-  "parameters": {
-    "authentication": "predefinedCredentialType",
-    "nodeCredentialType": "supabaseApi",
-    "operation": "getAll",
-    "tableId": "user_table",
-    "returnAll": false,
-    "limit": 10
-  },
-  "name": "Fetch User Data",
-  "type": "n8n-nodes-base.supabase",
-  "typeVersion": 1,
-  "credentials": {
-    "supabaseApi": {
-      "id": "uk8y8Aw346FSXNbw",
-      "name": "Supabase account"
-    }
-  }
-}
-```
-
-**HTTP Request** (for external APIs):
-```json
-{
-  "parameters": {
-    "method": "POST",
-    "url": "https://api.example.com/endpoint",
-    "authentication": "predefinedCredentialType",
-    "nodeCredentialType": "httpBasicAuth",
-    "sendBody": true,
-    "bodyParameters": {
-      "parameters": [
-        {
-          "name": "data",
-          "value": "={{ $json.input }}"
-        }
-      ]
-    }
-  },
-  "name": "External API Call",
-  "type": "n8n-nodes-base.httpRequest",
-  "typeVersion": 4.2
-}
-```
-
-**Code Node** (for custom logic):
-```json
-{
-  "parameters": {
-    "language": "javaScript",
-    "jsCode": "// Custom JavaScript code\nconst result = items[0].json;\nreturn [{ json: result }];"
-  },
-  "name": "Custom Logic",
-  "type": "n8n-nodes-base.code",
-  "typeVersion": 2
-}
-```
-
-**Conditional Router** (for decision logic):
-```json
-{
-  "parameters": {
-    "conditions": {
-      "options": {
-        "caseSensitive": true,
-        "leftValue": "",
-        "typeValidation": "strict"
-      },
-      "conditions": [
-        {
-          "leftValue": "={{ $json.intent }}",
-          "rightValue": "create_post",
-          "operator": {
-            "type": "string",
-            "operation": "equals"
-          }
-        }
-      ],
-      "combinator": "and"
-    },
-    "options": {}
-  },
-  "name": "Route By Intent",
-  "type": "n8n-nodes-base.if",
-  "typeVersion": 2
-}
-```
+**Optional Parameters:**
+- `template_id` (string) - Custom template ID (uses default if omitted)
 
 =======================================================================
-## CREDENTIAL MAPPING
+## API RESPONSE FORMAT
 
-Use these credential IDs for the Squidgy platform:
+Successful response:
 
+```json
+{
+  "success": true,
+  "workflow_id": "abc123xyz",
+  "workflow_name": "Squidgy_Social_Media_Manager_Workflow",
+  "editor_url": "https://n8n.theaiteam.uk/workflow/abc123xyz",
+  "message": "Workflow created successfully. ID: abc123xyz",
+  "warnings": []
+}
+```
+
+**Response Fields:**
+- `success` - Boolean indicating success/failure
+- `workflow_id` - The new workflow ID in N8N
+- `workflow_name` - Generated workflow name
+- `editor_url` - **IMPORTANT:** Direct link to edit and publish the workflow
+- `message` - Success message
+- `warnings` - Array of any credential mapping warnings
+
+=======================================================================
+## WHAT THE BACKEND DOES
+
+The backend API automatically handles all N8N workflow complexity:
+- Clones the standard template workflow
+- Replaces agent_id placeholders throughout
+- Configures webhook, database, AI agent, and response nodes
+- Maps credentials to your N8N instance
+- Deploys and returns editor URL
+
+**You don't need to know the technical details - just call the API!**
+
+=======================================================================
+## IMPLEMENTATION STEPS
+
+**IMPORTANT:** You must use the HTTP Request tool available in your N8N workflow to call this endpoint. You cannot call it directly from the AI agent.
+
+**Step 1: Use HTTP Request Tool**
+
+Tell the user you need to call the backend API and use the HTTP Request tool with these parameters:
+
+- **URL:** `https://squidgy-ai-updated-backend.onrender.com/api/n8n/clone-workflow`
+- **Method:** POST
+- **Body (JSON):**
+```json
+{
+  "agent_id": "{agent_id}",
+  "agent_name": "{agent_name}",
+  "activate": false
+}
+```
+- **Headers:**
+  - Content-Type: application/json
+
+**Step 2: Extract Editor URL**
 ```javascript
-{
-  "Claude_Demo_SMM": "7hB3eGzzdDVoxaV5",      // OpenRouter API
-  "Neon Postgres": "9VZuQcfK90oMX16w",        // Neon Database
-  "Supabase account": "uk8y8Aw346FSXNbw"      // Supabase
-}
+const editorUrl = result.editor_url;
+// Example: "https://n8n.theaiteam.uk/workflow/abc123xyz"
+```
+
+**Step 3: Present to User**
+Provide the editor URL as a clickable link in your response:
+
+```markdown
+✅ **N8N Workflow Created Successfully!**
+
+🔗 **[Click here to open and publish your workflow]({editor_url})**
+
+**Important:** You must click the link above and:
+1. Review the workflow nodes
+2. Verify credentials are connected
+3. Click the **Activate** button in N8N
+4. Test the workflow
+
+Workflow ID: {workflow_id}
 ```
 
 =======================================================================
-## NODE POSITIONING
+## USER INSTRUCTIONS
 
-Position nodes in a logical left-to-right flow:
+Always provide these instructions after creating a workflow:
 
-**Standard Layout:**
-- Webhook: [240, 300]
-- Load System Prompt: [460, 300]
-- AI Agent: [680, 300]
-- Response: [900, 300]
+**What to do next:**
+1. **Click the workflow link** above to open it in N8N
+2. **Review the workflow** - Check all nodes are properly configured
+3. **Verify credentials** - Ensure Claude, Postgres, and Supabase credentials are connected
+4. **Activate the workflow** - Click the toggle switch in the top right
+5. **Test it** - Send a test message to your agent in the Squidgy UI
 
-**With Conditional Branches:**
-- Main flow: Y = 300
-- Branch 1: Y = 200
-- Branch 2: Y = 400
-- Increment X by 220 for each step
-
-=======================================================================
-## CONNECTION STRUCTURE
-
-```json
-{
-  "connections": {
-    "Node A": {
-      "main": [[{ "node": "Node B", "type": "main", "index": 0 }]]
-    },
-    "Node B": {
-      "main": [[{ "node": "Node C", "type": "main", "index": 0 }]]
-    }
-  }
-}
-```
-
-**Multiple Outputs:**
-```json
-{
-  "connections": {
-    "Router": {
-      "main": [
-        [{ "node": "Branch A", "type": "main", "index": 0 }],
-        [{ "node": "Branch B", "type": "main", "index": 0 }]
-      ]
-    }
-  }
-}
-```
-
-=======================================================================
-## AGENT COMPLEXITY TIERS
-
-### Tier 1 - Basic Chat
-Use basic template with 4 nodes:
-- Webhook → Load System Prompt → AI Agent → Response
-
-### Tier 2 - Platform Integrated
-Add nodes for:
-- Supabase data fetch
-- HTTP requests to external APIs
-- File handling nodes
-
-### Tier 3 - Domain Expert
-Add nodes for:
-- Custom calculations (Code nodes)
-- Specialized API integrations
-- Data transformations
-
-### Tier 4 - Multi-Modal
-Add nodes for:
-- Conversation state persistence
-- Complex routing logic
-- Multiple AI agent nodes
-- Custom UI data preparation
-
-=======================================================================
-## PLACEHOLDER REPLACEMENT
-
-Always use `<<agent_id>>` placeholder in:
-- Webhook path
-- System prompt query
-- Response body
-- Any agent-specific references
-
-The placeholder will be replaced during deployment.
+**Troubleshooting:**
+- If credentials show warnings, reconnect them in N8N
+- If the workflow doesn't activate, check for any error messages
+- Test the webhook URL directly if needed
 
 =======================================================================
 ## VALIDATION CHECKLIST
 
-Before finalizing workflow JSON:
-- ✅ All required nodes present (Webhook, Load Prompt, AI Agent, Response)
-- ✅ Credentials use correct IDs
-- ✅ Connections are properly defined
-- ✅ Node positions are logical
-- ✅ Placeholder `<<agent_id>>` used correctly
-- ✅ JSON syntax is valid
-- ✅ Workflow name follows format: `Squidgy_[Agent_Name]_Workflow`
-- ✅ File uses UTF-8 encoding
+Before calling the API:
+- ✅ Agent ID is valid snake_case format
+- ✅ Agent name is descriptive and clear
+- ✅ Backend automation service URL is configured
+- ✅ N8N credentials are set in environment variables
+
+After API call:
+- ✅ Response status is 200 OK
+- ✅ `success` field is true
+- ✅ `workflow_id` is present
+- ✅ `editor_url` is valid and accessible
+- ✅ Present editor URL as clickable link to user
+- ✅ Provide clear instructions to activate workflow
+
+=======================================================================
+## ERROR HANDLING
+
+**Common Errors:**
+
+1. **N8N credentials missing:**
+   - Error: "N8N configuration missing"
+   - Solution: Ensure VITE_N8N_WEBHOOK_URL and VITE_N8N_TOKEN are set
+
+2. **Template not found:**
+   - Error: "Template workflow not found"
+   - Solution: Verify template ID exists in N8N instance
+
+3. **Credential mapping warnings:**
+   - Check `warnings` array in response
+   - User must manually reconnect credentials in N8N editor
+
+4. **Network errors:**
+   - Retry the API call once
+   - If fails again, inform user and provide manual workflow creation instructions

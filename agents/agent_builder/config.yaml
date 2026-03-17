@@ -36,6 +36,19 @@ agent:
     - "Generated Social Media Manager with zip file uploaded to Supabase"
 
 skills:
+  - name: Base System Prompt Reference
+    description: >
+      Reference for base system prompt content that is automatically added to ALL agents.
+      When creating agent system prompts, avoid duplicating or overwriting anything already
+      mentioned in this base prompt (core principles, response format, security, tone, error handling).
+    file: base_system_prompt.md
+  
+  - name: Agent Configuration Template
+    description: >
+      Standard template for agent config.yaml files. When creating config.yaml, review this
+      template and customize all fields based on user requirements and inferred agent characteristics.
+    file: agent_template.yaml
+  
   - name: Intelligent Inference
     description: >
       Automatically infer agent requirements from minimal user input using keyword detection,
@@ -44,20 +57,23 @@ skills:
   
   - name: Configuration Generation
     description: >
-      Generate complete config.yaml files with all required fields, proper YAML formatting,
-      interface features, suggestion buttons, and validation.
+      Explains WHY config.yaml is critical (agent foundation) and HOW to create it by consulting
+      the Agent Configuration Template skill. Covers importance, critical decisions, suggestion buttons,
+      recent actions, YAML formatting, and validation.
     file: config_generation.md
   
   - name: System Prompt Generation
     description: >
-      Create comprehensive system_prompt.md files with agent-specific workflows, responsibilities,
-      tool usage, and communication style without duplicating base prompt content.
+      Explains WHY system_prompt.md is essential (agent's brain) and HOW to create it by consulting
+      the Base System Prompt Reference skill first. Emphasizes keeping it minimal (50-100 lines with skills)
+      and avoiding duplication of base prompt content.
     file: system_prompt_generation.md
   
   - name: Skills Generation
     description: >
-      Create detailed skill files for Tier 2+ agents with complex workflows, multi-step processes,
-      specialized knowledge, and integration-heavy operations.
+      Core principle: Keep system prompts MINIMAL by breaking detailed content into skill files.
+      Covers when to create skills (20+ line processes), how to identify them, handling user-uploaded skills
+      from KB, naming conventions, folder structure (/skills), and packaging in final zip.
     file: skills_generation.md
   
   - name: N8N Workflow Generation

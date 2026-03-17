@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-03-13T16:02:55.286Z
+// Generated on: 2026-03-17T16:19:17.732Z
 
 export interface AgentConfig {
   agent: {
@@ -630,23 +630,33 @@ export const ALL_AGENTS: AgentConfig[] = [
     },
     "skills": [
       {
+        "name": "Base System Prompt Reference",
+        "description": "Reference for base system prompt content that is automatically added to ALL agents. When creating agent system prompts, avoid duplicating or overwriting anything already mentioned in this base prompt (core principles, response format, security, tone, error handling).\n",
+        "file": "base_system_prompt.md"
+      },
+      {
+        "name": "Agent Configuration Template",
+        "description": "Standard template for agent config.yaml files. When creating config.yaml, review this template and customize all fields based on user requirements and inferred agent characteristics.\n",
+        "file": "agent_template.yaml"
+      },
+      {
         "name": "Intelligent Inference",
         "description": "Automatically infer agent requirements from minimal user input using keyword detection, category mapping, capability extraction, and smart defaults for personality and configuration.\n",
         "file": "intelligent_inference.md"
       },
       {
         "name": "Configuration Generation",
-        "description": "Generate complete config.yaml files with all required fields, proper YAML formatting, interface features, suggestion buttons, and validation.\n",
+        "description": "Explains WHY config.yaml is critical (agent foundation) and HOW to create it by consulting the Agent Configuration Template skill. Covers importance, critical decisions, suggestion buttons, recent actions, YAML formatting, and validation.\n",
         "file": "config_generation.md"
       },
       {
         "name": "System Prompt Generation",
-        "description": "Create comprehensive system_prompt.md files with agent-specific workflows, responsibilities, tool usage, and communication style without duplicating base prompt content.\n",
+        "description": "Explains WHY system_prompt.md is essential (agent's brain) and HOW to create it by consulting the Base System Prompt Reference skill first. Emphasizes keeping it minimal (50-100 lines with skills) and avoiding duplication of base prompt content.\n",
         "file": "system_prompt_generation.md"
       },
       {
         "name": "Skills Generation",
-        "description": "Create detailed skill files for Tier 2+ agents with complex workflows, multi-step processes, specialized knowledge, and integration-heavy operations.\n",
+        "description": "Core principle: Keep system prompts MINIMAL by breaking detailed content into skill files. Covers when to create skills (20+ line processes), how to identify them, handling user-uploaded skills from KB, naming conventions, folder structure (/skills), and packaging in final zip.\n",
         "file": "skills_generation.md"
       },
       {
@@ -911,23 +921,33 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
     },
     "skills": [
       {
+        "name": "Base System Prompt Reference",
+        "description": "Reference for base system prompt content that is automatically added to ALL agents. When creating agent system prompts, avoid duplicating or overwriting anything already mentioned in this base prompt (core principles, response format, security, tone, error handling).\n",
+        "file": "base_system_prompt.md"
+      },
+      {
+        "name": "Agent Configuration Template",
+        "description": "Standard template for agent config.yaml files. When creating config.yaml, review this template and customize all fields based on user requirements and inferred agent characteristics.\n",
+        "file": "agent_template.yaml"
+      },
+      {
         "name": "Intelligent Inference",
         "description": "Automatically infer agent requirements from minimal user input using keyword detection, category mapping, capability extraction, and smart defaults for personality and configuration.\n",
         "file": "intelligent_inference.md"
       },
       {
         "name": "Configuration Generation",
-        "description": "Generate complete config.yaml files with all required fields, proper YAML formatting, interface features, suggestion buttons, and validation.\n",
+        "description": "Explains WHY config.yaml is critical (agent foundation) and HOW to create it by consulting the Agent Configuration Template skill. Covers importance, critical decisions, suggestion buttons, recent actions, YAML formatting, and validation.\n",
         "file": "config_generation.md"
       },
       {
         "name": "System Prompt Generation",
-        "description": "Create comprehensive system_prompt.md files with agent-specific workflows, responsibilities, tool usage, and communication style without duplicating base prompt content.\n",
+        "description": "Explains WHY system_prompt.md is essential (agent's brain) and HOW to create it by consulting the Base System Prompt Reference skill first. Emphasizes keeping it minimal (50-100 lines with skills) and avoiding duplication of base prompt content.\n",
         "file": "system_prompt_generation.md"
       },
       {
         "name": "Skills Generation",
-        "description": "Create detailed skill files for Tier 2+ agents with complex workflows, multi-step processes, specialized knowledge, and integration-heavy operations.\n",
+        "description": "Core principle: Keep system prompts MINIMAL by breaking detailed content into skill files. Covers when to create skills (20+ line processes), how to identify them, handling user-uploaded skills from KB, naming conventions, folder structure (/skills), and packaging in final zip.\n",
         "file": "skills_generation.md"
       },
       {
@@ -2175,23 +2195,33 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
       },
       "skills": [
         {
+          "name": "Base System Prompt Reference",
+          "description": "Reference for base system prompt content that is automatically added to ALL agents. When creating agent system prompts, avoid duplicating or overwriting anything already mentioned in this base prompt (core principles, response format, security, tone, error handling).\n",
+          "file": "base_system_prompt.md"
+        },
+        {
+          "name": "Agent Configuration Template",
+          "description": "Standard template for agent config.yaml files. When creating config.yaml, review this template and customize all fields based on user requirements and inferred agent characteristics.\n",
+          "file": "agent_template.yaml"
+        },
+        {
           "name": "Intelligent Inference",
           "description": "Automatically infer agent requirements from minimal user input using keyword detection, category mapping, capability extraction, and smart defaults for personality and configuration.\n",
           "file": "intelligent_inference.md"
         },
         {
           "name": "Configuration Generation",
-          "description": "Generate complete config.yaml files with all required fields, proper YAML formatting, interface features, suggestion buttons, and validation.\n",
+          "description": "Explains WHY config.yaml is critical (agent foundation) and HOW to create it by consulting the Agent Configuration Template skill. Covers importance, critical decisions, suggestion buttons, recent actions, YAML formatting, and validation.\n",
           "file": "config_generation.md"
         },
         {
           "name": "System Prompt Generation",
-          "description": "Create comprehensive system_prompt.md files with agent-specific workflows, responsibilities, tool usage, and communication style without duplicating base prompt content.\n",
+          "description": "Explains WHY system_prompt.md is essential (agent's brain) and HOW to create it by consulting the Base System Prompt Reference skill first. Emphasizes keeping it minimal (50-100 lines with skills) and avoiding duplication of base prompt content.\n",
           "file": "system_prompt_generation.md"
         },
         {
           "name": "Skills Generation",
-          "description": "Create detailed skill files for Tier 2+ agents with complex workflows, multi-step processes, specialized knowledge, and integration-heavy operations.\n",
+          "description": "Core principle: Keep system prompts MINIMAL by breaking detailed content into skill files. Covers when to create skills (20+ line processes), how to identify them, handling user-uploaded skills from KB, naming conventions, folder structure (/skills), and packaging in final zip.\n",
           "file": "skills_generation.md"
         },
         {

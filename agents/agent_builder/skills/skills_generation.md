@@ -1,54 +1,92 @@
 # Skills Generation
 
-Create detailed skill files for complex agents that need specialized knowledge or multi-step processes.
+**CORE PRINCIPLE: Keep system prompts MINIMAL by breaking detailed content into separate skill files.**
 
 =======================================================================
-## SKILL CRITERIA
+## WHY CREATE SKILLS
 
-Create skill files for agents that meet these criteria:
-- **Tier 2+** complexity (platform integrated or higher)
-- **Multi-step processes** that need detailed documentation
-- **Specialized knowledge** domains (industry-specific)
-- **Integration-heavy** workflows (multiple APIs, platforms)
+The entire purpose of skills is to **avoid massive system prompts**. Instead of creating a 500+ line system_prompt.md, break it into:
+
+1. **Minimal system_prompt.md** (50-100 lines) - High-level workflow and responsibilities
+2. **Detailed skill files** - Specific processes, best practices, examples, templates
+
+**Benefits:**
+- ✅ System prompt stays clean and readable
+- ✅ Skills are reusable and modular
+- ✅ Easier to maintain and update
+- ✅ Agent can consult specific skills as needed
+- ✅ All skills packaged in `/skills` folder for user
+
+=======================================================================
+## WHEN TO CREATE SKILLS
+
+**Create skills for agents with:**
+- **Multi-step workflows** that need detailed documentation
+- **Platform-specific integrations** (GHL, social media, CRM, etc.)
+- **Specialized knowledge** domains (industry-specific processes)
 - **Complex decision trees** with conditional logic
+- **Best practices** that would clutter the system prompt
 
-**Skip skills for:**
-- Simple conversational agents (Tier 1)
-- Agents with straightforward workflows
-- General-purpose assistants
+**Rule of thumb:** If a process needs more than 20 lines to explain, make it a skill.
 
 =======================================================================
-## SKILL IDENTIFICATION
+## HANDLING USER-UPLOADED SKILLS
 
-Analyze agent capabilities to identify skill candidates:
+**CRITICAL: Users may upload existing skill files from other agents or sources.**
 
-**Good Skill Candidates:**
-- Multi-step workflows (5+ steps)
-- Platform-specific integrations (GHL, social media, CRM)
-- Domain expertise (solar calculations, financial analysis)
-- Content creation processes (copywriting, design)
-- Data analysis workflows
-- Compliance or regulatory processes
+**Before creating any skill:**
+1. **Search Knowledge Base** for existing skill files
+2. **Review uploaded content** - All user uploads (except images) are available in KB
+3. **Check for duplicates** - Don't create skills that already exist
+4. **Avoid overwriting** - If user uploaded a skill, use it as-is or enhance it
+5. **Merge when appropriate** - Combine user's skill with your improvements
 
-**Examples:**
+**If user uploaded skills:**
+- ✅ Use their skills as the foundation
+- ✅ Fill in any missing skills they didn't provide
+- ✅ Enhance their skills if they're incomplete
+- ❌ Don't duplicate skills they already provided
+- ❌ Don't overwrite their custom content
+- ❌ Don't ignore their uploaded files
 
-*Social Media Agent → Skills:*
-1. Post Creation Workflow
-2. Caption & Copywriting
-3. Content Strategy Design
-4. Platform-Specific Publishing
+**Example:**
+User uploads: `lead_qualification.md` and `email_templates.md`
+- Use their uploaded files as-is
+- Create additional skills they didn't provide (e.g., `pipeline_management.md`)
+- Don't create your own version of lead qualification or email templates
 
-*Sales Agent → Skills:*
-1. Lead Qualification Process
-2. Outreach Message Templates
-3. Pipeline Management
-4. CRM Integration Guide
+=======================================================================
+## HOW TO IDENTIFY SKILLS
 
-*HR Agent → Skills:*
-1. Candidate Screening Workflow
-2. Onboarding Checklist
-3. Interview Question Bank
-4. Compliance Guidelines
+**Analyze the agent's capabilities and break down anything that would make the system prompt too long.**
+
+**Ask yourself:**
+1. Does this process have 5+ steps?
+2. Does it require platform-specific knowledge?
+3. Are there best practices or templates to include?
+4. Would explaining this take more than 20 lines?
+5. Is this a reusable process the agent will do repeatedly?
+
+If YES to any → Create a skill file.
+
+**Examples of Skill Breakdown:**
+
+*Social Media Agent (4 skills instead of 200-line system prompt):*
+1. **Post Creation Workflow** - Step-by-step process for creating posts
+2. **Caption & Copywriting** - Best practices, templates, tone guidelines
+3. **Content Strategy Design** - Planning, calendars, themes
+4. **Platform-Specific Publishing** - Facebook, Instagram, LinkedIn requirements
+
+*Sales Agent (4 skills instead of 250-line system prompt):*
+1. **Lead Qualification Process** - BANT framework, scoring, questions
+2. **Outreach Message Templates** - Email templates, follow-up sequences
+3. **Pipeline Management** - Stage definitions, movement criteria
+4. **CRM Integration Guide** - How to update, query, sync data
+
+*Email Marketing Agent (3 skills instead of 180-line system prompt):*
+1. **Campaign Creation Workflow** - Design, content, segmentation
+2. **Email Copywriting Best Practices** - Subject lines, CTAs, formatting
+3. **Analytics & Reporting** - Metrics to track, how to analyze performance
 
 =======================================================================
 ## SKILL FILE STRUCTURE
@@ -368,26 +406,85 @@ Before marking lead as qualified:
 **Use Clear, Descriptive Names:**
 - ✅ "Post Creation Workflow"
 - ✅ "Lead Qualification Process"
-- ✅ "Caption & Copywriting"
-- ❌ "Skill 1"
-- ❌ "Helper Functions"
-- ❌ "Misc"
+- ✅ "Caption & Copywriting Best Practices"
+- ✅ "Platform-Specific Publishing Guide"
+- ❌ "Skill 1" (not descriptive)
+- ❌ "Helper Functions" (too vague)
+- ❌ "Misc" (meaningless)
 
-**File Naming:**
-- Use snake_case for filenames
+**File Naming Rules:**
+- Use **snake_case** for filenames
 - Match skill name in lowercase
-- Examples: `post_creation_workflow.md`, `lead_qualification_process.md`
+- Use `.md` extension
+- Store in `/skills` folder within agent directory
+
+**Examples:**
+- Skill: "Post Creation Workflow" → File: `post_creation_workflow.md`
+- Skill: "Lead Qualification Process" → File: `lead_qualification_process.md`
+- Skill: "Caption & Copywriting" → File: `caption_copywriting.md`
+
+**Folder Structure:**
+```
+agent_id/
+├── config.yaml
+├── system_prompt.md (MINIMAL - 50-100 lines)
+└── skills/
+    ├── skill_1.md
+    ├── skill_2.md
+    └── skill_3.md
+```
+
+=======================================================================
+## PACKAGING & DELIVERY
+
+**All skill files MUST be:**
+1. Placed in `/skills` folder within the agent directory
+2. Named using snake_case matching the skill name
+3. Included in the final zip package sent to the user
+4. Referenced in the agent's config.yaml skills section
+
+**Final Package Structure:**
+```
+agent_package.zip
+├── config.yaml
+├── system_prompt.md (MINIMAL)
+├── n8n_workflow.json
+├── README.md
+└── skills/
+    ├── skill_1.md
+    ├── skill_2.md
+    └── skill_3.md
+```
+
+The user receives ALL files in one compressed package ready for deployment.
 
 =======================================================================
 ## VALIDATION CHECKLIST
 
 Before finalizing skill files:
-- ✅ Skill addresses a specific, complex process
+
+**Content Quality:**
+- ✅ Skill addresses a specific process (not generic)
 - ✅ Structure follows standard template
 - ✅ All sections are complete and detailed
 - ✅ Examples are concrete and helpful
 - ✅ Best practices are actionable
 - ✅ Validation checklist is included
+
+**System Prompt Minimization:**
+- ✅ System prompt is under 100 lines
+- ✅ Detailed processes moved to skills
+- ✅ System prompt only contains high-level workflow
+- ✅ Skills are referenced in config.yaml
+
+**File Organization:**
+- ✅ All skills in `/skills` folder
+- ✅ Filenames use snake_case
+- ✅ Filenames match skill names
 - ✅ Markdown formatting is correct
-- ✅ File uses UTF-8 encoding
-- ✅ Filename matches skill name in snake_case
+- ✅ Files use UTF-8 encoding
+
+**Package Completeness:**
+- ✅ All skill files will be included in zip package
+- ✅ Skills folder structure is correct
+- ✅ README mentions skills and how to use them

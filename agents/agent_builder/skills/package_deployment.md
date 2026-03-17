@@ -5,19 +5,25 @@ Create complete agent packages with zip files and upload to Supabase for user do
 =======================================================================
 ## PACKAGE CONTENTS
 
+**IMPORTANT: N8N workflows are created via API, NOT as files!**
+
 Every agent package must include:
 
 **Required Files:**
 1. `config.yaml` - Agent configuration
 2. `system_prompt.md` - Agent-specific instructions
-3. `n8n_workflow.json` - N8N workflow definition
-4. `README.md` - Deployment guide
+3. `README.md` - Deployment guide
 
 **Optional Files:**
-5. `skills/` folder - Skill files (if Tier 2+)
+4. `skills/` folder - Skill files (if Tier 2+)
    - `skill_1.md`
    - `skill_2.md`
    - etc.
+
+**N8N Workflow:**
+- Created via `POST /api/n8n/clone-workflow` endpoint
+- User receives direct link to edit and activate in N8N
+- No JSON file generation needed
 
 =======================================================================
 ## DEPLOYMENT README TEMPLATE
@@ -42,21 +48,17 @@ Complete deployment package for the [Agent Name] AI agent.
    node scripts/build-agents.js
    ```
 
-3. **Import N8N Workflow**
-   - Open N8N: https://n8n.theaiteam.uk
-   - Go to Workflows → Import from File
-   - Select `n8n_workflow.json`
-   - Click Import
-
-4. **Configure Credentials**
-   - Open the imported workflow
+3. **Activate N8N Workflow**
+   - The N8N workflow was created automatically during agent setup
+   - Click the workflow link provided by the agent builder
+   - Review the workflow nodes
    - Verify credentials are connected:
      - OpenRouter API (Claude)
      - Neon Postgres
      - Supabase (if used)
-   - Save and activate workflow
+   - Click the **Activate** toggle in N8N
 
-5. **Test Agent**
+4. **Test Agent**
    ```bash
    # Start development server
    npm run dev
@@ -94,12 +96,13 @@ Complete deployment package for the [Agent Name] AI agent.
 agents/[agent_id]/
 ├── config.yaml              # Agent configuration
 ├── system_prompt.md         # Agent instructions
-├── n8n_workflow.json        # N8N workflow
 ├── README.md                # This file
 └── skills/                  # Optional skills folder
     ├── skill_1.md
     └── skill_2.md
 ```
+
+**Note:** N8N workflow is created via API and lives in your N8N instance, not as a file.
 
 =======================================================================
 ## TROUBLESHOOTING
@@ -116,15 +119,17 @@ agents/[agent_id]/
 3. Enable in user settings (Onboarding page)
 
 **N8N workflow not responding:**
-1. Verify workflow is activated in N8N
-2. Check webhook URL matches agent_id
-3. Test webhook directly:
+1. Open the workflow link provided during agent creation
+2. Verify workflow is activated in N8N (toggle switch should be ON)
+3. Check webhook URL matches agent_id: `/webhook/[agent_id]`
+4. Verify all credentials are connected (no warning icons)
+5. Test webhook directly:
    ```bash
    curl -X POST https://n8n.theaiteam.uk/webhook/[agent_id] \
      -H "Content-Type: application/json" \
      -d '{"message": "test"}'
    ```
-4. Check N8N execution logs for errors
+6. Check N8N execution logs for errors
 
 **System prompt not loading:**
 1. Verify build script ran successfully
@@ -195,12 +200,13 @@ agents/[agent_id]/
 [agent_id]/
 ├── config.yaml
 ├── system_prompt.md
-├── n8n_workflow.json
 ├── README.md
 └── skills/
     ├── skill_1.md
     └── skill_2.md
 ```
+
+**Note:** N8N workflow is not included in zip - it's created via API.
 
 =======================================================================
 ## SUPABASE UPLOAD
@@ -255,16 +261,18 @@ After successful upload, provide this message to user:
 **What's Included:**
 - Complete agent configuration (config.yaml)
 - System prompt with [X] workflows
-- N8N workflow template
 [- X skill files (if applicable)]
 - Deployment guide with step-by-step instructions
+
+**N8N Workflow:**
+🔗 **[Click here to open and activate your workflow]({workflow_editor_url})**
 
 **Quick Deploy:**
 1. Download and extract the zip file
 2. Place in `agents/[agent_id]/` directory
 3. Run `node scripts/build-agents.js`
-4. Import `n8n_workflow.json` to N8N
-5. Activate workflow and test!
+4. Click the N8N workflow link above
+5. Activate workflow in N8N and test!
 
 **Agent Details:**
 - **ID:** [agent_id]
@@ -286,7 +294,8 @@ Before creating package:
 - ✅ All required files generated
 - ✅ config.yaml is valid YAML
 - ✅ system_prompt.md is complete
-- ✅ n8n_workflow.json is valid JSON
+- ✅ N8N workflow created via API endpoint
+- ✅ Workflow editor URL obtained and provided to user
 - ✅ README.md has correct agent_id references
 - ✅ Skills folder created (if needed)
 - ✅ All files use UTF-8 encoding
