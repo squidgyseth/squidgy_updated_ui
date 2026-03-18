@@ -315,18 +315,41 @@ The agent has skills containing best practices for each area of responsibility. 
 ${skills.map(skill => `| ${skill.name} | ${skill.description} |`).join('\n')}
 `;
 
-      // Remove ALL existing SKILLS sections (handles duplicates)
-      // Match pattern: optional newlines, then ======= followed by ## SKILLS, then everything until next section or end
-      let cleanedPrompt = systemPrompt;
+      // Check if SKILLS section already exists and matches the one we want to add
+      const existingSkillsMatch = systemPrompt.match(/\n={7,}\n## SKILLS\n[\s\S]*?(?=\n={7,}\n##|$)/);
       
-      // Keep removing SKILLS sections until none are found
-      while (true) {
-        const skillsMatch = cleanedPrompt.match(/\n*={7,}\n## SKILLS\n[\s\S]*?(?=\n={7,}\n##|$)/);
-        if (!skillsMatch) break;
-        cleanedPrompt = cleanedPrompt.replace(skillsMatch[0], '');
+      if (existingSkillsMatch) {
+        // SKILLS section exists - check if it matches what we want to add
+        const existingSkills = existingSkillsMatch[0].trim();
+        const newSkills = skillsSection.trim();
+        
+        if (existingSkills === newSkills) {
+          // SKILLS section is already correct, skip this agent
+          console.log(`  ⏭️  ${agentId} (skills already up to date)`);
+          skippedCount++;
+          continue;
+        }
       }
       
-      // Remove trailing whitespace and extra newlines
+      // Remove ALL existing SKILLS sections (handles duplicates)
+      // Split by section headers, filter out SKILLS sections, then rebuild
+      const sectionSeparator = /\n={7,}\n## /;
+      const parts = systemPrompt.split(sectionSeparator);
+      
+      // First part is everything before the first section (title, description)
+      let cleanedPrompt = parts[0];
+      
+      // Process remaining parts (each starts with a section name)
+      for (let i = 1; i < parts.length; i++) {
+        // Check if this section is a SKILLS section
+        if (!parts[i].startsWith('SKILLS\n')) {
+          // Not a SKILLS section, keep it
+          cleanedPrompt += '\n=======================================================================\n## ' + parts[i];
+        }
+        // If it is a SKILLS section, skip it (don't add it back)
+      }
+      
+      // Remove trailing whitespace
       cleanedPrompt = cleanedPrompt.trimEnd();
       
       // Append the new SKILLS section at the end

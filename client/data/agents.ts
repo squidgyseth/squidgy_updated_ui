@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-03-17T16:19:17.732Z
+// Generated on: 2026-03-18T11:12:30.867Z
 
 export interface AgentConfig {
   agent: {
@@ -820,6 +820,71 @@ export const ALL_AGENTS: AgentConfig[] = [
         "permit_databases"
       ]
     }
+  },
+  {
+    "agent": {
+      "id": "sales_qualifier",
+      "emoji": "🎯",
+      "name": "Sales Qualifier | Lead Qualification Expert",
+      "category": "SALES",
+      "description": "Qualifies incoming leads and schedules meetings with qualified prospects through intelligent questioning and assessment.",
+      "specialization": "Lead Qualification & Meeting Booking",
+      "tagline": "Qualify. Engage. Schedule.",
+      "avatar": "/Squidgy AI Assistants Avatars/7.png",
+      "pinned": false,
+      "enabled": true,
+      "initial_message": "Hey! I'm your Sales Qualifier 🎯. Ready to help you qualify leads and book meetings with the best prospects!",
+      "sidebar_greeting": "Hi! I'm your Sales Qualifier - I help assess incoming leads, ask the right qualification questions, and schedule meetings with qualified prospects. How can I assist you today?",
+      "capabilities": [
+        "Score and qualify incoming leads based on criteria",
+        "Ask qualification questions to assess fit",
+        "Schedule meetings and demos with qualified prospects",
+        "Generate personalized outreach messages",
+        "Track lead progression and follow-up status"
+      ],
+      "recent_actions": [
+        "Qualified 23 leads and booked 8 discovery calls this week",
+        "Generated personalized outreach sequence for enterprise prospect",
+        "Scheduled 5 product demos with high-fit leads",
+        "Assessed lead quality and prioritized follow-ups"
+      ]
+    },
+    "skills": [],
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Sales Qualifier Dashboard",
+          "path": "agent-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "suggestion_buttons"
+      ]
+    },
+    "suggestions": [
+      "Qualify a new lead",
+      "Schedule a meeting",
+      "Generate outreach message",
+      "Check lead score",
+      "Track pipeline status",
+      "What can you do?"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/sales_qualifier"
+    },
+    "personality": {
+      "tone": "professional",
+      "style": "persuasive",
+      "approach": "consultative"
+    }
   }
 ];
 
@@ -1279,6 +1344,71 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "tone": "professional",
       "style": "helpful",
       "approach": "proactive"
+    }
+  },
+  "sales_qualifier": {
+    "agent": {
+      "id": "sales_qualifier",
+      "emoji": "🎯",
+      "name": "Sales Qualifier | Lead Qualification Expert",
+      "category": "SALES",
+      "description": "Qualifies incoming leads and schedules meetings with qualified prospects through intelligent questioning and assessment.",
+      "specialization": "Lead Qualification & Meeting Booking",
+      "tagline": "Qualify. Engage. Schedule.",
+      "avatar": "/Squidgy AI Assistants Avatars/7.png",
+      "pinned": false,
+      "enabled": true,
+      "initial_message": "Hey! I'm your Sales Qualifier 🎯. Ready to help you qualify leads and book meetings with the best prospects!",
+      "sidebar_greeting": "Hi! I'm your Sales Qualifier - I help assess incoming leads, ask the right qualification questions, and schedule meetings with qualified prospects. How can I assist you today?",
+      "capabilities": [
+        "Score and qualify incoming leads based on criteria",
+        "Ask qualification questions to assess fit",
+        "Schedule meetings and demos with qualified prospects",
+        "Generate personalized outreach messages",
+        "Track lead progression and follow-up status"
+      ],
+      "recent_actions": [
+        "Qualified 23 leads and booked 8 discovery calls this week",
+        "Generated personalized outreach sequence for enterprise prospect",
+        "Scheduled 5 product demos with high-fit leads",
+        "Assessed lead quality and prioritized follow-ups"
+      ]
+    },
+    "skills": [],
+    "ui_use": {
+      "page_type": "single_page",
+      "pages": [
+        {
+          "name": "Sales Qualifier Dashboard",
+          "path": "agent-dashboard",
+          "order": 1,
+          "validated": true
+        }
+      ]
+    },
+    "interface": {
+      "type": "chat",
+      "features": [
+        "text_input",
+        "file_upload",
+        "suggestion_buttons"
+      ]
+    },
+    "suggestions": [
+      "Qualify a new lead",
+      "Schedule a meeting",
+      "Generate outreach message",
+      "Check lead score",
+      "Track pipeline status",
+      "What can you do?"
+    ],
+    "n8n": {
+      "webhook_url": "https://n8n.theaiteam.uk/webhook/sales_qualifier"
+    },
+    "personality": {
+      "tone": "professional",
+      "style": "persuasive",
+      "approach": "consultative"
     }
   },
   "social_media": {
@@ -2387,12 +2517,77 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
           "permit_databases"
         ]
       }
+    },
+    {
+      "agent": {
+        "id": "sales_qualifier",
+        "emoji": "🎯",
+        "name": "Sales Qualifier | Lead Qualification Expert",
+        "category": "SALES",
+        "description": "Qualifies incoming leads and schedules meetings with qualified prospects through intelligent questioning and assessment.",
+        "specialization": "Lead Qualification & Meeting Booking",
+        "tagline": "Qualify. Engage. Schedule.",
+        "avatar": "/Squidgy AI Assistants Avatars/7.png",
+        "pinned": false,
+        "enabled": true,
+        "initial_message": "Hey! I'm your Sales Qualifier 🎯. Ready to help you qualify leads and book meetings with the best prospects!",
+        "sidebar_greeting": "Hi! I'm your Sales Qualifier - I help assess incoming leads, ask the right qualification questions, and schedule meetings with qualified prospects. How can I assist you today?",
+        "capabilities": [
+          "Score and qualify incoming leads based on criteria",
+          "Ask qualification questions to assess fit",
+          "Schedule meetings and demos with qualified prospects",
+          "Generate personalized outreach messages",
+          "Track lead progression and follow-up status"
+        ],
+        "recent_actions": [
+          "Qualified 23 leads and booked 8 discovery calls this week",
+          "Generated personalized outreach sequence for enterprise prospect",
+          "Scheduled 5 product demos with high-fit leads",
+          "Assessed lead quality and prioritized follow-ups"
+        ]
+      },
+      "skills": [],
+      "ui_use": {
+        "page_type": "single_page",
+        "pages": [
+          {
+            "name": "Sales Qualifier Dashboard",
+            "path": "agent-dashboard",
+            "order": 1,
+            "validated": true
+          }
+        ]
+      },
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "suggestion_buttons"
+        ]
+      },
+      "suggestions": [
+        "Qualify a new lead",
+        "Schedule a meeting",
+        "Generate outreach message",
+        "Check lead score",
+        "Track pipeline status",
+        "What can you do?"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/sales_qualifier"
+      },
+      "personality": {
+        "tone": "professional",
+        "style": "persuasive",
+        "approach": "consultative"
+      }
     }
   ]
 };
 
 // Agent IDs list
-export const AGENT_IDS: string[] = ["admin","agent_builder","brandy","content_repurposer","newsletter_multi","personal_assistant","social_media","social_media_scheduler","SOL"];
+export const AGENT_IDS: string[] = ["admin","agent_builder","brandy","content_repurposer","newsletter_multi","personal_assistant","sales_qualifier","social_media","social_media_scheduler","SOL"];
 
 // Total count
-export const TOTAL_AGENTS = 9;
+export const TOTAL_AGENTS = 10;
