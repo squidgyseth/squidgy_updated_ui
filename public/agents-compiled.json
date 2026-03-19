@@ -563,14 +563,15 @@
         "pinned": true,
         "enabled": true,
         "admin_only": true,
-        "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I automatically create complete AI agents with minimal input:<br>✅ Just tell me what your agent should do<br>✅ I'll infer category, capabilities, and personality<br>✅ Generate config, system prompt, and N8N workflow<br>✅ Package everything in a downloadable zip file<br>✅ Upload to Supabase for easy deployment<br><br>Ready to create an agent? Simply describe what it should do!",
-        "sidebar_greeting": "Hi! I'm Ace - your automated Agent Builder. Just tell me what your agent should do, and I'll create a complete, production-ready package with all files and deployment instructions.",
+        "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I create complete AI agents through a guided process:<br>✅ I'll ask you a few key questions about your agent<br>✅ Present a complete plan for your review<br>✅ Once you approve, I'll generate all files automatically<br>✅ Create config, system prompt, skills, and N8N workflow<br>✅ Package everything in a downloadable zip file<br><br>Ready to create an agent? Let's start with the basics!",
+        "sidebar_greeting": "Hi! I'm Ace - your Agent Builder. I'll guide you through creating a complete agent by asking key questions, presenting a plan for your approval, then generating all files automatically.",
         "capabilities": [
-          "Automated agent creation from minimal user input",
+          "Structured information gathering with guided questions",
+          "Comprehensive agent plan presentation and confirmation",
           "Intelligent requirement inference and smart defaults",
           "Complete YAML configuration generation",
           "System prompt and skills file generation",
-          "N8N workflow JSON creation",
+          "N8N workflow creation via API",
           "Agent package zip file creation",
           "Supabase storage upload and public URL generation",
           "Deployment documentation and guides"
@@ -659,8 +660,90 @@
       ],
       "personality": {
         "tone": "professional",
-        "style": "educational",
-        "approach": "consultative"
+        "style": "consultative",
+        "approach": "thorough_then_efficient"
+      }
+    },
+    {
+      "agent": {
+        "id": "legal_doc_analyzer",
+        "emoji": "⚖️",
+        "name": "Diana | Legal Document Analyst",
+        "category": "OPERATIONS",
+        "description": "Expert legal document analyzer specializing in risk identification, red flag detection, and strategic client response recommendations for internal legal teams.",
+        "specialization": "Legal Document Intelligence & Risk Analysis",
+        "tagline": "Analyze. Assess. Advise.",
+        "avatar": "/Squidgy AI Assistants Avatars/7.png",
+        "pinned": false,
+        "enabled": true,
+        "initial_message": "Hello! I'm Diana, your legal document analyst. I specialize in analyzing contracts, court filings, correspondence, and notices to identify risks and recommend response strategies. Upload your documents or describe what you need analyzed.",
+        "sidebar_greeting": "Hi! I'm Diana - your expert legal document analyst. I help legal teams quickly understand complex documents, identify critical risks, and develop strategic client responses. What documents shall we review today?",
+        "capabilities": [
+          "Comprehensive analysis of contracts, court filings, correspondence, and legal notices",
+          "Risk identification and red flag detection with severity assessment",
+          "Action item extraction and prioritized response strategy recommendations",
+          "Decision-ready summaries optimized for senior lawyer review",
+          "Structured internal memo generation with legal principle analysis"
+        ],
+        "recent_actions": [
+          "Analyzed 15-page litigation bundle and identified 3 critical procedural defects",
+          "Reviewed commercial contract and flagged 5 high-risk clauses requiring immediate attention",
+          "Summarized client correspondence and recommended 4-step response strategy",
+          "Generated internal briefing memo for senior review in under 5 minutes"
+        ]
+      },
+      "skills": [
+        {
+          "name": "Document Analysis Workflow",
+          "description": "Multi-step workflow for analyzing legal documents including issue identification, clause extraction, inconsistency detection, and urgent issue flagging.\n",
+          "file": "document_analysis_workflow.md"
+        },
+        {
+          "name": "Risk Assessment & Red Flags",
+          "description": "Framework for identifying, categorizing, and prioritizing legal risks with severity ratings and mitigation recommendations.\n",
+          "file": "risk_assessment_framework.md"
+        },
+        {
+          "name": "Client Response Strategy",
+          "description": "Structured approach to developing actionable client response strategies including timeline assessment, defense identification, and next steps.\n",
+          "file": "client_response_strategy.md"
+        }
+      ],
+      "ui_use": {
+        "page_type": "single_page",
+        "pages": [
+          {
+            "name": "Legal Analysis Dashboard",
+            "path": "legal-analysis-dashboard",
+            "order": 1,
+            "validated": true
+          }
+        ]
+      },
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "suggestion_buttons"
+        ]
+      },
+      "suggestions": [
+        "Analyze uploaded legal documents",
+        "Identify risks and red flags",
+        "Generate response strategy",
+        "Create internal briefing memo",
+        "Extract key contract clauses",
+        "Review court filing for defects",
+        "What can you do?"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/legal_doc_analyzer"
+      },
+      "personality": {
+        "tone": "professional",
+        "style": "precise and legally rigorous",
+        "approach": "analytical with clear risk prioritization"
       }
     },
     {
@@ -774,71 +857,6 @@
           "permit_databases"
         ]
       }
-    },
-    {
-      "agent": {
-        "id": "sales_qualifier",
-        "emoji": "🎯",
-        "name": "Sales Qualifier | Lead Qualification Expert",
-        "category": "SALES",
-        "description": "Qualifies incoming leads and schedules meetings with qualified prospects through intelligent questioning and assessment.",
-        "specialization": "Lead Qualification & Meeting Booking",
-        "tagline": "Qualify. Engage. Schedule.",
-        "avatar": "/Squidgy AI Assistants Avatars/7.png",
-        "pinned": false,
-        "enabled": true,
-        "initial_message": "Hey! I'm your Sales Qualifier 🎯. Ready to help you qualify leads and book meetings with the best prospects!",
-        "sidebar_greeting": "Hi! I'm your Sales Qualifier - I help assess incoming leads, ask the right qualification questions, and schedule meetings with qualified prospects. How can I assist you today?",
-        "capabilities": [
-          "Score and qualify incoming leads based on criteria",
-          "Ask qualification questions to assess fit",
-          "Schedule meetings and demos with qualified prospects",
-          "Generate personalized outreach messages",
-          "Track lead progression and follow-up status"
-        ],
-        "recent_actions": [
-          "Qualified 23 leads and booked 8 discovery calls this week",
-          "Generated personalized outreach sequence for enterprise prospect",
-          "Scheduled 5 product demos with high-fit leads",
-          "Assessed lead quality and prioritized follow-ups"
-        ]
-      },
-      "skills": [],
-      "ui_use": {
-        "page_type": "single_page",
-        "pages": [
-          {
-            "name": "Sales Qualifier Dashboard",
-            "path": "agent-dashboard",
-            "order": 1,
-            "validated": true
-          }
-        ]
-      },
-      "interface": {
-        "type": "chat",
-        "features": [
-          "text_input",
-          "file_upload",
-          "suggestion_buttons"
-        ]
-      },
-      "suggestions": [
-        "Qualify a new lead",
-        "Schedule a meeting",
-        "Generate outreach message",
-        "Check lead score",
-        "Track pipeline status",
-        "What can you do?"
-      ],
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/sales_qualifier"
-      },
-      "personality": {
-        "tone": "professional",
-        "style": "persuasive",
-        "approach": "consultative"
-      }
     }
   ],
   "agentMap": {
@@ -917,14 +935,15 @@
         "pinned": true,
         "enabled": true,
         "admin_only": true,
-        "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I automatically create complete AI agents with minimal input:<br>✅ Just tell me what your agent should do<br>✅ I'll infer category, capabilities, and personality<br>✅ Generate config, system prompt, and N8N workflow<br>✅ Package everything in a downloadable zip file<br>✅ Upload to Supabase for easy deployment<br><br>Ready to create an agent? Simply describe what it should do!",
-        "sidebar_greeting": "Hi! I'm Ace - your automated Agent Builder. Just tell me what your agent should do, and I'll create a complete, production-ready package with all files and deployment instructions.",
+        "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I create complete AI agents through a guided process:<br>✅ I'll ask you a few key questions about your agent<br>✅ Present a complete plan for your review<br>✅ Once you approve, I'll generate all files automatically<br>✅ Create config, system prompt, skills, and N8N workflow<br>✅ Package everything in a downloadable zip file<br><br>Ready to create an agent? Let's start with the basics!",
+        "sidebar_greeting": "Hi! I'm Ace - your Agent Builder. I'll guide you through creating a complete agent by asking key questions, presenting a plan for your approval, then generating all files automatically.",
         "capabilities": [
-          "Automated agent creation from minimal user input",
+          "Structured information gathering with guided questions",
+          "Comprehensive agent plan presentation and confirmation",
           "Intelligent requirement inference and smart defaults",
           "Complete YAML configuration generation",
           "System prompt and skills file generation",
-          "N8N workflow JSON creation",
+          "N8N workflow creation via API",
           "Agent package zip file creation",
           "Supabase storage upload and public URL generation",
           "Deployment documentation and guides"
@@ -1013,8 +1032,8 @@
       ],
       "personality": {
         "tone": "professional",
-        "style": "educational",
-        "approach": "consultative"
+        "style": "consultative",
+        "approach": "thorough_then_efficient"
       }
     },
     "brandy": {
@@ -1150,6 +1169,88 @@
         "tone": "professional",
         "style": "helpful",
         "approach": "proactive"
+      }
+    },
+    "legal_doc_analyzer": {
+      "agent": {
+        "id": "legal_doc_analyzer",
+        "emoji": "⚖️",
+        "name": "Diana | Legal Document Analyst",
+        "category": "OPERATIONS",
+        "description": "Expert legal document analyzer specializing in risk identification, red flag detection, and strategic client response recommendations for internal legal teams.",
+        "specialization": "Legal Document Intelligence & Risk Analysis",
+        "tagline": "Analyze. Assess. Advise.",
+        "avatar": "/Squidgy AI Assistants Avatars/7.png",
+        "pinned": false,
+        "enabled": true,
+        "initial_message": "Hello! I'm Diana, your legal document analyst. I specialize in analyzing contracts, court filings, correspondence, and notices to identify risks and recommend response strategies. Upload your documents or describe what you need analyzed.",
+        "sidebar_greeting": "Hi! I'm Diana - your expert legal document analyst. I help legal teams quickly understand complex documents, identify critical risks, and develop strategic client responses. What documents shall we review today?",
+        "capabilities": [
+          "Comprehensive analysis of contracts, court filings, correspondence, and legal notices",
+          "Risk identification and red flag detection with severity assessment",
+          "Action item extraction and prioritized response strategy recommendations",
+          "Decision-ready summaries optimized for senior lawyer review",
+          "Structured internal memo generation with legal principle analysis"
+        ],
+        "recent_actions": [
+          "Analyzed 15-page litigation bundle and identified 3 critical procedural defects",
+          "Reviewed commercial contract and flagged 5 high-risk clauses requiring immediate attention",
+          "Summarized client correspondence and recommended 4-step response strategy",
+          "Generated internal briefing memo for senior review in under 5 minutes"
+        ]
+      },
+      "skills": [
+        {
+          "name": "Document Analysis Workflow",
+          "description": "Multi-step workflow for analyzing legal documents including issue identification, clause extraction, inconsistency detection, and urgent issue flagging.\n",
+          "file": "document_analysis_workflow.md"
+        },
+        {
+          "name": "Risk Assessment & Red Flags",
+          "description": "Framework for identifying, categorizing, and prioritizing legal risks with severity ratings and mitigation recommendations.\n",
+          "file": "risk_assessment_framework.md"
+        },
+        {
+          "name": "Client Response Strategy",
+          "description": "Structured approach to developing actionable client response strategies including timeline assessment, defense identification, and next steps.\n",
+          "file": "client_response_strategy.md"
+        }
+      ],
+      "ui_use": {
+        "page_type": "single_page",
+        "pages": [
+          {
+            "name": "Legal Analysis Dashboard",
+            "path": "legal-analysis-dashboard",
+            "order": 1,
+            "validated": true
+          }
+        ]
+      },
+      "interface": {
+        "type": "chat",
+        "features": [
+          "text_input",
+          "file_upload",
+          "suggestion_buttons"
+        ]
+      },
+      "suggestions": [
+        "Analyze uploaded legal documents",
+        "Identify risks and red flags",
+        "Generate response strategy",
+        "Create internal briefing memo",
+        "Extract key contract clauses",
+        "Review court filing for defects",
+        "What can you do?"
+      ],
+      "n8n": {
+        "webhook_url": "https://n8n.theaiteam.uk/webhook/legal_doc_analyzer"
+      },
+      "personality": {
+        "tone": "professional",
+        "style": "precise and legally rigorous",
+        "approach": "analytical with clear risk prioritization"
       }
     },
     "newsletter_multi": {
@@ -1296,71 +1397,6 @@
         "tone": "professional",
         "style": "helpful",
         "approach": "proactive"
-      }
-    },
-    "sales_qualifier": {
-      "agent": {
-        "id": "sales_qualifier",
-        "emoji": "🎯",
-        "name": "Sales Qualifier | Lead Qualification Expert",
-        "category": "SALES",
-        "description": "Qualifies incoming leads and schedules meetings with qualified prospects through intelligent questioning and assessment.",
-        "specialization": "Lead Qualification & Meeting Booking",
-        "tagline": "Qualify. Engage. Schedule.",
-        "avatar": "/Squidgy AI Assistants Avatars/7.png",
-        "pinned": false,
-        "enabled": true,
-        "initial_message": "Hey! I'm your Sales Qualifier 🎯. Ready to help you qualify leads and book meetings with the best prospects!",
-        "sidebar_greeting": "Hi! I'm your Sales Qualifier - I help assess incoming leads, ask the right qualification questions, and schedule meetings with qualified prospects. How can I assist you today?",
-        "capabilities": [
-          "Score and qualify incoming leads based on criteria",
-          "Ask qualification questions to assess fit",
-          "Schedule meetings and demos with qualified prospects",
-          "Generate personalized outreach messages",
-          "Track lead progression and follow-up status"
-        ],
-        "recent_actions": [
-          "Qualified 23 leads and booked 8 discovery calls this week",
-          "Generated personalized outreach sequence for enterprise prospect",
-          "Scheduled 5 product demos with high-fit leads",
-          "Assessed lead quality and prioritized follow-ups"
-        ]
-      },
-      "skills": [],
-      "ui_use": {
-        "page_type": "single_page",
-        "pages": [
-          {
-            "name": "Sales Qualifier Dashboard",
-            "path": "agent-dashboard",
-            "order": 1,
-            "validated": true
-          }
-        ]
-      },
-      "interface": {
-        "type": "chat",
-        "features": [
-          "text_input",
-          "file_upload",
-          "suggestion_buttons"
-        ]
-      },
-      "suggestions": [
-        "Qualify a new lead",
-        "Schedule a meeting",
-        "Generate outreach message",
-        "Check lead score",
-        "Track pipeline status",
-        "What can you do?"
-      ],
-      "n8n": {
-        "webhook_url": "https://n8n.theaiteam.uk/webhook/sales_qualifier"
-      },
-      "personality": {
-        "tone": "professional",
-        "style": "persuasive",
-        "approach": "consultative"
       }
     },
     "social_media": {
@@ -2254,14 +2290,15 @@
           "pinned": true,
           "enabled": true,
           "admin_only": true,
-          "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I automatically create complete AI agents with minimal input:<br>✅ Just tell me what your agent should do<br>✅ I'll infer category, capabilities, and personality<br>✅ Generate config, system prompt, and N8N workflow<br>✅ Package everything in a downloadable zip file<br>✅ Upload to Supabase for easy deployment<br><br>Ready to create an agent? Simply describe what it should do!",
-          "sidebar_greeting": "Hi! I'm Ace - your automated Agent Builder. Just tell me what your agent should do, and I'll create a complete, production-ready package with all files and deployment instructions.",
+          "initial_message": "Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I create complete AI agents through a guided process:<br>✅ I'll ask you a few key questions about your agent<br>✅ Present a complete plan for your review<br>✅ Once you approve, I'll generate all files automatically<br>✅ Create config, system prompt, skills, and N8N workflow<br>✅ Package everything in a downloadable zip file<br><br>Ready to create an agent? Let's start with the basics!",
+          "sidebar_greeting": "Hi! I'm Ace - your Agent Builder. I'll guide you through creating a complete agent by asking key questions, presenting a plan for your approval, then generating all files automatically.",
           "capabilities": [
-            "Automated agent creation from minimal user input",
+            "Structured information gathering with guided questions",
+            "Comprehensive agent plan presentation and confirmation",
             "Intelligent requirement inference and smart defaults",
             "Complete YAML configuration generation",
             "System prompt and skills file generation",
-            "N8N workflow JSON creation",
+            "N8N workflow creation via API",
             "Agent package zip file creation",
             "Supabase storage upload and public URL generation",
             "Deployment documentation and guides"
@@ -2350,8 +2387,90 @@
         ],
         "personality": {
           "tone": "professional",
-          "style": "educational",
-          "approach": "consultative"
+          "style": "consultative",
+          "approach": "thorough_then_efficient"
+        }
+      },
+      {
+        "agent": {
+          "id": "legal_doc_analyzer",
+          "emoji": "⚖️",
+          "name": "Diana | Legal Document Analyst",
+          "category": "OPERATIONS",
+          "description": "Expert legal document analyzer specializing in risk identification, red flag detection, and strategic client response recommendations for internal legal teams.",
+          "specialization": "Legal Document Intelligence & Risk Analysis",
+          "tagline": "Analyze. Assess. Advise.",
+          "avatar": "/Squidgy AI Assistants Avatars/7.png",
+          "pinned": false,
+          "enabled": true,
+          "initial_message": "Hello! I'm Diana, your legal document analyst. I specialize in analyzing contracts, court filings, correspondence, and notices to identify risks and recommend response strategies. Upload your documents or describe what you need analyzed.",
+          "sidebar_greeting": "Hi! I'm Diana - your expert legal document analyst. I help legal teams quickly understand complex documents, identify critical risks, and develop strategic client responses. What documents shall we review today?",
+          "capabilities": [
+            "Comprehensive analysis of contracts, court filings, correspondence, and legal notices",
+            "Risk identification and red flag detection with severity assessment",
+            "Action item extraction and prioritized response strategy recommendations",
+            "Decision-ready summaries optimized for senior lawyer review",
+            "Structured internal memo generation with legal principle analysis"
+          ],
+          "recent_actions": [
+            "Analyzed 15-page litigation bundle and identified 3 critical procedural defects",
+            "Reviewed commercial contract and flagged 5 high-risk clauses requiring immediate attention",
+            "Summarized client correspondence and recommended 4-step response strategy",
+            "Generated internal briefing memo for senior review in under 5 minutes"
+          ]
+        },
+        "skills": [
+          {
+            "name": "Document Analysis Workflow",
+            "description": "Multi-step workflow for analyzing legal documents including issue identification, clause extraction, inconsistency detection, and urgent issue flagging.\n",
+            "file": "document_analysis_workflow.md"
+          },
+          {
+            "name": "Risk Assessment & Red Flags",
+            "description": "Framework for identifying, categorizing, and prioritizing legal risks with severity ratings and mitigation recommendations.\n",
+            "file": "risk_assessment_framework.md"
+          },
+          {
+            "name": "Client Response Strategy",
+            "description": "Structured approach to developing actionable client response strategies including timeline assessment, defense identification, and next steps.\n",
+            "file": "client_response_strategy.md"
+          }
+        ],
+        "ui_use": {
+          "page_type": "single_page",
+          "pages": [
+            {
+              "name": "Legal Analysis Dashboard",
+              "path": "legal-analysis-dashboard",
+              "order": 1,
+              "validated": true
+            }
+          ]
+        },
+        "interface": {
+          "type": "chat",
+          "features": [
+            "text_input",
+            "file_upload",
+            "suggestion_buttons"
+          ]
+        },
+        "suggestions": [
+          "Analyze uploaded legal documents",
+          "Identify risks and red flags",
+          "Generate response strategy",
+          "Create internal briefing memo",
+          "Extract key contract clauses",
+          "Review court filing for defects",
+          "What can you do?"
+        ],
+        "n8n": {
+          "webhook_url": "https://n8n.theaiteam.uk/webhook/legal_doc_analyzer"
+        },
+        "personality": {
+          "tone": "professional",
+          "style": "precise and legally rigorous",
+          "approach": "analytical with clear risk prioritization"
         }
       }
     ],
@@ -2467,76 +2586,11 @@
             "permit_databases"
           ]
         }
-      },
-      {
-        "agent": {
-          "id": "sales_qualifier",
-          "emoji": "🎯",
-          "name": "Sales Qualifier | Lead Qualification Expert",
-          "category": "SALES",
-          "description": "Qualifies incoming leads and schedules meetings with qualified prospects through intelligent questioning and assessment.",
-          "specialization": "Lead Qualification & Meeting Booking",
-          "tagline": "Qualify. Engage. Schedule.",
-          "avatar": "/Squidgy AI Assistants Avatars/7.png",
-          "pinned": false,
-          "enabled": true,
-          "initial_message": "Hey! I'm your Sales Qualifier 🎯. Ready to help you qualify leads and book meetings with the best prospects!",
-          "sidebar_greeting": "Hi! I'm your Sales Qualifier - I help assess incoming leads, ask the right qualification questions, and schedule meetings with qualified prospects. How can I assist you today?",
-          "capabilities": [
-            "Score and qualify incoming leads based on criteria",
-            "Ask qualification questions to assess fit",
-            "Schedule meetings and demos with qualified prospects",
-            "Generate personalized outreach messages",
-            "Track lead progression and follow-up status"
-          ],
-          "recent_actions": [
-            "Qualified 23 leads and booked 8 discovery calls this week",
-            "Generated personalized outreach sequence for enterprise prospect",
-            "Scheduled 5 product demos with high-fit leads",
-            "Assessed lead quality and prioritized follow-ups"
-          ]
-        },
-        "skills": [],
-        "ui_use": {
-          "page_type": "single_page",
-          "pages": [
-            {
-              "name": "Sales Qualifier Dashboard",
-              "path": "agent-dashboard",
-              "order": 1,
-              "validated": true
-            }
-          ]
-        },
-        "interface": {
-          "type": "chat",
-          "features": [
-            "text_input",
-            "file_upload",
-            "suggestion_buttons"
-          ]
-        },
-        "suggestions": [
-          "Qualify a new lead",
-          "Schedule a meeting",
-          "Generate outreach message",
-          "Check lead score",
-          "Track pipeline status",
-          "What can you do?"
-        ],
-        "n8n": {
-          "webhook_url": "https://n8n.theaiteam.uk/webhook/sales_qualifier"
-        },
-        "personality": {
-          "tone": "professional",
-          "style": "persuasive",
-          "approach": "consultative"
-        }
       }
     ]
   },
   "meta": {
     "total": 10,
-    "buildTime": "2026-03-18T11:12:30.871Z"
+    "buildTime": "2026-03-19T13:59:55.607Z"
   }
 }
