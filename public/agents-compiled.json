@@ -673,7 +673,7 @@
         "description": "Expert legal document analyzer specializing in risk identification, red flag detection, and strategic client response recommendations for internal legal teams.",
         "specialization": "Legal Document Intelligence & Risk Analysis",
         "tagline": "Analyze. Assess. Advise.",
-        "avatar": "/Squidgy AI Assistants Avatars/7.png",
+        "avatar": "/Squidgy AI Assistants Avatars/8.png",
         "pinned": false,
         "enabled": true,
         "initial_message": "Hello! I'm Diana, your legal document analyst. I specialize in analyzing contracts, court filings, correspondence, and notices to identify risks and recommend response strategies. Upload your documents or describe what you need analyzed.",
@@ -1180,7 +1180,7 @@
         "description": "Expert legal document analyzer specializing in risk identification, red flag detection, and strategic client response recommendations for internal legal teams.",
         "specialization": "Legal Document Intelligence & Risk Analysis",
         "tagline": "Analyze. Assess. Advise.",
-        "avatar": "/Squidgy AI Assistants Avatars/7.png",
+        "avatar": "/Squidgy AI Assistants Avatars/8.png",
         "pinned": false,
         "enabled": true,
         "initial_message": "Hello! I'm Diana, your legal document analyst. I specialize in analyzing contracts, court filings, correspondence, and notices to identify risks and recommend response strategies. Upload your documents or describe what you need analyzed.",
@@ -2400,7 +2400,7 @@
           "description": "Expert legal document analyzer specializing in risk identification, red flag detection, and strategic client response recommendations for internal legal teams.",
           "specialization": "Legal Document Intelligence & Risk Analysis",
           "tagline": "Analyze. Assess. Advise.",
-          "avatar": "/Squidgy AI Assistants Avatars/7.png",
+          "avatar": "/Squidgy AI Assistants Avatars/8.png",
           "pinned": false,
           "enabled": true,
           "initial_message": "Hello! I'm Diana, your legal document analyst. I specialize in analyzing contracts, court filings, correspondence, and notices to identify risks and recommend response strategies. Upload your documents or describe what you need analyzed.",
@@ -2591,6 +2591,6 @@
   },
   "meta": {
     "total": 10,
-    "buildTime": "2026-03-19T13:59:55.607Z"
+    "buildTime": "2026-03-19T14:19:32.008Z"
   }
 }

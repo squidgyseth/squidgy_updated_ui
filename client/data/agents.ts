@@ -1,5 +1,5 @@
 // Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: 2026-03-19T13:59:55.604Z
+// Generated on: 2026-03-19T14:19:32.005Z
 
 export interface AgentConfig {
   agent: {
@@ -719,7 +719,7 @@ export const ALL_AGENTS: AgentConfig[] = [
       "description": "Expert legal document analyzer specializing in risk identification, red flag detection, and strategic client response recommendations for internal legal teams.",
       "specialization": "Legal Document Intelligence & Risk Analysis",
       "tagline": "Analyze. Assess. Advise.",
-      "avatar": "/Squidgy AI Assistants Avatars/7.png",
+      "avatar": "/Squidgy AI Assistants Avatars/8.png",
       "pinned": false,
       "enabled": true,
       "initial_message": "Hello! I'm Diana, your legal document analyst. I specialize in analyzing contracts, court filings, correspondence, and notices to identify risks and recommend response strategies. Upload your documents or describe what you need analyzed.",
@@ -1228,7 +1228,7 @@ export const AGENTS_BY_ID: Record<string, AgentConfig> = {
       "description": "Expert legal document analyzer specializing in risk identification, red flag detection, and strategic client response recommendations for internal legal teams.",
       "specialization": "Legal Document Intelligence & Risk Analysis",
       "tagline": "Analyze. Assess. Advise.",
-      "avatar": "/Squidgy AI Assistants Avatars/7.png",
+      "avatar": "/Squidgy AI Assistants Avatars/8.png",
       "pinned": false,
       "enabled": true,
       "initial_message": "Hello! I'm Diana, your legal document analyst. I specialize in analyzing contracts, court filings, correspondence, and notices to identify risks and recommend response strategies. Upload your documents or describe what you need analyzed.",
@@ -2450,7 +2450,7 @@ export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = {
         "description": "Expert legal document analyzer specializing in risk identification, red flag detection, and strategic client response recommendations for internal legal teams.",
         "specialization": "Legal Document Intelligence & Risk Analysis",
         "tagline": "Analyze. Assess. Advise.",
-        "avatar": "/Squidgy AI Assistants Avatars/7.png",
+        "avatar": "/Squidgy AI Assistants Avatars/8.png",
         "pinned": false,
         "enabled": true,
         "initial_message": "Hello! I'm Diana, your legal document analyst. I specialize in analyzing contracts, court filings, correspondence, and notices to identify risks and recommend response strategies. Upload your documents or describe what you need analyzed.",
