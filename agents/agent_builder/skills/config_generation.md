@@ -3,6 +3,21 @@
 **CRITICAL: The config.yaml file is the FOUNDATION of every agent. Without it, the agent cannot be registered, discovered, or used in the platform.**
 
 =======================================================================
+## PREREQUISITE CHECK
+
+**BEFORE generating config.yaml, ensure you have sufficient information:**
+
+You should understand:
+- What the agent does and its purpose
+- Who will use it and how they'll interact with it
+- Key capabilities and features
+- Any platform integrations needed
+- User has confirmed the agent plan (Step 1.5)
+- Intelligent inference has been completed (Step 2)
+
+**If you're missing critical information needed to create a complete config.yaml, gather it first.**
+
+=======================================================================
 ## WHY CONFIG.YAML IS ESSENTIAL
 
 The config.yaml file serves as the agent's:

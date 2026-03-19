@@ -1,6 +1,33 @@
 # Intelligent Inference
 
-Automatically infer agent requirements from minimal user input using keyword detection and industry patterns.
+Automatically infer agent requirements from user input gathered through natural conversation.
+
+=======================================================================
+## WHEN TO USE THIS SKILL
+
+**This skill is used AFTER Step 1 has gathered sufficient information from the user.**
+
+You should have enough information to understand:
+- What the agent does (purpose)
+- Who will use it (target users)
+- What tasks it handles (capabilities)
+- What systems it connects to (integrations)
+- Any special needs (requirements)
+
+**If critical information is missing, return to Step 1 to gather it through natural conversation.**
+
+=======================================================================
+## INFERENCE STRATEGY
+
+Use ALL available information to make intelligent inferences:
+
+- **Purpose statement** → Primary category and core capabilities
+- **Target users** → Tone, complexity level, and interface features
+- **Stated capabilities** → Specific features and skill requirements
+- **Platform integrations** → Technical complexity tier and integration needs
+- **Special requirements** → Custom workflows and compliance considerations
+
+The more information you have, the better your inferences will be. Use everything the user has shared.
 
 =======================================================================
 ## CATEGORY DETECTION
@@ -151,8 +178,23 @@ Convert agent name to valid snake_case identifier:
 ## VALIDATION
 
 Before proceeding, verify:
-- ✅ Category matches purpose keywords
+
+**Information Gathering:**
+- ✅ Agent purpose is clear and well-defined
+- ✅ Target users are identified
+- ✅ Key capabilities (3-5) are specified
+- ✅ Platform integrations are documented
+- ✅ Special requirements are noted (if any)
+
+**Inference Quality:**
+- ✅ Category matches purpose keywords and user requirements
 - ✅ Capabilities are specific and actionable (3-5 items)
-- ✅ Personality traits align with category
+- ✅ Personality traits align with category AND target users
 - ✅ Emoji is relevant and appropriate
 - ✅ Agent ID is unique, snake_case, and concise
+- ✅ Complexity tier matches platform integrations and workflows
+
+**User Confirmation:**
+- ✅ Complete agent plan has been presented to user
+- ✅ User has explicitly approved the plan
+- ✅ Any requested changes have been incorporated

@@ -69,10 +69,12 @@ If the agent has **NO skills**, the system prompt can be longer (100-200 lines):
 Include these sections (in order):
 1. **Agent Name & Description** (2-3 sentences)
 2. **PRIMARY RESPONSIBILITIES** (4-6 bullet points)
-3. **WORKFLOWS** (2-4 high-level workflows) OR **SKILLS** (if agent has skills)
+3. **WORKFLOWS** (2-4 high-level workflows if agent has NO skills)
 4. **TOOL USAGE** (specific tools and how to use them)
 5. **COMMUNICATION STYLE** (tone, style, approach from config)
 6. **KEY RULES** (5-7 agent-specific rules)
+
+**Note:** Do NOT add a SKILLS section to the system prompt. Skills are automatically referenced from the config.yaml file.
 
 **STEP 4: Use Inferred Data**
 
@@ -279,14 +281,16 @@ Focus on: versatility, routing to specialists, general assistance, information r
 
 1. **Review Base System Prompt Reference skill** - Understand what NOT to duplicate
 2. **Check if agent has skills** - Determines if system prompt should be minimal or detailed
-3. **Gather inferred data** - From Intelligent Inference skill (capabilities, personality, category)
-4. **Write agent name & description** - 2-3 sentences about purpose
+3. **Use available information** - Capabilities, personality, category, user requirements
+4. **Write agent name & description** - Brief overview of purpose
 5. **List primary responsibilities** - Convert capabilities into detailed responsibilities
-6. **Add workflows OR skills section** - Workflows if no skills, skills reference if has skills
+6. **Add workflows** - Only if agent has NO skills (workflows are replaced by skills)
 7. **Specify tool usage** - Database queries, APIs, file handling specific to this agent
-8. **Define communication style** - Use personality traits from config
+8. **Define communication style** - Based on personality and target users
 9. **Create key rules** - Agent-specific constraints, error handling, escalation
 10. **Validate** - Check length, no duplication, all sections present
+
+**Important:** Skills section is automatically added from config.yaml - do NOT manually add it to system_prompt.md
 
 =======================================================================
 ## VALIDATION CHECKLIST
@@ -311,10 +315,11 @@ Before finalizing system_prompt.md:
 - ✅ System prompt is MINIMAL if agent has skills
 - ✅ Markdown formatting is correct
 - ✅ UTF-8 encoding
+- ✅ NO skills section manually added (skills auto-referenced from config.yaml)
 
-**Skills Integration (if applicable):**
-- ✅ Skills section references all skill files
+**Skills Handling (if applicable):**
 - ✅ System prompt doesn't duplicate skill content
-- ✅ Clear guidance on when to consult each skill
+- ✅ System prompt stays minimal since detailed processes are in skills
+- ✅ Skills are defined in config.yaml (not in system_prompt.md)
 
-**REMEMBER:** The base prompt is automatically added. Focus only on what makes THIS agent unique.
+**REMEMBER:** Both the base prompt AND skills section are automatically added. Focus only on what makes THIS agent unique.

@@ -15,16 +15,17 @@ agent:
   enabled: true
   admin_only: true
 
-  initial_message: 'Hey! 👋 I''m Ace, your Agent Creation Expert.<br><br>I automatically create complete AI agents with minimal input:<br>✅ Just tell me what your agent should do<br>✅ I''ll infer category, capabilities, and personality<br>✅ Generate config, system prompt, and N8N workflow<br>✅ Package everything in a downloadable zip file<br>✅ Upload to Supabase for easy deployment<br><br>Ready to create an agent? Simply describe what it should do!'
+  initial_message: 'Hey! 👋 I''m Ace, your Agent Creation Expert.<br><br>I create complete AI agents through a guided process:<br>✅ I''ll ask you a few key questions about your agent<br>✅ Present a complete plan for your review<br>✅ Once you approve, I''ll generate all files automatically<br>✅ Create config, system prompt, skills, and N8N workflow<br>✅ Package everything in a downloadable zip file<br><br>Ready to create an agent? Let''s start with the basics!'
 
-  sidebar_greeting: "Hi! I'm Ace - your automated Agent Builder. Just tell me what your agent should do, and I'll create a complete, production-ready package with all files and deployment instructions."
+  sidebar_greeting: "Hi! I'm Ace - your Agent Builder. I'll guide you through creating a complete agent by asking key questions, presenting a plan for your approval, then generating all files automatically."
 
   capabilities:
-    - "Automated agent creation from minimal user input"
+    - "Structured information gathering with guided questions"
+    - "Comprehensive agent plan presentation and confirmation"
     - "Intelligent requirement inference and smart defaults"
     - "Complete YAML configuration generation"
     - "System prompt and skills file generation"
-    - "N8N workflow JSON creation"
+    - "N8N workflow creation via API"
     - "Agent package zip file creation"
     - "Supabase storage upload and public URL generation"
     - "Deployment documentation and guides"
@@ -121,5 +122,5 @@ suggestions:
 
 personality:
   tone: professional
-  style: educational
-  approach: consultative
+  style: consultative
+  approach: thorough_then_efficient

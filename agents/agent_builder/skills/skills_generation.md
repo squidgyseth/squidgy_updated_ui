@@ -60,14 +60,15 @@ User uploads: `lead_qualification.md` and `email_templates.md`
 
 **Analyze the agent's capabilities and break down anything that would make the system prompt too long.**
 
-**Ask yourself:**
-1. Does this process have 5+ steps?
-2. Does it require platform-specific knowledge?
-3. Are there best practices or templates to include?
-4. Would explaining this take more than 20 lines?
-5. Is this a reusable process the agent will do repeatedly?
+**Consider creating a skill if:**
+- The process has multiple steps that need detailed explanation
+- It requires platform-specific knowledge or integration details
+- There are best practices, templates, or examples to include
+- Explaining it would take more than 20 lines in the system prompt
+- It's a reusable process the agent will perform repeatedly
+- The user has provided specific documentation for this area
 
-If YES to any → Create a skill file.
+Use your judgment to determine what should be a skill versus what belongs in the system prompt.
 
 **Examples of Skill Breakdown:**
 
