@@ -603,16 +603,12 @@ When generating config.yaml, use this template as the base structure and fill in
 }
 
 /**
- * Build-time script to pre-compile all YAML agents into optimized JSON
- * This eliminates runtime YAML parsing and reduces HTTP requests
+ * Build-time script to sync all YAML agent configurations to database
+ * Parses YAML files and syncs to Supabase agents table and Neon database
  */
 async function buildAgents() {
   try {
     const agentsDir = path.join(__dirname, '../agents');
-    const outputFile = path.join(__dirname, '../client/data/agents.ts');
-    
-    // Ensure output directory exists
-    await fs.mkdir(path.dirname(outputFile), { recursive: true });
     
     // Read all directories in the agents folder
     const entries = await fs.readdir(agentsDir, { withFileTypes: true });
@@ -621,7 +617,6 @@ async function buildAgents() {
     );
     
     const agents = [];
-    const agentMap = {};
     
     // Parse config.yaml from each agent folder
     for (const folder of agentFolders) {
@@ -633,100 +628,12 @@ async function buildAgents() {
         // Only include valid agent configs
         if (config && config.agent && config.agent.id) {
           agents.push(config);
-          agentMap[config.agent.id] = config;
         }
       } catch (error) {
         // Skip folders without config.yaml
       }
     }
     
-    // Sort agents by category and name
-    agents.sort((a, b) => {
-      if (a.agent.category !== b.agent.category) {
-        return a.agent.category.localeCompare(b.agent.category);
-      }
-      // Pinned agents come first within their category
-      if (a.agent.pinned !== b.agent.pinned) {
-        return a.agent.pinned ? -1 : 1;
-      }
-      return a.agent.name.localeCompare(b.agent.name);
-    });
-    
-    // Group by category
-    const categories = {};
-    agents.forEach(agent => {
-      const category = agent.agent.category.toUpperCase();
-      if (!categories[category]) {
-        categories[category] = [];
-      }
-      categories[category].push(agent);
-    });
-    
-    // Generate TypeScript file with all data
-    const tsContent = `// Auto-generated at build time - DO NOT EDIT MANUALLY
-// Generated on: ${new Date().toISOString()}
-
-export interface AgentConfig {
-  agent: {
-    id: string;
-    name: string;
-    emoji?: string;
-    category: string;
-    description: string;
-    specialization?: string;
-    tagline?: string;
-    avatar?: string;
-    pinned?: boolean;
-    enabled?: boolean;
-    admin_only?: boolean;
-    uses_conversation_state?: boolean;
-    initial_message?: string;
-    sidebar_greeting?: string;
-    capabilities?: string[];
-    recent_actions?: string[];
-  };
-  n8n: {
-    webhook_url: string;
-  };
-  ui?: {
-    page_type: string;
-    pages?: any[];
-  };
-  ui_use?: {
-    pages: any[];
-    default_page?: string;
-    navigation_type?: string;
-  };
-  interface?: {
-    type: string;
-    features?: string[];
-  };
-  suggestions?: string[];
-  personality?: {
-    tone: string;
-    style: string;
-    approach: string;
-  };
-}
-
-// All agents (pre-sorted)
-export const ALL_AGENTS: AgentConfig[] = ${JSON.stringify(agents, null, 2)};
-
-// Agents by ID (for fast lookup)
-export const AGENTS_BY_ID: Record<string, AgentConfig> = ${JSON.stringify(agentMap, null, 2)};
-
-// Agents by category (pre-grouped)
-export const AGENTS_BY_CATEGORY: Record<string, AgentConfig[]> = ${JSON.stringify(categories, null, 2)};
-
-// Agent IDs list
-export const AGENT_IDS: string[] = ${JSON.stringify(Object.keys(agentMap))};
-
-// Total count
-export const TOTAL_AGENTS = ${agents.length};
-`;
-    
-    await fs.writeFile(outputFile, tsContent);
-
     // Sync complete agent configurations to database (Bible of Agents)
     await syncCompleteAgentConfigurations(agents);
 
