@@ -118,7 +118,8 @@ export interface ChatMessage {
   isHtml?: boolean;
   type?: 'demo_stream' | 'regular';
   isStreaming?: boolean;
-  fileUpload?: FileUploadInfo;
+  fileUpload?: FileUploadInfo; // Legacy: single file upload (kept for backward compatibility)
+  fileUploads?: FileUploadInfo[]; // New: multiple file uploads
   content_repurposer_history_id?: string; // Database record ID for content repurposer
   isProcessingStatus?: boolean; // Flag for file processing status messages (not saved to history)
 }
