@@ -59,6 +59,7 @@ export default function N8nChatInterface({
   // Fall back to generating new session only if parent doesn't provide one
   const sessionId = initialSessionId || generateSessionId(userId, agent.id);
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, { name: string; status: string }>>(new Map());
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // Store selected files before upload
   const [pendingFileAttachments, setPendingFileAttachments] = useState<Array<{ fileName: string; fileUrl: string; fileId?: string }>>([]);
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null);
   const [showNewsletterSelector, setShowNewsletterSelector] = useState(false);
@@ -432,14 +433,51 @@ export default function N8nChatInterface({
   };
 
   const handleSendMessage = async (message: string, fileUrl?: string, fileName?: string, agentMessage?: string) => {
-    // Allow sending if there are pending file attachments even without message text
-    if ((!message.trim() && pendingFileAttachments.length === 0) || isLoading) return;
+    // Allow sending if there are selected files or pending file attachments even without message text
+    if ((!message.trim() && selectedFiles.length === 0 && pendingFileAttachments.length === 0) || isLoading) return;
 
-    // Use pending file attachments if available (use all of them)
-    const attachments = pendingFileAttachments.length > 0 ? pendingFileAttachments : 
-      (fileUrl ? [{ fileName: fileName || 'file', fileUrl, fileId: undefined }] : []);
+    // Process selected files first (upload and extract)
+    let uploadedAttachments: Array<{ fileName: string; fileUrl: string; fileId?: string }> = [];
+    if (selectedFiles.length > 0) {
+      setIsLoading(true);
+      
+      for (const file of selectedFiles) {
+        try {
+          // Check for duplicate file
+          const { isDuplicate, existingFile } = await checkForDuplicateFile(file.name);
+          
+          if (isDuplicate && existingFile) {
+            // Delete the existing file first
+            await deleteExistingFile(existingFile.file_id);
+          }
+          
+          // Upload file and get URL
+          const result = await uploadFileToSupabaseAndProcess(file);
+          if (result) {
+            uploadedAttachments.push(result);
+          }
+        } catch (error) {
+          console.error('File upload error:', error);
+          toast.error(`Failed to upload "${file.name}"`, {
+            description: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+      
+      // Clear selected files
+      setSelectedFiles([]);
+    }
 
-    // Clear pending attachments after using them
+    // Combine uploaded files with any existing pending attachments
+    const attachments = [...uploadedAttachments, ...pendingFileAttachments];
+    
+    // If we only uploaded files but have no attachments to send, return early
+    if (attachments.length === 0 && !message.trim()) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Clear pending attachments after combining them
     if (pendingFileAttachments.length > 0) {
       setPendingFileAttachments([]);
     }
@@ -1191,13 +1229,15 @@ export default function N8nChatInterface({
     fileInput.accept = '.pdf,.txt,.md,.docx,.png,.jpg,.jpeg,.mp4,.mov,.webm';
     fileInput.style.display = 'none';
 
-    fileInput.onchange = async (e) => {
+    fileInput.onchange = (e) => {
       const target = e.target as HTMLInputElement;
       const files = target.files;
 
       if (!files || files.length === 0) return;
 
-      // Process each file
+      // Validate and store files locally - no upload yet
+      const validFiles: File[] = [];
+      
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
 
@@ -1228,44 +1268,14 @@ export default function N8nChatInterface({
           continue; // Skip this file and continue with next
         }
         
-        try {
-          // Check for duplicate file
-          const { isDuplicate, existingFile } = await checkForDuplicateFile(file.name);
-          
-          if (isDuplicate && existingFile) {
-            // Show in upload indicator that we're replacing
-            const uploadTrackingId = `upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-            setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { 
-              name: file.name, 
-              status: 'Replacing existing file...' 
-            })));
-            
-            // Delete the existing file first
-            await deleteExistingFile(existingFile.file_id);
-            
-            // Update status to uploading
-            setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { 
-              name: file.name, 
-              status: 'Uploading...' 
-            })));
-            
-            // Pass trackingId to prevent double tracking
-            await uploadFileToSupabase(file, uploadTrackingId);
-            
-            // Clear the upload indicator
-            setUploadingFiles(prev => {
-              const newMap = new Map(prev);
-              newMap.delete(uploadTrackingId);
-              return newMap;
-            });
-          } else {
-            await uploadFileToSupabase(file);
-          }
-        } catch (error) {
-          console.error('File upload error:', error);
-          console.error('Full error object:', error);
-          alert(`Failed to upload "${file.name}". Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
+        validFiles.push(file);
+      }
+      
+      // Store selected files - they will be uploaded when user clicks send
+      if (validFiles.length > 0) {
+        setSelectedFiles(prev => [...prev, ...validFiles]);
+        // Focus input for user to type
+        inputRef.current?.focus();
       }
     };
     
@@ -1273,6 +1283,83 @@ export default function N8nChatInterface({
     document.body.appendChild(fileInput);
     fileInput.click();
     document.body.removeChild(fileInput);
+  };
+
+  // Upload file to Supabase and process it, returning file info for attachments
+  const uploadFileToSupabaseAndProcess = async (file: File): Promise<{ fileName: string; fileUrl: string; fileId?: string } | null> => {
+    try {
+      const timestamp = Date.now();
+      const sanitizedFileName = file.name
+        .replace(/[^a-zA-Z0-9._-]/g, '_')
+        .replace(/\s+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+      const fileName = `${userId}_${timestamp}_${sanitizedFileName}`;
+      const uploadTrackingId = `upload_${timestamp}_${Math.random().toString(36).slice(2, 8)}`;
+
+      // Show uploading status
+      setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { name: file.name, status: 'Uploading...' })));
+      
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('newsletter')
+        .upload(fileName, file);
+      
+      if (error) {
+        setUploadingFiles(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(uploadTrackingId);
+          return newMap;
+        });
+        throw new Error(`Upload failed: ${error.message}`);
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('newsletter')
+        .getPublicUrl(data.path);
+
+      const fileUrl = urlData.publicUrl;
+
+      // Update status to processing
+      setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { name: file.name, status: 'Processing...' })));
+
+      // Call backend processing endpoint
+      const formData = new FormData();
+      formData.append('firm_user_id', userId);
+      formData.append('file_name', file.name);
+      formData.append('file_url', fileUrl);
+      formData.append('agent_id', agent.id);
+      formData.append('agent_name', agent.name);
+      formData.append('source', 'chat_upload');
+
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/file/process`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Backend processing failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      const fileId = result.data?.file_id;
+
+      // Clear uploading status
+      setUploadingFiles(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(uploadTrackingId);
+        return newMap;
+      });
+
+      // Don't monitor - we'll add to pendingFileAttachments in handleSendMessage
+      // Just return the file info
+      return { fileName: file.name, fileUrl, fileId };
+    } catch (error) {
+      console.error('Error in uploadFileToSupabaseAndProcess:', error);
+      throw error;
+    }
   };
 
   const uploadFileToSupabase = async (file: File, trackingId?: string) => {
@@ -1926,7 +2013,45 @@ export default function N8nChatInterface({
         </div>
       )}
       
-      {/* Pending File Attachments Indicator */}
+      {/* Selected Files Indicator (not yet uploaded) */}
+      {selectedFiles.length > 0 && (
+        <div className="border-t border-gray-200 px-4 pt-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+            <div className="space-y-2">
+              {selectedFiles.map((file, index) => (
+                <div key={index} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-sm text-blue-700">
+                    <Paperclip className="w-4 h-4" />
+                    <span className="font-medium truncate">{file.name}</span>
+                    <span className="text-xs text-blue-500">Ready to upload</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+                    }}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <div className="flex items-center justify-between pt-1 border-t border-blue-200">
+                <span className="text-xs text-blue-600 font-medium">
+                  {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} selected
+                </span>
+                <button
+                  onClick={() => setSelectedFiles([])}
+                  className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                >
+                  Remove All
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Pending File Attachments Indicator (already uploaded and processed) */}
       {pendingFileAttachments.length > 0 && (
         <div className="border-t border-gray-200 px-4 pt-3">
           <div className="bg-purple-50 border border-purple-200 rounded-lg px-3 py-2">
@@ -2029,7 +2154,7 @@ export default function N8nChatInterface({
           {/* Send Button */}
           <button
             type="submit"
-            disabled={(!inputValue.trim() && pendingFileAttachments.length === 0) || isLoading}
+            disabled={(!inputValue.trim() && selectedFiles.length === 0 && pendingFileAttachments.length === 0) || isLoading}
             className="p-3 bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             title="Send message"
           >
