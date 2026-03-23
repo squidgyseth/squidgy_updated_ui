@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { SettingsLayout } from '../components/layout/SettingsLayout';
 import { supabase } from '../lib/supabase';
 import OnboardingService from '../services/onboardingService';
+import DatabaseAgentService from '../services/databaseAgentService';
 import { useAdmin } from '../hooks/useAdmin';
 
 interface Agent {
@@ -75,64 +76,63 @@ export default function PersonalisationSettings() {
 
         const actualUserId = profile.user_id;
 
-        // Load agents from public compiled file
-        const response = await fetch('/agents-compiled.json');
-        const agentsData = await response.json();
+        // Load agents from database
+        const agentService = DatabaseAgentService.getInstance();
+        const allAgentConfigs = await agentService.getAllAgents(true);
         
-        if (agentsData && agentsData.agents) {
-          // Check if we should show all agents (local development override)
-          const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';
+        // Check if we should show all agents (local development override)
+        const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';
+        
+        // Get platform-enabled agents from agents table (skip if show_all_agents is true)
+        let platformEnabledIds: Set<string>;
+        
+        if (showAllAgents) {
+          // In local development with show_all_agents, all agents are considered platform-enabled
+          platformEnabledIds = new Set(allAgentConfigs.map(c => c.agent.id));
+        } else {
+          const { data: platformAgents } = await supabase
+            .from('agents')
+            .select('agent_id, is_enabled')
+            .eq('is_enabled', true);
           
-          // Get platform-enabled agents from agents table (skip if show_all_agents is true)
-          let platformEnabledIds: Set<string>;
-          
-          if (showAllAgents) {
-            // In local development with show_all_agents, all agents are considered platform-enabled
-            platformEnabledIds = new Set(agentsData.agents.map((a: any) => a.agent.id));
-          } else {
-            const { data: platformAgents } = await supabase
-              .from('agents')
-              .select('agent_id, is_enabled')
-              .eq('is_enabled', true);
-            
-            platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
-          }
+          platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+        }
 
           // Get user-enabled agents from assistant_personalizations
           const onboardingService = OnboardingService.getInstance();
           const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
           const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
 
-          // Always include Personal Assistant
-          enabledAgentIds.add('personal_assistant');
-          platformEnabledIds.add('personal_assistant');
+        // Always include Personal Assistant
+        enabledAgentIds.add('personal_assistant');
+        platformEnabledIds.add('personal_assistant');
 
-          // Filter agents to only show those that are BOTH platform-enabled AND user-enabled
-          // Exception: Admin-only agents bypass user enablement check for admin users
-          const filteredAgents = agentsData.agents.filter((agentData: any) => {
-            const agentId = agentData.agent.id;
-            const isAdminOnly = agentData.agent.admin_only === true;
-            const isPlatformEnabled = platformEnabledIds.has(agentId);
-            const isUserEnabled = enabledAgentIds.has(agentId);
-            
-            // Admin-only agents: show if user is admin AND platform-enabled
-            if (isAdminOnly) {
-              return isAdmin && isPlatformEnabled;
-            }
-            
-            // Regular agents: must be both platform-enabled AND user-enabled
-            return isPlatformEnabled && isUserEnabled;
-          });
+        // Filter agents to only show those that are BOTH platform-enabled AND user-enabled
+        // Exception: Admin-only agents bypass user enablement check for admin users
+        const filteredAgents = allAgentConfigs.filter((config: any) => {
+          const agentId = config.agent.id;
+          const isAdminOnly = config.agent.admin_only === true;
+          const isPlatformEnabled = platformEnabledIds.has(agentId);
+          const isUserEnabled = enabledAgentIds.has(agentId);
+          
+          // Admin-only agents: show if user is admin AND platform-enabled
+          if (isAdminOnly) {
+            return isAdmin && isPlatformEnabled;
+          }
+          
+          // Regular agents: must be both platform-enabled AND user-enabled
+          return isPlatformEnabled && isUserEnabled;
+        });
 
-          const formattedAgents: Agent[] = filteredAgents.map((agentData: any) => ({
-            id: agentData.agent.id,
-            name: agentData.agent.name,
-            avatar: agentData.agent.avatar,
-            category: agentData.agent.category,
-            description: agentData.agent.description,
-            selected: false
-          }));
-          setAgents(formattedAgents);
+        const formattedAgents: Agent[] = filteredAgents.map((config: any) => ({
+          id: config.agent.id,
+          name: config.agent.name,
+          avatar: config.agent.avatar,
+          category: config.agent.category,
+          description: config.agent.description,
+          selected: false
+        }));
+        setAgents(formattedAgents);
           
           // Check for navigation state to auto-select agent
           const navigationState = location.state as { selectedAgent?: string; openSection?: string } | null;
@@ -177,9 +177,8 @@ export default function PersonalisationSettings() {
             }
           }
           
-          // Check which agents have existing customizations
-          await checkExistingCustomizations(formattedAgents);
-        }
+        // Check which agents have existing customizations
+        await checkExistingCustomizations(formattedAgents);
       } catch (error) {
         console.error('Error loading agents:', error);
         toast.error('Failed to load agents');

@@ -32,6 +32,109 @@ function getNeonConnectionString() {
 }
 
 /**
+ * Upsert complete agent configurations to agents table
+ * This is the "Bible of Agents" - stores ALL configuration data
+ */
+async function syncCompleteAgentConfigurations(agents) {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.log('⚠️ Supabase credentials not found, skipping agents sync');
+    return;
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  console.log('📚 Syncing complete agent configurations to agents table...');
+
+  const configRecords = agents.map((agent, index) => ({
+    agent_id: agent.agent.id,
+    name: agent.agent.name,
+    emoji: agent.agent.emoji || '🤖',
+    category: agent.agent.category?.toUpperCase() || 'GENERAL',
+    description: agent.agent.description || '',
+    specialization: agent.agent.specialization || null,
+    tagline: agent.agent.tagline || null,
+    avatar_url: agent.agent.avatar || null,
+    pinned: agent.agent.pinned === true,
+    display_order: agent.agent.pinned ? index : index + 100,
+    is_enabled: agent.agent.enabled === true,
+    admin_only: agent.agent.admin_only === true,
+    is_default: agent.agent.id === 'personal_assistant',
+    initial_message: agent.agent.initial_message || null,
+    sidebar_greeting: agent.agent.sidebar_greeting || null,
+    capabilities: agent.agent.capabilities || [],
+    recent_actions: agent.agent.recent_actions || [],
+    skills: agent.skills || [],
+    ui_config: agent.ui_use || agent.ui || {},
+    interface_config: agent.interface || {},
+    suggestions: agent.suggestions || [],
+    personality: agent.personality || {},
+    webhook_url: agent.n8n?.webhook_url || '',
+    uses_conversation_state: agent.agent.uses_conversation_state === true,
+    platforms: agent.platforms || {},
+    domain_config: agent.solar_config || agent.domain_config || {},
+    raw_config: agent
+  }));
+
+  for (const record of configRecords) {
+    try {
+      const { error } = await supabase
+        .from('agents')
+        .upsert(record, {
+          onConflict: 'agent_id',
+          ignoreDuplicates: false
+        });
+
+      if (error) {
+        console.error(`❌ Error syncing ${record.agent_id} to agents:`, error.message);
+      } else {
+        console.log(`  ✅ ${record.agent_id}`);
+      }
+    } catch (err) {
+      console.error(`❌ Error syncing ${record.agent_id}:`, err.message);
+    }
+  }
+
+  // Cleanup orphaned agents
+  const yamlAgentIds = configRecords.map(r => r.agent_id);
+  try {
+    const { data: dbAgents, error: fetchError } = await supabase
+      .from('agents')
+      .select('agent_id');
+    
+    if (fetchError) {
+      console.error('❌ Error fetching agents for cleanup:', fetchError.message);
+    } else if (dbAgents) {
+      const orphanedAgents = dbAgents.filter(
+        dbAgent => !yamlAgentIds.includes(dbAgent.agent_id)
+      );
+      
+      if (orphanedAgents.length > 0) {
+        console.log('🧹 Cleaning up orphaned agents...');
+        for (const orphan of orphanedAgents) {
+          const { error: deleteError } = await supabase
+            .from('agents')
+            .delete()
+            .eq('agent_id', orphan.agent_id);
+          
+          if (deleteError) {
+            console.error(`  ❌ Error deleting ${orphan.agent_id}:`, deleteError.message);
+          } else {
+            console.log(`  🗑️  Deleted: ${orphan.agent_id}`);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('❌ Error during cleanup:', err.message);
+  }
+
+  console.log(`✅ Synced ${configRecords.length} agents with complete configurations`);
+}
+
+/**
  * Upsert agents to Supabase personal_assistant_config table
  * Only upserts records with config_type = 'assistants'
  * Syncs: code, display_name, emoji, description, category, is_enabled
@@ -76,107 +179,37 @@ async function upsertAgentsToSupabase(agents) {
     }
   }
 
-  // ============================================
-  // SYNC TO agents TABLE (for n8n/Personal Assistant)
-  // ============================================
-  console.log('📦 Syncing agents to agents table...');
-  
-  const agentRecords = agents.map((agent, index) => ({
-    agent_id: agent.agent.id,
-    name: agent.agent.name,
-    description: agent.agent.description || null,
-    category: agent.agent.category?.toUpperCase() || 'GENERAL',
-    emoji: agent.agent.emoji || '🤖',
-    specialization: agent.agent.specialization || null,
-    tagline: agent.agent.tagline || null,
-    webhook_url: agent.n8n?.webhook_url || null,
-    avatar_url: agent.agent.avatar || null,
-    is_enabled: agent.agent.enabled === true,
-    admin_only: agent.agent.admin_only === true,
-    is_default: agent.agent.id === 'personal_assistant',
-    display_order: agent.agent.pinned ? index : index + 100
-  }));
-
-  for (const record of agentRecords) {
-    try {
-      const { data: existing } = await supabase
-        .from('agents')
-        .select('id')
-        .eq('agent_id', record.agent_id)
-        .single();
-
-      if (existing) {
-        const { error } = await supabase
-          .from('agents')
-          .update({
-            name: record.name,
-            description: record.description,
-            category: record.category,
-            emoji: record.emoji,
-            specialization: record.specialization,
-            tagline: record.tagline,
-            webhook_url: record.webhook_url,
-            avatar_url: record.avatar_url,
-            is_enabled: record.is_enabled,
-            admin_only: record.admin_only,
-            is_default: record.is_default,
-            display_order: record.display_order,
-            updated_at: new Date().toISOString()
-          })
-          .eq('agent_id', record.agent_id);
-
-        if (error) {
-          console.error(`❌ Error updating ${record.agent_id} in agents table:`, error.message);
-        } else {
-          console.log(`  ✅ Updated: ${record.agent_id}`);
-        }
-      } else {
-        const { error } = await supabase
-          .from('agents')
-          .insert(record);
-
-        if (error) {
-          console.error(`❌ Error inserting ${record.agent_id} in agents table:`, error.message);
-        } else {
-          console.log(`  ✅ Inserted: ${record.agent_id}`);
-        }
-      }
-    } catch (err) {
-      console.error(`❌ Error syncing ${record.agent_id} to agents table:`, err.message);
-    }
-  }
-
-  console.log(`✅ Synced ${agentRecords.length} agents to database`);
+  console.log(`✅ Synced ${configRecords.length} agents to database`);
 
   // ============================================
   // CLEANUP: Remove agents from DB that are not in YAML configs
   // ============================================
-  const yamlAgentIds = agentRecords.map(r => r.agent_id);
+  const yamlAgentIds = configRecords.map(r => r.code);
   
   try {
     const { data: dbAgents, error: fetchError } = await supabase
-      .from('agents')
-      .select('agent_id');
+      .from('personal_assistant_config')
+      .select('code');
     
     if (fetchError) {
       console.error('❌ Error fetching agents for cleanup:', fetchError.message);
     } else if (dbAgents) {
       const orphanedAgents = dbAgents.filter(
-        dbAgent => !yamlAgentIds.includes(dbAgent.agent_id)
+        dbAgent => !yamlAgentIds.includes(dbAgent.code)
       );
       
       if (orphanedAgents.length > 0) {
         console.log('🧹 Cleaning up orphaned agents from database...');
         for (const orphan of orphanedAgents) {
           const { error: deleteError } = await supabase
-            .from('agents')
+            .from('personal_assistant_config')
             .delete()
-            .eq('agent_id', orphan.agent_id);
+            .eq('code', orphan.code);
           
           if (deleteError) {
-            console.error(`  ❌ Error deleting ${orphan.agent_id}:`, deleteError.message);
+            console.error(`  ❌ Error deleting ${orphan.code}:`, deleteError.message);
           } else {
-            console.log(`  🗑️  Deleted: ${orphan.agent_id}`);
+            console.log(`  🗑️  Deleted: ${orphan.code}`);
           }
         }
       }
@@ -693,20 +726,11 @@ export const TOTAL_AGENTS = ${agents.length};
 `;
     
     await fs.writeFile(outputFile, tsContent);
-    
-    // Also generate a simple JSON version for external use
-    const jsonOutput = path.join(__dirname, '../public/agents-compiled.json');
-    await fs.writeFile(jsonOutput, JSON.stringify({
-      agents,
-      agentMap,
-      categories,
-      meta: {
-        total: agents.length,
-        buildTime: new Date().toISOString()
-      }
-    }, null, 2));
 
-    // Sync agents to Supabase database
+    // Sync complete agent configurations to database (Bible of Agents)
+    await syncCompleteAgentConfigurations(agents);
+
+    // Sync agents to Supabase database (legacy tables)
     await upsertAgentsToSupabase(agents);
 
     // Update system prompts with skills table

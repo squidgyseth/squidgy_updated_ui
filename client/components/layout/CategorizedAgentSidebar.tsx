@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
 import { useAdmin } from '../../hooks/useAdmin';
 import CreateGroupChatModal from '../modals/CreateGroupChatModal';
-import OptimizedAgentService from '../../services/optimizedAgentService';
+import DatabaseAgentService from '../../services/databaseAgentService';
 import OnboardingService from '../../services/onboardingService';
 import { supabase } from '../../lib/supabase';
 
@@ -34,12 +34,13 @@ export default function CategorizedAgentSidebar() {
   const [selectedAssistant, setSelectedAssistant] = useState<string | null>(null);
 
   useEffect(() => {
-    loadAgentsFromYAML();
+    // Force refresh on mount to always get latest data
+    loadAgentsFromYAML(true);
   }, [userId, profile, isImpersonating, isAdmin]); // Refresh when user data or admin status changes
 
   // Refresh agents when needed (can be called from outside)
   const refreshAgents = () => {
-    loadAgentsFromYAML();
+    loadAgentsFromYAML(true);
   };
 
   // Expose refresh function to window for N8N webhook calls
@@ -150,7 +151,7 @@ export default function CategorizedAgentSidebar() {
     }
   }, [location]);
 
-  const loadAgentsFromYAML = async () => {
+  const loadAgentsFromYAML = async (forceRefresh: boolean = false) => {
     try {
       // Use the useUser hook which properly handles impersonation
       if (!userId || !profile) {
@@ -160,9 +161,9 @@ export default function CategorizedAgentSidebar() {
 
       const actualUserId = profile.user_id;
 
-      const agentService = OptimizedAgentService.getInstance();
+      const agentService = DatabaseAgentService.getInstance();
       const onboardingService = OnboardingService.getInstance();
-      const allAgentConfigs = agentService.getAllAgents();
+      const allAgentConfigs = await agentService.getAllAgents(forceRefresh);
       
       // Check if we should show all agents (local development override)
       const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';

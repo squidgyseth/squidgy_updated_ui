@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader, Users, Bot } from 'lucide-react';
 import GroupChatService, { type GroupChat, type GroupChatMessage } from '../../services/groupChatService';
-import OptimizedAgentService from '../../services/optimizedAgentService';
+import DatabaseAgentService from '../../services/databaseAgentService';
 import OnboardingService from '../../services/onboardingService';
 import { useUser } from '../../hooks/useUser';
 import { useAdmin } from '../../hooks/useAdmin';
@@ -45,7 +45,7 @@ export default function GroupChatInterface({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const groupChatService = GroupChatService.getInstance();
-  const agentService = OptimizedAgentService.getInstance();
+  const agentService = DatabaseAgentService.getInstance();
   const thinkingMessage = useThinkingMessage(); // Get rotating thinking message
 
   useEffect(() => {
@@ -116,9 +116,9 @@ export default function GroupChatInterface({
       }
 
       const actualUserId = profile.user_id;
-      const agentService = OptimizedAgentService.getInstance();
+      const agentService = DatabaseAgentService.getInstance();
       const onboardingService = OnboardingService.getInstance();
-      const allAgentConfigs = agentService.getAllAgents();
+      const allAgentConfigs = await agentService.getAllAgents();
 
       // Check if we should show all agents (local development override)
       const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';

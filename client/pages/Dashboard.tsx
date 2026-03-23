@@ -100,7 +100,7 @@ export default function Index() {
     setIsLoadingUserName(false);
   }, [profile]);
 
-  // Fetch enabled agents from BOTH agents table AND assistant_personalizations
+  // Fetch enabled agents from database and user personalizations
   useEffect(() => {
     const fetchEnabledAgents = async () => {
       // Wait for auth to be ready and profile to be loaded
@@ -115,19 +115,23 @@ export default function Index() {
         // Check if we should show all agents (local development override)
         const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';
         
-        // Get platform-enabled agents from agents table (skip if show_all_agents is true)
+        // Get platform-enabled agents from database
         let platformEnabledIds: Set<string>;
         
         if (showAllAgents) {
           // In local development with show_all_agents, all agents are considered platform-enabled
           platformEnabledIds = new Set(['personal_assistant', 'social_media', 'content_repurposer', 'newsletter_multi']);
         } else {
-          const { data: platformAgents } = await supabase
-            .from('agents')
-            .select('agent_id, is_enabled')
-            .eq('is_enabled', true);
+          // Use DatabaseAgentService to get enabled agents
+          const { default: DatabaseAgentService } = await import('../services/databaseAgentService');
+          const agentService = DatabaseAgentService.getInstance();
+          const allAgents = await agentService.getAllAgents();
           
-          platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+          platformEnabledIds = new Set(
+            allAgents
+              .filter(agent => agent.agent.enabled)
+              .map(agent => agent.agent.id)
+          );
         }
         
         // Get user-enabled agents from assistant_personalizations

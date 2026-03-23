@@ -11,7 +11,7 @@ import {
   MessageSquare, Clock, User as UserIcon, History, Hash, Mail, KeyRound, Send, BarChart3, LogIn
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { ALL_AGENTS, AgentConfig } from '../../data/agents';
+import DatabaseAgentService, { type AgentConfig } from '../../services/databaseAgentService';
 import { chatSessionService, ChatSession as ChatSessionType, ChatMessage as ChatMessageType } from '../../services/chatSessionService';
 import ChatMessageBubble from '../../components/chat/ChatMessageBubble';
 
@@ -936,15 +936,17 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
     try {
       setLoadingAssistant(true);
       
-      // Use frontend agent definitions as source of truth (not the agents table)
-      // ALL_AGENTS is imported from client/data/agents.ts
-      const frontendAgents = ALL_AGENTS.map(config => ({
+      // Load agent definitions from database
+      const agentService = DatabaseAgentService.getInstance();
+      const agentConfigs = await agentService.getAllAgents();
+      
+      const frontendAgents = agentConfigs.map(config => ({
         id: config.agent.id,
         name: config.agent.name,
         description: config.agent.description,
         emoji: config.agent.emoji,
         category: config.agent.category,
-        enabled: config.agent.enabled // personal_assistant has enabled: true
+        enabled: config.agent.enabled
       }));
       
       // Load user's personalizations from Supabase

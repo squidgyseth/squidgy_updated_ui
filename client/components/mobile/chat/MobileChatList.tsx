@@ -7,7 +7,7 @@ import { TouchButton } from '../layout/TouchButton';
 import { MobileCard } from '../layout/MobileCard';
 import { Badge } from '../../ui/badge';
 import { cn } from '../../../lib/utils';
-import OptimizedAgentService from '../../../services/optimizedAgentService';
+import DatabaseAgentService from '../../../services/databaseAgentService';
 import OnboardingService from '../../../services/onboardingService';
 import { supabase } from '../../../lib/supabase';
 import { useUser } from '../../../hooks/useUser';
@@ -69,9 +69,10 @@ export function MobileChatList({
 
       const actualUserId = profile.user_id;
 
-      const agentService = OptimizedAgentService.getInstance();
+      const agentService = DatabaseAgentService.getInstance();
       const onboardingService = OnboardingService.getInstance();
-      const allAgentConfigs = agentService.getAllAgents();
+      // Force refresh to get latest agents from database
+      const allAgentConfigs = await agentService.getAllAgents(true);
 
       // Check if we should show all agents (local development override)
       const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';
