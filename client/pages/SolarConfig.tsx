@@ -3,7 +3,7 @@ import { ChevronLeft, DollarSign, Percent, Home, Building2, Package, CreditCard,
 import { supabase } from '../lib/supabase';
 import { useUser } from '../hooks/useUser';
 import { toast } from 'sonner';
-import { OptimizedAgentService } from '../services/optimizedAgentService';
+import DatabaseAgentService from '../services/databaseAgentService';
 import { CURRENCIES, getCountryEnergyDefaults, getCurrencyFromCountry } from '../utils/currencyUtils';
 import { getBusinessDetails } from '../lib/api';
 
@@ -57,10 +57,10 @@ export default function SolarConfig() {
 
   // Load agent configuration and defaults
   useEffect(() => {
-    const loadAgentConfig = () => {
+    const loadAgentConfig = async () => {
       try {
-        const agentService = OptimizedAgentService.getInstance();
-        const config = agentService.getAgentById('SOL');
+        const agentService = DatabaseAgentService.getInstance();
+        const config = await agentService.getAgentById('SOL');
         if (config) {
           setAgentConfig(config);
           

@@ -109,14 +109,14 @@ export default function ComprehensiveOnboarding() {
   useEffect(() => {
     const loadAgents = async () => {
       try {
-        // Load from agents.ts - this would need to be updated to include presetup_required field
-        const response = await fetch('/agents-compiled.json');
-        const agentsData = await response.json();
+        const DatabaseAgentService = (await import('../../services/databaseAgentService')).default;
+        const agentService = DatabaseAgentService.getInstance();
+        const allAgents = await agentService.getAllAgents(true);
 
         // Filter agents that have presetup_required: true
-        const presetupAgents = agentsData.agents?.filter((agent: any) =>
-          agent.presetup_required === true || agent.agent?.presetup_required === true
-        ) || [];
+        const presetupAgents = allAgents.filter((config: any) =>
+          config.presetup_required === true || config.agent?.presetup_required === true
+        );
 
         setAgents(presetupAgents);
       } catch (error) {

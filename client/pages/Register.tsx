@@ -396,7 +396,7 @@ export default function Register() {
       </div>
 
       {/* Right Side - Carousel */}
-      <AuthCarousel />
+      <AuthCarousel hideGameSlide={true} />
 
       {/* Beta User Agreement Modal */}
       <BetaUserAgreementModal
@@ -415,3 +415,4 @@ export default function Register() {
     </div>
   );
 }
+

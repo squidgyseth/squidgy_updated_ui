@@ -25,6 +25,7 @@ dist-ssr
 
 .config/
 .env
+.env.loil
 
 .env_production
 .env_backup_farzin
@@ -53,3 +54,5 @@ debug_*.py
 # Workflow backups (keep in n8n/backups/ instead)
 *_BROKEN_*.json
 *_LAST_GOOD_*.json
+.vercel
+// Trigger deployment

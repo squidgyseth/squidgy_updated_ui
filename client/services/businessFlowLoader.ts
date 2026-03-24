@@ -195,33 +195,27 @@ class BusinessFlowLoader {
   }
 
   /**
-   * Load agent details from actual config file
+   * Load agent details from database
    */
   async loadAgentFromConfigFile(configFileName: string): Promise<any> {
     try {
-      const response = await fetch(`/agents-compiled.json`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch agents-compiled.json: ${response.status}`);
-      }
+      const DatabaseAgentService = (await import('./databaseAgentService')).default;
+      const agentService = DatabaseAgentService.getInstance();
+      const agentConfig = await agentService.getAgentById(configFileName);
       
-      const agentsData = await response.json();
-      const agentData = agentsData.agents?.find((a: any) => 
-        a.agent?.id === configFileName
-      );
-      
-      if (agentData?.agent) {
+      if (agentConfig?.agent) {
         // Transform to expected format
         return {
-          id: agentData.agent.id,
-          name: agentData.agent.name,
-          description: agentData.agent.description,
-          icon: agentData.agent.avatar || agentData.agent.icon || '🤖',
-          icon_color: agentData.agent.icon_color || '#6017E8',
-          key_capabilities: agentData.agent.capabilities || [],
-          specialization: agentData.agent.specialization,
-          tagline: agentData.agent.tagline,
-          presetup_required: agentData.agent.presetup_required || false,
-          presetup_page: agentData.agent.presetup_page || null
+          id: agentConfig.agent.id,
+          name: agentConfig.agent.name,
+          description: agentConfig.agent.description,
+          icon: agentConfig.agent.avatar || agentConfig.agent.icon || '🤖',
+          icon_color: agentConfig.agent.icon_color || '#6017E8',
+          key_capabilities: agentConfig.agent.capabilities || [],
+          specialization: agentConfig.agent.specialization,
+          tagline: agentConfig.agent.tagline,
+          presetup_required: agentConfig.agent.presetup_required || false,
+          presetup_page: agentConfig.agent.presetup_page || null
         };
       }
       

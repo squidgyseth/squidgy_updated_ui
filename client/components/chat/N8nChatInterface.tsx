@@ -60,6 +60,8 @@ export default function N8nChatInterface({
   // Fall back to generating new session only if parent doesn't provide one
   const sessionId = initialSessionId || generateSessionId(userId, agent.id);
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, { name: string; status: string }>>(new Map());
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // Store selected files before upload
+  const [pendingFileAttachments, setPendingFileAttachments] = useState<Array<{ fileName: string; fileUrl: string; fileId?: string }>>([]);
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null);
   const [showNewsletterSelector, setShowNewsletterSelector] = useState(false);
   const [existingHistoryId, setExistingHistoryId] = useState<string | null>(null);
@@ -432,7 +434,54 @@ export default function N8nChatInterface({
   };
 
   const handleSendMessage = async (message: string, fileUrl?: string, fileName?: string, agentMessage?: string) => {
-    if (!message.trim() || isLoading) return;
+    // Allow sending if there are selected files or pending file attachments even without message text
+    if ((!message.trim() && selectedFiles.length === 0 && pendingFileAttachments.length === 0) || isLoading) return;
+
+    // Process selected files first (upload and extract)
+    let uploadedAttachments: Array<{ fileName: string; fileUrl: string; fileId?: string }> = [];
+    if (selectedFiles.length > 0) {
+      setIsLoading(true);
+      
+      for (const file of selectedFiles) {
+        try {
+          // Check for duplicate file
+          const { isDuplicate, existingFile } = await checkForDuplicateFile(file.name);
+          
+          if (isDuplicate && existingFile) {
+            // Delete the existing file first
+            await deleteExistingFile(existingFile.file_id);
+          }
+          
+          // Upload file and get URL
+          const result = await uploadFileToSupabaseAndProcess(file);
+          if (result) {
+            uploadedAttachments.push(result);
+          }
+        } catch (error) {
+          console.error('File upload error:', error);
+          toast.error(`Failed to upload "${file.name}"`, {
+            description: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+      
+      // Clear selected files
+      setSelectedFiles([]);
+    }
+
+    // Combine uploaded files with any existing pending attachments
+    const attachments = [...uploadedAttachments, ...pendingFileAttachments];
+    
+    // If we only uploaded files but have no attachments to send, return early
+    if (attachments.length === 0 && !message.trim()) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Clear pending attachments after combining them
+    if (pendingFileAttachments.length > 0) {
+      setPendingFileAttachments([]);
+    }
 
     // For content_repurposer agent (and content_repurposer_multi), enforce newsletter selection
     if ((agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') && !selectedNewsletterId) {
@@ -440,20 +489,105 @@ export default function N8nChatInterface({
       return;
     }
 
-    // If agentMessage is provided, use it for the agent; otherwise use the user message
-    // For file uploads: user sees simple message + file frame, agent gets detailed KB instruction
-    const messageContent = agentMessage || message;
+    // Helper function to generate template message for files
+    const generateTemplateMessage = (attachments: Array<{ fileName: string; fileUrl: string; fileId?: string }>) => {
+      const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.tiff', '.ico', '.heic', '.heif'];
+      const videoExtensions = ['.mp4', '.mov', '.webm', '.avi', '.mkv', '.flv', '.wmv', '.m4v'];
+      
+      const images = attachments.filter(f => imageExtensions.some(ext => f.fileName.toLowerCase().endsWith(ext)));
+      const videos = attachments.filter(f => videoExtensions.some(ext => f.fileName.toLowerCase().endsWith(ext)));
+      const documents = attachments.filter(f => 
+        !imageExtensions.some(ext => f.fileName.toLowerCase().endsWith(ext)) &&
+        !videoExtensions.some(ext => f.fileName.toLowerCase().endsWith(ext))
+      );
+      
+      const parts: string[] = [];
+      
+      if (images.length > 0) {
+        parts.push(images.length === 1 ? '1 image' : `${images.length} images`);
+      }
+      if (videos.length > 0) {
+        parts.push(videos.length === 1 ? '1 video' : `${videos.length} videos`);
+      }
+      if (documents.length > 0) {
+        parts.push(documents.length === 1 ? '1 document' : `${documents.length} documents`);
+      }
+      
+      const fileList = attachments.map(f => f.fileName).join(', ');
+      
+      if (attachments.length === 1) {
+        if (images.length === 1) {
+          return `I've uploaded an image. Please analyze this image and tell me what you see in it.`;
+        } else if (videos.length === 1) {
+          return `I've uploaded a video file.`;
+        } else {
+          return `I've uploaded a document: ${attachments[0].fileName}. Please analyze this document.`;
+        }
+      } else {
+        const typesText = parts.join(', ').replace(/, ([^,]*)$/, ' and $1');
+        return `I've uploaded ${typesText}: ${fileList}.`;
+      }
+    };
+
+    // Determine the user-visible message and agent message
+    let userVisibleMessage = message.trim(); // Only show what user actually typed
+    let messageContent = message.trim();
+    
+    // If user left message empty but has attachments, generate template message for agent only
+    if (!messageContent && attachments.length > 0) {
+      messageContent = generateTemplateMessage(attachments);
+      // userVisibleMessage stays empty - we don't show template in chat
+    }
+
+    // Always attach file URLs to agent message if files are present
+    if (attachments.length > 0 && !agentMessage) {
+      // Detect file types to construct appropriate instruction
+      const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.tiff', '.ico', '.heic', '.heif'];
+      const videoExtensions = ['.mp4', '.mov', '.webm', '.avi', '.mkv', '.flv', '.wmv', '.m4v'];
+      
+      const fileReferences: string[] = [];
+      
+      attachments.forEach(attachment => {
+        const isImage = attachment.fileName && imageExtensions.some(ext => attachment.fileName.toLowerCase().endsWith(ext));
+        const isVideo = attachment.fileName && videoExtensions.some(ext => attachment.fileName.toLowerCase().endsWith(ext));
+        
+        if (isImage) {
+          fileReferences.push(`Image URL: ${attachment.fileUrl}`);
+        } else if (isVideo) {
+          fileReferences.push(`Video URL: ${attachment.fileUrl}`);
+        } else {
+          fileReferences.push(`Document: ${attachment.fileName}`);
+        }
+      });
+      
+      if (fileReferences.length > 0) {
+        messageContent = `${messageContent}\n\n${fileReferences.join('\n')}`;
+      }
+    } else if (agentMessage) {
+      // Use provided agent message if specified
+      messageContent = agentMessage;
+    }
 
     const messageId = generateRequestId();
     const userMessage: ChatMessage = {
       id: messageId,
-      content: message,
+      content: userVisibleMessage,
       sender: 'user',
       timestamp: new Date(),
-      fileUpload: fileUrl ? {
-        fileName: fileName || 'file',
-        fileUrl,
-        fileId: `file_${messageId}`, // Use message ID with prefix to ensure uniqueness
+      // Include all file attachments
+      fileUploads: attachments.length > 0 ? attachments.map((attachment, index) => ({
+        fileName: attachment.fileName,
+        fileUrl: attachment.fileUrl,
+        fileId: attachment.fileId || `file_${messageId}_${index}`,
+        status: 'completed' as const,
+        agentId: agent.id,
+        agentName: agent.name
+      })) : undefined,
+      // Keep legacy single file for backward compatibility
+      fileUpload: attachments.length > 0 ? {
+        fileName: attachments[0].fileName,
+        fileUrl: attachments[0].fileUrl,
+        fileId: attachments[0].fileId || `file_${messageId}`,
         status: 'completed',
         agentId: agent.id,
         agentName: agent.name
@@ -464,9 +598,27 @@ export default function N8nChatInterface({
     setInputValue('');
     setIsLoading(true);
 
-    // Save user message to database (with file info if present)
-    // Save only the user-visible message, not the agent instruction
-    await saveMessageToHistory(message, 'User', userMessage.timestamp, undefined, undefined, undefined, fileUrl, fileName);
+    // Save user message to database
+    // If there are file attachments, save one row per file
+    // If no files, save one row with just the message
+    if (attachments.length > 0) {
+      // Save one database row per file attachment
+      for (const attachment of attachments) {
+        await saveMessageToHistory(
+          userVisibleMessage, 
+          'User', 
+          userMessage.timestamp, 
+          undefined, 
+          undefined, 
+          undefined, 
+          attachment.fileUrl, 
+          attachment.fileName
+        );
+      }
+    } else {
+      // No files - just save the message
+      await saveMessageToHistory(userVisibleMessage, 'User', userMessage.timestamp);
+    }
 
     try {
       // Reset streaming text
@@ -640,15 +792,26 @@ export default function N8nChatInterface({
         // Parse response to handle structured JSON format
         let displayMessage = response.agent_response || response.response || 'I received your message but encountered an issue processing the response.';
         
-        // Extract only the final response - n8n concatenates streaming "thinking" text with final response
-        // Find the LAST occurrence of '...' and extract everything after it
-        const lastEllipsisIndex = displayMessage.lastIndexOf('...');
-        if (lastEllipsisIndex !== -1 && lastEllipsisIndex < displayMessage.length - 3) {
-          // There's content after the last '...'
-          const afterEllipsis = displayMessage.substring(lastEllipsisIndex + 3).trim();
-          if (afterEllipsis) {
-            console.log('[Final Response] Extracted:', afterEllipsis.substring(0, 100) + (afterEllipsis.length > 100 ? '...' : ''));
-            displayMessage = afterEllipsis;
+        // Extract only the final response - agent sends =clear= marker to separate prefinal steps from final response
+        // Check for =clear= marker first (new behavior)
+        const clearMarkerIndex = displayMessage.indexOf('=clear=');
+        if (clearMarkerIndex !== -1) {
+          // Extract everything after =clear= marker
+          const afterClear = displayMessage.substring(clearMarkerIndex + 7).trim();
+          if (afterClear) {
+            console.log('[Final Response] Extracted after =clear=:', afterClear.substring(0, 100) + (afterClear.length > 100 ? '...' : ''));
+            displayMessage = afterClear;
+          }
+        } else {
+          // Fallback: Find the LAST occurrence of '...' and extract everything after it (legacy behavior)
+          const lastEllipsisIndex = displayMessage.lastIndexOf('...');
+          if (lastEllipsisIndex !== -1 && lastEllipsisIndex < displayMessage.length - 3) {
+            // There's content after the last '...'
+            const afterEllipsis = displayMessage.substring(lastEllipsisIndex + 3).trim();
+            if (afterEllipsis) {
+              console.log('[Final Response] Extracted:', afterEllipsis.substring(0, 100) + (afterEllipsis.length > 100 ? '...' : ''));
+              displayMessage = afterEllipsis;
+            }
           }
         }
         
@@ -1063,69 +1226,57 @@ export default function N8nChatInterface({
     // Create file input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.pdf,.txt,.docx,.png,.jpg,.jpeg,.mp4,.mov,.webm';
+    fileInput.multiple = true; // Allow multiple file selection
+    fileInput.accept = '.pdf,.txt,.md,.docx,.png,.jpg,.jpeg,.mp4,.mov,.webm';
     fileInput.style.display = 'none';
 
-    fileInput.onchange = async (e) => {
+    fileInput.onchange = (e) => {
       const target = e.target as HTMLInputElement;
-      const file = target.files?.[0];
+      const files = target.files;
 
-      if (!file) return;
+      if (!files || files.length === 0) return;
 
-      // Validate file type
-      const allowedTypes = [
-        'application/pdf',
-        'text/plain',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'image/png',
-        'image/jpeg',
-        'image/jpg',
-        'video/mp4',
-        'video/quicktime',
-        'video/webm'
-      ];
-      if (!allowedTypes.includes(file.type)) {
-        alert('Only PDF, TXT, DOCX, PNG, JPG, JPEG, MP4, MOV, and WEBM files are supported');
-        return;
+      // Validate and store files locally - no upload yet
+      const validFiles: File[] = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        // Validate file type
+        const allowedTypes = [
+          'application/pdf',
+          'text/plain',
+          'text/markdown',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'image/png',
+          'image/jpeg',
+          'image/jpg',
+          'video/mp4',
+          'video/quicktime',
+          'video/webm'
+        ];
+        
+        // Get file extension for fallback validation
+        const fileExtension = file.name.split('.').pop()?.toLowerCase();
+        const allowedExtensions = ['pdf', 'txt', 'md', 'docx', 'png', 'jpg', 'jpeg', 'mp4', 'mov', 'webm'];
+        
+        // Check MIME type first, fallback to extension if MIME type is empty or generic
+        const isValidMimeType = allowedTypes.includes(file.type);
+        const isValidExtension = fileExtension && allowedExtensions.includes(fileExtension);
+        
+        if (!isValidMimeType && !isValidExtension) {
+          alert(`File "${file.name}": Only PDF, TXT, MD, DOCX, PNG, JPG, JPEG, MP4, MOV, and WEBM files are supported`);
+          continue; // Skip this file and continue with next
+        }
+        
+        validFiles.push(file);
       }
       
-      try {
-        // Check for duplicate file
-        const { isDuplicate, existingFile } = await checkForDuplicateFile(file.name);
-        
-        if (isDuplicate && existingFile) {
-          // Show in upload indicator that we're replacing
-          const uploadTrackingId = `upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-          setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { 
-            name: file.name, 
-            status: 'Replacing existing file...' 
-          })));
-          
-          // Delete the existing file first
-          await deleteExistingFile(existingFile.file_id);
-          
-          // Update status to uploading
-          setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { 
-            name: file.name, 
-            status: 'Uploading...' 
-          })));
-          
-          // Pass trackingId to prevent double tracking
-          await uploadFileToSupabase(file, uploadTrackingId);
-          
-          // Clear the upload indicator
-          setUploadingFiles(prev => {
-            const newMap = new Map(prev);
-            newMap.delete(uploadTrackingId);
-            return newMap;
-          });
-        } else {
-          await uploadFileToSupabase(file);
-        }
-      } catch (error) {
-        console.error('File upload error:', error);
-        console.error('Full error object:', error);
-        alert(`Failed to upload file. Please try again. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Store selected files - they will be uploaded when user clicks send
+      if (validFiles.length > 0) {
+        setSelectedFiles(prev => [...prev, ...validFiles]);
+        // Focus input for user to type
+        inputRef.current?.focus();
       }
     };
     
@@ -1133,6 +1284,83 @@ export default function N8nChatInterface({
     document.body.appendChild(fileInput);
     fileInput.click();
     document.body.removeChild(fileInput);
+  };
+
+  // Upload file to Supabase and process it, returning file info for attachments
+  const uploadFileToSupabaseAndProcess = async (file: File): Promise<{ fileName: string; fileUrl: string; fileId?: string } | null> => {
+    try {
+      const timestamp = Date.now();
+      const sanitizedFileName = file.name
+        .replace(/[^a-zA-Z0-9._-]/g, '_')
+        .replace(/\s+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+      const fileName = `${userId}_${timestamp}_${sanitizedFileName}`;
+      const uploadTrackingId = `upload_${timestamp}_${Math.random().toString(36).slice(2, 8)}`;
+
+      // Show uploading status
+      setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { name: file.name, status: 'Uploading...' })));
+      
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('newsletter')
+        .upload(fileName, file);
+      
+      if (error) {
+        setUploadingFiles(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(uploadTrackingId);
+          return newMap;
+        });
+        throw new Error(`Upload failed: ${error.message}`);
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('newsletter')
+        .getPublicUrl(data.path);
+
+      const fileUrl = urlData.publicUrl;
+
+      // Update status to processing
+      setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { name: file.name, status: 'Processing...' })));
+
+      // Call backend processing endpoint
+      const formData = new FormData();
+      formData.append('firm_user_id', userId);
+      formData.append('file_name', file.name);
+      formData.append('file_url', fileUrl);
+      formData.append('agent_id', agent.id);
+      formData.append('agent_name', agent.name);
+      formData.append('source', 'chat_upload');
+
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/file/process`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Backend processing failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      const fileId = result.data?.file_id;
+
+      // Clear uploading status
+      setUploadingFiles(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(uploadTrackingId);
+        return newMap;
+      });
+
+      // Don't monitor - we'll add to pendingFileAttachments in handleSendMessage
+      // Just return the file info
+      return { fileName: file.name, fileUrl, fileId };
+    } catch (error) {
+      console.error('Error in uploadFileToSupabaseAndProcess:', error);
+      throw error;
+    }
   };
 
   const uploadFileToSupabase = async (file: File, trackingId?: string) => {
@@ -1229,53 +1457,83 @@ export default function N8nChatInterface({
     const isImage = imageExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
     const isVideo = videoExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
     
-    // User visible message (saved to chat history)
-    const userVisibleMessage = `I've uploaded a file: ${fileName}`;
+    // Determine appropriate pre-fill message based on file type
+    let preFillMessage = '';
+    
+    // Helper function to generate message based on all file types
+    const generateFileMessage = (attachments: Array<{ fileName: string; fileUrl: string; fileId?: string }>) => {
+      const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.tiff', '.ico', '.heic', '.heif'];
+      const videoExtensions = ['.mp4', '.mov', '.webm', '.avi', '.mkv', '.flv', '.wmv', '.m4v'];
+      
+      const images = attachments.filter(f => imageExtensions.some(ext => f.fileName.toLowerCase().endsWith(ext)));
+      const videos = attachments.filter(f => videoExtensions.some(ext => f.fileName.toLowerCase().endsWith(ext)));
+      const documents = attachments.filter(f => 
+        !imageExtensions.some(ext => f.fileName.toLowerCase().endsWith(ext)) &&
+        !videoExtensions.some(ext => f.fileName.toLowerCase().endsWith(ext))
+      );
+      
+      const parts: string[] = [];
+      
+      if (images.length > 0) {
+        parts.push(images.length === 1 ? '1 image' : `${images.length} images`);
+      }
+      if (videos.length > 0) {
+        parts.push(videos.length === 1 ? '1 video' : `${videos.length} videos`);
+      }
+      if (documents.length > 0) {
+        parts.push(documents.length === 1 ? '1 document' : `${documents.length} documents`);
+      }
+      
+      const fileList = attachments.map(f => f.fileName).join(', ');
+      
+      if (attachments.length === 1) {
+        if (images.length === 1) {
+          return `I've uploaded an image. Please analyze this image and tell me what you see in it.`;
+        } else if (videos.length === 1) {
+          return `I've uploaded a video file.`;
+        } else {
+          return `I've uploaded a document: ${attachments[0].fileName}. Please analyze this document.`;
+        }
+      } else {
+        const typesText = parts.join(', ').replace(/, ([^,]*)$/, ' and $1');
+        return `I've uploaded ${typesText}: ${fileList}.`;
+      }
+    };
     
     if (isImage) {
-      // For images: send URL with analysis instruction immediately (no need to wait for KB processing)
-      const agentInstruction = `I've uploaded an image: ${fileUrl}. Please analyze this image and tell me what you see in it. Describe the content, objects, text, or any relevant information you can extract from the image.`;
-      await handleSendMessage(userVisibleMessage, fileUrl, fileName, agentInstruction);
+      // Add to pending attachments array (don't pre-fill input)
+      setPendingFileAttachments(prev => [...prev, { fileName, fileUrl, fileId }]);
+      // Focus input for user to type
+      inputRef.current?.focus();
       
       // Still monitor for UI updates
       if (fileId) {
         monitorFileStatus(fileId, fileName);
       }
     } else if (isVideo) {
-      // For videos: send URL directly to agent (no text extraction needed)
-      const agentInstruction = `I've uploaded a video: ${fileUrl}. This video file is now available for use in social media posts or other content.`;
-      await handleSendMessage(userVisibleMessage, fileUrl, fileName, agentInstruction);
+      // Add to pending attachments array (don't pre-fill input)
+      setPendingFileAttachments(prev => [...prev, { fileName, fileUrl, fileId }]);
+      // Focus input for user to type
+      inputRef.current?.focus();
       
       // Still monitor for UI updates
       if (fileId) {
         monitorFileStatus(fileId, fileName);
       }
     } else {
-      // For documents: wait for processing to complete before sending agent instruction
-      // First show the file upload message in chat (without sending to agent yet)
-      const messageId = generateRequestId();
-      const userMessage: ChatMessage = {
-        id: messageId,
-        content: userVisibleMessage,
-        sender: 'user',
-        timestamp: new Date(),
-        fileUpload: {
-          fileName: fileName,
-          fileUrl: fileUrl,
-          fileId: fileId || `file_${messageId}`,
-          status: 'processing',
-          agentId: agent.id,
-          agentName: agent.name
-        }
-      };
-      setMessages(prev => [...prev, userMessage]);
+      // For documents: show processing indicator and wait for completion
+      preFillMessage = `I've uploaded a document: ${fileName}`;
       
-      // Save user message to history (without agent instruction)
-      await saveMessageToHistory(userVisibleMessage, 'User', userMessage.timestamp, undefined, undefined, undefined, fileUrl, fileName);
+      // Show processing indicator in input area
+      const uploadTrackingId = `processing_${fileId}`;
+      setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { 
+        name: fileName, 
+        status: 'Processing document...' 
+      })));
       
-      // Monitor file status and send agent instruction when complete
+      // Monitor file status and pre-fill input when complete
       if (fileId) {
-        monitorFileStatusAndNotifyAgent(fileId, fileName, fileUrl);
+        monitorFileStatusAndPreFillInput(fileId, fileName, fileUrl, uploadTrackingId);
       }
     }
     } catch (error) {
@@ -1367,12 +1625,12 @@ export default function N8nChatInterface({
     };
   };
 
-  // Monitor file status and send agent instruction only when processing completes
-  const monitorFileStatusAndNotifyAgent = async (fileId: string, fileName: string, fileUrl: string) => {
+  // Monitor file status and pre-fill input when processing completes
+  const monitorFileStatusAndPreFillInput = async (fileId: string, fileName: string, fileUrl: string, uploadTrackingId: string) => {
     let attempts = 0;
     const maxAttempts = 60; // Monitor for 10 minutes (60 attempts * 10 seconds)
     let timeoutId: NodeJS.Timeout | null = null;
-    let agentNotified = false;
+    let inputPreFilled = false;
     
     // Helper to get progress message based on status
     const getProgressMessage = (status: string, message?: string): string => {
@@ -1386,19 +1644,6 @@ export default function N8nChatInterface({
       }
     };
     
-    // Helper to get progress percentage based on status
-    const getProgressPercent = (status: string, serverProgress?: number): number => {
-      if (serverProgress) return serverProgress;
-      switch (status) {
-        case 'extracting': return 20;
-        case 'extracted': return 40;
-        case 'embedding': return 50;
-        case 'saving': return 70;
-        case 'processing': return 30;
-        default: return 10;
-      }
-    };
-    
     const checkStatus = async () => {
       try {
         const file = await fileUploadService.getFileStatus(fileId);
@@ -1406,108 +1651,56 @@ export default function N8nChatInterface({
         // If file not found, stop monitoring
         if (!file) {
           console.log(`File ${fileId} not found, stopping monitoring`);
+          setUploadingFiles(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(uploadTrackingId);
+            return newMap;
+          });
           return;
         }
         
         const status = file.processing_status || file.status || 'processing';
         const message = file.message || file.processing_message;
-        const progress = file.progress;
         
-        // Update the file message with processing progress
-        setMessages(prev => prev.map(msg => {
-          if (msg.fileUpload?.fileId === fileId) {
-            return {
-              ...msg,
-              fileUpload: {
-                ...msg.fileUpload,
-                status: file.processing_status,
-                extractedText: file.extracted_text,
-                errorMessage: file.error_message,
-                processingProgress: status !== 'completed' && status !== 'failed' ? {
-                  status: status,
-                  message: getProgressMessage(status, message),
-                  progress: getProgressPercent(status, progress)
-                } : undefined
-              }
-            };
-          }
-          return msg;
-        }));
+        // Update the processing indicator with current status
+        setUploadingFiles(prev => new Map(prev.set(uploadTrackingId, { 
+          name: fileName, 
+          status: getProgressMessage(status, message)
+        })));
         
-        if (file.processing_status === 'completed' && !agentNotified) {
-          // File processing complete - now send instruction to agent
-          agentNotified = true;
+        if (file.processing_status === 'completed' && !inputPreFilled) {
+          // File processing complete - pre-fill input for user to edit
+          inputPreFilled = true;
           if (timeoutId) clearTimeout(timeoutId);
+          
+          // Clear processing indicator
+          setUploadingFiles(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(uploadTrackingId);
+            return newMap;
+          });
           
           // Show success toast
           toast.success(`File "${fileName}" processed successfully!`, {
-            description: 'Added to your knowledge base.',
-            duration: 3000,
+            description: 'Added to your knowledge base. Edit the message below and send.',
+            duration: 5000,
           });
           
-          // Now send the agent instruction (document is in KB)
-          const agentInstruction = `I've uploaded a file: ${fileName}. Please read and analyze this document from my knowledge base. You can ask me questions about it or provide insights based on its content.`;
+          // Add to pending attachments array (don't pre-fill input)
+          setPendingFileAttachments(prev => [...prev, { fileName, fileUrl, fileId }]);
           
-          // Send to agent (this will add agent response to chat)
-          setIsLoading(true);
-          try {
-            const response = await sendToN8nWorkflowStreaming(
-              userId,
-              agentInstruction,
-              agent.id,
-              (text) => setStreamingText(text),
-              sessionId,
-              generateRequestId(),
-              webhookUrl,
-              (agent.id === 'content_repurposer' || agent.id === 'content_repurposer_multi') ? selectedNewsletterId || undefined : undefined,
-              conversationState
-            );
-            
-            if (response) {
-              // Add agent response to chat
-              const displayMessage = response.agent_response || response.response || 'I received your file and processed it.';
-              const agentMessage: ChatMessage = {
-                id: response.request_id || generateRequestId(),
-                content: displayMessage,
-                sender: 'agent',
-                timestamp: new Date(),
-                status: response.agent_status || 'Ready',
-                isHtml: (response.agent_status || 'Ready') === 'Ready'
-              };
-              
-              setMessages(prev => [...prev, agentMessage]);
-              
-              // Save agent response to database
-              await saveMessageToHistory(
-                displayMessage,
-                'Agent',
-                agentMessage.timestamp,
-                response.agent_status || 'Ready',
-                response.execution_id,
-                response.workflow_id
-              );
-              
-              // Trigger Recent Actions refresh
-              onMessageSent?.();
-            }
-          } catch (error) {
-            console.error('Error sending to agent after file processing:', error);
-            const errorMessage = 'Your file was processed but I encountered an error analyzing it. Please try asking about it.';
-            // Add error message to chat
-            setMessages(prev => [...prev, {
-              id: generateRequestId(),
-              content: errorMessage,
-              sender: 'agent',
-              timestamp: new Date(),
-              status: 'Ready'
-            }]);
-          } finally {
-            setIsLoading(false);
-            setStreamingText('');
-          }
+          // Focus input for user to type
+          inputRef.current?.focus();
           
           return;
         } else if (file.processing_status === 'failed') {
+          // Clear processing indicator
+          setUploadingFiles(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(uploadTrackingId);
+            return newMap;
+          });
+          
           // Show error toast
           toast.error(`File "${fileName}" processing failed`, {
             description: file.error_message || 'Unknown error occurred',
@@ -1524,6 +1717,14 @@ export default function N8nChatInterface({
           timeoutId = setTimeout(checkStatus, 1000); // Check every 1 second to catch fast processing
         } else {
           console.log(`File ${fileId} monitoring timed out after ${maxAttempts} attempts`);
+          
+          // Clear processing indicator
+          setUploadingFiles(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(uploadTrackingId);
+            return newMap;
+          });
+          
           toast.error(`File "${fileName}" processing timed out`, {
             description: 'Please try uploading again.',
             duration: 7000,
@@ -1758,19 +1959,35 @@ export default function N8nChatInterface({
                 </div>
               ) : (
                 // User message display
-                <div>
-                  {message.fileUpload ? (
-                    <FileMessage fileInfo={message.fileUpload} timestamp={message.timestamp} processingProgress={message.fileUpload.processingProgress} />
-                  ) : (
-                    <>
-                      <div className="bg-blue-500 text-white rounded-lg px-4 py-2 overflow-hidden">
-                        <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.content}</p>
-                      </div>
-                      <span className="text-xs text-gray-500 mt-1 block">
-                        {message.timestamp.toLocaleTimeString()}
-                      </span>
-                    </>
+                <div className="space-y-2">
+                  {/* Show user's message text if present */}
+                  {message.content && (
+                    <div className="bg-blue-500 text-white rounded-lg px-4 py-2 overflow-hidden">
+                      <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.content}</p>
+                    </div>
                   )}
+                  
+                  {/* Show all file attachments */}
+                  {message.fileUploads && message.fileUploads.length > 0 ? (
+                    <div className="space-y-2">
+                      {message.fileUploads.map((fileInfo, index) => (
+                        <FileMessage 
+                          key={fileInfo.fileId || index} 
+                          fileInfo={fileInfo} 
+                          timestamp={message.timestamp} 
+                          processingProgress={fileInfo.processingProgress} 
+                        />
+                      ))}
+                    </div>
+                  ) : message.fileUpload ? (
+                    // Fallback for legacy single file upload
+                    <FileMessage fileInfo={message.fileUpload} timestamp={message.timestamp} processingProgress={message.fileUpload.processingProgress} />
+                  ) : null}
+                  
+                  {/* Timestamp */}
+                  <span className="text-xs text-gray-500 mt-1 block">
+                    {message.timestamp.toLocaleTimeString()}
+                  </span>
                 </div>
               )}
             </div>
@@ -1796,6 +2013,97 @@ export default function N8nChatInterface({
           </div>
         </div>
       )}
+      
+      {/* Selected Files Indicator (not yet uploaded) */}
+      {selectedFiles.length > 0 && (
+        <div className="border-t border-gray-200 px-4 pt-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+            <div className="space-y-2">
+              {selectedFiles.map((file, index) => (
+                <div key={index} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-sm text-blue-700">
+                    <Paperclip className="w-4 h-4" />
+                    <span className="font-medium truncate">{file.name}</span>
+                    <span className="text-xs text-blue-500">Ready to upload</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+                    }}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <div className="flex items-center justify-between pt-1 border-t border-blue-200">
+                <span className="text-xs text-blue-600 font-medium">
+                  {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} selected
+                </span>
+                <button
+                  onClick={() => setSelectedFiles([])}
+                  className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                >
+                  Remove All
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Pending File Attachments Indicator (already uploaded and processed) */}
+      {pendingFileAttachments.length > 0 && (
+        <div className="border-t border-gray-200 px-4 pt-3">
+          <div className="bg-purple-50 border border-purple-200 rounded-lg px-3 py-2">
+            <div className="space-y-2">
+              {pendingFileAttachments.map((attachment, index) => (
+                <div key={index} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-sm text-purple-700">
+                    <Paperclip className="w-4 h-4" />
+                    <span className="font-medium truncate">{attachment.fileName}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingFileAttachments(prev => {
+                        const updated = prev.filter((_, i) => i !== index);
+                        // Update message if files remain
+                        if (updated.length > 0) {
+                          const fileList = updated.map(f => f.fileName).join(', ');
+                          setInputValue(`I've uploaded ${updated.length} file(s): ${fileList}.`);
+                        } else {
+                          setInputValue('');
+                        }
+                        return updated;
+                      });
+                    }}
+                    className="text-purple-600 hover:text-purple-800 text-xs font-medium"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              {pendingFileAttachments.length > 1 && (
+                <div className="flex items-center justify-between pt-1 border-t border-purple-200">
+                  <span className="text-xs text-purple-600 font-medium">{pendingFileAttachments.length} files attached</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingFileAttachments([]);
+                      setInputValue('');
+                    }}
+                    className="text-purple-600 hover:text-purple-800 text-xs font-medium"
+                  >
+                    Remove All
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
       <form onSubmit={handleSubmit} className="border-t border-gray-200 p-4">
         <div className="flex gap-3 items-end">
           <textarea
@@ -1817,7 +2125,7 @@ export default function N8nChatInterface({
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                if (inputValue.trim() && !isLoading) {
+                if ((inputValue.trim() || pendingFileAttachments.length > 0) && !isLoading) {
                   handleSendMessage(inputValue);
                 }
               }
@@ -1847,7 +2155,7 @@ export default function N8nChatInterface({
           {/* Send Button */}
           <button
             type="submit"
-            disabled={!inputValue.trim() || isLoading}
+            disabled={(!inputValue.trim() && selectedFiles.length === 0 && pendingFileAttachments.length === 0) || isLoading}
             className="p-3 bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             title="Send message"
           >

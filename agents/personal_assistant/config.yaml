@@ -9,6 +9,7 @@ agent:
   avatar: "/Squidgy AI Assistants Avatars/1.png"
   pinned: true
   enabled: true
+  admin_only: false
   initial_message: "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you."
   sidebar_greeting: "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?"
   capabilities:
@@ -23,6 +24,22 @@ agent:
     - "Configured SMM Assistant for e-commerce business"
     - "Set up professional brand voice for marketing team"
     - "Enabled notifications and calendar integration"
+
+skills:
+  - name: Onboarding Flow
+    description: >
+      Running first-time or returning user onboarding, website analysis,
+      agent selection, brand voice/target audience setup, or enabling agents.
+
+  - name: Knowledge Base & Saving
+    description: >
+      Saving any user-provided info, correcting existing data, searching
+      before saving, or deciding categories/sources.
+
+  - name: Agent Routing
+    description: >
+      User wants to use or access a specialised agent, matching intent to
+      enabled agents, redirecting, or handling requests that belong to another agent.
 
 ui_use:
   page_type: single_page

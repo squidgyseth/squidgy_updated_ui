@@ -62,6 +62,7 @@ import NewsletterPreview from "./pages/NewsletterPreview";
 import SocialMediaPreview from "./pages/SocialMediaPreview";
 import HistoricalNewsletters from "./pages/HistoricalNewsletters";
 import HistoricalSocialPosts from "./pages/HistoricalSocialPosts";
+import SocialPostAction from "./pages/SocialPostAction";
 
 // AI Onboarding Pages
 import BusinessTypeSelection from "./pages/onboarding/BusinessTypeSelection";
@@ -89,6 +90,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminActivity from "./pages/admin/AdminActivity";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminLeaderboard from "./pages/admin/AdminLeaderboard";
 import { AdminRoute } from "./components/AdminRoute";
 import ImpersonationBanner from "./components/ImpersonationBanner";
 import { RootRedirect } from "./components/RootRedirect";
@@ -375,6 +377,7 @@ const App = () => (
               <HistoricalSocialPosts />
             </ProtectedRoute>
           } />
+          <Route path="/social-post-action" element={<SocialPostAction />} />
           
           {/* AI Onboarding Routes */}
           <Route path="/ai-onboarding/business-type" element={
@@ -472,7 +475,12 @@ const App = () => (
               <AdminAnalytics />
             </AdminRoute>
           } />
-          
+          <Route path="/admin/leaderboard" element={
+            <AdminRoute>
+              <AdminLeaderboard />
+            </AdminRoute>
+          } />
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

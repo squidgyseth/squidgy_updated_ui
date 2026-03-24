@@ -1,8 +1,4 @@
-import { AgentConfig } from '../data/agents';
-
-interface CompiledAgents {
-  agents: AgentConfig[];
-}
+import DatabaseAgentService, { type AgentConfig } from './databaseAgentService';
 
 interface AgentInfo {
   id: string;
@@ -28,12 +24,12 @@ class AgentMappingService {
     if (this.isLoaded) return;
 
     try {
-      // Load from compiled agents JSON
-      const response = await fetch('/agents-compiled.json');
-      const compiledAgents: CompiledAgents = await response.json();
+      // Load from database
+      const agentService = DatabaseAgentService.getInstance();
+      const agentConfigs = await agentService.getAllAgents();
 
       // Store agent info with ID words for dynamic matching
-      this.agents = compiledAgents.agents.map(agentConfig => {
+      this.agents = agentConfigs.map(agentConfig => {
         const { id, name } = agentConfig.agent;
         // Split agent ID by "_" to get meaningful words
         // e.g., "newsletter_multi" -> ["newsletter", "multi"]

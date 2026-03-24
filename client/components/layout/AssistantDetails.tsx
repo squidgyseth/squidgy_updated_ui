@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChatHistoryService, ChatSession } from '../../services/chatHistoryService';
-import { AGENTS_BY_ID } from '../../data/agents';
+import DatabaseAgentService from '../../services/databaseAgentService';
 
 interface AssistantDetailsProps {
   assistant: string;

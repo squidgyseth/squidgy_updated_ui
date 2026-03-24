@@ -17,7 +17,7 @@ agent:
   description: Brief description of what this agent does.
   specialization: "Expert Title"
   tagline: "Action. Create. Deliver."
-  avatar: "/Squidgy AI Assistants Avatars/1.png"
+  avatar: "/Squidgy AI Assistants Avatars/1.png" # select a number beetween 1 to 18 randomly
   pinned: false
   enabled: false
   initial_message: "Hey! I'm your Agent Name. Ready to help you today!"
@@ -29,6 +29,27 @@ agent:
   recent_actions:
     - "Completed a recent task"
     - "Generated content or analysis"
+
+# ===========================================
+# SKILLS
+# ===========================================
+# Skills are reusable best-practice documents stored in the database.
+# The agent loads them by name via tool call before executing a task.
+# List only the skills this agent needs. Multiple skills may apply to a single task.
+#
+# Example:
+#   skills:
+#     - name: Post Creation Workflow
+#       description: >
+#         Creating, scheduling, or publishing any post or story.
+#         The primary orchestration skill — consult first.
+#       file: post_creation_workflow.md
+#
+# The 'file' field should point to a markdown file in the agent's skills/ subfolder.
+# For shared skills, place the file in agents/shared/skills/ folder.
+# ===========================================
+
+skills: []
 
 ui_use:
   page_type: single_page

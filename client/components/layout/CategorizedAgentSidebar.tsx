@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
+import { useAdmin } from '../../hooks/useAdmin';
 import CreateGroupChatModal from '../modals/CreateGroupChatModal';
-import OptimizedAgentService from '../../services/optimizedAgentService';
+import DatabaseAgentService from '../../services/databaseAgentService';
 import OnboardingService from '../../services/onboardingService';
 import { supabase } from '../../lib/supabase';
 
@@ -27,17 +28,19 @@ export default function CategorizedAgentSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { userId, profile, isImpersonating } = useUser();
+  const { isAdmin } = useAdmin();
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [categories, setCategories] = useState<AssistantCategory[]>([]);
   const [selectedAssistant, setSelectedAssistant] = useState<string | null>(null);
 
   useEffect(() => {
-    loadAgentsFromYAML();
-  }, [userId, profile, isImpersonating]); // Refresh when user data changes (including impersonation)
+    // Force refresh on mount to always get latest data
+    loadAgentsFromYAML(true);
+  }, [userId, profile, isImpersonating, isAdmin]); // Refresh when user data or admin status changes
 
   // Refresh agents when needed (can be called from outside)
   const refreshAgents = () => {
-    loadAgentsFromYAML();
+    loadAgentsFromYAML(true);
   };
 
   // Expose refresh function to window for N8N webhook calls
@@ -148,7 +151,7 @@ export default function CategorizedAgentSidebar() {
     }
   }, [location]);
 
-  const loadAgentsFromYAML = async () => {
+  const loadAgentsFromYAML = async (forceRefresh: boolean = false) => {
     try {
       // Use the useUser hook which properly handles impersonation
       if (!userId || !profile) {
@@ -158,9 +161,9 @@ export default function CategorizedAgentSidebar() {
 
       const actualUserId = profile.user_id;
 
-      const agentService = OptimizedAgentService.getInstance();
+      const agentService = DatabaseAgentService.getInstance();
       const onboardingService = OnboardingService.getInstance();
-      const allAgentConfigs = agentService.getAllAgents();
+      const allAgentConfigs = await agentService.getAllAgents(forceRefresh);
       
       // Check if we should show all agents (local development override)
       const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';
@@ -189,9 +192,20 @@ export default function CategorizedAgentSidebar() {
       platformEnabledIds.add('personal_assistant');
       
       // Filter configs to only show agents that are BOTH platform-enabled AND user-enabled
-      const enabledConfigs = allAgentConfigs.filter(config => 
-        enabledAgentIds.has(config.agent.id) && platformEnabledIds.has(config.agent.id)
-      );
+      // Exception: Admin-only agents bypass user enablement check for admin users
+      const enabledConfigs = allAgentConfigs.filter(config => {
+        const isAdminOnly = config.agent.admin_only === true;
+        const isPlatformEnabled = platformEnabledIds.has(config.agent.id);
+        const isUserEnabled = enabledAgentIds.has(config.agent.id);
+        
+        // Admin-only agents: show if user is admin AND platform-enabled
+        if (isAdminOnly) {
+          return isAdmin && isPlatformEnabled;
+        }
+        
+        // Regular agents: must be both platform-enabled AND user-enabled
+        return isPlatformEnabled && isUserEnabled;
+      });
       
       
       // Transform configs to match sidebar format

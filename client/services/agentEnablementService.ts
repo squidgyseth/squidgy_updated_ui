@@ -1,4 +1,4 @@
-import OptimizedAgentService from './optimizedAgentService';
+import DatabaseAgentService from './databaseAgentService';
 
 // ============================================================================
 // DEV IMPLEMENTATION (COMMENTED OUT)
@@ -75,11 +75,11 @@ async enableAgentFromOnboarding(data: AgentEnablementData, userId?: string): Pro
 }
 
 // DEV: parseOnboardingResponse method
-parseOnboardingResponse(responseText: string): AgentEnablementData | null {
+async parseOnboardingResponse(responseText: string): Promise<AgentEnablementData | null> {
   try {
 
-    const agentService = OptimizedAgentService.getInstance();
-    const allAgents = agentService.getAllAgents();
+    const agentService = DatabaseAgentService.getInstance();
+    const allAgents = await agentService.getAllAgents();
 
     const sortedAgents = [...allAgents].sort((a, b) =>
       b.agent.name.length - a.agent.name.length
@@ -229,10 +229,10 @@ class AgentEnablementService {
     return AgentEnablementService.instance;
   }
 
-  private buildAgentNameMapping(): void {
+  private async buildAgentNameMapping(): Promise<void> {
     try {
-      const agentService = OptimizedAgentService.getInstance();
-      const allAgents = agentService.getAllAgents();
+      const agentService = DatabaseAgentService.getInstance();
+      const allAgents = await agentService.getAllAgents();
       
       this.agentNameToIdMap = {};
       allAgents.forEach(config => {

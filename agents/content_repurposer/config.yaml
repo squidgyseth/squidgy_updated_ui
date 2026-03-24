@@ -9,6 +9,7 @@ agent:
   avatar: "/Squidgy AI Assistants Avatars/15.png"
   pinned: false
   enabled: false
+  admin_only: false
   uses_conversation_state: true
   initial_message: "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!"
   sidebar_greeting: "Hi! I'm your Content Repurposer - I transform your existing content into fresh formats for different platforms. How can I assist you today?"

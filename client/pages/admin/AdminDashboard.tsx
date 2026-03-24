@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
 import { useAdmin } from '../../hooks/useAdmin';
 import { supabase } from '../../lib/supabase';
-import { Users, MessageSquare, Bot, TrendingUp, Settings, Activity, Shield, BarChart3, Ticket } from 'lucide-react';
+import { Users, MessageSquare, Bot, TrendingUp, Settings, Activity, Shield, BarChart3, Ticket, Gift, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 import ReferralService from '../../services/referralService';
 
@@ -45,7 +45,8 @@ export default function AdminDashboard() {
     try {
       setCreatingCode(true);
       const referralService = ReferralService.getInstance();
-      const result = await referralService.getUserReferralCode(userId);
+      // Use createNewReferralCode to allow multiple codes per admin
+      const result = await referralService.createNewReferralCode(userId);
       setGeneratedCode(result);
       setShowReferralModal(true);
       toast.success('Referral code generated successfully!');
@@ -160,11 +161,18 @@ export default function AdminDashboard() {
       color: 'bg-blue-100 text-blue-600',
     },
     {
-      title: 'Create Referral Code',
+      title: 'Instant Referral Code',
       description: 'Generate a referral code to share',
       icon: Ticket,
       action: handleCreateReferralCode,
       color: 'bg-pink-100 text-pink-600',
+    },
+    {
+      title: 'Game Leaderboard',
+      description: 'View game scores and player tracking',
+      icon: Trophy,
+      link: '/admin/leaderboard',
+      color: 'bg-yellow-100 text-yellow-600',
     },
     {
       title: 'User Analytics',
@@ -186,6 +194,13 @@ export default function AdminDashboard() {
       icon: Activity,
       link: '/admin/activity',
       color: 'bg-green-100 text-green-600',
+    },
+    {
+      title: 'Referral Hub',
+      description: 'View referral program and stats',
+      icon: Gift,
+      link: '/referrals',
+      color: 'bg-orange-100 text-orange-600',
     },
   ];
 

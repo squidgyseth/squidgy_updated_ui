@@ -34,9 +34,19 @@ export default function AssistantSidebar({ selectedAssistant, onSelectAssistant 
 
   const fetchAgents = async () => {
     try {
-      const response = await fetch('/api/agents/list');
+      const response = await fetch('/api/agent-configurations/list');
       if (response.ok) {
-        const groupedAgents = await response.json();
+        const agents = await response.json();
+        
+        // Group agents by category
+        const groupedAgents: Record<string, any[]> = {};
+        agents.forEach((agent: any) => {
+          const category = agent.category || 'GENERAL';
+          if (!groupedAgents[category]) {
+            groupedAgents[category] = [];
+          }
+          groupedAgents[category].push(agent);
+        });
         
         // Transform grouped agents into categories format
         const transformedCategories: AssistantCategory[] = Object.entries(groupedAgents).map(([category, agents]: [string, any]) => ({

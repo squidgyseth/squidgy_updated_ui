@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import GroupChatService from "../../services/groupChatService";
-import OptimizedAgentService from "../../services/optimizedAgentService";
+import DatabaseAgentService from "../../services/databaseAgentService";
 import OnboardingService from "../../services/onboardingService";
 
 interface CreateGroupChatModalProps {
@@ -28,7 +28,7 @@ export default function CreateGroupChatModal({ isOpen, onClose, onCreateGroup }:
   const [assistants, setAssistants] = useState<Assistant[]>([]);
   
   const groupChatService = GroupChatService.getInstance();
-  const agentService = OptimizedAgentService.getInstance();
+  const agentService = DatabaseAgentService.getInstance();
 
   // Load enabled assistants with proper filtering
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function CreateGroupChatModal({ isOpen, onClose, onCreateGroup }:
         }
 
         const actualUserId = profile.user_id;
-        const allAgentConfigs = agentService.getAllAgents();
+        const allAgentConfigs = await agentService.getAllAgents();
         const onboardingService = OnboardingService.getInstance();
 
         // Check if we should show all agents (local development override)
