@@ -76,6 +76,29 @@ async function syncMetadataFromDatabase(agents, supabase) {
 }
 
 /**
+ * Strip base system prompt from compiled prompt
+ * The database stores: base_prompt + "\n\n---\n\n" + agent_prompt
+ * This function extracts only the agent-specific part
+ */
+function stripBasePrompt(compiledPrompt, basePrompt) {
+  if (!compiledPrompt || !basePrompt) {
+    return compiledPrompt || '';
+  }
+
+  // The compiled format is: basePrompt + "\n\n---\n\n" + agentPrompt
+  const separator = '\n\n---\n\n';
+  const baseWithSeparator = basePrompt + separator;
+
+  if (compiledPrompt.startsWith(baseWithSeparator)) {
+    // Remove base prompt and separator, return only agent-specific part
+    return compiledPrompt.substring(baseWithSeparator.length);
+  }
+
+  // If it doesn't start with base prompt, return as-is (might be agent-only prompt)
+  return compiledPrompt;
+}
+
+/**
  * Sync all agent_builder-created agents from database
  * - Creates new agents in filesystem if they don't exist
  * - Updates existing agents if DB is newer
@@ -189,20 +212,34 @@ async function syncAgentBuilderAgents(agents, supabase) {
 
         // Update system_prompt from Neon
         try {
+          // Read base prompt to strip it from compiled prompt
+          const basePromptPath = path.join(agentsDir, 'shared', 'base_system_prompt.md');
+          let basePrompt = '';
+          try {
+            basePrompt = await fs.readFile(basePromptPath, 'utf8');
+          } catch (err) {
+            console.log(`    ⚠️ Could not read base prompt: ${err.message}`);
+          }
+
           const systemPrompts = await sql`
-            SELECT prompt_content 
-            FROM system_prompts 
+            SELECT system_prompt 
+            FROM agent_system_prompts 
             WHERE agent_id = ${agentId}
             LIMIT 1
           `;
 
-          if (systemPrompts.length > 0 && systemPrompts[0].prompt_content) {
+          if (systemPrompts.length > 0 && systemPrompts[0].system_prompt) {
+            // Strip base prompt from compiled prompt
+            const agentSpecificPrompt = stripBasePrompt(systemPrompts[0].system_prompt, basePrompt);
+            
             const promptPath = path.join(agentsDir, agentId, 'system_prompt.md');
-            await fs.writeFile(promptPath, systemPrompts[0].prompt_content);
+            await fs.writeFile(promptPath, agentSpecificPrompt);
             console.log(`    ✅ Updated system_prompt.md`);
+          } else {
+            console.log(`    ⚠️ No system prompt found in database`);
           }
         } catch (err) {
-          console.log(`    ⚠️ No system prompt to update`);
+          console.log(`    ⚠️ Error fetching system prompt: ${err.message}`);
         }
 
         // Update skills from Neon
@@ -334,20 +371,34 @@ async function backupAgentBuilderAgents(orphanedAgents, supabase) {
 
       // Download system_prompt from Neon
       try {
+        // Read base prompt to strip it from compiled prompt
+        const basePromptPath = path.join(agentsDir, 'shared', 'base_system_prompt.md');
+        let basePrompt = '';
+        try {
+          basePrompt = await fs.readFile(basePromptPath, 'utf8');
+        } catch (err) {
+          console.log(`    ⚠️ Could not read base prompt: ${err.message}`);
+        }
+
         const systemPrompts = await sql`
-          SELECT prompt_content 
-          FROM system_prompts 
+          SELECT system_prompt 
+          FROM agent_system_prompts 
           WHERE agent_id = ${orphan.agent_id}
           LIMIT 1
         `;
 
-        if (systemPrompts.length > 0 && systemPrompts[0].prompt_content) {
+        if (systemPrompts.length > 0 && systemPrompts[0].system_prompt) {
+          // Strip base prompt from compiled prompt
+          const agentSpecificPrompt = stripBasePrompt(systemPrompts[0].system_prompt, basePrompt);
+          
           const promptPath = path.join(agentFolder, 'system_prompt.md');
-          await fs.writeFile(promptPath, systemPrompts[0].prompt_content);
-          console.log(`    ✅ Downloaded system_prompt.md`);
+          await fs.writeFile(promptPath, agentSpecificPrompt);
+          console.log(`    ✅ Created system_prompt.md`);
+        } else {
+          console.log(`    ⚠️ No system prompt found in database`);
         }
       } catch (err) {
-        console.log(`    ⚠️ No system prompt found`);
+        console.log(`    ⚠️ Error fetching system prompt: ${err.message}`);
       }
 
       // Download skills from Neon
