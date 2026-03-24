@@ -6,9 +6,10 @@ import { useUser } from '../../hooks/useUser';
 import { useAdmin } from '../../hooks/useAdmin';
 import { ArrowLeft, BarChart3, RefreshCw, Eye, Activity, ExternalLink, LayoutDashboard, List } from 'lucide-react';
 import { toast } from 'sonner';
+import { getBackendUrl, getPostHogConfig } from '@/lib/envConfig';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-const POSTHOG_EMBED_URL = import.meta.env.VITE_POSTHOG_EMBED_URL || '';
+const BACKEND_URL = getBackendUrl();
+const POSTHOG_EMBED_URL = getPostHogConfig().embedUrl;
 
 interface InsightData {
   id: number;

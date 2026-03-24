@@ -90,6 +90,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminActivity from "./pages/admin/AdminActivity";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminLeaderboard from "./pages/admin/AdminLeaderboard";
 import { AdminRoute } from "./components/AdminRoute";
 import ImpersonationBanner from "./components/ImpersonationBanner";
 import { RootRedirect } from "./components/RootRedirect";
@@ -474,7 +475,12 @@ const App = () => (
               <AdminAnalytics />
             </AdminRoute>
           } />
-          
+          <Route path="/admin/leaderboard" element={
+            <AdminRoute>
+              <AdminLeaderboard />
+            </AdminRoute>
+          } />
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

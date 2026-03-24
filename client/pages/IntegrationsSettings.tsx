@@ -8,6 +8,7 @@ import { useUser } from '../hooks/useUser';
 import { supabase } from '../lib/supabase';
 import { profilesApi } from '../lib/supabase-api';
 import { toast } from 'sonner';
+import { getBackendUrl, getTeamsClientId } from '@/lib/envConfig';
 
 interface GHLIntegration {
   id: string;
@@ -241,7 +242,7 @@ export default function IntegrationsSettings() {
     
     setRefreshingToken(true);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
       
       const response = await fetch(`${backendUrl}/api/ghl/refresh-firebase-token`, {
         method: 'POST',
@@ -894,7 +895,7 @@ export default function IntegrationsSettings() {
     console.log('🔵 Starting Slack OAuth with firmUserId:', firmUserId);
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       // Call backend to get OAuth URL (same pattern as Facebook/Instagram)
       const response = await fetch(`${backendUrl}/api/social/slack/start-oauth`, {
@@ -971,8 +972,8 @@ export default function IntegrationsSettings() {
     }
 
     // Microsoft Teams app client ID (get from environment or Azure AD app registration)
-    const teamsClientId = import.meta.env.VITE_TEAMS_CLIENT_ID || 'YOUR_TEAMS_CLIENT_ID';
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    const teamsClientId = getTeamsClientId() || 'YOUR_TEAMS_CLIENT_ID';
+    const backendUrl = getBackendUrl();
 
     // Microsoft Teams/Graph API scopes
     const scopes = [
@@ -1028,7 +1029,7 @@ export default function IntegrationsSettings() {
 
     setFacebookLoading(true);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
       
       const checkResponse = await fetch(`${backendUrl}/api/facebook/check-integration-status`, {
         method: 'POST',
@@ -1112,7 +1113,7 @@ export default function IntegrationsSettings() {
     
     setFacebookLoading(true);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
       
       // Step 1: Start backend automation that will intercept tokens
       const response = await fetch(`${backendUrl}/api/facebook/start-oauth-with-interception`, {
@@ -1349,7 +1350,7 @@ export default function IntegrationsSettings() {
     }
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       // Call backend to get OAuth URL
       const response = await fetch(`${backendUrl}/api/social/facebook/start-oauth`, {
@@ -1434,7 +1435,7 @@ export default function IntegrationsSettings() {
     }
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       // Call backend to get OAuth URL
       const response = await fetch(`${backendUrl}/api/social/instagram/start-oauth`, {
@@ -1640,7 +1641,7 @@ export default function IntegrationsSettings() {
     }
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       const response = await fetch(`${backendUrl}/api/social/slack/connected-workspaces`, {
         method: 'POST',
@@ -2063,7 +2064,7 @@ export default function IntegrationsSettings() {
       }
 
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       // Use backend endpoint
       const endpoint = socialMediaPlatform === 'facebook'
@@ -2176,7 +2177,7 @@ export default function IntegrationsSettings() {
     }
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       const response = await fetch(`${backendUrl}/api/social/slack/disconnect-workspace`, {
         method: 'POST',

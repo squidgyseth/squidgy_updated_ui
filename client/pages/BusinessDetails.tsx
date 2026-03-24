@@ -10,6 +10,7 @@ import { useUser } from "../hooks/useUser";
 import { useToast } from "../hooks/use-toast";
 import { COUNTRIES, getCountryByCode, formatPhoneNumber, detectCountryFromWebsite, getPhoneNumberPlaceholder } from "../utils/phoneNumberUtils";
 import { supabase } from "../lib/supabase";
+import { getSupabaseConfig, getBackendUrl, getFrontendUrl } from '@/lib/envConfig';
 
 interface CompanyMaterial {
   id: string;
@@ -201,7 +202,7 @@ export default function BusinessDetails() {
       formData.append('agent_id', 'personal_assistant'); // Use personal_assistant for company materials
       formData.append('agent_name', 'Personal Assistant');
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/knowledge-base/file`, {
         method: 'POST',
         body: formData,

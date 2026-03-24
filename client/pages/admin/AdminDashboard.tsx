@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
 import { useAdmin } from '../../hooks/useAdmin';
 import { supabase } from '../../lib/supabase';
-import { Users, MessageSquare, Bot, TrendingUp, Settings, Activity, Shield, BarChart3, Ticket, Gift } from 'lucide-react';
+import { Users, MessageSquare, Bot, TrendingUp, Settings, Activity, Shield, BarChart3, Ticket, Gift, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 import ReferralService from '../../services/referralService';
 
@@ -166,6 +166,13 @@ export default function AdminDashboard() {
       icon: Ticket,
       action: handleCreateReferralCode,
       color: 'bg-pink-100 text-pink-600',
+    },
+    {
+      title: 'Game Leaderboard',
+      description: 'View game scores and player tracking',
+      icon: Trophy,
+      link: '/admin/leaderboard',
+      color: 'bg-yellow-100 text-yellow-600',
     },
     {
       title: 'User Analytics',

@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-N8N_BASE_URL = os.getenv("VITE_N8N_WEBHOOK_URL", "").rstrip("/")
-N8N_TOKEN    = os.getenv("VITE_N8N_TOKEN", "")
+N8N_BASE_URL = os.getenv("N8N_WEBHOOK_URL", "").rstrip("/")
+N8N_TOKEN    = os.getenv("N8N_TOKEN", "")
 
 if "/webhook" in N8N_BASE_URL:
     N8N_BASE_URL = N8N_BASE_URL.split("/webhook")[0]

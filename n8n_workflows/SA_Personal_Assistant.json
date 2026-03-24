@@ -1,0 +1,1720 @@
+{
+  "name": "FK | Personal Assistant v5",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# Personal Assistant - Master Agent (v5 - Refactored)\n\n## An agent capable of interacting with the user based on their progress and latest configuration, providing suggestions tailored to their type of business by referencing the knowledge base and saved settings. It can also update all configurations and enable or disable other agents.",
+        "height": 392,
+        "width": 544,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        480,
+        -320
+      ],
+      "typeVersion": 1,
+      "id": "96deacf2-31d3-48c5-ad06-692ac6604133",
+      "name": "Overview1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code in JavaScript').item.json.body.session_id }}",
+        "contextWindowLength": "=5"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -656,
+        576
+      ],
+      "id": "f53f6477-8482-4fcb-bff3-e63e5b1008c9",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "httpMethod": [
+          "POST"
+        ],
+        "path": "personal_assistant_revised",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "GA Main Workflow",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        272
+      ],
+      "id": "f388f817-80c7-42be-bfcc-24f210581cdd",
+      "webhookId": "27510a69-c31b-4d2f-b8cf-56baa278f6d3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Code in JavaScript').item.json.body.user_mssg }} {{ $('Code in JavaScript').item.json.url }} ",
+        "options": {
+          "systemMessage": "=# Personal Assistant - Master Agent\n\nYou are Squidgy's Personal Assistant, the **Master Agent** serving as the central hub for all user interactions. You onboard users, route to specialized agents, answer questions from Knowledge Base, and manage user information.\n\n**YOU DO NOT CREATE CONTENT.** For marketing content, newsletters, social posts, or any content creation → ROUTE to the appropriate specialized agent.\n\n=======================================================================\n## � PRIMARY TASK: CONTINUOUS KB & USER SETTINGS SYNC\n\n**Your #1 ongoing responsibility is keeping Knowledge Base and User Settings synchronized and up-to-date.**\n\nThis is NOT a one-time task - it happens CONTINUOUSLY throughout EVERY conversation:\n\n### On EVERY User Message:\n1. **Extract new information** - Any business info, preferences, contact details, etc.\n2. **Check if it exists** - Search KB and User Profile for existing data\n3. **Update or Create** - If exists → Update with new info. If new → Save it.\n4. **Cross-sync** - If info belongs in BOTH KB and User Settings, update BOTH\n\n### What to Sync:\n| Information Type | Save To | Example |\n|------------------|---------|----------|\n| Company name, URL, description | KB (company) + User Profile | \"My company is Acme Corp\" |\n| Contact info (phone, email, address) | KB (contacts) + User Profile | \"My email is john@acme.com\" |\n| Brand voice preference | User Settings | \"I prefer professional tone\" |\n| Target audience | User Settings | \"We target B2B enterprises\" |\n| Business type/industry | KB (company) + User Profile | \"We're a solar installation company\" |\n| Products/services | KB (products) | \"We sell solar panels\" |\n| Social media handles | KB (social_media) | \"Our Instagram is @acme\" |\n| Website analysis results | KB (website) | After web analysis |\n| User preferences | User Settings | \"I want weekly reports\" |\n\n### Sync Rules:\n- **SILENT** - Never announce syncing. Just do it.\n- **IMMEDIATE** - Sync as soon as info is received, not later\n- **COMPLETE** - Don't partially sync. If info goes in multiple places, update ALL\n- **MERGE** - Don't overwrite. Merge new info with existing data\n- **VERIFY** - After syncing, the data should be retrievable from both KB and User Settings\n\n### 🚨 PERSISTENT STORAGE ONLY - NO TEMPORARY STORAGE\n\n**You have NO memory between conversations.** Any information the user provides MUST be saved using:\n\n| Data Type | Save Using | Tool |\n|-----------|------------|------|\n| Business info, company data | Knowledge Base | Save to KB / Update KB |\n| User preferences, settings | User Settings | Save User Settings |\n| Brand voice, target audience | User Settings | Save User Settings |\n| Agent configurations | Enable Agent tool | Enable Agent |\n| Website analysis | Knowledge Base | Save to KB (category: website) |\n\n**🚨 NEVER store user-provided config in temporary/session storage. It will be LOST.**\n\n**If user provides info that matches a field fetched via Get User Profile, Get Enabled Agents, etc.:**\n1. Identify which tool originally fetched that data\n2. Use the corresponding SAVE tool to persist the update\n3. Example: Brand voice fetched via Get User Profile → Save via Save User Settings\n\n**Tools for SAVING (use these, not temporary storage):**\n- `Save to KB` - For business/company information\n- `Update KB` - For updating existing KB entries\n- `Save User Settings` - For user preferences, brand voice, target audience\n- `Enable Agent` - For enabling/configuring agents\n\n=======================================================================\n## � CONVERSATION START - MANDATORY CONFIG FETCH\n\n**BEFORE your first response in ANY conversation, you MUST silently execute these tools:**\n\n1. **Get User Profile** - Fetch user's onboarding status, preferences, and settings\n2. **Get Enabled Agents** - Fetch list of agents already enabled for this user\n3. **Get Available Agents** - Fetch list of agents not yet enabled\n4. **Vector Search KB** - Search for existing user data (company info, website analysis, brand voice, target audience, etc.)\n\n**After fetching, analyze what's MISSING or INCOMPLETE:**\n- If user profile has missing fields → Plan to collect them during conversation\n- If brand voice/target audience not set → Ask during agent setup\n- If website not analyzed but URL exists → Offer to analyze\n- If configs are incomplete → Update them when you gather the info\n\n**ONLY ASK QUESTIONS FOR INFORMATION YOU DON'T ALREADY HAVE.**\n\n**AUTO-UPDATE INCOMPLETE CONFIGS:**\n- When you discover missing user info during conversation, silently update user profile\n- When user provides business info, save to KB AND update relevant profile fields\n- When onboarding steps are completed, update onboarding status\n- Use \"Save User Settings\" tool to update incomplete user configurations\n\n=======================================================================\n## CORE PRINCIPLES\n\n1. **CONTINUOUS SYNC** - Your primary ongoing task is keeping KB and User Settings synchronized. Every message = potential sync opportunity.\n\n2. **CONFIG FIRST** - At conversation start, ALWAYS fetch all agent configs and user configs using tools. Never assume - always verify current state.\n\n3. **KB + SETTINGS TOGETHER** - When user provides info, determine if it belongs in KB, User Settings, or BOTH. Update all relevant locations.\n\n4. **NO REPETITIVE QUESTIONS** - NEVER ask for information already in KB or user profile. Before asking ANY question, check fetched configs first. If data exists, use it silently. Only ask what you DON'T know.\n\n5. **SEARCH → SAVE → SYNC** - Every user interaction: (1) Search KB/configs for context, (2) Save new info to appropriate locations, (3) Sync across KB and User Settings. This happens silently.\n\n6. **QUESTION-DRIVEN** - Every response ends with a question. Never leave users without clear next steps.\n\n7. **SILENT EXECUTION** - Never narrate tool calls. Never say \"Let me search...\" or \"Saving to KB...\". Just do it and present results.\n\n8. **BUTTONS FOR EVERYTHING** - Use `$**Button Text**$` or `$$Button Text$$` syntax. No plain text options.\n\n=======================================================================\n## INTENT DETECTION\n\n| User Intent | Action | Example |\n|-------------|--------|---------|\n| Ask business question | ANSWER from KB | \"What's my company name?\" |\n| Update/save info | CRUD operation | \"Update my phone to 123-456\" |\n| USE an enabled agent | REDIRECT | \"Help me create a newsletter\" |\n| SETUP/ENABLE an agent | ONBOARD | \"I want to enable newsletter\" |\n| Unclear request | CLARIFY with buttons | Ambiguous message |\n\n**USE vs SETUP Detection:**\n- \"Help me with newsletter\" / \"Create a newsletter\" → **USE** → Redirect\n- \"Enable newsletter agent\" / \"Add newsletter assistant\" → **SETUP** → Onboard\n\n=======================================================================\n## DECISION FLOW\n\n**0. FIRST - Fetch all configs (MANDATORY at conversation start):**\n   - Get User Profile → Check onboarding status, preferences, missing fields\n   - Get Enabled Agents → Know what's already set up\n   - Get Available Agents → Know what can be offered\n   - Vector Search KB → Get company info, website analysis, etc.\n   - **Identify gaps:** What's missing? What's incomplete?\n\n1. **Check onboarding status** (from fetched User Profile)\n   - FALSE → Run onboarding flow (only ask questions for UNKNOWN info)\n   - TRUE → Normal operations\n   - **If profile incomplete** → Silently plan to collect missing info\n\n2. **For REDIRECT** (user wants to USE agent):\n   - Check fetched Enabled Agents list\n   - If enabled → Route to agent\n   - If not enabled → Ask: \"Would you like to set it up now?\"\n\n3. **For ANSWER** (user asks question):\n   - Check fetched KB data first → Synthesize response → Ask follow-up\n\n4. **For CLARIFY** (unclear intent):\n   - Ask clarifying question with button options\n\n5. **For UPDATE** (when you discover incomplete configs):\n   - Use \"Save User Settings\" tool to update user profile\n   - Use \"Save to KB\" for business information\n   - Do this SILENTLY - never announce you're updating configs\n\n=======================================================================\n## ONBOARDING FLOW\n\n### Phase Detection (from ALREADY FETCHED configs - do NOT re-fetch)\n| Check | From Fetched Data | If Exists → Skip |\n|-------|-------------------|------------------|\n| Website analyzed? | KB search results | Skip website step |\n| Has enabled agents? | Enabled Agents list | Use shortened flow |\n| Company name known? | KB/User Profile | Don't ask for it |\n| Brand voice set? | User Profile | Don't ask again |\n| Target audience set? | User Profile | Don't ask again |\n| Business type known? | KB search results | Don't ask for it |\n\n**CRITICAL: Only ask questions for data that is MISSING from your fetched configs.**\n\n### First-Time User Flow\n**Step 1: Website Analysis**\n```\n\"Welcome to Squidgy! 👋\n\n**How can I learn about your business?**\n\n$**🌐 Analyze My Website|Share your URL**$\n$**💬 Tell Me About Your Business|No website? Describe what you do**$\"\n```\n\n### 🔄 AFTER WEBSITE ANALYSIS - AUTO-UPDATE USER SETTINGS\n\n**When website analysis completes, automatically extract and SAVE these fields:**\n\n| Discovered Info | Save To | Tool |\n|-----------------|---------|------|\n| Company name | KB (company) + User Profile | Save to KB + Save User Settings |\n| Business type/industry | KB (company) + User Profile | Save to KB + Save User Settings |\n| Products/services | KB (products) | Save to KB |\n| Contact info (email, phone, address) | KB (contacts) + User Profile | Save to KB + Save User Settings |\n| Social media links | KB (social_media) | Save to KB |\n| Brand colors, logo info | KB (branding) | Save to KB |\n| Target audience (if detectable) | User Settings | Save User Settings |\n| Company description/tagline | KB (company) | Save to KB |\n\n**🚨 DO THIS AUTOMATICALLY - Don't ask permission to save discovered info.**\n\n**After saving, update your internal state:**\n- Business type is now KNOWN → Use for agent filtering\n- Company name is now KNOWN → Don't ask for it\n- Any discovered field → Skip asking for it in onboarding\n\n**Step 2: Agent Selection**\n1. Use Get Available Agents tool to fetch agents **NOT YET ENABLED**\n2. **EXCLUDE already enabled agents** - NEVER show agents from Enabled Agents list. They are already active!\n3. **FILTER by business type** - Only show agents RELEVANT to user's industry:\n   - **Solar/Renewable Energy** → Show Solar Sales Agent + general agents\n   - **Non-Solar businesses** → DO NOT show Solar Sales Agent\n   - **All businesses** → Newsletter, Content Repurposer, Social Media agents\n4. Present ONLY relevant, NOT-YET-ENABLED agents as buttons\n5. ALWAYS include: `$**📊 See All Available Agents|Browse everything**$`\n6. Include: `$**⏭️ Skip for now**$` and `$**⬅️ Go Back**$`\n\n**🚨 CRITICAL: NEVER ask to enable an agent that is already enabled. Check Enabled Agents list FIRST.**\n\n**Agent Relevance Rules:**\n| Agent | Show When |\n|-------|-----------|\n| Solar Sales Agent (SOL) | ONLY for solar/renewable/energy companies |\n| Newsletter Agent | All businesses |\n| Content Repurposer | All businesses |\n| Social Media Manager | All businesses |\n| Social Media Scheduler | All businesses |\n\n**If user clicks \"See All Available Agents\"** → Show complete list of all available agents\n\n**Step 3: Brand Voice**\n1. Use Get Brand Voices tool to fetch options\n2. Present as buttons for selected agent\n3. Include: `$**⬅️ Go Back**$`\n\n**Step 4: Target Audience**\n1. Use Get Target Audiences tool to fetch options\n2. Present as buttons\n3. Include: `$**⬅️ Go Back**$`\n\n**Completion:**\n1. Call \"Enable Agent\" tool with the **agent ID** (snake_case format like `social_media_scheduler`, NOT the display name)\n2. Show completion message with buttons:\n   - `$**💬 Start Chat with [agent_name]**$`\n   - `$**➕ Add Another Assistant**$`\n\n### Additional Agent Flow (Shortened)\nAgent Selection → Brand Voice → Target Audience → Enable\n\n**CRITICAL:**\n- ALWAYS ask Brand Voice AND Target Audience (never auto-apply)\n- MUST call \"Enable Agent\" tool before showing completion\n- **Use agent ID** (e.g., `social_media_scheduler`) NOT display name (e.g., \"Social Media Scheduler\")\n- Include navigation: `$**⬅️ Go Back**$` options\n\n=======================================================================\n## AGENT IDs (use these when calling Enable Agent tool)\n\n| Display Name | Agent ID |\n|--------------|----------|\n| Social Media Scheduler | `social_media_scheduler` |\n| Social Media Manager | `social_media_agent` |\n| Newsletter Agent | `newsletter` |\n| Newsletter Multi-Topic | `newsletter_multi` |\n| Content Repurposer | `content_repurposer` |\n| Content Repurposer Multi | `content_repurposer_multi` |\n| Solar Sales Agent | `SOL` |\n\n**ALWAYS use the Agent ID (right column), NEVER the Display Name.**\n\n=======================================================================\n## ROUTING\n\n**When user wants to do something a specialized agent handles:**\n1. Identify the correct agent for the task\n2. Route immediately - don't try to do it yourself\n\n| User Request | Route To |\n|--------------|----------|\n| Create newsletter | Newsletter Agent |\n| Social media post | Social Media Manager |\n| Schedule posts | Social Media Scheduler |\n| Marketing content | Content Repurposer |\n| Solar quotes | Solar Sales Agent |\n\n**Routing response:** \"I'll connect you with [Agent Name]! 🚀\"\n\n=======================================================================\n## KNOWLEDGE BASE OPERATIONS\n\n**Tools:** Vector Search, Save to KB, Update KB, Delete from KB, Web Analysis\n\n**Categories:** `company`, `website`, `branding`, `products`, `contacts`, `social_media`, `sales`, `marketing`, `operations`, `competitive`\n\n**After Web Analysis:** ALWAYS save results to KB with category \"website\"\n\n=======================================================================\n## SAVE TO KB\n\nYou have NO memory between sessions. Save important findings:\n- Company info, contact details, business description\n- Brand colors, voice, messaging discovered\n- User preferences and settings\n- Website analysis results\n- Any information user shares about their business\n\n**Before saving, search KB first to merge with existing data.**\n\n**When user provides info:**\n1. Silently search KB for existing related data\n2. If exists → Update KB entry\n3. If new → Save to KB with appropriate category\n4. Never ask \"should I save this?\" - just save it\n\n=======================================================================\n## DYNAMIC DATA (USE TOOLS)\n\nAll data must be fetched dynamically using tools - nothing is pre-populated:\n- **Available Agents** → Get Available Agents tool\n- **Enabled Agents** → Get Enabled Agents tool\n- **Brand Voices** → Get Brand Voices tool\n- **Target Audiences** → Get Target Audiences tool\n- **Website/Business Info** → Vector Search KB\n- **Onboarding Status** → Get User Profile tool\n\n=======================================================================\n## DO NOT\n\n- **Start responding without fetching configs first** - ALWAYS fetch User Profile, Enabled Agents, Available Agents, and KB data at conversation start\n- **Ask for information you already have** - Check fetched configs before ANY question\n- **Create marketing content, newsletters, social posts** - route to specialized agents\n- **Analyze business data or market trends** - route to specialized agents\n- **Ask for information already in KB or User Profile** (business URL, company name, type of business, brand voice, target audience, etc.)\n- Ask the same question twice - check fetched data first\n- **Ask to enable already-enabled agents** - Check Enabled Agents list before suggesting any agent\n- Stop asking questions during onboarding\n- Auto-apply brand voice or target audience settings without asking\n- Make up information (use Vector Search)\n- **Show ALL agents by default** - Only show agents RELEVANT to user's business type. Include \"See All Available Agents\" button for full list.\n- Recommend Solar agent to non-solar companies\n- Skip calling \"Enable Agent\" tool when enabling agents\n- Assume any data without fetching via tools first\n- Narrate tool calls or internal process\n- Ask questions without buttons\n- **Forget to update incomplete user configs** - When you discover missing info, silently update it\n\n=======================================================================\n## TONE & BEHAVIOR\n\n- Friendly and helpful, not robotic\n- Concise but thorough\n- Use emojis sparingly (✅ for completed actions)\n- Always offer next steps as questions\n- Be patient with unclear requests",
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        -560,
+        272
+      ],
+      "id": "60f0724a-4fac-4e12-ac00-018ad626c7e9",
+      "name": "GA AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.body.user_mssg;\nconst body = $input.first().json.body;  \nconst userId = body.user_id;\n// Extract URL from message (uploaded file)\nconst urlMatch = text.match(/https?:\\/\\/[^\\s]+/);\nconst url = urlMatch ? urlMatch[0] : null;\n// Extract Supabase base URL from the uploaded file URL\nlet supabaseUrl = '';\nif (url) {\n  const baseMatch = url.match(/^(https:\\/\\/[^\\/]+\\.supabase\\.co)/);\n  supabaseUrl = baseMatch ? baseMatch[1] : '';\n}\n// Extract file extension from URL or filename\nlet format = null;\nif (url) {\n  const cleanUrl = url.split('?')[0];\n  format = cleanUrl.split('.').pop();\n}\n// Generate download links for all 12 KB files\nconst kbFiles = [\n  '01-company-overview.md',\n  '02-icp-target-audience.md',\n  '03-branding-identity.md',\n  '04-messaging-positioning.md',\n  '05-product-services.md',\n  '06-sales-process.md',\n  '07-marketing-channels.md',\n  '08-development-technical.md',\n  '09-operations-workflows.md',\n  '10-contacts-stakeholders.md',\n  '11-customer-success.md',\n  '12-competitive-landscape.md'\n];\n// Build download URLs for existing KB files\n// Path: knowledge-base/{user_id}/{filename}\nconst kbDownloadLinks = kbFiles.map(filename => ({\n  filename: filename,\n  download_url: `${supabaseUrl}/storage/v1/object/public/knowledge-base/${userId}/${filename}`\n}));\nreturn [\n  {\n    url,\n    format,\n    body,\n    user_id: userId,\n    supabase_url: supabaseUrl,\n    kb_files: kbDownloadLinks\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        272
+      ],
+      "id": "a8eef038-377e-40cf-a0c7-75bcdea99143",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get AI response - it's already just a message string\nconst aiOutput = $input.first().json;\nconst aiResponse = aiOutput.output || aiOutput.text || aiOutput;\n\n// Clean the response (remove any accidental JSON formatting if present)\nlet userMessage;\ntry {\n  // Check if AI accidentally returned JSON\n  const parsed = JSON.parse(aiResponse);\n  userMessage = parsed.message || aiResponse;\n} catch (e) {\n  // It's already a plain string, use it directly\n  userMessage = aiResponse;\n}\n\n// Convert HTML anchor tags to markdown links\nuserMessage = userMessage.replace(/<a\\s+[^>]*href=[\"']([^\"']+)[\"'][^>]*>([^<]+)<\\/a>/gi, '[$2]($1)');\n\n// Clean leftover attributes\nuserMessage = userMessage.replace(/target=[\"'][^\"']*[\"']\\s*/gi, '');\nuserMessage = userMessage.replace(/rel=[\"'][^\"']*[\"']\\s*/gi, '');\nuserMessage = userMessage.replace(/style=[\"'][^\"']*[\"']\\s*/gi, '');\n\n// ✅ RETURN (unchanged structure + intermediateSteps added)\nreturn {\n  json: {\n    user_id: $('GA Main Workflow').first().json.body.user_id,\n    session_id: $('GA Main Workflow').first().json.body.session_id,\n    agent_name: $('GA Main Workflow').first().json.body.agent_name,\n    timestamp_of_call_made: new Date().toISOString(),\n    request_id: $('GA Main Workflow').first().json.body.request_id,\n    agent_response: userMessage.trim(),\n\n    // 🔥 ADD THIS (for tool logger)\n    intermediateSteps: aiOutput.intermediateSteps || []\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        272
+      ],
+      "id": "a58553ae-7635-49d9-abf0-4828a46aeef5",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"user_id\": \"{{ $json.user_id }}\",\n  \"session_id\": \"{{ $json.session_id }}\",\n  \"agent_name\": \"{{ $json.agent_name }}\",\n  \"timestamp_of_call_made\": \"{{ $json.timestamp_of_call_made }}\",\n  \"request_id\": \"{{ $json.request_id }}\",\n  \"agent_response\": {{ JSON.stringify($json.agent_response) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        144,
+        272
+      ],
+      "id": "e21dc86e-9c57-46cb-afb1-a39d070db985",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-sonnet-4.5",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        560
+      ],
+      "id": "18676e9f-d1d1-447d-8528-13057b45dedb",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "7hB3eGzzdDVoxaV5",
+          "name": "Claude_Demo_SMM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        608
+      ],
+      "id": "4c550e23-fbf6-4c58-a827-a8edbba3a03c",
+      "name": "OpenRouter Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "xeFNBBSMiFQf7cQv",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the knowledge base for relevant information about the user, their preferences, previous conversations, uploaded documents, or saved context. Use this tool when you need to recall information the user has shared before or check if specific information has been saved. Query with natural language describing what you're looking for.",
+        "tableName": "user_vector_knowledge_base",
+        "topK": 10,
+        "options": {
+          "columnNames": {
+            "values": {
+              "contentColumnName": "document"
+            }
+          },
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "user_id",
+                "value": "={{ $('Code in JavaScript').item.json.body.user_id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        896,
+        448
+      ],
+      "id": "c02236f3-0305-46a9-9b13-6df3c69e0075",
+      "name": "Postgres PGVector RAG",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Save information to the knowledge base\n\n⚠️ MANDATORY PREREQUISITE: You MUST call \"Postgres PGVector RAG\" tool FIRST before using this tool. Never save without searching first.\n\nWHEN TO USE:\n- User shares preferences or settings\n- Analysis results need to be stored for future reference\n- User provides custom instructions for how you should behave\n\nNOTE: File uploads are handled separately via the Agent Settings page. This tool is for saving TEXT-BASED information only.\n\nREQUIRED WORKFLOW (NEVER SKIP):\n1. ⚡ ALWAYS call \"Postgres PGVector RAG\" tool first to search for existing related content\n2. Review search results to determine if this is NEW or UPDATE\n3. Then call this save tool with appropriate parameters\n\nPARAMETERS:\n- query: The information to save (clear, structured text)\n- category: MUST be one of:\n  - \"user_preferences\" - User settings, likes/dislikes, personal choices\n  - \"result_of_analysis\" - Outputs from analysis tasks (website analysis, competitor research, etc.)\n  - \"custom_instructions\" - User-defined rules for how the agent should behave\n- source: Origin/topic identifier (e.g., \"brand_voice\", \"website_analysis\", \"posting_rules\")\n- updating: TRUE if updating existing content, FALSE if saving new content\n\nDECISION LOGIC AFTER RAG SEARCH:\n- If RAG returns NO relevant results → updating=false (new entry)\n- If RAG returns EXISTING content on same topic → updating=true (replaces old entry with same source)\n\nEXAMPLES:\n\nNEW user preference:\nUser: \"I prefer posting in the morning\"\n1. RAG search \"posting time preference\" → No results\n2. Save: query=\"User prefers posting in the morning\", category=\"user_preferences\", source=\"posting_schedule\", updating=false\n\nUPDATE custom instruction:\nUser: \"Actually, never use more than 2 hashtags\"\n1. RAG search \"hashtag\" → Found existing hashtag rule\n2. Save: query=\"Never use more than 2 hashtags per post\", category=\"custom_instructions\", source=\"hashtag_rules\", updating=true\n\nSave analysis result:\nAfter completing website analysis:\n1. RAG search \"website analysis\" → No results\n2. Save: query=\"[analysis summary]\", category=\"result_of_analysis\", source=\"website_analysis\", updating=false\n\n🚫 DO NOT:\n- Save without searching RAG first\n- Use categories other than: user_preferences, result_of_analysis, custom_instructions\n- Set updating=true without finding existing content in RAG\n- Use for file uploads",
+        "workflowId": {
+          "__rl": true,
+          "value": "mrMpEHjl5tpKaY1F",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/mrMpEHjl5tpKaY1F",
+          "cachedResultName": "FK - RAG"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('query', `The information to save to the knowledge base. Provide clear, well-structured text. For files, break down information into logical sections. Be specific and detailed.\n\nExample formats:\n- \"Company name: The AI Team | Location: London, UK | Founded: 2023\"\n- \"Product: Workflow automation | Price: £500/month | Features: AI-powered, No-code\"\n- \"Target customers: Marketing agencies | Size: 10-50 employees | Pain point: Manual tasks\"`, 'string') }}",
+            "userID": "={{ $('Code in JavaScript').item.json.user_id }}",
+            "category": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('category', `It should be either \"user_preferences\", the \"result_of_analysis\", or user defined \"custom_instructions\".`, 'string') }}",
+            "agentID": "personal_assistant",
+            "source": "chat",
+            "Updating": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Updating', `if you want to update a previously seved content in knowledge base pass True`, 'boolean') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "userID",
+              "displayName": "userID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "agentID",
+              "displayName": "agentID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Updating",
+              "displayName": "Updating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -320,
+        656
+      ],
+      "id": "98d3b172-043b-4970-88a5-3ef4fd803977",
+      "name": "Call 'FK - RAG'"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Get agent configuration from assistant_personalizations table. Returns the current setup for a specific agent (or all agents) for this user. Use before redirecting to an agent chat or during onboarding to check if agent is already configured. Response includes assistant_id, custom_name, communication_tone, is_enabled, and other settings.",
+        "useCustomSchema": true,
+        "operation": "getAll",
+        "tableId": "assistant_personalizations",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Code in JavaScript').item.json.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        576,
+        640
+      ],
+      "id": "0c418603-4d6c-481d-aa99-c6b96e7a4f7e",
+      "name": "Get Agent Setup",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Analyze a website URL to extract company information. Use when user provides their website URL during onboarding or asks to analyze a site. Returns company details, products, services, brand voice, target audience, and other business intelligence.",
+        "method": "POST",
+        "url": "https://squidgy-backend-00f664bf1f3d.herokuapp.com/api/website/analysis_complete",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=url",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', `The website URL to analyze`, 'string') }}"
+            },
+            {
+              "name": "firm_user_id",
+              "value": "={{ $('Code in JavaScript').item.json.body.user_id }}"
+            },
+            {
+              "name": "agent_id",
+              "value": "personal_assistant"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -128,
+        640
+      ],
+      "id": "9cd2c519-f9ac-451c-91cb-9d30e22a5444",
+      "name": "Web Analysis"
+    },
+    {
+      "parameters": {
+        "path": "ab67c04e-9649-45c4-825b-b92eb6f4b377",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -816,
+        -48
+      ],
+      "id": "c168d59a-2d37-4e9d-b3c8-4302673d5a40",
+      "name": "Webhook",
+      "webhookId": "ab67c04e-9649-45c4-825b-b92eb6f4b325"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        16,
+        -48
+      ],
+      "id": "bb827d4e-b791-474f-9dd7-e47c70348066",
+      "name": "Respond to Webhook4"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('Webhook').item.json.body.userid }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        -48
+      ],
+      "id": "f9c00763-c92e-4cf5-8350-53c62fc490bd",
+      "name": "Get profile configs",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "business_settings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('Webhook').item.json.body.userid }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -48
+      ],
+      "id": "9a6da965-4b40-4ebf-b940-b368d4f2e86f",
+      "name": "Get business configs",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "ghl_subaccounts",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "firm_user_id",
+              "keyValue": "={{ $json.body.userid }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        -48
+      ],
+      "id": "7cee25d0-08e9-4f35-bbdf-f443677f104c",
+      "name": "Get GHL configs",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst supabase1 = $('Get GHL configs').all().map(i => ({\n  connected_pages: i.json.connected_pages,\n  updated_at: i.json.updated_at,\n}));\nconst supabase2 = $('Get profile configs').all().map(i => ({\n  email: i.json.email,\n  first_name: i.json.full_name,\n  role: i.json.role,\n  phone: i.json.phone,\n  target_audience: i.json.target_audience,\n  primary_goals: i.json.primary_goals,\n  calendar_type: i.json.calendar_type,\n  notifications_enabled: i.json.notifications_enabled,\n  brand_voice: i.json.brand_voice,\n  business_type: i.json.business_type,\n  updated_at: i.json.updated_at,\n}));\nconst supabase3 = $('Get business configs').all().map(i => ({\n  company_name: i.json.company_name,\n  industry: i.json.industry,\n  business_email: i.json.business_email,\n  business_phone_number: i.json.phone_number,\n  emergency_numbers: i.json.emergency_numbers,\n  country: i.json.country,\n  address: i.json.address,\n  city: i.json.city,\n  state: i.json.state,\n  postal_code: i.json.postal_code,\n  company_logo_url: i.json.company_logo_url,\n  enabled_templates: i.json.enabled_templates,\n  updated_at: i.json.updated_at,\n}));\nreturn [{\n  json: {\n    GHL_configs: supabase1,\n    profile_configs: supabase2,\n    business_configs: supabase3\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        -48
+      ],
+      "id": "657b3bd7-8cca-4309-b826-60bc2f070f49",
+      "name": "Filtering out output"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool for getting current business and profile setting saved",
+        "url": "https://n8n.theaiteam.uk/webhook/ab67c04e-9649-45c4-825b-b92eb6f4b377",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userid",
+              "value": "={{ $json.body.user_id }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        640
+      ],
+      "id": "c661ce76-44da-44aa-b942-a84764f80ec3",
+      "name": "Get user configs"
+    },
+    {
+      "parameters": {
+        "path": "ab67c04e-9649-45c4-825b-b92eb6f4b379",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -816,
+        -256
+      ],
+      "id": "d568f453-f4a9-4aa2-9e1d-39759ee1c6cb",
+      "name": "Webhook1",
+      "webhookId": "ab67c04e-9649-45c4-825b-b92eb6f4b325"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "assistant_personalizations",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $json.body.userid }}"
+            },
+            {
+              "keyName": "assistant_id",
+              "keyValue": "={{ $json.body.agentid }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        -256
+      ],
+      "id": "c1083ea9-1a1b-4d09-b3ea-cb0f0e77849a",
+      "name": "Get active agents",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d9116d90-9ed5-43ae-9fb2-397c5021b0a6",
+              "leftValue": "={{ $json.exists }}",
+              "rightValue": "false",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -352,
+        -256
+      ],
+      "id": "b6bfc447-ac1d-4a2c-91f2-da260c0e9be6",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Enable or update a child agent based on new conditions (newsletter, smm, content_repurposer, sol, etc.) by inserting a row into assistant_personalizations with is_enabled=true. Only the Personal Assistant can enable other agents. Requires the agent_id (e.g., newsletter_multi, smm, content_repurposer, sol).",
+        "url": "https://n8n.theaiteam.uk/webhook/ab67c04e-9649-45c4-825b-b92eb6f4b379",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userid",
+              "value": "={{ $json.body.user_id }}"
+            },
+            {
+              "name": "agentid",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', `The agent_id in snake_case format (e.g., social_media_scheduler, newsletter, content_repurposer). Do NOT use display names like \"Social Media Scheduler\". Valid IDs: social_media_scheduler, social_media_agent, newsletter, newsletter_multi, content_repurposer, content_repurposer_multi, SOL`, 'string') }}"
+            },
+            {
+              "name": "tone",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `what ever tone user decide should be passed here`, 'string') }}"
+            },
+            {
+              "name": "enable",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters3_Value', `True or false for enabling or disabling the agent.`, 'string') }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        48,
+        640
+      ],
+      "id": "cd98b7cd-f49a-44a9-ace3-e77c4a6ecf08",
+      "name": "Agents activation"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        240,
+        -256
+      ],
+      "id": "76f90e78-4b29-492b-a3b0-d2462056dff9",
+      "name": "Respond to Webhook5"
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentId = $('Webhook1').first().json.body.agentid;\nconst agents = $('Get active agents').all();\n\nconst hasResults = agents.length > 0;\nconst exists = hasResults && agents.some(i => i.json.assistant_id === agentId);\n\nreturn [{\n  json: {\n    exists,\n    message: exists ? 'Agent already exists, update agent instead!' : 'New agent created.',\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        -256
+      ],
+      "id": "19a71e1f-bb55-48d5-80df-a35ed6ed097e",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "tableId": "assistant_personalizations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Webhook1').item.json.body.userid }}"
+            },
+            {
+              "fieldId": "is_enabled",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "communication_tone",
+              "fieldValue": "={{ $('Webhook1').item.json.body.tone }}"
+            },
+            {
+              "fieldId": "assistant_id",
+              "fieldValue": "={{ $('Webhook1').item.json.body.agentid }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        -320
+      ],
+      "id": "141168f9-dce4-4002-9f33-44e36c6025ca",
+      "name": "activate agent",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://squidgy-backend-00f664bf1f3d.herokuapp.com/api/agents/notify-enablement",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Webhook1').item.json.body.userid }}\",\n  \"agent_id\": \"{{ $('Webhook1').item.json.body.agentid }}\",\n  \"agent_name\": \"Social Media Scheduler\",\n  \"action\": \"enabled\"\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        64,
+        -256
+      ],
+      "id": "fb0973cb-c3cc-4f11-ba01-c24d0da0416b",
+      "name": "Reload left panel",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "path": "ab67c04e-9649-45c4-825b-b92eb6f4b320",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -816,
+        -464
+      ],
+      "id": "1f305475-9460-49b8-9a25-0769faf1c447",
+      "name": "Webhook2",
+      "webhookId": "ab67c04e-9649-45c4-825b-b92eb6f4b325"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        48,
+        -464
+      ],
+      "id": "cd53f5b6-a65e-4430-b637-645076212a6a",
+      "name": "Respond to Webhook6"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook2').item.json.body.userid }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "brand_voice",
+              "fieldValue": "={{ $('Webhook2').item.json.body.brand_voice }}"
+            },
+            {
+              "fieldId": "target_audience",
+              "fieldValue": "={{ $('Webhook2').item.json.body.target_audience }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $('Webhook2').item.json.body.phone }}"
+            },
+            {
+              "fieldId": "primary_goals",
+              "fieldValue": "={{ $('Webhook2').item.json.body.primary_goals }}"
+            },
+            {
+              "fieldId": "notifications_enabled",
+              "fieldValue": "={{ $('Webhook2').item.json.body.notifications_enabled }}"
+            },
+            {
+              "fieldId": "business_type",
+              "fieldValue": "={{ $('Webhook2').item.json.body.industry }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        -464
+      ],
+      "id": "c7d7f3af-f058-4335-8696-04b0593c4472",
+      "name": "Update profile configs",
+      "alwaysOutputData": false,
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "business_settings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook2').item.json.body.userid }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "company_name",
+              "fieldValue": "={{ $('Webhook2').item.json.body.company_name }}"
+            },
+            {
+              "fieldId": "industry",
+              "fieldValue": "={{ $('Webhook2').item.json.body.industry }}"
+            },
+            {
+              "fieldId": "business_email",
+              "fieldValue": "={{ $('Webhook2').item.json.body.business_email }}"
+            },
+            {
+              "fieldId": "phone_number",
+              "fieldValue": "={{ $('Webhook2').item.json.body.phone }}"
+            },
+            {
+              "fieldId": "emergency_numbers",
+              "fieldValue": "={{ $('Webhook2').item.json.body.emergency_numbers }}"
+            },
+            {
+              "fieldId": "postal_code",
+              "fieldValue": "={{ $('Webhook2').item.json.body.postal_code }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        -464
+      ],
+      "id": "348ae19d-a2d7-45f6-be4a-875efe1f5227",
+      "name": "Update business configs",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst supabase1 = $('Update profile configs').all().map(i => ({\n  email: i.json.email,\n  first_name: i.json.full_name,\n  role: i.json.role,\n  phone: i.json.phone,\n  target_audience: i.json.target_audience,\n  primary_goals: i.json.primary_goals,\n  calendar_type: i.json.calendar_type,\n  notifications_enabled: i.json.notifications_enabled,\n  brand_voice: i.json.brand_voice,\n  business_type: i.json.business_type,\n  updated_at: i.json.updated_at,\n}));\nconst supabase2 = $('Update business configs').all().map(i => ({\n  company_name: i.json.company_name,\n  industry: i.json.industry,\n  business_email: i.json.business_email,\n  business_phone_number: i.json.phone_number,\n  emergency_numbers: i.json.emergency_numbers,\n  country: i.json.country,\n  address: i.json.address,\n  city: i.json.city,\n  state: i.json.state,\n  postal_code: i.json.postal_code,\n  company_logo_url: i.json.company_logo_url,\n  enabled_templates: i.json.enabled_templates,\n  updated_at: i.json.updated_at,\n}));\nreturn [{\n  json: {\n    profile_configs: supabase1,\n    business_configs: supabase2,\n    message:  'Configs updated!'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        -464
+      ],
+      "id": "8e274ae7-48fa-470a-aba2-5e2f521d0e71",
+      "name": "Filtering out outputs"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool for updating user configs pass as much as user provide must be less than 50 characters for each field.",
+        "url": "https://n8n.theaiteam.uk/webhook/ab67c04e-9649-45c4-825b-b92eb6f4b320",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userid",
+              "value": "={{ $json.body.user_id }}"
+            },
+            {
+              "name": "brand_voice",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', `The selected brand voice (e.g., Professional and authoritative)`, 'string') }}"
+            },
+            {
+              "name": "=target_audience",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `The target audience description`, 'string') }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters3_Value', `pass business phone number here`, 'string') }}"
+            },
+            {
+              "name": "=primary_goals",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `send primary goal of user here`, 'string') }}"
+            },
+            {
+              "name": "notifications_enabled",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters5_Value', `true or false for enabling notification`, 'string') }}"
+            },
+            {
+              "name": "company_name",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters6_Value', `pass company name here`, 'string') }}"
+            },
+            {
+              "name": "industry",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters7_Value', `pass the industry here `, 'string') }}"
+            },
+            {
+              "name": "business_email",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters8_Value', `pass business email here`, 'string') }}"
+            },
+            {
+              "name": "emergency_numbers",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters9_Value', `pass emergency numbers here `, 'string') }}"
+            },
+            {
+              "name": "postal_code",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters11_Value', `pass business postal code here`, 'string') }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        640
+      ],
+      "id": "f1bf69cb-5945-4e5b-abdf-8e66bdb4c54f",
+      "name": "Update user configs"
+    },
+    {
+      "parameters": {
+        "tableId": "User_Tool Usage",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "Tool Used",
+              "fieldValue": "={{ $json.tool_name }}"
+            },
+            {
+              "fieldId": "User Id",
+              "fieldValue": "={{ $('GA Main Workflow').item.json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        816,
+        144
+      ],
+      "id": "cdbab6da-d9b9-444b-91cc-d656e44f45c6",
+      "name": "Write in Tool Log",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7a79d1f1-c2cd-437b-86ed-536d1d18829b",
+              "leftValue": "={{ $json.tool_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        576,
+        160
+      ],
+      "id": "5053d2a2-2c50-4cf8-9722-07f125904c4b",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the data passed down from previous node\nconst inputData = $input.first().json;\nconst steps = Array.isArray(inputData.intermediateSteps)\n  ? inputData.intermediateSteps\n  : [];\n\nconst returnItems = [];\n\n// 2. Loop through all steps\nsteps.forEach((step) => {\n  \n  const action = step.action || {};\n  \n  // Support multiple possible tool name properties\n  const toolName =\n    action.tool ||\n    action.toolName ||\n    action.name ||\n    action.id ||\n    null;\n\n  if (toolName) {\n    returnItems.push({\n      json: {\n        // --- Tool Data ---\n        tool_name: toolName,\n        tool_args: action.toolInput || action.input || null,\n        tool_output: step.observation || null,\n\n        // --- Context ---\n        user_id: inputData.user_id,\n        session_id: inputData.session_id,\n        request_id: inputData.request_id\n      }\n    });\n  }\n});\n\n// 3. Return one item per tool call\nreturn returnItems;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        160
+      ],
+      "id": "5813547c-faae-4eac-8c14-d96b5753414a",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.theaiteam.uk/webhook/7ffba8da-d247-43a1-a092-aa5b7a517ff1",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "execution.id",
+              "value": "={{$execution.id}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        368,
+        336
+      ],
+      "id": "210d18af-d454-4944-a196-98d8ee102404",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "assistant_personalizations",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook1').item.json.body.userid }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Webhook1').item.json.body.userid }}"
+            },
+            {
+              "fieldId": "is_enabled",
+              "fieldValue": "={{ $('Webhook1').item.json.body.enable }}"
+            },
+            {
+              "fieldId": "communication_tone",
+              "fieldValue": "={{ $('Webhook1').item.json.body.tone }}"
+            },
+            {
+              "fieldId": "assistant_id",
+              "fieldValue": "={{ $('Webhook1').item.json.body.agentid }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        -192
+      ],
+      "id": "42a463f8-895e-4d8b-b5e3-81e7d7ccb407",
+      "name": "update agent",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Search the knowledge base for relevant information about the user, their preferences, previous conversations, uploaded documents, or saved context. Use this tool when you need to recall information the user has shared before or check if specific information has been saved. Query with natural language describing what you're looking for.",
+        "method": "POST",
+        "url": "https://squidgy-backend-00f664bf1f3d.herokuapp.com/api/knowledge-base/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', `send query here`, 'string') }}"
+            },
+            {
+              "name": "user_id",
+              "value": "={{ $('Code in JavaScript').item.json.body.user_id }}"
+            },
+            {
+              "name": "agent_id",
+              "value": "personal_assistant"
+            },
+            {
+              "name": "limit",
+              "value": "5"
+            },
+            {
+              "name": "similarity_threshold",
+              "value": "0"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        -480,
+        640
+      ],
+      "id": "d3dc04f1-1c23-4be5-b034-acd6f069291e",
+      "name": "Serach in knowledge base"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.theaiteam.uk",
+            "user-agent": "axios/1.12.0",
+            "content-length": "49",
+            "accept": "application/json,text/html,application/xhtml+xml,application/xml,text/*;q=0.9, image/*;q=0.8, */*;q=0.7",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "via": "1.1 Caddy",
+            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-host": "n8n.theaiteam.uk",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "userid": "68cd707e-0f47-4835-b235-90e94680231d"
+          },
+          "webhookUrl": "https://n8n.theaiteam.uk/webhook/ab67c04e-9649-45c4-825b-b92eb6f4b377",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Webhook2": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.theaiteam.uk",
+            "user-agent": "axios/1.12.0",
+            "content-length": "445",
+            "accept": "application/json,text/html,application/xhtml+xml,application/xml,text/*;q=0.9, image/*;q=0.8, */*;q=0.7",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "via": "1.1 Caddy",
+            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-host": "n8n.theaiteam.uk",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "userid": "68cd707e-0f47-4835-b235-90e94680231d",
+            "brand_voice": "Friendly and conversational",
+            "target_audience": "SME Business Owners (10-100 employees) - Growing businesses ready to automate",
+            "phone": "+44 7700 900077",
+            "primary_goals": "Business growth and efficiency",
+            "notifications_enabled": "true",
+            "company_name": "The AI Team",
+            "industry": "B2B SaaS",
+            "business_email": "hello@theai.team",
+            "emergency_numbers": "+44 7700 900077",
+            "postal_code": "London"
+          },
+          "webhookUrl": "https://n8n.theaiteam.uk/webhook/ab67c04e-9649-45c4-825b-b92eb6f4b320",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "GA Main Workflow": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.theaiteam.uk",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+            "content-length": "307",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://app.squidgy.ai",
+            "priority": "u=1, i",
+            "referer": "https://app.squidgy.ai/",
+            "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "via": "2.0 Caddy",
+            "x-forwarded-for": "77.97.17.69",
+            "x-forwarded-host": "n8n.theaiteam.uk",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "user_id": "61a0306e-2018-4c86-99f8-6287e12fd1ce",
+            "user_mssg": "Entrepreneurs and startups",
+            "session_id": "61a0306e-2018-4c86-99f8-6287e12fd1ce_personal_assistant_1770904568371_pef5wz4o8f",
+            "agent_name": "personal_assistant",
+            "timestamp_of_call_made": "2026-02-12T14:05:45.478Z",
+            "request_id": "1770905145407-2665"
+          },
+          "webhookUrl": "https://n8n.theaiteam.uk/webhook/personal_assistant_revised",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Webhook1": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.theaiteam.uk",
+            "user-agent": "axios/1.12.0",
+            "content-length": "133",
+            "accept": "application/json,text/html,application/xhtml+xml,application/xml,text/*;q=0.9, image/*;q=0.8, */*;q=0.7",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "via": "1.1 Caddy",
+            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-host": "n8n.theaiteam.uk",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "userid": "61a0306e-2018-4c86-99f8-6287e12fd1ce",
+            "agentid": "social_media_agent",
+            "tone": "Friendly and conversational",
+            "enable": "true"
+          },
+          "webhookUrl": "https://n8n.theaiteam.uk/webhook/ab67c04e-9649-45c4-825b-b92eb6f4b379",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GA Main Workflow": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GA AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector RAG",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres PGVector RAG": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Call 'FK - RAG'": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Web Analysis": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Agent Setup": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get GHL configs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get profile configs": {
+      "main": [
+        [
+          {
+            "node": "Get business configs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get business configs": {
+      "main": [
+        [
+          {
+            "node": "Filtering out output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get GHL configs": {
+      "main": [
+        [
+          {
+            "node": "Get profile configs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtering out output": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get user configs": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Get active agents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get active agents": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agents activation": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "activate agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "update agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "activate agent": {
+      "main": [
+        [
+          {
+            "node": "Reload left panel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reload left panel": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Update profile configs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update profile configs": {
+      "main": [
+        [
+          {
+            "node": "Update business configs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update business configs": {
+      "main": [
+        [
+          {
+            "node": "Filtering out outputs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtering out outputs": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update user configs": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Write in Tool Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update agent": {
+      "main": [
+        [
+          {
+            "node": "Reload left panel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Serach in knowledge base": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b8564f43-dcd1-44f9-9586-cc281b41903f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "Xku5blRWCqhUJDHV",
+  "tags": [
+    {
+      "updatedAt": "2025-06-23T14:33:52.218Z",
+      "createdAt": "2025-06-23T14:33:52.218Z",
+      "id": "tbBgpBQ9QoHKIZP6",
+      "name": "Squidgy"
+    }
+  ]
+}

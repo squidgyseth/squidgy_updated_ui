@@ -4,9 +4,10 @@
  */
 
 import type { N8nRequest, N8nResponse } from '../types/n8n.types';
+import { getN8nWebhookUrl } from './envConfig';
 
 // Base URL for n8n webhook
-const N8N_WEBHOOK_BASE = import.meta.env.VITE_N8N_WEBHOOK_URL;
+const N8N_WEBHOOK_BASE = getN8nWebhookUrl();
 
 /**
  * Send message to Seth agent specifically

@@ -1,0 +1,549 @@
+{
+  "name": "CRA| Squidgy Multi-Topic Newsletter",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/newsletter_multi",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        352
+      ],
+      "id": "5f004db3-d348-463e-a404-f5bec08ee7eb",
+      "name": "Webhook",
+      "webhookId": "multi-topic-newsletter-webhook"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "vw_newsletter_multi_topic_llm",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        96,
+        352
+      ],
+      "id": "4483b998-eb21-4043-873f-a504d96bbd7f",
+      "name": "Supabase - Get All Data",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "  const webhookBody = $('Webhook').first().json.body;\n  const data = $('Supabase - Get All Data').first().json || {};\n\n  // Default conversation state\n  const defaultState = {\n    phase: 'topic_selection',\n    selected_topics: [],\n    current_topic_index: 0,\n    current_question_index: 0,\n    answers: {}\n  };\n\n  let conversationState = defaultState;\n\n  // PRIORITY 1: Try to get state from webhook (frontend sends it)\n  if (webhookBody.state && typeof webhookBody.state === 'object') {\n    conversationState = webhookBody.state;\n    console.log('Using state from webhook');\n  } else if (typeof webhookBody.state === 'string' && webhookBody.state.trim()) {\n    try {\n      conversationState = JSON.parse(webhookBody.state);\n      console.log('Parsed state from webhook string');\n    } catch (e) {\n      console.log('Could not parse webhook state string');\n    }\n  }\n\n  // PRIORITY 2: If still default, fetch from Supabase database\n  if (JSON.stringify(conversationState) === JSON.stringify(defaultState)) {\n    try {\n      const session_id = webhookBody.session_id;\n      const agent_id = webhookBody.agent_name || 'newsletter_multi';\n\n      const supabaseUrl = 'https://aoteeitreschwzkbpqyd.supabase.co';\n      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvdGVlaXRyZXNjaHd6a2JwcXlkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDEyMDAzNCwiZXhwIjoyMDU5Njk2MDM0fQ.EfXz8Rv_6yvI4MTDk5WoKSQ0E0jxoO3oWEMO-xAEtWU';\n\n      const response = await fetch(\n        `${supabaseUrl}/rest/v1/agent_conversation_state?session_id=eq.${encodeURIComponent(session_id)}&agent_id=eq.${encodeURIComponent(agent_id)}&status=eq.active&select=state`,\n        {\n          headers: {\n            'apikey': supabaseKey,\n            'Authorization': `Bearer ${supabaseKey}`\n          }\n        }\n      );\n\n      const stateData = await response.json();\n      if (stateData && stateData.length > 0 && stateData[0].state) {\n        conversationState = stateData[0].state;\n        console.log('Loaded state from database:', conversationState);\n      } else {\n        console.log('No state in database, using default');\n      }\n    } catch (err) {\n      console.log('State fetch error:', err.message);\n    }\n  }\n\n  return [{\n    json: {\n      // Webhook identifiers\n      user_id: webhookBody.user_id,\n      user_mssg: webhookBody.user_mssg,\n      session_id: webhookBody.session_id,\n      agent_name: webhookBody.agent_name,\n      timestamp_of_call_made: webhookBody.timestamp_of_call_made,\n      request_id: webhookBody.request_id,\n\n      // KB data (from combined view)\n      knowledge_base: data.knowledge_base || '',\n      knowledge_base_summary: (data.knowledge_base || '').substring(0, 2000),\n      website_url: data.website_url || '',\n      website_icon: data.favicon_url || '',\n      communication_tone: data.communication_tone || 'professional',\n      newsletter_instructions: data.newsletter_questions || '',\n\n      // Topics data (from combined view)\n      available_topics_display: data.available_topics_display || '',\n      available_topics_text: data.available_topics_text || '',\n      topics_with_questions: JSON.stringify(data.topics_with_questions || [], null, 2),\n      topics_questions_formatted: data.topics_questions_formatted || '',\n      topic_code_map: data.topic_code_map || {},\n      total_topics: data.total_topics || 7,\n\n      // Conversation state (FROM DB or default)\n      conversation_state: JSON.stringify(conversationState, null, 2)\n    }\n  }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        352
+      ],
+      "id": "f6d7652a-2de6-4ee2-aa91-b3bec812c262",
+      "name": "Code - Prepare Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=---\n\n## 🚨🚨🚨 MANDATORY STATE CHECK - READ THIS FIRST 🚨🚨🚨\n\n**STOP. Before generating ANY response, you MUST check the conversation_state below.**\n\n### Current State from Database:\n{{ $json.conversation_state }}\n\n**THIS STATE IS YOUR ONLY SOURCE OF TRUTH. IGNORE YOUR CHAT MEMORY IF IT CONTRADICTS THIS STATE.**\n\n### DECISION TREE - FOLLOW THIS EXACTLY:\n\n**IF state.phase = \"topic_selection\" AND state.selected_topics is empty []:**\n→ You MUST show the topics list. No exceptions.\n→ Do NOT say \"Perfect! That covers...\" or move to questions.\n→ Do NOT pretend topics were already selected.\n→ Your response MUST include all 7 topics with numbers.\n→ Even if your memory tells you topics were discussed before, if selected_topics = [], SHOW THE LIST.\n\n**IF state.phase = \"topic_selection\" AND user message contains numbers (1-7):**\n→ Parse the numbers as topic selections\n→ Change phase to \"gathering\"\n→ Ask the first question for the first selected topic\n\n**IF state.phase = \"gathering\":**\n→ Look at state.current_topic_index and state.current_question_index\n→ Continue asking questions for the current topic\n→ Store user's answer in state.answers\n→ Move to next question or next topic when complete\n\n**IF state.phase = \"ready\":**\n→ All topics and questions completed\n→ Set Status to \"Ready\"\n\n**⚠️ DO NOT HALLUCINATE. DO NOT INVENT. DO NOT SKIP STEPS.**\nIf selected_topics is empty [], the user has NOT selected topics yet.\nThe database state is the ONLY truth. Your chat memory may contain old conversations - IGNORE IT.\n\n---\n\nYou are an expert B2B newsletter specialist helping users create multi-topic newsletters.\n\n---\n\n## ⚠️ CRITICAL RULE - ALWAYS SHOW TOPICS LIST\n\n**NEVER ask users to select topics without displaying the full list.**\n\nWhen in topic_selection phase, your `response` field MUST include ALL topics from the list below:\n\n### AVAILABLE TOPICS (COPY THIS ENTIRE LIST INTO YOUR RESPONSE):\n{{ $json.available_topics_display }}\n\n---\n\n## FIRST: DETECT USER INPUT TYPE\n\n**Before responding, analyze the user's message:**\n\n| User Input | What It Means | Your Action |\n|------------|---------------|-------------|\n| \"hi\", \"hello\", \"start\", \"lets start\", general text | Starting conversation | Show topics list (Step 1) |\n| Numbers like \"3,4,7\" or \"1, 3, 5\" | Topic selection | Parse & start questions (Step 2) |\n| Text answer after asking a question | Answer to your question | Store answer, ask next question (Step 3) |\n\n**IF USER MESSAGE CONTAINS NUMBERS (1-7), THEY ARE SELECTING TOPICS!**\n- Do NOT show the topics list again\n- Parse the numbers and move to gathering phase\n- Start asking questions for the first selected topic\n\n**IF USER MESSAGE IS TEXT WITHOUT NUMBERS AND selected_topics IS EMPTY:**\n- This means they haven't selected topics yet\n- You MUST show the topics list\n- Do NOT skip to asking questions\n\n---\n\n## YOUR TASK\n\nGuide users through multi-topic newsletter creation:\n1. Let them select 2-4 topics\n2. Ask questions for EACH selected topic (one question at a time)\n3. Track progress and show which topic/question they're on\n4. When all information is gathered, set Status to \"Ready\"\n\n---\n\n## STEP 1: TOPIC SELECTION (MULTI-SELECT)\n\n**MANDATORY: You MUST display ALL topics in your response.**\n\nWhen the user first messages (e.g., \"hi\", \"hello\", \"start\", \"lets start\"), your response MUST look like this:\n\n```\nLet's create your newsletter! Please select 2-4 topics you'd like to include.\n\nType the numbers separated by commas (e.g., '1, 3, 5'):\n\n[PASTE ALL TOPICS FROM {{ $json.available_topics_display }} HERE]\n```\n\n**DO NOT:**\n- Ask for topic selection without showing the numbered list\n- Say \"Please enter the numbers...\" without showing what the numbers refer to\n- Skip or truncate the topics list\n- Pretend topics were already selected when selected_topics is empty\n\n**DO:**\n- Copy the ENTIRE topics list from `{{ $json.available_topics_display }}` into your response\n- Show each topic with its number, emoji, name, and description\n- Let users see ALL options before asking them to choose\n\n---\n\n## STEP 2: PARSE TOPIC SELECTION\n\n**CRITICAL: DETECT NUMBER INPUTS AND MOVE TO QUESTIONS**\n\n**When user's message contains numbers (e.g., \"3,4,7\" or \"1, 3, 5\" or \"3 4 7\"):**\n1. **RECOGNIZE THIS IS A TOPIC SELECTION** - Do NOT show the topics list again!\n2. Parse their numbers and map to topics:\n   - 1 = Industry Insights (industry_insights)\n   - 2 = Customer Stories (customer_stories)\n   - 3 = Education / How-To Tips (education)\n   - 4 = Curated Resources (curated_resources)\n   - 5 = Promotions & Offers (promotions)\n   - 6 = Events & Announcements (events)\n   - 7 = Behind The Scenes (behind_scenes)\n3. **Change phase to \"gathering\"** in your state\n4. **Confirm selection and ASK THE FIRST QUESTION**\n\n**DO NOT:**\n- Show the topics list again after user picks numbers\n- Stay in \"topic_selection\" phase after receiving numbers\n- Repeat \"Please select 2-4 topics...\"\n\n**DO:**\n- Confirm what they selected\n- Move to phase: \"gathering\"\n- Immediately ask the first question for the first selected topic\n\n**Example - User selects \"3,4,7\":**\n```\nGreat choices! You've selected:\n- 📚 Education / How-To Tips\n- 🔗 Curated Resources / Tools\n- 🎬 Behind The Scenes\n\nLet's start with **📚 Education / How-To Tips** (Topic 1 of 3)\n\nFirst up, what problem or pain point does your audience commonly face?\n```\n\n---\n\n## STEP 3: GATHER INFORMATION\n\n**CRITICAL: ALWAYS END WITH A QUESTION OR CONFIRMATION**\n\nFor each selected topic:\n- Show progress: \"**[Topic Name]** (Topic X of Y)\"\n- Ask questions ONE AT A TIME from the topics_questions below\n- Wait for user's answer before asking next question\n- After all questions for a topic, move to next topic\n\n**DO NOT:**\n- Just summarize the user's answer and stop\n- Leave the response open-ended without a question\n- Say \"Got it\" and end there\n\n**ALWAYS:**\n- Acknowledge the answer briefly (1-2 sentences max)\n- Then IMMEDIATELY ask the next question\n- If it's the last question for a topic, move to the next topic and ask its first question\n- If all topics are done, show summary and set Status to \"Ready\"\n\n**USE NATURAL LANGUAGE, NOT NUMBERED QUESTIONS:**\n\nInstead of \"Question 1:\", \"Question 2:\", use conversational phrases:\n- \"First up...\" or \"To start...\"\n- \"Next...\" or \"Moving on...\"\n- \"A couple more to go...\" or \"Almost there...\"\n- \"One last thing...\" or \"Final question...\"\n\n**Example - After user answers:**\n```\nGot it - [brief acknowledgment].\n\nNext, [question here]?\n```\n\n**Example - Moving to next topic:**\n```\nPerfect! That covers Customer Stories.\n\nMoving to **📚 Education / How-To Tips** (Topic 2 of 3)\n\nFirst up, what problem or pain point does your audience commonly face?\n```\n\n**Example - Last question:**\n```\nGreat! One last thing for this topic - [question]?\n```\n\n---\n\n## STEP 4: COMPLETION\n\nAfter all topics have been covered:\n1. Show brief summary\n2. Set Status to \"Ready\"\n\nExample:\n```\nPerfect! I have all the information needed.\n\nSummary:\n- Industry Insights: SaaS trends for CTOs\n- Education: 5-step guide to automation\n- Events: Upcoming webinar announcement\n\nReady to generate your newsletter!\n```\n\n---\n\n## AVAILABLE TOPICS & QUESTIONS\n\n{{ $json.topics_questions_formatted }}\n\n---\n\n## CURRENT STATE (READ THIS CAREFULLY!)\n\n{{ $json.conversation_state }}\n\n**REMINDER:**\n- If phase = \"topic_selection\" and selected_topics = [], you MUST show topics list\n- Do NOT pretend work was already done if the state shows otherwise\n\n---\n\n## USER'S MESSAGE\n\n{{ $json.user_mssg }}\n\n---\n\n## OUTPUT FORMAT (STRICT JSON)\n\n**ALWAYS respond with valid JSON in this exact format:**\n\n```json\n{\n  \"response\": \"Your message to the user\",\n  \"Status\": \"Waiting\",\n  \"state\": {\n    \"phase\": \"topic_selection|gathering|ready\",\n    \"selected_topics\": [],\n    \"current_topic_index\": 0,\n    \"current_question_index\": 0,\n    \"answers\": {}\n  }\n}\n```\n\n**Status values:**\n- `\"Waiting\"` - Still gathering information\n- `\"Ready\"` - All information collected, ready to generate\n\n**CRITICAL RULES:**\n1. Output ONLY valid JSON - no text before or after\n2. No markdown code blocks around the JSON\n3. **IF selected_topics IS EMPTY: You MUST show topics list in response - NO EXCEPTIONS**\n4. **WHEN USER SENDS NUMBERS: Change phase to \"gathering\" and ask first question**\n5. Escape special characters properly in strings (use \\n for newlines)\n\n**VALIDATION - YOUR RESPONSE WILL BE REJECTED IF:**\n- You ask user to \"select topics\" WITHOUT showing the full topics list\n- You show the topics list AGAIN after user already selected numbers\n- You skip topic selection when selected_topics is empty []\n- You pretend topics were selected when they weren't\n- You summarize user's answer WITHOUT asking the next question (in gathering phase)\n- Your response ends without a question or \"Ready to generate\" (if complete)\n\n---\n\n## COMPANY CONTEXT\n\nWebsite: {{ $json.website_url }}\nKnowledge Base Summary: {{ $json.knowledge_base_summary }}\n\n---\n\n## EXAMPLE CONVERSATION\n\n**Turn 1 - User starts:**\nUser: \"hi\" or \"lets start\" or \"start\"\n\n**State shows:** phase = \"topic_selection\", selected_topics = []\n\n**CORRECT RESPONSE (you MUST include the topics list from {{ $json.available_topics_display }}):**\n\n```json\n{\n  \"response\": \"Let's create your newsletter! Please select 2-4 topics you'd like to include.\\n\\nType the numbers separated by commas (e.g., '1, 3, 5'):\\n\\n{{ $json.available_topics_display }}\",\n  \"Status\": \"Waiting\",\n  \"state\": {\n    \"phase\": \"topic_selection\",\n    \"selected_topics\": [],\n    \"current_topic_index\": 0,\n    \"current_question_index\": 0,\n    \"answers\": {}\n  }\n}\n```\n\n**WRONG - Do NOT respond like this:**\n```json\n{\n  \"response\": \"Perfect! That covers Industry Insights. Moving to Education...\",\n  ...\n}\n```\n**This is WRONG because topics weren't selected yet! selected_topics is empty!**\n\n**Turn 2 - User selects topics:**\nUser: \"1, 3, 6\"\n```json\n{\n  \"response\": \"Great choices! You've selected:\\n- 📊 Industry Insights\\n- 📚 Education / How-To Tips\\n- 📅 Events & Announcements\\n\\nLet's start with **📊 Industry Insights** (Topic 1 of 3)\\n\\nFirst up, what industry are you operating in? (e.g., SaaS, Healthcare, Finance)\",\n  \"Status\": \"Waiting\",\n  \"state\": {\n    \"phase\": \"gathering\",\n    \"selected_topics\": [\"industry_insights\", \"education\", \"events\"],\n    \"current_topic_index\": 0,\n    \"current_question_index\": 0,\n    \"answers\": {\n      \"industry_insights\": {},\n      \"education\": {},\n      \"events\": {}\n    }\n  }\n}\n```\n\n**Turn 3 - User answers:**\nUser: \"SaaS and cloud computing\"\n```json\n{\n  \"response\": \"Got it - SaaS and cloud computing.\\n\\nNext, who is the target audience — beginners, professionals, executives, or businesses?\",\n  \"Status\": \"Waiting\",\n  \"state\": {\n    \"phase\": \"gathering\",\n    \"selected_topics\": [\"industry_insights\", \"education\", \"events\"],\n    \"current_topic_index\": 0,\n    \"current_question_index\": 1,\n    \"answers\": {\n      \"industry_insights\": {\n        \"q1\": \"SaaS and cloud computing\"\n      },\n      \"education\": {},\n      \"events\": {}\n    }\n  }\n}\n```",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        704,
+        352
+      ],
+      "id": "b713b60c-120d-4464-8df5-b1774c91c588",
+      "name": "AI Agent - Conversation"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3-haiku",
+        "options": {
+          "responseFormat": "text"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        688,
+        576
+      ],
+      "id": "3ddb4641-a8f2-4497-add1-cb32a5afde2d",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "zc9d5HHhbyNyysy0",
+          "name": "OpenRouter Soma Test"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code - Prepare Data').item.json.session_id }}",
+        "contextWindowLength": 100
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        576
+      ],
+      "id": "69f8d7d9-65bb-4743-b98b-941980586438",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"response\": \"the response\",\n\"Status\": \"Waiting\",\n\"state\": {\n  \"phase\": \"topic_selection\",\n  \"selected_topics\": [],\n  \"current_topic_index\": 0,\n  \"current_question_index\": 0,\n  \"answers\": {}\n}\n}",
+        "autoFix": true,
+        "customizeRetryPrompt": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        768
+      ],
+      "id": "023a5a88-a508-426e-807e-28d39b572ff3",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-ready",
+              "leftValue": "={{ $json.output.Status }}",
+              "rightValue": "Ready",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1088,
+        352
+      ],
+      "id": "11067793-f040-4270-b9c6-6a40d90b8366",
+      "name": "If Ready"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"user_id\":\"{{ $('Code - Prepare Data').item.json.user_id }}\",\n  \"session_id\":\"{{ $('Code - Prepare Data').item.json.session_id }}\",\n  \"agent_name\":\"{{ $('Code - Prepare Data').item.json.agent_name }}\",\n  \"timestamp_of_call_made\":\"{{ new Date().toISOString() }}\",\n  \"request_id\":\"{{ $('Code - Prepare Data').item.json.request_id }}\",\n  \"agent_response\":{{ JSON.stringify($('AI Agent - Conversation').item.json.output.response) }},\n  \"agent_status\": \"Waiting\",\n  \"state\": {{ JSON.stringify($('AI Agent - Conversation').item.json.output.state) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        608
+      ],
+      "id": "88199189-6cdd-4799-b178-32f6831de9da",
+      "name": "Respond - Waiting",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookBody = $('Webhook').first().json.body;\n  const data = $('Supabase - Get All Data').first().json || {};\n\n  const defaultState = {\n    phase: 'topic_selection',\n    selected_topics: [],\n    current_topic_index: 0,\n    current_question_index: 0,\n    answers: {}\n  };\n\n  // CRITICAL FIX: Use state from webhook if provided\n  let conversationState = defaultState;\n  if (webhookBody.state && typeof webhookBody.state === 'object') {\n    conversationState = webhookBody.state;\n  } else if (typeof webhookBody.state === 'string') {\n    try {\n      conversationState = JSON.parse(webhookBody.state);\n    } catch (e) {\n      conversationState = defaultState;\n    }\n  }\n\n  return [{\n    json: {\n      user_id: webhookBody.user_id,\n      user_mssg: webhookBody.user_mssg,\n      session_id: webhookBody.session_id,\n      agent_name: webhookBody.agent_name,\n      timestamp_of_call_made: webhookBody.timestamp_of_call_made,\n      request_id: webhookBody.request_id,\n      knowledge_base: data.knowledge_base || '',\n      knowledge_base_summary: (data.knowledge_base || '').substring(0, 2000),\n      website_url: data.website_url || '',\n      website_icon: data.favicon_url || '',\n      communication_tone: data.communication_tone || 'professional',\n      newsletter_instructions: data.newsletter_questions || '',\n      available_topics_display: data.available_topics_display || '',\n      available_topics_text: data.available_topics_text || '',\n      topics_with_questions: JSON.stringify(data.topics_with_questions || [], null, 2),\n      topics_questions_formatted: data.topics_questions_formatted || '',\n      topic_code_map: data.topic_code_map || {},\n      total_topics: data.total_topics || 7,\n      conversation_state: JSON.stringify(conversationState, null, 2)\n    }\n  }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        192
+      ],
+      "id": "90a50511-7b6c-409d-827e-a72b68534316",
+      "name": "Code - Prepare Generation"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a complete newsletter using the information gathered.\n\n## NEWSLETTER STRUCTURE\n\n### 1. HERO ARTICLE (300-400 words)\n- Use the FIRST selected topic as primary\n- Deep dive into the user's answers\n\n### 2. QUICK INSIGHTS (100-150 words each)\n- One for each ADDITIONAL selected topic\n- Summarize key points\n\n### 3. CTA SECTION (100-150 words)\n- Combine relevant calls-to-action\n\n### 4. FOOTER\n- Soft conclusion and brand signature\n\n---\n\n## SELECTED TOPICS\n{{ $json.selected_topics }}\n\n## TOPIC DETAILS WITH ANSWERS\n{{ $json.topic_details }}\n\n## ALL ANSWERS\n{{ $json.all_answers }}\n\n---\n\n## COMPANY CONTEXT\nWebsite: {{ $json.website_url }}\nLogo: {{ $json.website_icon }}\nTone: {{ $json.communication_tone }}\n\nKnowledge Base:\n{{ $json.knowledge_base }}\n\n---\n\n## INSTRUCTIONS\n{{ $json.newsletter_instructions }}\n\n---\n\n## CRITICAL RULES\n1. NO PLACEHOLDERS - Use actual content\n2. NO IMAGE PLACEHOLDERS - Only include logo if provided\n3. RESPONSIVE HTML - Works in email clients\n4. INLINE STYLES - Email clients strip external CSS\n\n## OUTPUT\nGenerate complete HTML newsletter.\nJust the HTML - nothing else.",
+        "options": {
+          "systemMessage": "You are an elite newsletter writer. Generate complete, professional HTML newsletters.\n\nOUTPUT ONLY THE HTML - no markdown code blocks, no explanations."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        1568,
+        192
+      ],
+      "id": "0114b4b6-1b23-4e91-8bbe-58ed63f1a4c9",
+      "name": "AI Agent - Generator"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3-haiku",
+        "options": {
+          "responseFormat": "text"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        416
+      ],
+      "id": "655f7da2-5215-44ec-839b-7689335d5cf8",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "zc9d5HHhbyNyysy0",
+          "name": "OpenRouter Soma Test"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Clean the HTML output\nreturn items.map(item => {\n  let raw = item.json.output;\n\n  if (!raw) {\n    return { json: { error: 'No output field found' } };\n  }\n\n  // Remove markdown code block markers\n  const cleaned = raw\n    .replace(/^```html\\s*/, '')\n    .replace(/^```\\s*/, '')\n    .replace(/```$/, '')\n    .trim();\n\n  return {\n    json: {\n      Newsletter_HTML: cleaned\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        192
+      ],
+      "id": "91e292e1-780d-41c2-808a-f4b86fec2107",
+      "name": "Code - Clean HTML"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"user_id\":\"{{ $('Code - Prepare Data').item.json.user_id }}\",\n  \"session_id\":\"{{ $('Code - Prepare Data').item.json.session_id }}\",\n  \"agent_name\":\"newsletter\",\n  \"timestamp_of_call_made\":\"{{ new Date().toISOString() }}\",\n  \"request_id\":\"{{ $('Code - Prepare Data').item.json.request_id }}\",\n  \"agent_response\":{{ JSON.stringify($json.Newsletter_HTML) }},\n  \"agent_status\": \"Ready\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2048,
+        192
+      ],
+      "id": "0f6c4ff8-35ad-4f68-94ea-748b39ea11fd",
+      "name": "Respond - Ready"
+    },
+    {
+      "parameters": {
+        "content": "## Multi-Topic Newsletter Workflow (Simplified)\n\n**Flow:**\n1. Webhook receives request\n2. Single Supabase query (vw_newsletter_multi_topic_llm)\n3. AI Agent guides multi-topic selection\n4. Gather answers for each topic\n5. When Ready, generate combined newsletter\n\n**Single Query Returns:**\n- KB data (knowledge_base, website_url, etc.)\n- Topics data (available_topics_display, etc.)",
+        "height": 368,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        192
+      ],
+      "id": "197c5071-a4a2-40f5-a131-740e639462ba",
+      "name": "Sticky Note - Info"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3-haiku",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        848,
+        976
+      ],
+      "id": "d7a71785-4992-46fd-a54e-f833b3c4c661",
+      "name": "OpenRouter Chat Model2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "zc9d5HHhbyNyysy0",
+          "name": "OpenRouter Soma Test"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"user_id\":\"{{ $('Code - Prepare Data').item.json.user_id }}\",\n  \"session_id\":\"{{ $('Code - Prepare Data').item.json.session_id }}\",\n  \"agent_name\":\"{{ $('Code - Prepare Data').item.json.agent_name }}\",\n  \"timestamp_of_call_made\":\"{{ new Date().toISOString() }}\",\n  \"request_id\":\"{{ $('Code - Prepare Data').item.json.request_id }}\",\n  \"agent_response\":{{ JSON.stringify($('AI Agent - Conversation').item.json.output.response) }},\n  \"agent_status\": \"Waiting\",\n  \"state\": {{ JSON.stringify($('AI Agent - Conversation').item.json.output.state) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1504,
+        560
+      ],
+      "id": "296afdf9-d0e6-41e6-b61c-3163cc9a6da6",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================================\n  // Save Conversation State to Supabase - Multi-Topic Newsletter\n  // ============================================================================\n\n  const preparedData = $('Code - Prepare Data').first().json;\n  const aiOutput = $('AI Agent - Conversation').first().json.output;\n\n  const session_id = preparedData.session_id;\n  const agent_id = preparedData.agent_name || 'newsletter_multi';\n  const user_id = preparedData.user_id;\n\n  // Get the new state from AI output\n  const newState = aiOutput.state || {\n    phase: 'topic_selection',\n    selected_topics: [],\n    current_topic_index: 0,\n    current_question_index: 0,\n    answers: {}\n  };\n\n  const status = aiOutput.Status === 'Ready' ? 'completed' : 'active';\n\n  try {\n      const supabaseUrl = 'https://aoteeitreschwzkbpqyd.supabase.co';\n      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvdGVlaXRyZXNjaHd6a2JwcXlkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDEyMDAzNCwiZXhwIjoyMDU5Njk2MDM0fQ.EfXz8Rv_6yvI4MTDk5WoKSQ0E0jxoO3oWEMO-xAEtWU';\n\n    // Upsert state (insert or update on conflict)\n    const response = await fetch(`${supabaseUrl}/rest/v1/agent_conversation_state`, {\n      method: 'POST',\n      headers: {\n        'apikey': supabaseKey,\n        'Authorization': `Bearer ${supabaseKey}`,\n        'Content-Type': 'application/json',\n        'Prefer': 'resolution=merge-duplicates'\n      },\n      body: JSON.stringify({\n        session_id: session_id,\n        agent_id: agent_id,\n        firm_user_id: user_id,\n        state: newState,\n        status: status,\n        updated_at: new Date().toISOString()\n      })\n    });\n\n    if (response.ok) {\n      console.log('State saved successfully:', { session_id, agent_id, phase: newState.phase });\n    } else {\n      const errorText = await response.text();\n      console.log('State save response:', errorText);\n    }\n  } catch (err) {\n    console.log('State save error:', err.message);\n  }\n\n  // Pass through unchanged\n  return $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        544
+      ],
+      "id": "78299533-09f9-4220-a69f-264f88fd7703",
+      "name": "Save State"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.theaiteam.uk",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+            "content-length": "375",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://app.squidgy.ai",
+            "priority": "u=1, i",
+            "referer": "https://app.squidgy.ai/",
+            "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "49.37.150.84",
+            "x-forwarded-host": "n8n.theaiteam.uk",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "user_id": "b3ab8157-e3bb-456a-b0a1-bcf140fbc6fa",
+            "user_mssg": "You just now took all the details right then what is off here?? Please generate the newsltter\n\n",
+            "session_id": "b3ab8157-e3bb-456a-b0a1-bcf140fbc6fa_newsletter_multi_1768458891646_x3e0kmjhrwn",
+            "agent_name": "newsletter_multi",
+            "timestamp_of_call_made": "2026-01-15T06:53:01.510Z",
+            "request_id": "1768459981202-2143"
+          },
+          "webhookUrl": "https://n8n.theaiteam.uk/webhook/newsletter_multi",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get All Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get All Data": {
+      "main": [
+        [
+          {
+            "node": "Code - Prepare Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Conversation": {
+      "main": [
+        [
+          {
+            "node": "If Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Conversation",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent - Conversation",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "AI Agent - Generator",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent - Conversation",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Ready": {
+      "main": [
+        [
+          {
+            "node": "Code - Prepare Generation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Prepare Generation": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Generator": {
+      "main": [
+        [
+          {
+            "node": "Code - Clean HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Clean HTML": {
+      "main": [
+        [
+          {
+            "node": "Respond - Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond - Waiting": {
+      "main": [
+        []
+      ]
+    },
+    "Save State": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3e46d775-8b16-4cbe-a40e-84068d99e4b7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "J8dxEOgthDVnQbIx",
+  "tags": []
+}

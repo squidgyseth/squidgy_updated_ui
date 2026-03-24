@@ -4,6 +4,7 @@ import { Profile } from './supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { profilesApi } from './supabase-api';
 import ReferralService from '../services/referralService';
+import { getSupabaseConfig, getBackendUrl, getFrontendUrl } from './envConfig';
 
 interface SignUpData {
   email: string;
@@ -55,7 +56,7 @@ export class AuthService {
   async signUp(userData: SignUpData): Promise<{ user: any; profile?: Profile; needsEmailConfirmation?: boolean; message?: string }> {
     try {
       // Check if Supabase is configured
-      if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co') {
+      if (!getSupabaseConfig().url || getSupabaseConfig().url === 'https://your-project.supabase.co') {
         throw new Error('Supabase is not configured. Please add your Supabase credentials to the .env file.');
       }
 
@@ -75,8 +76,8 @@ export class AuthService {
       // Check if email already exists in profiles table using direct API call
       // Note: Using direct fetch because Supabase JS client hangs in this environment
       try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const supabaseUrl = getSupabaseConfig().url;
+        const supabaseKey = getSupabaseConfig().anonKey;
         const emailLower = userData.email.toLowerCase();
         const encodedEmail = encodeURIComponent(emailLower);
         const url = `${supabaseUrl}/rest/v1/profiles?email=eq.${encodedEmail}&select=id,email`;
@@ -112,7 +113,7 @@ export class AuthService {
 
       // Create auth user with email confirmation
       // Always use production URL for email confirmations to avoid localhost issues
-      const redirectUrl = `${import.meta.env.VITE_FRONTEND_URL}/login`;
+      const redirectUrl = `${getFrontendUrl()}/login`;
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email.toLowerCase(),
@@ -171,8 +172,8 @@ export class AuthService {
         let checkError = null;
 
         try {
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+          const supabaseUrl = getSupabaseConfig().url;
+          const supabaseKey = getSupabaseConfig().anonKey;
           
           // Check by id first (trigger might create with auth user id)
           let url = `${supabaseUrl}/rest/v1/profiles?id=eq.${authData.user.id}&select=*`;
@@ -240,8 +241,8 @@ export class AuthService {
         // Only create if profile doesn't exist
         if (!existingProfile) {
           try {
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-            const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            const supabaseUrl = getSupabaseConfig().url;
+            const supabaseKey = getSupabaseConfig().anonKey;
             const url = `${supabaseUrl}/rest/v1/profiles`;
 
             const userId = uuidv4();
@@ -306,8 +307,8 @@ export class AuthService {
           // Auto-create business_settings for new users
           if (profile && profile.user_id) {
             try {
-              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-              const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+              const supabaseUrl = getSupabaseConfig().url;
+              const supabaseKey = getSupabaseConfig().anonKey;
               const businessSettingsUrl = `${supabaseUrl}/rest/v1/business_settings`;
 
               const businessSettingsData = {
@@ -346,8 +347,8 @@ export class AuthService {
           // Update the existing profile with any missing data
           if (!existingProfile.user_id || !existingProfile.company_id) {
             try {
-              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-              const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+              const supabaseUrl = getSupabaseConfig().url;
+              const supabaseKey = getSupabaseConfig().anonKey;
               const url = `${supabaseUrl}/rest/v1/profiles?id=eq.${authData.user.id}`;
 
               const updateData = {
@@ -388,8 +389,8 @@ export class AuthService {
           // Auto-create business_settings for existing users if missing
           if (existingProfile && existingProfile.user_id) {
             try {
-              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-              const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+              const supabaseUrl = getSupabaseConfig().url;
+              const supabaseKey = getSupabaseConfig().anonKey;
 
               // Check if business_settings already exists
               const checkUrl = `${supabaseUrl}/rest/v1/business_settings?user_id=eq.${existingProfile.user_id}&select=id`;
@@ -441,7 +442,7 @@ export class AuthService {
         // Profile created successfully - now trigger GHL registration
         if (profile) {
           try {
-            const backendUrl = import.meta.env.VITE_BACKEND_URL;
+            const backendUrl = getBackendUrl();
             const ghlPayload = {
               full_name: userData.fullName.trim(),
               email: userData.email.toLowerCase()
@@ -493,7 +494,7 @@ export class AuthService {
   async signIn(credentials: SignInData): Promise<{ user: any; profile?: Profile; needsEmailConfirmation?: boolean }> {
     try {
       // Check if Supabase is configured
-      if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co') {
+      if (!getSupabaseConfig().url || getSupabaseConfig().url === 'https://your-project.supabase.co') {
         throw new Error('Supabase is not configured. Please add your Supabase credentials to the .env file.');
       }
 
@@ -584,7 +585,7 @@ export class AuthService {
 
       // Use Supabase Auth's built-in password reset
       // Always use production URL for password reset emails to avoid localhost issues
-      const redirectUrl = `${import.meta.env.VITE_FRONTEND_URL}/reset-password`;
+      const redirectUrl = `${getFrontendUrl()}/reset-password`;
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         data.email.toLowerCase(),

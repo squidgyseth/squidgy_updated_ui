@@ -20,6 +20,7 @@ import InteractiveMessageButtons from './InteractiveMessageButtons';
 import { googleCalendarService } from '../../lib/googleCalendar';
 import { toast } from 'sonner';
 import { useThinkingMessage } from '../../hooks/useThinkingMessage';
+import { getBackendUrl } from '@/lib/envConfig';
 
 interface N8nChatInterfaceProps {
   agent: {
@@ -1187,7 +1188,7 @@ export default function N8nChatInterface({
   // Check for duplicate files in firm_users_knowledge_base
   const checkForDuplicateFile = async (fileName: string): Promise<{ isDuplicate: boolean; existingFile?: { file_id: string; file_url: string } }> => {
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/files/user/${userId}?agent_id=${agent.id}`);
       
       if (response.ok) {
@@ -1210,7 +1211,7 @@ export default function N8nChatInterface({
   // Delete existing file before replacing
   const deleteExistingFile = async (fileId: string): Promise<boolean> => {
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/knowledge-base/file/${fileId}`, {
         method: 'DELETE'
       });
@@ -1429,10 +1430,10 @@ export default function N8nChatInterface({
       formData.append('agent_id', agent.id);
       formData.append('agent_name', agent.name);
       formData.append('source', 'chat');
-      
-      
-      // Use the backend URL from environment variables, default to localhost for development
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+
+
+      // Use the backend URL from environment variables
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/file/process`, {
         method: 'POST',
         body: formData

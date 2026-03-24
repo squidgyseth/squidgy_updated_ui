@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import DatabaseAgentService, { type AgentConfig } from '../../services/databaseAgentService';
 import { chatSessionService, ChatSession as ChatSessionType, ChatMessage as ChatMessageType } from '../../services/chatSessionService';
 import ChatMessageBubble from '../../components/chat/ChatMessageBubble';
+import { getBackendUrl } from '@/lib/envConfig';
 
 interface UserProfile {
   id: string;
@@ -199,7 +200,7 @@ export default function AdminUsers() {
   const handleDeleteUser = async (targetUserId: string) => {
     try {
       // Hard delete - call backend API to remove user from all tables
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://squidgy-backend.onrender.com';
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/admin/delete-user`, {
         method: 'POST',
         headers: {
@@ -1043,7 +1044,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
       
       // Notify backend to refresh user view
       try {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+        const backendUrl = getBackendUrl();
         await fetch(`${backendUrl}/api/agents/notify-enablement`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1575,7 +1576,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                               onClick={async () => {
                                 try {
                                   setSavingGhl(true);
-                                  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+                                  const backendUrl = getBackendUrl();
                                   const response = await fetch(`${backendUrl}/api/ghl/retry-automation`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -2042,7 +2043,7 @@ function PostHogActivityModal({ user, onClose }: PostHogActivityModalProps) {
   const [activityData, setActivityData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+  const BACKEND_URL = getBackendUrl();
 
   useEffect(() => {
     const fetchActivity = async () => {

@@ -41,10 +41,10 @@ export class N8NTemplateService {
 
   private constructor() {
     // Load API key from environment variable
-    this.apiKey = process.env.VITE_N8N_TOKEN || process.env.N8N_API_KEY || '';
-    
+    this.apiKey = process.env.N8N_TOKEN || process.env.N8N_API_KEY || '';
+
     if (!this.apiKey) {
-      console.warn('⚠️  N8N API key not found. Set VITE_N8N_TOKEN in .env file');
+      console.warn('⚠️  N8N API key not found. Set N8N_TOKEN in .env file');
     }
   }
 
