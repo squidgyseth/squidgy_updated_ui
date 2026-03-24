@@ -334,12 +334,10 @@ export default function AdminLeaderboard() {
                           <div className="text-sm font-medium text-gray-900">
                             {entry.player_name || 'Anonymous Player'}
                           </div>
-                          {entry.player_email && (
-                            <div className="text-xs text-gray-500 flex items-center gap-1">
-                              <Mail className="w-3 h-3" />
-                              {entry.player_email}
-                            </div>
-                          )}
+                          <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                            <Mail className="w-3 h-3" />
+                            {entry.player_email || 'No email'}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
