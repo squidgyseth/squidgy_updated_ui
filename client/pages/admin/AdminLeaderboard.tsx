@@ -42,6 +42,8 @@ export default function AdminLeaderboard() {
   const [kpis, setKPIs] = useState<KPIs | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'registered' | 'anonymous'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const RECORDS_PER_PAGE = 50;
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -62,7 +64,7 @@ export default function AdminLeaderboard() {
       const now = new Date();
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      // Fetch leaderboard with linked user info (excluding admins)
+      // Fetch all leaderboard records with linked user info (excluding admins)
       const { data: scores, error: scoresError } = await supabase
         .from('anonymous_game_scores')
         .select(`
@@ -73,8 +75,7 @@ export default function AdminLeaderboard() {
             is_super_admin
           )
         `)
-        .order('played_at', { ascending: false })
-        .limit(100);
+        .order('played_at', { ascending: false });
 
       if (scoresError) throw scoresError;
 
@@ -143,6 +144,25 @@ export default function AdminLeaderboard() {
     if (filter === 'anonymous') return !entry.is_registered;
     return true;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredLeaderboard.length / RECORDS_PER_PAGE);
+  const startIndex = (currentPage - 1) * RECORDS_PER_PAGE;
+  const endIndex = startIndex + RECORDS_PER_PAGE;
+  const paginatedLeaderboard = filteredLeaderboard.slice(startIndex, endIndex);
+
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+  };
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
 
   if (adminLoading || loading) {
     return (
@@ -322,32 +342,34 @@ export default function AdminLeaderboard() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredLeaderboard.length === 0 ? (
+                {paginatedLeaderboard.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                       No game scores found
                     </td>
                   </tr>
                 ) : (
-                  filteredLeaderboard.map((entry, index) => (
+                  paginatedLeaderboard.map((entry, index) => {
+                    const globalRank = startIndex + index + 1;
+                    return (
                     <tr key={entry.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          {index < 3 ? (
+                          {globalRank <= 3 ? (
                             <div className="flex items-center gap-2">
                               <Trophy
                                 className={`w-5 h-5 ${
-                                  index === 0
+                                  globalRank === 1
                                     ? 'text-yellow-500'
-                                    : index === 1
+                                    : globalRank === 2
                                     ? 'text-gray-400'
                                     : 'text-orange-400'
                                 }`}
                               />
-                              <span className="text-sm font-bold text-gray-900">{index + 1}</span>
+                              <span className="text-sm font-bold text-gray-900">{globalRank}</span>
                             </div>
                           ) : (
-                            <span className="text-sm text-gray-500">{index + 1}</span>
+                            <span className="text-sm text-gray-500">{globalRank}</span>
                           )}
                         </div>
                       </td>
@@ -401,11 +423,57 @@ export default function AdminLeaderboard() {
                         </div>
                       </td>
                     </tr>
-                  ))
+                  );
+                  })
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {filteredLeaderboard.length > RECORDS_PER_PAGE && (
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                <span className="font-medium">{Math.min(endIndex, filteredLeaderboard.length)}</span> of{' '}
+                <span className="font-medium">{filteredLeaderboard.length}</span> results
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
+                  className={`p-2 rounded-lg border ${
+                    currentPage === 1
+                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                  title="Previous page"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <span className="text-sm text-gray-700">
+                  Page <span className="font-medium">{currentPage}</span> of{' '}
+                  <span className="font-medium">{totalPages}</span>
+                </span>
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  className={`p-2 rounded-lg border ${
+                    currentPage === totalPages
+                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                  title="Next page"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
