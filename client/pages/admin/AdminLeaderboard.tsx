@@ -73,14 +73,15 @@ export default function AdminLeaderboard() {
             is_super_admin
           )
         `)
-        .order('score', { ascending: false })
+        .order('played_at', { ascending: false })
         .limit(100);
 
       if (scoresError) throw scoresError;
 
-      // Filter out admin scores and format the data
+      // Filter out admin scores, records without email, and format the data
       const formattedScores: LeaderboardEntry[] = (scores || [])
         .filter((score: any) => !score.profiles?.is_super_admin) // Exclude admins
+        .filter((score: any) => score.Email || score.profiles?.email) // Only include records with email
         .map((score: any) => ({
           id: score.id,
           anonymous_id: score.anonymous_id,
@@ -292,9 +293,6 @@ export default function AdminLeaderboard() {
                     Duration
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Played At
                   </th>
                 </tr>
@@ -302,7 +300,7 @@ export default function AdminLeaderboard() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredLeaderboard.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                       No game scores found
                     </td>
                   </tr>
@@ -330,13 +328,21 @@ export default function AdminLeaderboard() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col">
-                          <div className="text-sm font-medium text-gray-900">
-                            {entry.player_name || 'Anonymous Player'}
+                        <div className="flex flex-col gap-1">
+                          <div className="text-sm font-medium text-gray-900 flex items-center gap-1">
+                            <Mail className="w-3 h-3 text-gray-400" />
+                            {entry.player_email}
                           </div>
-                          <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                            <Mail className="w-3 h-3" />
-                            {entry.player_email || 'No email'}
+                          <div className="text-xs">
+                            {entry.is_registered ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                Registered
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                Anonymous
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -363,17 +369,6 @@ export default function AdminLeaderboard() {
                               }s`
                             : 'N/A'}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {entry.is_registered ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Registered
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            Anonymous
-                          </span>
-                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500 flex items-center gap-1">
