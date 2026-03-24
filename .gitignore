@@ -25,6 +25,7 @@ dist-ssr
 
 .config/
 .env
+.env.loil
 
 .env_production
 .env_backup_farzin
