@@ -155,7 +155,7 @@ export default function AdminLeaderboard() {
     );
   }
 
-  const kpiCards = [
+  const weeklyKPIs = [
     {
       title: 'Games This Week',
       value: kpis?.total_games_this_week || 0,
@@ -168,6 +168,9 @@ export default function AdminLeaderboard() {
       icon: UserCheck,
       color: 'bg-green-500',
     },
+  ];
+
+  const overallKPIs = [
     {
       title: 'Total Players',
       value: kpis?.total_players || 0,
@@ -220,19 +223,40 @@ export default function AdminLeaderboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
-          {kpiCards.map((stat, index) => (
-            <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className={`p-2 rounded-lg ${stat.color}`}>
-                  <stat.icon className="w-4 h-4 text-white" />
+        {/* Weekly KPIs */}
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">This Week</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {weeklyKPIs.map((stat, index) => (
+              <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`p-2 rounded-lg ${stat.color}`}>
+                    <stat.icon className="w-4 h-4 text-white" />
+                  </div>
                 </div>
+                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-xs font-medium text-gray-500 mt-1">{stat.title}</p>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              <p className="text-xs font-medium text-gray-500 mt-1">{stat.title}</p>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        {/* Overall KPIs */}
+        <div className="mb-8">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Overall Stats</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {overallKPIs.map((stat, index) => (
+              <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`p-2 rounded-lg ${stat.color}`}>
+                    <stat.icon className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-xs font-medium text-gray-500 mt-1">{stat.title}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Filters */}
