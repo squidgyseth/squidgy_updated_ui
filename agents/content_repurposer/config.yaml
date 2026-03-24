@@ -1,28 +1,28 @@
+updated_at: '2026-03-24T11:07:26.348816'
 agent:
   id: content_repurposer
-  emoji: "🔄"
-  name: "Rita | Repurposing Maestro"
+  emoji: 🔄
+  name: Rita | Repurposing Maestro
   category: MARKETING
-  description: "Transform existing content into fresh formats for different platforms."
-  specialization: "Repurposing Maestro"
-  tagline: "Repurpose. Convert. Deliver."
-  avatar: "/Squidgy AI Assistants Avatars/15.png"
+  description: Transform existing content into fresh formats for different platforms.
+  specialization: Repurposing Maestro
+  tagline: Repurpose. Convert. Deliver.
+  avatar: /Squidgy AI Assistants Avatars/15.png
   pinned: false
   enabled: false
   admin_only: false
   uses_conversation_state: true
-  initial_message: "Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!"
-  sidebar_greeting: "Hi! I'm your Content Repurposer - I transform your existing content into fresh formats for different platforms. How can I assist you today?"
+  initial_message: Hey there! 🎨 I'm your Content Repurposer, ready to transform your content across different platforms.<br><br>📄 To get started, please <strong>select a newsletter from the dropdown above</strong>, and I'll help you generate engaging social media posts based on that content!
+  sidebar_greeting: Hi! I'm your Content Repurposer - I transform your existing content into fresh formats for different platforms. How can I assist you today?
   capabilities:
-    - "Transform blogs into social media posts"
-    - "Convert videos into articles"
-    - "Generate multi-platform content"
-    - "Adapt content for different audiences"
+    - Transform blogs into social media posts
+    - Convert videos into articles
+    - Generate multi-platform content
+    - Adapt content for different audiences
   recent_actions:
-    - "Repurposed newsletter into 5 social posts"
-    - "Converted blog article to video script"
-    - "Generated LinkedIn content from podcast"
-
+    - Repurposed newsletter into 5 social posts
+    - Converted blog article to video script
+    - Generated LinkedIn content from podcast
 ui_use:
   page_type: single_page
   pages:
@@ -30,7 +30,6 @@ ui_use:
       path: content-repurposer-dashboard
       order: 1
       validated: true
-
 interface:
   type: chat
   features:
@@ -38,18 +37,15 @@ interface:
     - file_upload
     - voice_input
     - suggestion_buttons
-
 suggestions:
-  - "Complete Setup"
-  - "Repurpose blog to social posts"
-  - "Convert video to article"
-  - "Transform article to video script"
-  - "Generate multi-platform content"
-
+  - Complete Setup
+  - Repurpose blog to social posts
+  - Convert video to article
+  - Transform article to video script
+  - Generate multi-platform content
 n8n:
   webhook_url: https://n8n.theaiteam.uk/webhook/content_repurposer
   image_generator_url: https://n8n.theaiteam.uk/webhook/image_generator
-
 personality:
   tone: professional
   style: helpful

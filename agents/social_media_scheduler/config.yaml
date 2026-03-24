@@ -1,30 +1,30 @@
+updated_at: '2026-03-24T11:07:26.642277'
 agent:
   id: social_media_scheduler
   name: Social Media Scheduler
   category: MARKETING
   description: Schedule and manage your social media posts across multiple platforms
-  specialization: "Automated & Strategic"
-  tagline: "Schedule. Publish. Engage."
+  specialization: Automated & Strategic
+  tagline: Schedule. Publish. Engage.
   avatar: /Squidgy AI Assistants Avatars/6.png
   pinned: false
   enabled: false
   admin_only: false
-  initial_message: 'Hey! 👋 I''m your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let''s get started!'
+  initial_message: Hey! 👋 I'm your Social Media Scheduler. I can help you plan, schedule, and manage posts across all your social platforms. Want to schedule a post, check your content calendar, or analyze your posting strategy? Let's get started!
   capabilities:
-    - "Schedule posts across multiple social media platforms"
-    - "Create and manage content calendars"
-    - "Optimize posting times for maximum engagement"
-    - "Draft social media content with hashtags and captions"
-    - "Track scheduled posts and publishing status"
-    - "Analyze best times to post based on audience data"
-    - "Manage social media campaigns and series"
-    - "Cross-platform content adaptation"
+    - Schedule posts across multiple social media platforms
+    - Create and manage content calendars
+    - Optimize posting times for maximum engagement
+    - Draft social media content with hashtags and captions
+    - Track scheduled posts and publishing status
+    - Analyze best times to post based on audience data
+    - Manage social media campaigns and series
+    - Cross-platform content adaptation
   recent_actions:
-    - "Scheduled 15 posts for next week's product launch"
-    - "Optimized posting times based on engagement analytics"
-    - "Created content calendar for Q1 campaign"
-    - "Drafted Instagram captions with trending hashtags"
-
+    - Scheduled 15 posts for next week's product launch
+    - Optimized posting times based on engagement analytics
+    - Created content calendar for Q1 campaign
+    - Drafted Instagram captions with trending hashtags
 ui_use:
   page_type: single_page
   pages:
@@ -32,7 +32,6 @@ ui_use:
       path: social-media-scheduler-dashboard
       order: 1
       validated: true
-
 interface:
   type: chat
   features:
@@ -40,19 +39,16 @@ interface:
     - file_upload
     - suggestion_buttons
     - calendar_integration
-
 suggestions:
-  - "Complete Setup"
-  - "Schedule a post for tomorrow"
-  - "Show my content calendar"
-  - "What's the best time to post?"
-  - "Draft a LinkedIn post"
-  - "Create a posting schedule"
-  - "Analyze my posting strategy"
-
+  - Complete Setup
+  - Schedule a post for tomorrow
+  - Show my content calendar
+  - What's the best time to post?
+  - Draft a LinkedIn post
+  - Create a posting schedule
+  - Analyze my posting strategy
 n8n:
   webhook_url: https://n8n.theaiteam.uk/webhook/social_media_scheduler
-
 personality:
   tone: professional
   style: strategic

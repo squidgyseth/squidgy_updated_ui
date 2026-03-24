@@ -30,6 +30,8 @@ agents/
         └── agent_skill.md
 ```
 
+**Note:** Agents can also be created dynamically via the `agent_builder` tool. These agents are automatically backed up to the filesystem by the build script.
+
 ---
 
 ## 🔧 Creating a New Agent
@@ -94,6 +96,9 @@ cp agents/shared/agent_template.yaml agents/your_agent_id/config.yaml
 **Required fields in `config.yaml`:**
 
 ```yaml
+# Metadata (automatically managed by build script)
+updated_at: null  # ISO 8601 timestamp, automatically updated when agent is modified
+
 agent:
   id: your_agent_id                    # Unique identifier (snake_case)
   name: "Name | Agent Title"           # Display name
@@ -179,20 +184,21 @@ When to route to other agents or escalate.
 
 #### Step 4: Build and Deploy
 
-Run the build process to compile agents and sync to database:
+Run the build process to sync agents to database:
 
 ```bash
 node scripts/build-agents.js
 ```
 
 This will:
-- ✅ Compile all YAML configs to TypeScript
-- ✅ Sync agents to Supabase database
+- ✅ Parse all agent YAML configs from `agents/` folder
+- ✅ Sync metadata (add missing `updated_at` fields silently)
+- ✅ Sync agent_builder-created agents from database to filesystem
+- ✅ Upload all agents to Supabase `agents` table (sets `last_modified_by = 'admin'`)
 - ✅ Update system prompts with skills tables
 - ✅ Upload skills to Neon database
 - ✅ Combine `base_system_prompt.md` + `system_prompt.md`
 - ✅ Upload compiled prompts to Neon database
-- ✅ Clean up orphaned agents
 
 #### Step 5: Restart Dev Server
 
@@ -218,17 +224,45 @@ npm run dev
 
 ## 🔄 Agent Lifecycle
 
-### 1. Platform-Level Control (`agents` table)
+### 1. Agent Creation Methods
+
+**Manual Creation:**
+- Create folder in `agents/` directory
+- Add `config.yaml` and `system_prompt.md`
+- Run build script to sync to database
+- `last_modified_by = 'admin'` in database
+
+**Agent Builder Creation:**
+- Created dynamically via `agent_builder` tool
+- Stored directly in database
+- `last_modified_by = 'agent_builder'` in database
+- Build script automatically backs up to filesystem
+- After backup, `last_modified_by` changes to `'admin'`
+
+### 2. Build Script Sync Flow
+
+```
+1. Parse agents from agents/ folder
+2. Sync metadata (add missing updated_at fields)
+3. Sync agent_builder agents:
+   - NEW agents (not in folder) → Backup to filesystem
+   - EXISTING agents (in folder) → Update if DB is newer
+4. Re-scan agents/ folder (includes newly backed up agents)
+5. Upload ALL agents to database (last_modified_by = 'admin')
+6. Sync skills and system prompts to Neon
+```
+
+### 3. Platform-Level Control (`agents` table)
 
 Agents must be enabled in the `agents` table with `is_enabled = true` to be available platform-wide.
 
 ```sql
-SELECT agent_id, name, is_enabled 
+SELECT agent_id, name, is_enabled, last_modified_by, updated_at
 FROM agents 
 WHERE is_enabled = true;
 ```
 
-### 2. User-Level Control (`assistant_personalizations` table)
+### 4. User-Level Control (`assistant_personalizations` table)
 
 Users must enable agents individually through onboarding:
 
@@ -238,7 +272,7 @@ FROM assistant_personalizations
 WHERE user_id = 'user_id' AND is_enabled = true;
 ```
 
-### 3. Display Logic
+### 5. Display Logic
 
 Agents appear in the UI only if **BOTH** conditions are met:
 - ✅ Platform-enabled (`agents.is_enabled = true`)
@@ -435,6 +469,41 @@ Check if you're duplicating base prompt rules in your `system_prompt.md`. Remove
 - **[Agent Architecture](../docs/AGENT_ARCHITECTURE_PLAN.md)** - System architecture overview
 - **[Agent Folder Structure](../docs/agent-folder-structure.md)** - Detailed file organization
 
+## 🗄️ Database Schema
+
+### Agents Table
+
+The `agents` table stores complete agent configurations:
+
+```sql
+CREATE TABLE agents (
+  id UUID PRIMARY KEY,
+  agent_id VARCHAR(100) UNIQUE NOT NULL,
+  name VARCHAR(200) NOT NULL,
+  category VARCHAR(50) NOT NULL,
+  description TEXT NOT NULL,
+  -- ... other fields ...
+  
+  -- Metadata
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),  -- Auto-updated by trigger
+  last_modified_by TEXT DEFAULT 'admin' -- 'admin' or 'agent_builder'
+);
+```
+
+**Key Fields:**
+- `updated_at` - Automatically updated on every change (trigger)
+- `last_modified_by` - Tracks who last modified the agent:
+  - `'admin'` - Manual changes or build script uploads
+  - `'agent_builder'` - Modified by agent_builder tool
+
+### Metadata Sync
+
+The `updated_at` field in `config.yaml` is synced with the database:
+- Build script adds missing `updated_at` fields from database
+- Used to compare timestamps and detect newer versions
+- Ensures consistency across different systems
+
 ---
 
-**Last Updated:** 2026-03-13
+**Last Updated:** 2026-03-24

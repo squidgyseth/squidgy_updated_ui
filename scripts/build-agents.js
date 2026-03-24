@@ -32,6 +32,363 @@ function getNeonConnectionString() {
 }
 
 /**
+ * Sync metadata from database to YAML files that are missing updated_at field
+ * Adds updated_at timestamp to existing agents without modifying other content
+ */
+async function syncMetadataFromDatabase(agents, supabase) {
+  const agentsDir = path.join(__dirname, '../agents');
+  let syncedCount = 0;
+
+  for (const agent of agents) {
+    try {
+      const agentId = agent.agent.id;
+      const configPath = path.join(agentsDir, agentId, 'config.yaml');
+
+      // Skip if agent already has updated_at
+      if (agent.updated_at) {
+        continue;
+      }
+
+      // Fetch updated_at from database
+      const { data: dbAgent, error: fetchError } = await supabase
+        .from('agents')
+        .select('updated_at')
+        .eq('agent_id', agentId)
+        .single();
+
+      if (fetchError || !dbAgent || !dbAgent.updated_at) {
+        continue;
+      }
+
+      // Add updated_at to the config
+      const updatedConfig = {
+        updated_at: dbAgent.updated_at,
+        ...agent
+      };
+
+      // Write updated config.yaml
+      await fs.writeFile(configPath, yaml.dump(updatedConfig, { lineWidth: -1 }));
+      syncedCount++;
+    } catch (err) {
+      // Silent error handling
+    }
+  }
+}
+
+/**
+ * Sync all agent_builder-created agents from database
+ * - Creates new agents in filesystem if they don't exist
+ * - Updates existing agents if DB is newer
+ */
+async function syncAgentBuilderAgents(agents, supabase) {
+  const connectionString = getNeonConnectionString();
+  if (!connectionString) {
+    console.log('⚠️ Neon connection not available, skipping YAML update check');
+    return;
+  }
+
+  const sql = neon(connectionString);
+  const agentsDir = path.join(__dirname, '../agents');
+  let updatedCount = 0;
+
+  console.log('🔄 Syncing agent_builder agents from database...');
+
+  // Get all agent_builder agents from database
+  const { data: agentBuilderAgents, error: fetchError } = await supabase
+    .from('agents')
+    .select('agent_id, updated_at')
+    .eq('last_modified_by', 'agent_builder');
+
+  if (fetchError || !agentBuilderAgents || agentBuilderAgents.length === 0) {
+    console.log('✅ No agent_builder agents found in database');
+    return;
+  }
+
+  console.log(`📋 Found ${agentBuilderAgents.length} agent_builder agent(s) in database`);
+
+  for (const dbAgent of agentBuilderAgents) {
+    try {
+      const agentId = dbAgent.agent_id;
+      const configPath = path.join(agentsDir, agentId, 'config.yaml');
+      
+      // Check if agent exists in local filesystem
+      const existingAgent = agents.find(a => a.agent.id === agentId);
+      const agentExists = existingAgent !== undefined;
+      
+      // Determine if we need to update/create
+      let shouldSync = false;
+      
+      if (!agentExists) {
+        // Agent doesn't exist in folder - backup from database
+        console.log(`  📦 New agent_builder agent: ${agentId} (not in folder, backing up)`);
+        shouldSync = true;
+      } else {
+        // Agent exists - check if DB is newer
+        const yamlModTime = existingAgent.updated_at ? new Date(existingAgent.updated_at) : null;
+        const dbModTime = new Date(dbAgent.updated_at);
+        
+        if (!yamlModTime || dbModTime > yamlModTime) {
+          console.log(`  🔄 Updating ${agentId} from database (DB: ${dbModTime.toISOString()}, YAML: ${yamlModTime ? yamlModTime.toISOString() : 'none'})`);
+          shouldSync = true;
+        }
+      }
+      
+      if (shouldSync) {
+        // Create agent folder if it doesn't exist
+        const agentFolder = path.join(agentsDir, agentId);
+        await fs.mkdir(agentFolder, { recursive: true });
+
+        // Fetch full agent data
+        const { data: agentData, error: dataError } = await supabase
+          .from('agents')
+          .select('*')
+          .eq('agent_id', agentId)
+          .single();
+
+        if (dataError || !agentData) {
+          console.error(`    ❌ Error fetching data for ${agentId}`);
+          continue;
+        }
+
+        // Build updated config.yaml
+        const config = {
+          updated_at: agentData.updated_at,
+          agent: {
+            id: agentData.agent_id,
+            name: agentData.name,
+            emoji: agentData.emoji || '🤖',
+            category: agentData.category.toLowerCase(),
+            description: agentData.description,
+            specialization: agentData.specialization || undefined,
+            tagline: agentData.tagline || undefined,
+            avatar: agentData.avatar_url || undefined,
+            pinned: agentData.pinned || false,
+            enabled: agentData.is_enabled,
+            admin_only: agentData.admin_only || false,
+            uses_conversation_state: agentData.uses_conversation_state || false,
+            initial_message: agentData.initial_message || undefined,
+            sidebar_greeting: agentData.sidebar_greeting || undefined,
+            capabilities: agentData.capabilities || [],
+            recent_actions: agentData.recent_actions || []
+          },
+          n8n: {
+            webhook_url: agentData.webhook_url || ''
+          },
+          ui_use: agentData.ui_config || {},
+          interface: agentData.interface_config || {},
+          suggestions: agentData.suggestions || [],
+          personality: agentData.personality || {},
+          platforms: agentData.platforms || {},
+          domain_config: agentData.domain_config || {},
+          skills: agentData.skills || []
+        };
+
+        // Update config.yaml
+        await fs.writeFile(configPath, yaml.dump(config, { lineWidth: -1 }));
+        console.log(`    ✅ Updated config.yaml`);
+
+        // Update system_prompt from Neon
+        try {
+          const systemPrompts = await sql`
+            SELECT prompt_content 
+            FROM system_prompts 
+            WHERE agent_id = ${agentId}
+            LIMIT 1
+          `;
+
+          if (systemPrompts.length > 0 && systemPrompts[0].prompt_content) {
+            const promptPath = path.join(agentsDir, agentId, 'system_prompt.md');
+            await fs.writeFile(promptPath, systemPrompts[0].prompt_content);
+            console.log(`    ✅ Updated system_prompt.md`);
+          }
+        } catch (err) {
+          console.log(`    ⚠️ No system prompt to update`);
+        }
+
+        // Update skills from Neon
+        try {
+          const skills = await sql`
+            SELECT skill_name, skill_content 
+            FROM agent_skills 
+            WHERE agent_id = ${agentId}
+          `;
+
+          if (skills.length > 0) {
+            const skillsFolder = path.join(agentsDir, agentId, 'skills');
+            await fs.mkdir(skillsFolder, { recursive: true });
+
+            // Clear existing skills folder
+            const existingFiles = await fs.readdir(skillsFolder);
+            for (const file of existingFiles) {
+              if (file.endsWith('.md')) {
+                await fs.unlink(path.join(skillsFolder, file));
+              }
+            }
+
+            // Write updated skills
+            for (const skill of skills) {
+              const skillFileName = skill.skill_name.toLowerCase().replace(/\s+/g, '_') + '.md';
+              const skillPath = path.join(skillsFolder, skillFileName);
+              await fs.writeFile(skillPath, skill.skill_content || '');
+            }
+            console.log(`    ✅ Updated ${skills.length} skill(s)`);
+          }
+        } catch (err) {
+          console.log(`    ⚠️ No skills to update`);
+        }
+
+        updatedCount++;
+        console.log(`  ✅ Updated ${agentId} from database`);
+      }
+    } catch (err) {
+      console.error(`  ❌ Error checking ${agent.agent.id}:`, err.message);
+    }
+  }
+
+  if (updatedCount > 0) {
+    console.log(`✅ Synced ${updatedCount} agent_builder agent(s) from database`);
+  } else {
+    console.log(`✅ All agent_builder agents are up to date`);
+  }
+}
+
+/**
+ * Backup agent_builder-created agents to filesystem
+ * Downloads agent config, system prompt, and skills from databases
+ */
+async function backupAgentBuilderAgents(orphanedAgents, supabase) {
+  const connectionString = getNeonConnectionString();
+  if (!connectionString) {
+    console.log('⚠️ Neon connection not available, skipping agent backup');
+    return [];
+  }
+
+  const sql = neon(connectionString);
+  const agentsDir = path.join(__dirname, '../agents');
+  const backedUpAgents = [];
+
+  console.log('💾 Backing up agent_builder-created agents...');
+
+  for (const orphan of orphanedAgents) {
+    try {
+      // Fetch full agent data from Supabase
+      const { data: agentData, error: fetchError } = await supabase
+        .from('agents')
+        .select('*')
+        .eq('agent_id', orphan.agent_id)
+        .single();
+
+      if (fetchError || !agentData) {
+        console.error(`  ❌ Error fetching ${orphan.agent_id}:`, fetchError?.message);
+        continue;
+      }
+
+      // Only backup if created by agent_builder
+      if (agentData.last_modified_by !== 'agent_builder') {
+        continue;
+      }
+
+      console.log(`  📦 Backing up: ${orphan.agent_id}`);
+
+      // Create agent folder
+      const agentFolder = path.join(agentsDir, orphan.agent_id);
+      await fs.mkdir(agentFolder, { recursive: true });
+
+      // Build config.yaml from database data
+      const config = {
+        updated_at: agentData.updated_at,
+        agent: {
+          id: agentData.agent_id,
+          name: agentData.name,
+          emoji: agentData.emoji || '🤖',
+          category: agentData.category.toLowerCase(),
+          description: agentData.description,
+          specialization: agentData.specialization || undefined,
+          tagline: agentData.tagline || undefined,
+          avatar: agentData.avatar_url || undefined,
+          pinned: agentData.pinned || false,
+          enabled: agentData.is_enabled,
+          admin_only: agentData.admin_only || false,
+          uses_conversation_state: agentData.uses_conversation_state || false,
+          initial_message: agentData.initial_message || undefined,
+          sidebar_greeting: agentData.sidebar_greeting || undefined,
+          capabilities: agentData.capabilities || [],
+          recent_actions: agentData.recent_actions || []
+        },
+        n8n: {
+          webhook_url: agentData.webhook_url || ''
+        },
+        ui_use: agentData.ui_config || {},
+        interface: agentData.interface_config || {},
+        suggestions: agentData.suggestions || [],
+        personality: agentData.personality || {},
+        platforms: agentData.platforms || {},
+        domain_config: agentData.domain_config || {},
+        skills: agentData.skills || []
+      };
+
+      // Write config.yaml
+      const configPath = path.join(agentFolder, 'config.yaml');
+      await fs.writeFile(configPath, yaml.dump(config, { lineWidth: -1 }));
+      console.log(`    ✅ Created config.yaml`);
+
+      // Download system_prompt from Neon
+      try {
+        const systemPrompts = await sql`
+          SELECT prompt_content 
+          FROM system_prompts 
+          WHERE agent_id = ${orphan.agent_id}
+          LIMIT 1
+        `;
+
+        if (systemPrompts.length > 0 && systemPrompts[0].prompt_content) {
+          const promptPath = path.join(agentFolder, 'system_prompt.md');
+          await fs.writeFile(promptPath, systemPrompts[0].prompt_content);
+          console.log(`    ✅ Downloaded system_prompt.md`);
+        }
+      } catch (err) {
+        console.log(`    ⚠️ No system prompt found`);
+      }
+
+      // Download skills from Neon
+      try {
+        const skills = await sql`
+          SELECT skill_name, skill_content 
+          FROM agent_skills 
+          WHERE agent_id = ${orphan.agent_id}
+        `;
+
+        if (skills.length > 0) {
+          const skillsFolder = path.join(agentFolder, 'skills');
+          await fs.mkdir(skillsFolder, { recursive: true });
+
+          for (const skill of skills) {
+            const skillFileName = skill.skill_name.toLowerCase().replace(/\s+/g, '_') + '.md';
+            const skillPath = path.join(skillsFolder, skillFileName);
+            await fs.writeFile(skillPath, skill.skill_content || '');
+          }
+          console.log(`    ✅ Downloaded ${skills.length} skill(s)`);
+        }
+      } catch (err) {
+        console.log(`    ⚠️ No skills found`);
+      }
+
+      backedUpAgents.push(orphan.agent_id);
+      console.log(`  ✅ Backed up: ${orphan.agent_id}`);
+
+    } catch (err) {
+      console.error(`  ❌ Error backing up ${orphan.agent_id}:`, err.message);
+    }
+  }
+
+  if (backedUpAgents.length > 0) {
+    console.log(`✅ Backed up ${backedUpAgents.length} agent_builder-created agent(s)`);
+  }
+
+  return backedUpAgents;
+}
+
+/**
  * Upsert complete agent configurations to agents table
  * This is the "Bible of Agents" - stores ALL configuration data
  */
@@ -74,8 +431,9 @@ async function syncCompleteAgentConfigurations(agents) {
     webhook_url: agent.n8n?.webhook_url || '',
     uses_conversation_state: agent.agent.uses_conversation_state === true,
     platforms: agent.platforms || {},
-    domain_config: agent.solar_config || agent.domain_config || {},
-    raw_config: agent
+    domain_config: agent.domain_config || {},
+    raw_config: agent,
+    last_modified_by: 'admin'
   }));
 
   for (const record of configRecords) {
@@ -97,39 +455,8 @@ async function syncCompleteAgentConfigurations(agents) {
     }
   }
 
-  // Cleanup orphaned agents
-  const yamlAgentIds = configRecords.map(r => r.agent_id);
-  try {
-    const { data: dbAgents, error: fetchError } = await supabase
-      .from('agents')
-      .select('agent_id');
-    
-    if (fetchError) {
-      console.error('❌ Error fetching agents for cleanup:', fetchError.message);
-    } else if (dbAgents) {
-      const orphanedAgents = dbAgents.filter(
-        dbAgent => !yamlAgentIds.includes(dbAgent.agent_id)
-      );
-      
-      if (orphanedAgents.length > 0) {
-        console.log('🧹 Cleaning up orphaned agents...');
-        for (const orphan of orphanedAgents) {
-          const { error: deleteError } = await supabase
-            .from('agents')
-            .delete()
-            .eq('agent_id', orphan.agent_id);
-          
-          if (deleteError) {
-            console.error(`  ❌ Error deleting ${orphan.agent_id}:`, deleteError.message);
-          } else {
-            console.log(`  🗑️  Deleted: ${orphan.agent_id}`);
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.error('❌ Error during cleanup:', err.message);
-  }
+  // Note: Orphaned agent cleanup removed - syncAgentBuilderAgents now handles
+  // all agent_builder agents by syncing them to filesystem before this step
 
   console.log(`✅ Synced ${configRecords.length} agents with complete configurations`);
 }
@@ -610,6 +937,11 @@ async function buildAgents() {
   try {
     const agentsDir = path.join(__dirname, '../agents');
     
+    // Initialize Supabase client for update checks
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+    
     // Read all directories in the agents folder
     const entries = await fs.readdir(agentsDir, { withFileTypes: true });
     const agentFolders = entries.filter(entry => 
@@ -631,6 +963,51 @@ async function buildAgents() {
         }
       } catch (error) {
         // Skip folders without config.yaml
+      }
+    }
+    
+    // Sync metadata from database for agents missing updated_at field
+    if (supabase) {
+      await syncMetadataFromDatabase(agents, supabase);
+      
+      // Re-parse agents after metadata sync
+      agents.length = 0;
+      for (const folder of agentFolders) {
+        try {
+          const configPath = path.join(agentsDir, folder.name, 'config.yaml');
+          const content = await fs.readFile(configPath, 'utf8');
+          const config = yaml.load(content);
+          
+          if (config && config.agent && config.agent.id) {
+            agents.push(config);
+          }
+        } catch (error) {
+          // Skip folders without config.yaml
+        }
+      }
+      
+      // Sync all agent_builder agents (new and existing)
+      await syncAgentBuilderAgents(agents, supabase);
+      
+      // Re-parse agents after agent_builder sync (may have new agents)
+      agents.length = 0;
+      const updatedEntries = await fs.readdir(agentsDir, { withFileTypes: true });
+      const updatedFolders = updatedEntries.filter(entry => 
+        entry.isDirectory() && entry.name !== 'shared'
+      );
+      
+      for (const folder of updatedFolders) {
+        try {
+          const configPath = path.join(agentsDir, folder.name, 'config.yaml');
+          const content = await fs.readFile(configPath, 'utf8');
+          const config = yaml.load(content);
+          
+          if (config && config.agent && config.agent.id) {
+            agents.push(config);
+          }
+        } catch (error) {
+          // Skip folders without config.yaml
+        }
       }
     }
     

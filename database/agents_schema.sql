@@ -75,8 +75,7 @@ CREATE TABLE IF NOT EXISTS agents (
   -- Metadata
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
-  created_by UUID REFERENCES auth.users(id),
-  last_modified_by UUID REFERENCES auth.users(id)
+  last_modified_by TEXT DEFAULT 'admin'
 );
 
 -- 2. Agent conversations table (simplified)
@@ -199,7 +198,6 @@ SELECT
   domain_config,
   created_at,
   updated_at,
-  created_by,
   last_modified_by
 FROM agents
 ORDER BY 

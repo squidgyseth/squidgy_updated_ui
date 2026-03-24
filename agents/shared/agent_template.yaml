@@ -9,6 +9,9 @@
 # 5. Restart dev server: npm run dev
 # ===========================================
 
+# Metadata 
+updated_at: null  # ISO 8601 timestamp, automatically updated when agent is modified
+
 agent:
   id: your_agent_id
   emoji: "🤖"
@@ -80,3 +83,7 @@ personality:
   tone: professional
   style: helpful
   approach: proactive
+
+platforms: {}
+
+domain_config: {}
