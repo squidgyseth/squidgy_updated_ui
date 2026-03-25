@@ -1,4 +1,4 @@
-updated_at: '2026-03-24T13:00:13.288053'
+updated_at: '2026-03-25T13:38:13.433794'
 agent:
   id: brandy
   name: Brandy | Brand Advisor
@@ -12,6 +12,8 @@ agent:
   enabled: true
   admin_only: false
   uses_conversation_state: false
+  initial_message: Hey! Ready to build a brand that actually stands out? Let's do it.
+  sidebar_greeting: Hey! Ready to build a brand that actually stands out? Let's do it.
   capabilities:
     - Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)
     - Brand document import and parsing
@@ -37,9 +39,10 @@ interface:
     - text_input
     - suggestion_buttons
 suggestions:
-  - Help me with Brand foundation building (atmosphere, edge, enemy, visuals, hooks, messaging)
-  - What can you do?
-  - Show me examples
+  - Build my brand foundation
+  - Review my brand content
+  - Generate hooks & headlines
+  - Transform my copy
 personality:
   tone: friendly
   style: supportive

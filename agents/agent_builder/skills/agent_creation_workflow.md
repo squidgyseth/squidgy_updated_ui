@@ -10,7 +10,7 @@ Complete step-by-step workflow for creating agents with N8N integration via API.
 This workflow ensures every agent is created with:
 1. Complete configuration (config.yaml)
 2. Comprehensive system prompt (system_prompt.md)
-3. **Live N8N workflow via API endpoint**
+3. **Live N8N workflow via workflow creation tool**
 4. Optional skills (for Tier 2+ agents)
 5. Deployment package for user
 
@@ -45,27 +45,21 @@ This workflow ensures every agent is created with:
 
 **Skill Reference:** `system_prompt_generation.md`
 
-### Step 4: Create N8N Workflow via API ⭐
+### Step 4: Create N8N Workflow ⭐
 **THIS IS THE CRITICAL STEP - DO NOT SKIP!**
 
-Call the backend API endpoint to create the N8N workflow:
+Use the N8N workflow creation tool to create the workflow:
 
-```javascript
-const response = await fetch(`${AUTOMATION_SERVICE_URL}/api/n8n/clone-workflow`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    agent_id: agent_id,
-    agent_name: agent_name,
-    activate: false  // User will activate manually
-  })
-});
-
-const result = await response.json();
-const workflowEditorUrl = result.editor_url;
+**Tool Parameters:**
+```json
+{
+  "agent_id": "agent_id",
+  "agent_name": "Agent Name",
+  "activate": false
+}
 ```
 
-**Expected Response:**
+**Expected Tool Response:**
 ```json
 {
   "success": true,
@@ -164,9 +158,9 @@ Start your dev server and test the agent in the UI!
 =======================================================================
 ## ERROR HANDLING
 
-### N8N API Call Fails
+### N8N Workflow Tool Fails
 1. Log the error details
-2. Retry once after 2 seconds
+2. Retry once
 3. If still fails, inform user:
    ```
    ⚠️ Unable to create N8N workflow automatically.
@@ -230,7 +224,7 @@ Before presenting to user:
 =======================================================================
 ## IMPORTANT REMINDERS
 
-1. **ALWAYS create N8N workflow via API endpoint**
+1. **ALWAYS create N8N workflow using workflow creation tool**
 2. **NEVER generate n8n_workflow.json files**
 3. **ALWAYS provide clickable workflow editor URL to user**
 4. **ALWAYS instruct user to activate workflow manually**
@@ -241,8 +235,7 @@ Before presenting to user:
 =======================================================================
 ## AUTOMATION SERVICE URL
 
-Get the backend URL from environment:
-- Development: `http://localhost:8000` or configured dev URL
-- Production: Configured production backend URL
-
-The endpoint is: `POST /api/n8n/clone-workflow`
+Get the backend URL from **N8N Workflow Creation:**
+- Use the N8N workflow creation tool
+- Tool handles all backend communication
+- No need to know endpoint details

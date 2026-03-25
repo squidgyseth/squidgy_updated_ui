@@ -11,8 +11,7 @@ agent:
   pinned: true
   enabled: true
   admin_only: true
-  initial_message: Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I create complete AI agents through a guided process:<br>✅ I'll ask you a few key questions about your agent<br>✅ Present a complete plan for your review<br>✅ Once you approve, I'll generate all files automatically<br>✅ Create config, system prompt, skills, and N8N workflow<br>✅ Package everything in a downloadable zip file<br><br>Ready to create an agent? Let's start with the basics!
-  sidebar_greeting: Hi! I'm Ace - your Agent Builder. I'll guide you through creating a complete agent by asking key questions, presenting a plan for your approval, then generating all files automatically.
+  initial_message: Hey! 👋 I'm Ace, your Agent Creation Expert.<br><br>I create complete AI agents through a guided process:<br>✅ I'll ask you a few key questions about your agent<br>✅ Present a complete plan for your review<br>✅ Once you approve, I'll generate all files automatically<br>✅ Create config, system prompt, skills, and N8N workflow<br>✅ Publish to database - your agent goes live immediately!<br>✅ Provide files for your records and version control<br><br>Ready to create an agent? Let's start with the basics!
   capabilities:
     - Structured information gathering with guided questions
     - Comprehensive agent plan presentation and confirmation
@@ -20,14 +19,14 @@ agent:
     - Complete YAML configuration generation
     - System prompt and skills file generation
     - N8N workflow creation via API
-    - Agent package zip file creation
-    - Supabase storage upload and public URL generation
-    - Deployment documentation and guides
+    - Database publishing via API endpoints
+    - File creation for user records and version control
+    - Immediate agent deployment and activation
   recent_actions:
-    - Auto-generated Email Marketing Agent package in 30 seconds
-    - Created complete Customer Support Agent with skills and workflow
-    - Built HR Onboarding Agent with automated deployment package
-    - Generated Social Media Manager with zip file uploaded to Supabase
+    - Published Email Marketing Agent to database in 30 seconds
+    - Created and deployed Customer Support Agent with skills and workflow
+    - Built and published HR Onboarding Agent to production database
+    - Generated and activated Social Media Manager with N8N workflow
 skills:
   - name: Base System Prompt Reference
     description: |
@@ -57,9 +56,17 @@ skills:
     description: |
       Generate complete N8N workflow JSON files with proper node configuration, connections, credentials, and conditional logic based on agent complexity tier.
     file: n8n_workflow_generation.md
+  - name: Tools & Integrations
+    description: |
+      Guide users to add custom tools, API integrations, database access, and MCP servers to agent workflows when agents need capabilities beyond default RAG management tools. Identifies when agents need external APIs, specific database tables, or third-party integrations.
+    file: tools_and_integrations.md
+  - name: Agent Publishing
+    description: |
+      Publish agent configuration, system prompt, and skills to database using publishing tools. Creates files for records and asks user if they want a zip file for sharing/backup.
+    file: agent_publishing.md
   - name: Package & Deployment
     description: |
-      Create complete agent packages with all files, generate deployment README, create zip file, upload to Supabase storage, and provide download link with instructions.
+      Create deployment packages with zip files for sharing agents with team members or deploying to other environments. Includes README with deployment instructions.
     file: package_deployment.md
 n8n:
   webhook_url: https://n8n.theaiteam.uk/webhook/agent_builder

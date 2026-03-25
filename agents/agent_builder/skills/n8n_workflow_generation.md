@@ -1,16 +1,16 @@
 # N8N Workflow Generation
 
-Create N8N workflows by calling the backend API endpoint that clones and deploys workflows directly to N8N.
+Create N8N workflows using the N8N workflow creation tool that clones and deploys workflows directly to N8N.
 
 =======================================================================
 ## WORKFLOW CREATION PROCESS
 
-**CRITICAL: Use the API endpoint, NOT file generation!**
+**CRITICAL: Use the workflow creation tool, NOT file generation!**
 
-Instead of generating JSON files, call the backend endpoint:
-- **Endpoint:** `POST /api/n8n/clone-workflow`
-- **Backend URL:** Use the automation service URL from environment
-- **Method:** HTTP POST request
+Instead of generating JSON files, use the N8N workflow creation tool:
+- **Tool:** N8N workflow creation tool
+- Provide agent_id and agent_name
+- Tool handles all backend communication automatically
 
 Every N8N workflow automatically includes:
 1. **Webhook Trigger** - Entry point for agent requests at `/webhook/{agent_id}`
@@ -20,14 +20,11 @@ Every N8N workflow automatically includes:
 5. **Credential Mapping** - Automatically remaps credentials to your instance
 
 =======================================================================
-## API REQUEST FORMAT
+## TOOL USAGE FORMAT
 
-Call the endpoint with minimal parameters:
+Use the N8N workflow creation tool with these parameters:
 
 ```json
-POST /api/n8n/clone-workflow
-Content-Type: application/json
-
 {
   "agent_id": "social_media_manager",
   "agent_name": "Social Media Manager",
@@ -44,9 +41,9 @@ Content-Type: application/json
 - `template_id` (string) - Custom template ID (uses default if omitted)
 
 =======================================================================
-## API RESPONSE FORMAT
+## TOOL RESPONSE FORMAT
 
-Successful response:
+Successful response from tool:
 
 ```json
 {
@@ -68,40 +65,30 @@ Successful response:
 - `warnings` - Array of any credential mapping warnings
 
 =======================================================================
-## WHAT THE BACKEND DOES
+## WHAT THE TOOL DOES
 
-The backend API automatically handles all N8N workflow complexity:
+The N8N workflow creation tool automatically handles all N8N workflow complexity:
 - Clones the standard template workflow
 - Replaces agent_id placeholders throughout
 - Configures webhook, database, AI agent, and response nodes
 - Maps credentials to your N8N instance
 - Deploys and returns editor URL
 
-**You don't need to know the technical details - just call the API!**
+**You don't need to know the technical details - just use the tool!**
 
 =======================================================================
 ## IMPLEMENTATION STEPS
 
-**IMPORTANT:** You must use the HTTP Request tool available in your N8N workflow to call this endpoint. You cannot call it directly from the AI agent.
+**Step 1: Use N8N Workflow Creation Tool**
 
-**Step 1: Use HTTP Request Tool**
-
-Tell the user you need to call the backend API and use the HTTP Request tool with these parameters:
-
-- **URL:** `https://squidgy-ai-updated-backend.onrender.com/api/n8n/clone-workflow`
-- **Method:** POST
-- **Body (JSON):**
-```json
-{
-  "agent_id": "{agent_id}",
-  "agent_name": "{agent_name}",
-  "activate": false
-}
-```
-- **Headers:**
-  - Content-Type: application/json
+Use the available N8N workflow creation tool with:
+- agent_id
+- agent_name
+- activate: false (default)
 
 **Step 2: Extract Editor URL**
+
+The tool returns the workflow editor URL:
 ```javascript
 const editorUrl = result.editor_url;
 // Example: "https://n8n.theaiteam.uk/workflow/abc123xyz"
@@ -144,15 +131,12 @@ Always provide these instructions after creating a workflow:
 =======================================================================
 ## VALIDATION CHECKLIST
 
-Before calling the API:
+Before using the tool:
 - ✅ Agent ID is valid snake_case format
 - ✅ Agent name is descriptive and clear
-- ✅ Backend automation service URL is configured
-- ✅ N8N credentials are set in environment variables
 
-After API call:
-- ✅ Response status is 200 OK
-- ✅ `success` field is true
+After tool execution:
+- ✅ Tool response shows success: true
 - ✅ `workflow_id` is present
 - ✅ `editor_url` is valid and accessible
 - ✅ Present editor URL as clickable link to user
@@ -175,6 +159,6 @@ After API call:
    - Check `warnings` array in response
    - User must manually reconnect credentials in N8N editor
 
-4. **Network errors:**
-   - Retry the API call once
-   - If fails again, inform user and provide manual workflow creation instructions
+4. **Tool execution errors:**
+   - Retry the tool once
+   - If fails again, inform user and check error message
