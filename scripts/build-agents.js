@@ -506,8 +506,45 @@ async function syncCompleteAgentConfigurations(agents) {
     }
   }
 
-  // Note: Orphaned agent cleanup removed - syncAgentBuilderAgents now handles
-  // all agent_builder agents by syncing them to filesystem before this step
+  // ============================================
+  // CLEANUP: Remove orphaned agents from agents table
+  // Only delete agents that:
+  // 1. Exist in database but not in YAML files
+  // 2. Were NOT created by agent_builder (those are backed up to filesystem)
+  // ============================================
+  const yamlAgentIds = configRecords.map(r => r.agent_id);
+  
+  try {
+    const { data: dbAgents, error: fetchError } = await supabase
+      .from('agents')
+      .select('agent_id, last_modified_by');
+    
+    if (fetchError) {
+      console.error('❌ Error fetching agents for cleanup:', fetchError.message);
+    } else if (dbAgents) {
+      const orphanedAgents = dbAgents.filter(
+        dbAgent => !yamlAgentIds.includes(dbAgent.agent_id) && dbAgent.last_modified_by !== 'agent_builder'
+      );
+      
+      if (orphanedAgents.length > 0) {
+        console.log('🧹 Cleaning up orphaned agents from agents table...');
+        for (const orphan of orphanedAgents) {
+          const { error: deleteError } = await supabase
+            .from('agents')
+            .delete()
+            .eq('agent_id', orphan.agent_id);
+          
+          if (deleteError) {
+            console.error(`  ❌ Error deleting ${orphan.agent_id}:`, deleteError.message);
+          } else {
+            console.log(`  🗑️  Deleted: ${orphan.agent_id}`);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('❌ Error during agents table cleanup:', err.message);
+  }
 
   console.log(`✅ Synced ${configRecords.length} agents with complete configurations`);
 }
@@ -726,45 +763,42 @@ The agent has skills containing best practices for each area of responsibility. 
 ${skills.map(skill => `| ${skill.name} | ${skill.description} |`).join('\n')}
 `;
 
-      // Check if SKILLS section already exists and matches the one we want to add
-      const existingSkillsMatch = systemPrompt.match(/\n={7,}\n## SKILLS\n[\s\S]*?(?=\n={7,}\n##|$)/);
+      // Check for duplicate SKILLS sections
+      const skillsSectionMatches = systemPrompt.match(/={7,}\s*\n## SKILLS/g);
+      const hasDuplicates = skillsSectionMatches && skillsSectionMatches.length > 1;
       
-      if (existingSkillsMatch) {
-        // SKILLS section exists - check if it matches what we want to add
-        const existingSkills = existingSkillsMatch[0].trim();
-        const newSkills = skillsSection.trim();
+      if (!hasDuplicates) {
+        // No duplicates - check if SKILLS section already exists and matches the one we want to add
+        const existingSkillsMatch = systemPrompt.match(/={7,}\n## SKILLS\n[\s\S]*?(?=\n={7,}\n##|$)/);
         
-        if (existingSkills === newSkills) {
-          // SKILLS section is already correct, skip this agent
-          console.log(`  ⏭️  ${agentId} (skills already up to date)`);
-          skippedCount++;
-          continue;
+        if (existingSkillsMatch) {
+          // SKILLS section exists - check if it matches what we want to add
+          const existingSkills = existingSkillsMatch[0].trim();
+          const newSkills = skillsSection.trim();
+          
+          if (existingSkills === newSkills) {
+            // SKILLS section is already correct, skip this agent
+            console.log(`  ⏭️  ${agentId} (skills already up to date)`);
+            skippedCount++;
+            continue;
+          }
         }
       }
       
       // Remove ALL existing SKILLS sections (handles duplicates)
-      // Split by section headers, filter out SKILLS sections, then rebuild
-      const sectionSeparator = /\n={7,}\n## /;
-      const parts = systemPrompt.split(sectionSeparator);
+      // Find the first SKILLS section and remove everything from there to the end
+      const firstSkillsIndex = systemPrompt.search(/\n={7,}\s*\n## SKILLS/);
       
-      // First part is everything before the first section (title, description)
-      let cleanedPrompt = parts[0];
-      
-      // Process remaining parts (each starts with a section name)
-      for (let i = 1; i < parts.length; i++) {
-        // Check if this section is a SKILLS section
-        if (!parts[i].startsWith('SKILLS\n')) {
-          // Not a SKILLS section, keep it
-          cleanedPrompt += '\n=======================================================================\n## ' + parts[i];
-        }
-        // If it is a SKILLS section, skip it (don't add it back)
+      if (firstSkillsIndex !== -1) {
+        // Remove everything from the first SKILLS section onwards
+        systemPrompt = systemPrompt.substring(0, firstSkillsIndex).trimEnd();
+      } else {
+        // No SKILLS section found, just trim
+        systemPrompt = systemPrompt.trimEnd();
       }
       
-      // Remove trailing whitespace
-      cleanedPrompt = cleanedPrompt.trimEnd();
-      
       // Append the new SKILLS section at the end
-      systemPrompt = cleanedPrompt + '\n\n' + skillsSection;
+      systemPrompt = systemPrompt + '\n\n' + skillsSection;
 
       // Write updated system prompt
       await fs.writeFile(systemPromptPath, systemPrompt, 'utf8');
