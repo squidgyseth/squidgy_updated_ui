@@ -564,6 +564,120 @@ export class AuthService {
         }
       }
 
+      // If no profile found, create one automatically (handles manually registered users)
+      if (!profile && authData.user) {
+        console.log('⚠️ AUTH_SERVICE: No profile found for user, creating automatically...');
+        try {
+          const supabaseUrl = getSupabaseConfig().url;
+          const supabaseKey = getSupabaseConfig().anonKey;
+          const url = `${supabaseUrl}/rest/v1/profiles`;
+
+          const userId = uuidv4();
+          const fullName = authData.user.user_metadata?.full_name || 
+                          authData.user.email?.split('@')[0] || 
+                          'User';
+
+          const profileData = {
+            id: authData.user.id,
+            user_id: userId,
+            company_id: uuidv4(),
+            email: authData.user.email,
+            full_name: fullName,
+            role: 'member',
+            terms_accepted: false,
+            ai_processing_consent: false,
+            marketing_consent: false,
+            consent_timestamp: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(profileData)
+          });
+
+          if (response.ok) {
+            const createdProfiles = await response.json();
+            profile = createdProfiles && createdProfiles.length > 0 ? createdProfiles[0] : profileData;
+            console.log('✅ AUTH_SERVICE: Profile created automatically for user:', authData.user.id);
+
+            // Auto-create business_settings for the new profile
+            if (profile && profile.user_id) {
+              try {
+                const businessSettingsUrl = `${supabaseUrl}/rest/v1/business_settings`;
+                const businessSettingsData = {
+                  user_id: profile.user_id,
+                  company_name: null,
+                  industry: null,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                };
+
+                const businessResponse = await fetch(businessSettingsUrl, {
+                  method: 'POST',
+                  headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${supabaseKey}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                  },
+                  body: JSON.stringify(businessSettingsData)
+                });
+
+                if (businessResponse.ok) {
+                  console.log('✅ AUTH_SERVICE: Auto-created business_settings for new profile');
+                } else {
+                  console.warn('⚠️ AUTH_SERVICE: business_settings creation failed (non-critical)');
+                }
+              } catch (error: any) {
+                console.warn('⚠️ AUTH_SERVICE: business_settings creation error (non-critical):', error);
+              }
+            }
+
+            // Trigger GHL registration for manually registered users
+            try {
+              const backendUrl = getBackendUrl();
+              const ghlPayload = {
+                full_name: fullName,
+                email: authData.user.email?.toLowerCase()
+              };
+
+              console.log('🔄 AUTH_SERVICE: Triggering GHL registration for manually registered user...');
+              const ghlResponse = await fetch(`${backendUrl}/api/ghl/create-subaccount-and-user-registration`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(ghlPayload)
+              });
+
+              const ghlResult = await ghlResponse.json();
+
+              if (ghlResponse.ok && ghlResult.status === 'accepted') {
+                console.log('✅ AUTH_SERVICE: GHL registration triggered successfully');
+              } else {
+                console.warn('⚠️ AUTH_SERVICE: GHL registration failed (non-critical):', ghlResult);
+              }
+            } catch (ghlError) {
+              console.error('❌ AUTH_SERVICE: GHL registration error (non-critical):', ghlError);
+              // Don't throw - this is non-critical, user can still use the app
+            }
+          } else {
+            const errorText = await response.text();
+            console.error('❌ AUTH_SERVICE: Auto profile creation failed:', response.status, errorText);
+          }
+        } catch (error: any) {
+          console.error('❌ AUTH_SERVICE: Error auto-creating profile:', error);
+        }
+      }
+
       return {
         user: authData.user,
         profile: profile || undefined
