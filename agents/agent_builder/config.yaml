@@ -68,6 +68,10 @@ skills:
     description: |
       Create deployment packages with zip files for sharing agents with team members or deploying to other environments. Includes README with deployment instructions.
     file: package_deployment.md
+  - name: Agent Activation
+    description: |
+      OPTIONAL step after publishing: Offer to activate the newly created agent for the user by delegating the activation request to the Personal Assistant. Only perform if user explicitly requests activation - NOT done by default.
+    file: agent_activation.md
 n8n:
   webhook_url: https://n8n.theaiteam.uk/webhook/agent_builder
 ui_use:

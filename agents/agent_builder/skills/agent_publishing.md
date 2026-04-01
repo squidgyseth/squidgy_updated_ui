@@ -257,10 +257,10 @@ After successfully publishing to database, provide this message to the user:
    - Send a test message
    - Verify the agent responds correctly
 
-3. **Enable for Users (if needed):**
-   - Agent is enabled by default
-   - Users can access it in their agent settings
-   - Admin-only agents require admin privileges
+---
+
+**Want to Start Using This Agent?**
+Would you like me to activate this agent for you so you can start using it right away?
 
 **Agent Details:**
 - **ID:** {agent_id}
