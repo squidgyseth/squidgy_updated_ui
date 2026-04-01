@@ -132,6 +132,7 @@ export const sendToN8nWorkflow = async (
     agent_name: agentName,
     timestamp_of_call_made: new Date().toISOString(),
     request_id: finalRequestId,
+    sending_from: "User",
     ...(newsletterId && { newsletter_id: newsletterId }), // Include newsletter_id only if provided
     ...(conversationState && { state: conversationState }) // Include state for multi-turn conversations
   };
@@ -426,6 +427,7 @@ export const sendToN8nWorkflowStreaming = async (
     agent_name: agentName,
     timestamp_of_call_made: new Date().toISOString(),
     request_id: finalRequestId,
+    sending_from: "User",
     ...(newsletterId && { newsletter_id: newsletterId }),
     ...(conversationState && { state: conversationState })
   };
