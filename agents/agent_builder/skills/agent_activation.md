@@ -118,38 +118,32 @@ Can you please enable this agent for this user?
 - "Skip that"
 
 =======================================================================
-## COMPLETE WORKFLOW WITH ACTIVATION
+## WORKFLOW INTEGRATION
 
-**Step 7: Publish Agent (existing step)**
+**How activation fits into the agent creation workflow:**
+
+**Step 7: Publish Agent**
 - Create files
 - Publish to database
 - Verify publication
 - Ask about zip file
-- Provide confirmation message
+- **Provide confirmation message that INCLUDES activation offer in "Next Steps" section**
+- DO NOT wait for activation response - just present the message
 
-**Step 8: Offer Agent Activation (NEW - OPTIONAL)**
-
-**8.1 Ask User:**
-```markdown
-**Want to Start Using This Agent?**
-Would you like me to activate this agent for you so you can start using it right away?
-```
-
-**8.2 Wait for User Response**
-
-**8.3 If User Says YES:**
-- Delegate activation to Personal Assistant using format above
-- Wait for Personal Assistant's response
-- Relay the response to user (e.g., "The Personal Assistant has activated the agent for you! You can now find it in your agent list." or share any issues if activation failed)
-
-**8.4 If User Says NO:**
-- Acknowledge: "No problem! You can activate this agent later by asking the Personal Assistant or from your agent settings whenever you're ready."
-- Do NOT delegate to Personal Assistant
+**Step 8: Handle User-Level Activation (OPTIONAL)**
+- **Only executes if user responds YES to the activation offer from Step 7's confirmation message**
+- If user says YES:
+  - Delegate activation to Personal Assistant using @mention format
+  - Wait for Personal Assistant's response
+  - Relay the response to user
+- If user says NO:
+  - Acknowledge: "No problem! You can activate this agent later by asking the Personal Assistant or from your agent settings whenever you're ready."
+  - Do NOT delegate to Personal Assistant
 
 =======================================================================
-## UPDATED CONFIRMATION MESSAGE
+## CONFIRMATION MESSAGE TEMPLATE
 
-**Include activation offer in the final confirmation message:**
+**The activation offer is included in Step 7's confirmation message template (see Agent Publishing skill):**
 
 ```markdown
 ✅ **Agent Published: [Agent Name | Title]**

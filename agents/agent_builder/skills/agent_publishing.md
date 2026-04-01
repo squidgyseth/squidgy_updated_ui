@@ -244,36 +244,34 @@ After successfully publishing to database, provide this message to the user:
 **N8N Workflow:**
 🔗 **[Click here to activate your workflow]({workflow_editor_url})**
 
-**Next Steps:**
-1. **Activate N8N Workflow:**
-   - Click the workflow link above
-   - Review the workflow nodes
-   - Verify credentials are connected (OpenRouter, Postgres, Supabase)
-   - Click the **Activate** toggle in N8N
-
-2. **Test Your Agent:**
-   - Navigate to the Squidgy UI
-   - Find your agent in the agent list
-   - Send a test message
-   - Verify the agent responds correctly
-
----
-
-**Want to Start Using This Agent?**
-Would you like me to activate this agent for you so you can start using it right away?
-
 **Agent Details:**
 - **ID:** {agent_id}
 - **Category:** {CATEGORY}
 - **Capabilities:** {count} specialized capabilities
-- **Complexity:** Tier {X}
+- **Skills:** {X} skill files
 - **Status:** Published & Live ✅
 
 **Files Location:**
 All agent files are saved in `agents/{agent_id}/` for your records and version control.
 
-**Need Adjustments?**
-Let me know if you'd like to modify any configuration, add more capabilities, or create additional skills!
+---
+
+**Next Steps:**
+
+**1. Activate N8N Workflow:**
+   - Click the workflow link above
+   - Review the workflow nodes
+   - Verify credentials are connected (OpenRouter, Postgres, Supabase)
+   - Click the **Activate** toggle in N8N
+
+**2. Activate Agent for Your Account (Optional):**
+Would you like me to activate this agent for you so you can start using it right away? I can ask the Personal Assistant to enable it for your account.
+
+**3. Test Your Agent:**
+   - Navigate to the Squidgy UI
+   - Find your agent in the agent list
+   - Send a test message
+   - Verify the agent responds correctly
 ```
 
 =======================================================================
