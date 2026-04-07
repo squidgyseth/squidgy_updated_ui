@@ -1,271 +1,52 @@
 # Similarity Detection & Priority Scoring
 
-Automatically search existing feedback database for duplicate or similar reports, calculate priority scores based on frequency and severity, and ensure popular requests get appropriate attention.
+Search the existing feedback database for duplicate or related reports, calculate priority scores, and ensure popular requests bubble up automatically.
+
+> **Note:** All scoring rules in this skill defer to the **Canonical Scoring Rules** section in `system_prompt.md`. If anything here appears to contradict it, the system prompt wins.
 
 =======================================================================
 ## WHEN TO USE
 
-Use this skill:
-- Before storing new feedback in database
-- After collecting complete feedback details from user
-- To calculate initial and adjusted priority scores
-- To identify duplicate or related feedback submissions
+- Before storing new feedback in the database
+- After collecting complete feedback details from the user
+- To calculate the initial and adjusted `priority_score`
+- To identify duplicates and link related feedback
 
 =======================================================================
 ## WHY THIS MATTERS
 
-**Priority scoring helps the admin team:**
-- Focus on issues affecting multiple users
-- Identify most-requested features quickly
-- Allocate resources to high-impact items
-- Track which problems are most common
+**For the admin team:** focus on issues affecting many users, identify popular feature requests, allocate resources by impact.
 
-**Users benefit because:**
-- Their feedback adds weight to existing requests
-- They see their voice contributes to prioritization
-- Popular features get built faster
-- Common bugs get fixed sooner
+**For users:** their feedback adds weight to existing requests, popular items get built faster, common bugs get fixed sooner.
 
 =======================================================================
 ## VECTOR SEARCH FOR SIMILARITY
 
-### Search Configuration
+### Configuration
 
-**Database Table:** `feedback_submissions`
-**Search Method:** Semantic vector search (embeddings-based)
-**Similarity Threshold:** 0.75 or higher (75% similarity)
-**Return Limit:** Top 5 most similar results
+| Setting | Value |
+|---|---|
+| Table | `feedback_submissions` |
+| Column | `embedding` (vector(1536), pgvector) |
+| Distance metric | Cosine similarity |
+| Related threshold | **0.75** |
+| Near-duplicate threshold | **0.90** |
+| Result limit | 5 |
 
 ### Query Preparation
 
-**Use the user's feedback content as the search query:**
-- Include the full description they provided
-- Do NOT search by single keywords only
-- Semantic search understands context and meaning
+Use the user's full feedback content as the search query, not single keywords. Semantic search relies on context.
 
-**Example:**
 ```javascript
-// Good query (full context)
+// ✅ Good — full context
 query: "The chat interface freezes when I try to upload large PDF files over 10MB. It shows a loading spinner but never completes."
 
-// Bad query (too vague)
+// ❌ Bad — too sparse
 query: "upload freeze"
 ```
 
 ### Executing the Search
 
-**Before storing new feedback, MUST search first:**
-
-```javascript
-// Call vector search tool
-search_feedback({
-  query: feedback_content,
-  table: "feedback_submissions",
-  threshold: 0.75,
-  limit: 5
-})
-```
-
-**Response Structure:**
-```javascript
-[
-  {
-    feedback_id: "uuid",
-    content: "Similar feedback description",
-    type: "bug_report",
-    priority_score: 6,
-    similarity_score: 0.89,
-    similar_count: 3,
-    created_at: "2024-01-15T10:30:00Z"
-  },
-  // ... up to 5 results
-]
-```
-
-### Interpreting Results
-
-**Similarity Score Ranges:**
-- **0.90 - 1.00:** Nearly identical (likely duplicate)
-- **0.80 - 0.89:** Very similar (same issue, different wording)
-- **0.75 - 0.79:** Related (similar topic, possibly different aspect)
-- **Below 0.75:** Not similar enough (treat as unique)
-
-**What to do with results:**
-- If 1+ results >= 0.75: Similar feedback exists
-- If 0 results >= 0.75: This is new/unique feedback
-- Store similar feedback_ids for linking
-
-=======================================================================
-## PRIORITY SCORING SYSTEM
-
-### Initial Priority Calculation
-
-**Base Score (1-10) determined by:**
-
-#### Severity Keywords Detection
-
-**Critical (Base Score: 8-9)**
-Keywords: crash, data loss, security, can't access, completely broken, unable to use, blocking, urgent, critical
-
-Impact: System unusable or data at risk
-
-**High (Base Score: 6-7)**
-Keywords: broken, not working, fails, error, major issue, significant problem, always fails
-
-Impact: Feature unusable but workarounds may exist
-
-**Medium (Base Score: 4-5)**
-Keywords: inconsistent, sometimes fails, annoying, inconvenient, slow, should work better
-
-Impact: Feature works but with issues
-
-**Low (Base Score: 2-3)**
-Keywords: minor, cosmetic, nice to have, suggestion, improve, enhance, could be better
-
-Impact: Improvement rather than fix
-
-#### Feedback Type Adjustment
-
-- **Bug Report:** Use severity keywords for score
-- **Feature Request:** Start at 5, adjust based on urgency language
-- **Suggestion:** Start at 4, adjust based on impact described
-- **General Feedback:** Start at 2 (informational)
-
-#### Impact Multipliers (Add to Base)
-
-**User Impact:**
-- Affects all users: +2
-- Affects specific user group: +1
-- Affects individual: +0
-
-**Workflow Impact:**
-- Blocks critical workflow: +2
-- Impacts important workflow: +1
-- Minor inconvenience: +0
-
-**Data/Security:**
-- Security vulnerability: +3
-- Data loss risk: +2
-- Data integrity concern: +1
-
-**Example Calculation:**
-```
-Base: "not working" = 6 (High severity)
-+ Affects all users = +2
-+ Blocks critical workflow = +2
-= Initial Score: 10 (capped at 10)
-```
-
-### Frequency-Based Priority Adjustment
-
-**When similar feedback is found, increase priority:**
-
-#### Frequency Multiplier Rules
-
-**Similar Feedback Count:** How many reports >= 0.75 similarity
-
-- **First report (0 similar):** Score = Base score
-- **2-3 similar reports:** Add +1 to score
-- **4-7 similar reports:** Add +2 to score
-- **8-15 similar reports:** Add +3 to score
-- **16+ similar reports:** Add +4 to score
-
-**Maximum score is capped at 10**
-
-#### Example Adjustments
-
-**Scenario 1: New Bug Report**
-- Base severity score: 6 (High)
-- Similar feedback found: 2 reports
-- Frequency adjustment: +1
-- **Final priority_score: 7**
-
-**Scenario 2: Popular Feature Request**
-- Base score: 5 (Feature request)
-- Similar feedback found: 12 reports
-- Frequency adjustment: +3
-- **Final priority_score: 8**
-
-**Scenario 3: Critical Bug Affecting Many**
-- Base severity score: 8 (Critical)
-- User impact: +2
-- Similar feedback found: 5 reports
-- Frequency adjustment: +2
-- Calculation: 8 + 2 + 2 = 12 → **Capped at 10**
-
-### Updating Existing Feedback Scores
-
-**When new similar feedback is submitted:**
-
-1. **Retrieve all similar feedback records** (similarity >= 0.75)
-2. **Increment similar_count** for each existing record
-3. **Recalculate priority_score** using new similar_count
-4. **Update database** with new scores
-
-**Example Database Update:**
-```javascript
-// For each similar feedback found
-{
-  feedback_id: existing_feedback_id,
-  similar_count: old_count + 1,
-  priority_score: recalculated_score,
-  updated_at: current_timestamp
-}
-```
-
-**Why this matters:**
-- Ensures popular issues stay at top of list
-- Reflects growing demand automatically
-- Admin sees real-time prioritization
-
-=======================================================================
-## LINKING RELATED FEEDBACK
-
-### Creating Feedback Relationships
-
-**Store bidirectional links between similar feedback:**
-
-**New Feedback Record:**
-```javascript
-{
-  feedback_id: "new-uuid",
-  content: "User's feedback",
-  priority_score: 7,
-  similar_feedback_ids: ["existing-uuid-1", "existing-uuid-2"],
-  similar_count: 2,
-  // ... other fields
-}
-```
-
-**Update Existing Feedback:**
-```javascript
-// For each similar feedback found
-{
-  feedback_id: "existing-uuid-1",
-  similar_feedback_ids: [...old_ids, "new-uuid"],
-  similar_count: old_count + 1,
-  priority_score: recalculated_score
-}
-```
-
-### Benefits of Linking
-
-1. **Admin Dashboard:** Can view all related feedback together
-2. **User Transparency:** Show users their feedback is part of larger trend
-3. **Resolution Tracking:** When one is fixed, all related can be updated
-4. **Analytics:** Understand which issues are most common
-
-=======================================================================
-## WORKFLOW IMPLEMENTATION
-
-### Complete Similarity Detection Process
-
-**Step 1: Collect Feedback**
-- User provides complete feedback description
-- Type, severity, and details are gathered
-- Calculate initial base priority score
-
-**Step 2: Execute Vector Search**
 ```javascript
 const similarFeedback = await search_feedback({
   query: feedback_content,
@@ -275,193 +56,264 @@ const similarFeedback = await search_feedback({
 });
 ```
 
-**Step 3: Analyze Results**
+**Response shape:**
 ```javascript
-const similarCount = similarFeedback.length;
-const similarIds = similarFeedback.map(f => f.feedback_id);
-
-// Check if truly duplicate (similarity >= 0.90)
-const isDuplicate = similarFeedback.some(f => f.similarity_score >= 0.90);
+[
+  {
+    feedback_id: "uuid",
+    content: "Similar feedback description",
+    type: "bug_report",
+    priority_score: 6,
+    base_score: 6,
+    similarity_score: 0.89,
+    similar_count: 3,
+    created_at: "2026-01-15T10:30:00Z"
+  }
+  // up to 5 results
+]
 ```
 
-**Step 4: Calculate Adjusted Priority**
+### Interpreting Similarity Scores
+
+| Range | Meaning |
+|---|---|
+| 0.90 – 1.00 | Near-duplicate — set `duplicate_of` on the new record |
+| 0.80 – 0.89 | Same issue, different wording — link as related |
+| 0.75 – 0.79 | Related (same topic, possibly different aspect) — link as related |
+| Below 0.75 | Not similar — treat as unique |
+
+=======================================================================
+## PRIORITY SCORING
+
+All scoring follows the **Canonical Scoring Rules** in `system_prompt.md`. The full reference is duplicated here for convenience but the system prompt is authoritative.
+
+### Step 1 — Base Score from Severity
+
+| Severity | Base | Trigger keywords |
+|---|---|---|
+| Critical | **8** | crash, data loss, security, can't access, completely broken, blocking, urgent |
+| High     | **6** | broken, not working, fails, error, major issue, always fails |
+| Medium   | **4** | inconsistent, sometimes fails, annoying, slow, inconvenient |
+| Low      | **2** | minor, cosmetic, nice to have, enhancement |
+
+### Step 2 — Fallback Base Score from Type (only if no severity keywords)
+
+| Type | Base |
+|---|---|
+| Bug Report       | 6 |
+| Feature Request  | 5 |
+| Suggestion       | 4 |
+| General Feedback | 2 |
+
+### Step 3 — Impact Multipliers
+
+| Condition | Add |
+|---|---|
+| Affects all users | +2 |
+| Affects a specific user group | +1 |
+| Blocks a critical workflow | +2 |
+| Impacts an important workflow | +1 |
+| Security vulnerability | +3 |
+| Data loss risk | +2 |
+| Data integrity concern | +1 |
+
+### Step 4 — Frequency Multiplier (after similarity search)
+
+| Similar reports found | Add |
+|---|---|
+| 0 | +0 |
+| 2–3 | +1 |
+| 4–7 | +2 |
+| 8–15 | +3 |
+| 16+ | +4 |
+
+### Step 5 — Cap
+
 ```javascript
-let priorityScore = baseScore; // From initial severity assessment
-
-// Add frequency multiplier
-if (similarCount >= 16) priorityScore += 4;
-else if (similarCount >= 8) priorityScore += 3;
-else if (similarCount >= 4) priorityScore += 2;
-else if (similarCount >= 2) priorityScore += 1;
-
-// Cap at 10
-priorityScore = Math.min(priorityScore, 10);
+final_priority = Math.min(Math.max(base + impact + frequency, 1), 10);
 ```
 
-**Step 5: Inform User**
+### Worked Examples
+
+**Scenario 1 — New, isolated bug**
+- Severity = High → base 6
+- No impact multipliers
+- 0 similar reports → +0
+- **Final: 6**
+
+**Scenario 2 — Popular feature request**
+- No severity → use type fallback: Feature Request = base 5
+- Affects all users → +2
+- 12 similar reports → +3
+- 5 + 2 + 3 = 10 → **Final: 10**
+
+**Scenario 3 — Critical security bug, several reports**
+- Severity = Critical → base 8
+- Security vulnerability → +3
+- 5 similar reports → +2
+- 8 + 3 + 2 = 13 → capped → **Final: 10**
+
+=======================================================================
+## RECALCULATING EXISTING FEEDBACK
+
+When a new similar item arrives, **recalculate** existing scores rather than incrementing them. This keeps history correct if the rules ever change.
+
 ```javascript
-if (similarCount > 0) {
-  message = `Great news - ${similarCount} other users have shared similar feedback! This helps us prioritize what matters most. I'm increasing the priority on this issue.`;
-} else {
-  message = `This is a new piece of feedback - you're the first to mention this! We'll track it carefully.`;
+function recalculatePriority(record, newSimilarCount) {
+  const base       = record.base_score;            // stored, never recalculated
+  const impact     = record.impact_score || 0;     // stored alongside base
+  const frequency  = frequencyMultiplier(newSimilarCount);
+  return Math.min(Math.max(base + impact + frequency, 1), 10);
+}
+
+function frequencyMultiplier(count) {
+  if (count >= 16) return 4;
+  if (count >= 8)  return 3;
+  if (count >= 4)  return 2;
+  if (count >= 2)  return 1;
+  return 0;
 }
 ```
 
-**Step 6: Store New Feedback**
-```javascript
-const newFeedback = {
-  type: feedback_type,
-  content: feedback_content,
-  priority_score: priorityScore,
-  similar_feedback_ids: similarIds,
-  similar_count: similarCount,
-  user_id: user_id,
-  timestamp: new Date().toISOString(),
-  // ... other fields
-};
+**Why store `base_score` and `impact_score` separately from `priority_score`:** the priority field changes over time as similar reports arrive, but base and impact don't. Storing them lets Fiona recompute deterministically without re-analysing the original content.
 
-await database.insert('feedback_submissions', newFeedback);
+=======================================================================
+## LINKING RELATED FEEDBACK
+
+When similar feedback is found, store bidirectional links.
+
+### On the new record
+
+```javascript
+{
+  feedback_id: "new-uuid",
+  similar_feedback_ids: ["existing-uuid-1", "existing-uuid-2"],
+  similar_count: 2,
+  duplicate_of: "existing-uuid-1"  // only if similarity >= 0.90
+}
 ```
 
-**Step 7: Update Existing Similar Feedback**
+### On each existing similar record
+
 ```javascript
-for (const similar of similarFeedback) {
-  const newSimilarCount = similar.similar_count + 1;
-  const newPriorityScore = recalculatePriority(similar.priority_score, newSimilarCount);
-  
-  await database.update('feedback_submissions', {
-    feedback_id: similar.feedback_id,
-    similar_count: newSimilarCount,
-    priority_score: newPriorityScore,
-    similar_feedback_ids: [...similar.similar_feedback_ids, newFeedback.feedback_id],
-    updated_at: new Date().toISOString()
-  });
+{
+  feedback_id: "existing-uuid-1",
+  similar_feedback_ids: [...old_ids, "new-uuid"],
+  similar_count: old_count + 1,
+  priority_score: recalculatePriority(record, old_count + 1),
+  updated_at: now()
 }
+```
+
+### Benefits
+
+1. Admin dashboards can group related feedback
+2. Users see their voice contributes to a tracked trend
+3. Resolving one record can resolve all linked ones
+4. Analytics reveal the most common issues
+
+=======================================================================
+## COMPLETE WORKFLOW
+
+```
+1. Feedback collected (type, content, severity, impact known)
+2. Calculate base_score (from severity, fallback to type)
+3. Calculate impact_score (from impact multipliers)
+4. Vector search for similar feedback (threshold 0.75)
+5. Calculate frequency multiplier from result count
+6. Calculate priority_score = min(max(base + impact + frequency, 1), 10)
+7. Insert new row with base_score, impact_score, priority_score
+8. For each similar record found:
+     - Increment similar_count
+     - Recalculate priority_score
+     - Append new feedback_id to similar_feedback_ids
+     - Update updated_at
+9. If priority_score >= 8 → set admin_notified = true
+10. Confirm to user (with similar-feedback context if applicable)
 ```
 
 =======================================================================
-## PRIORITY SCORE MEANINGS
+## PRIORITY LEVEL MEANINGS
 
-### Score Interpretation for Admin Dashboard
+| Score | Level | Action by team |
+|---|---|---|
+| 9–10 | **Critical** | Immediate review, Slack ping, Linear issue created |
+| 7–8 | **High** | Review within 24–48 hours |
+| 4–6 | **Medium** | Review within 1 week |
+| 1–3 | **Low** | Consider for future planning |
 
-**10 (Maximum Priority)**
-- Critical bugs affecting multiple users
-- Highly requested features (10+ users)
-- Security vulnerabilities
-- **Action:** Immediate attention required
+=======================================================================
+## USER COMMUNICATION
 
-**8-9 (High Priority)**
-- Major bugs with workarounds
-- Popular feature requests (5-9 users)
-- Significant workflow blockers
-- **Action:** Address within 24-48 hours
+### Similar feedback found
+"Great news — [X] other users have shared similar feedback. This helps us prioritise what matters most, and I'm raising the priority on this issue."
 
-**5-7 (Medium Priority)**
-- Minor bugs or inconsistent issues
-- Valuable feature requests (2-4 users)
-- Workflow improvements
-- **Action:** Review within 1 week
+### No similar feedback found
+"This is a new piece of feedback — you're the first to mention this. We'll track it carefully."
 
-**3-4 (Low Priority)**
-- Cosmetic issues
-- Nice-to-have features
-- Minor enhancements
-- **Action:** Consider for future releases
-
-**1-2 (Informational)**
-- General feedback
-- Praise or comments
-- Questions answered elsewhere
-- **Action:** Acknowledge and archive
+### Never expose
+- The actual numerical score
+- The phrase "vector search" or "embedding"
+- Database errors or table names
+- The phrase "duplicate" — use "similar" instead (more positive framing)
 
 =======================================================================
 ## BEST PRACTICES
 
 ### Search Quality
-
-1. **Use Full Context** - Search with complete user description, not keywords
-2. **Trust the Algorithm** - Semantic search understands meaning, not just exact words
-3. **Set Proper Threshold** - 0.75 is sweet spot (too low = false matches, too high = miss duplicates)
+- Always pass full context, not keywords
+- Trust the 0.75 threshold — it's the calibrated sweet spot
+- Use 0.90 only for true near-duplicate detection (sets `duplicate_of`)
 
 ### Priority Calculation
+- Apply rules consistently across all feedback types
+- Always cap at 10 and floor at 1
+- Recalculate, don't increment
+- Store `base_score` and `impact_score` for deterministic recomputation
 
-1. **Be Consistent** - Apply same rules to all feedback types
-2. **Cap Scores** - Never exceed 10, maintains meaningful scale
-3. **Recalculate When Needed** - Update scores as new similar feedback arrives
-4. **Consider Context** - Bug affecting 100-user feature vs. rarely-used feature
-
-### User Communication
-
-1. **Positive Framing** - "Great news - others agree!" not "This is a duplicate"
-2. **Show Impact** - Explain how their feedback increases priority
-3. **Set Expectations** - Higher score doesn't guarantee immediate fix, but faster review
-4. **Thank Regardless** - Even if duplicate, their voice matters
-
-### Database Maintenance
-
-1. **Keep Links Updated** - Bidirectional relationships for easier querying
-2. **Track Timestamps** - Know when feedback came in and was updated
-3. **Archive Resolved** - Mark feedback as resolved when feature ships/bug fixed
-4. **Regular Cleanup** - Periodically review and consolidate extremely similar items
+### Database Hygiene
+- Keep links bidirectional
+- Always update `updated_at` on modified rows
+- Mark resolved items with `status = 'resolved'` and a `resolved_at` timestamp
+- Periodically review extremely-similar items for consolidation
 
 =======================================================================
 ## ERROR HANDLING
 
-### Vector Search Fails
-**Scenario:** Database connection error, search timeout
+### Vector search fails
+- Proceed with `base_score + impact_score` only
+- Set `similar_count = 0`, `similar_feedback_ids = []`
+- Log the error to `metadata.search_error = true`
+- Still store the feedback successfully — never block submission
 
-**Action:**
-- Proceed with base priority score only
-- Do NOT block feedback submission
-- Set similar_count to 0
-- Log error for investigation
-- Still store feedback successfully
+### Malformed search results
+- Treat as no similar feedback
+- Store with base + impact only
+- Log warning
 
-**User Message:**
-"I've recorded your feedback with [base priority level]. Thank you!"
-
-### Similarity Calculation Errors
-**Scenario:** Malformed search results, missing fields
-
-**Action:**
-- Treat as no similar feedback found
-- Use base score only
-- Store new feedback normally
-- Log warning for review
-
-### Priority Score Out of Range
-**Scenario:** Calculation bug produces score > 10 or < 1
-
-**Action:**
-- Cap at 10 if too high
-- Floor at 1 if too low
+### Score out of range
+- Cap at 10, floor at 1
 - Log the anomaly
-- Continue normal flow
 
-### Database Update Fails for Similar Feedback
-**Scenario:** Can update new feedback but not existing ones
-
-**Action:**
-- New feedback still stored successfully
-- Retry updates for existing feedback
-- If still fails, queue for later processing
-- Don't expose error to user
+### Update fails on existing similar records
+- New feedback is still stored successfully
+- Queue the failed updates for retry
+- Don't expose the error to the user
 
 =======================================================================
 ## VALIDATION CHECKLIST
 
-Before storing feedback with priority score:
-- ✅ Vector search was executed (or gracefully failed)
-- ✅ Base priority score is between 1-10
-- ✅ Frequency multiplier applied correctly
-- ✅ Final score is capped at 10
-- ✅ Similar feedback IDs are stored (if any found)
-- ✅ Similar count is accurate
-- ✅ User received appropriate message about similarity
+Before storing a new feedback row:
+- ✅ Vector search executed (or gracefully failed)
+- ✅ `base_score` is between 1 and 10
+- ✅ `impact_score` is calculated and stored
+- ✅ `priority_score` is calculated, capped at 10, floored at 1
+- ✅ `similar_feedback_ids` and `similar_count` populated
+- ✅ `duplicate_of` set if any similarity ≥ 0.90
+- ✅ `admin_notified = true` if `priority_score >= 8`
 
-After storing and updating:
-- ✅ New feedback record created successfully
-- ✅ All similar feedback records updated with new count and scores
-- ✅ Bidirectional links established
-- ✅ Timestamps updated correctly
-- ✅ Critical feedback flagged if score >= 8
+After storing:
+- ✅ New record created
+- ✅ All similar records updated with new count and recalculated score
+- ✅ Bidirectional links in place
+- ✅ Timestamps updated

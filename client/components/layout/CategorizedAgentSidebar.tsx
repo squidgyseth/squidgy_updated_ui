@@ -187,9 +187,12 @@ export default function CategorizedAgentSidebar() {
       const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
       const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
       
-      // Always include Personal Assistant (pinned)
-      enabledAgentIds.add('personal_assistant');
-      platformEnabledIds.add('personal_assistant');
+      // Always include all pinned agents
+      const pinnedAgents = allAgentConfigs.filter(config => config.agent.pinned === true);
+      pinnedAgents.forEach(config => {
+        enabledAgentIds.add(config.agent.id);
+        platformEnabledIds.add(config.agent.id);
+      });
       
       // Filter configs to only show agents that are BOTH platform-enabled AND user-enabled
       // Exception: Admin-only agents bypass user enablement check for admin users

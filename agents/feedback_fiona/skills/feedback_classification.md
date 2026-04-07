@@ -1,78 +1,57 @@
 # Feedback Classification
 
-Automatically analyze feedback content and classify it into appropriate categories with confidence scoring. Ensures accurate categorization for proper routing, prioritization, and admin review.
+Automatically analyse feedback content and classify it into the correct category with a confidence score. Ensures accurate categorisation for routing, prioritisation, and admin review.
+
+> **Note:** All scoring rules in this skill defer to the **Canonical Scoring Rules** section in `system_prompt.md`. If anything here appears to contradict it, the system prompt wins.
 
 =======================================================================
 ## WHEN TO USE
 
-Use this skill:
-- When user provides feedback but doesn't explicitly state the type
-- To validate user's stated feedback type matches content
-- During feedback collection workflow to auto-detect category
-- Before storing feedback in database
+- When the user provides feedback without explicitly stating the type
+- To validate that a user's stated type matches their content
+- During the feedback collection workflow, to auto-detect category
+- Before storing feedback in the database
 
 =======================================================================
 ## FEEDBACK CATEGORIES
 
 ### Bug Report 🐛
-**Definition:** Something in Squidgy is broken, not working as expected, or producing errors
+**Definition:** Something in Squidgy is broken, not working as expected, or producing errors.
 
-**Characteristics:**
-- Describes current negative behavior
-- States what's not working
-- May include error messages
-- Impacts user's ability to complete tasks
+**Characteristics:** Describes current negative behaviour, may include error messages, impacts the user's ability to complete tasks.
 
 **Examples:**
 - "The chat freezes when I upload files"
-- "I'm getting an error message when I try to create a new agent"
+- "I'm getting an error when I try to create a new agent"
 - "Posts aren't scheduling correctly"
-- "My dashboard isn't loading"
 
 ### Feature Request ✨
-**Definition:** User wants a new capability or functionality that doesn't currently exist
+**Definition:** User wants a new capability that doesn't currently exist.
 
-**Characteristics:**
-- Describes desired new functionality
-- States what they wish Squidgy could do
-- Often includes use case or benefit
-- Forward-looking ("would be great if...")
+**Characteristics:** Forward-looking, describes desired new functionality, often includes a use case.
 
 **Examples:**
 - "Could you add the ability to export chat history?"
 - "I'd love to see analytics for agent usage"
 - "Would be great if agents could integrate with Zapier"
-- "Can we have templates for common agent types?"
 
 ### Suggestion 💡
-**Definition:** Idea for improving or enhancing existing functionality
+**Definition:** Idea for improving or enhancing existing functionality.
 
-**Characteristics:**
-- Describes how existing feature could work better
-- Compares current vs. preferred behavior
-- Focuses on optimization or improvement
-- May include "could be better" phrasing
+**Characteristics:** Compares current vs. preferred behaviour, focuses on optimisation.
 
 **Examples:**
-- "The agent list could be organized better by category"
+- "The agent list could be organised better by category"
 - "It would be easier if the settings were in one place"
-- "Consider adding keyboard shortcuts for common actions"
-- "The onboarding flow could be more intuitive"
+- "Consider adding keyboard shortcuts"
 
 ### General Feedback 💬
-**Definition:** Comments, praise, observations, or feedback that doesn't fit other categories
-
-**Characteristics:**
-- Doesn't request specific changes
-- May be praise or positive comments
-- General observations about experience
-- Questions or clarifications
+**Definition:** Comments, praise, or observations that don't fit the other categories.
 
 **Examples:**
-- "I really love using Squidgy, it's made my work easier"
+- "I really love using Squidgy"
 - "The interface is clean and modern"
-- "Just wanted to share my thoughts on the platform"
-- "Overall I'm very satisfied with the product"
+- "Just wanted to share my thoughts"
 
 =======================================================================
 ## CLASSIFICATION ALGORITHM
@@ -81,265 +60,105 @@ Use this skill:
 
 #### Bug Report Keywords
 
-**Primary Indicators (High Confidence):**
-- broken, not working, doesn't work, isn't working
-- error, crash, fails, failed, failure
-- bug, issue, problem, glitch
-- can't, unable to, won't, doesn't
+**Primary indicators:** broken, not working, doesn't work, error, crash, fails, bug, issue, glitch, can't, unable to
 
-**Severity Keywords:**
-- critical, urgent, blocking, major
-- data loss, security, can't access
-- completely, always, every time
-
-**Example Phrases:**
-- "I'm getting an error"
-- "It's not working"
-- "Something is broken"
-- "This fails when I..."
-
-**Confidence Level:**
-- 2+ primary keywords = 90% confidence
-- 1 primary keyword + context = 75% confidence
-- Severity keywords alone = 60% confidence
+**Severity keywords (also feed into the severity scoring in the system prompt):** critical, urgent, blocking, data loss, security, completely, always, every time
 
 #### Feature Request Keywords
 
-**Primary Indicators (High Confidence):**
-- would be great if, wish you had, can you add
-- feature request, new feature, add support for
-- would like to see, hoping for, looking forward to
-- could you, is it possible to, will you
-
-**Intent Keywords:**
-- add, include, implement, introduce
-- support, enable, allow, integrate
-- ability to, option to, way to
-
-**Example Phrases:**
-- "Would be great if I could..."
-- "Can you add..."
-- "Is there a way to..."
-- "I wish Squidgy had..."
-
-**Confidence Level:**
-- Explicit "feature request" = 95% confidence
-- "Would be great if" + specific ask = 85% confidence
-- "Can you add" phrasing = 80% confidence
-- Intent keywords only = 60% confidence
+**Primary indicators:** would be great if, wish you had, can you add, feature request, would like to see, is it possible to, ability to, option to
 
 #### Suggestion Keywords
 
-**Primary Indicators (High Confidence):**
-- could improve, could be better, should work
-- consider, maybe, perhaps, what if, how about
-- suggestion, idea, thought, recommend
-- easier, simpler, clearer, more intuitive
+**Primary indicators:** could improve, could be better, consider, maybe, perhaps, what if, how about, suggestion, easier, simpler, more intuitive
 
-**Comparison Keywords:**
-- instead of, rather than, compared to
-- currently vs. could, is vs. should be
-- better if, more convenient if
-
-**Example Phrases:**
-- "It would be easier if..."
-- "Consider making it..."
-- "How about..."
-- "I think you could improve..."
-
-**Confidence Level:**
-- "Suggestion" + improvement idea = 85% confidence
-- Comparison phrasing = 75% confidence
-- "Could improve" phrasing = 70% confidence
-- Vague suggestions = 50% confidence
+**Comparison phrasing:** instead of, rather than, currently vs. could, better if
 
 #### General Feedback Keywords
 
-**Primary Indicators:**
-- love, like, appreciate, enjoy, great
-- thank you, thanks, feedback, thoughts
-- overall, generally, in general
-- just wanted to share, just saying
+**Primary indicators:** love, like, appreciate, enjoy, thank you, thoughts, overall, just wanted to share
 
-**Praise Keywords:**
-- excellent, amazing, fantastic, wonderful
-- helpful, useful, valuable, impressive
-- satisfied, happy, pleased
-
-**Observation Keywords:**
-- noticed, observed, seeing, found
-- interesting, curious, wondering
-
-**Example Phrases:**
-- "I love using Squidgy"
-- "Just wanted to share my thoughts"
-- "Overall very satisfied"
-- "Noticed that..."
-
-**Confidence Level:**
-- Pure praise = 90% general feedback
-- Observations without requests = 80% confidence
-- "Just sharing" phrasing = 85% confidence
+**Praise:** excellent, fantastic, helpful, satisfied, happy
 
 ### Contextual Analysis
 
-**Beyond keywords, analyze:**
+Beyond keywords, look at:
 
-#### Sentence Structure
-- Questions about new features → Feature Request
-- Statements about broken behavior → Bug Report
-- Comparative statements → Suggestion
-- Positive statements only → General Feedback
-
-#### Verb Tense
-- Present tense + negative (isn't working) → Bug
-- Conditional tense (would be) → Feature Request
-- Imperative mood (could improve) → Suggestion
-- Past tense + positive (has helped) → General
-
-#### Problem vs. Vision
-- States current problem → Bug or Suggestion
-- Describes desired future state → Feature Request
-- Neither problem nor vision → General Feedback
+- **Sentence structure** — Questions about new capabilities → Feature Request. Statements about broken behaviour → Bug. Comparative statements → Suggestion. Pure praise → General.
+- **Verb tense** — Present + negative ("isn't working") → Bug. Conditional ("would be") → Feature. Imperative ("could improve") → Suggestion. Past + positive ("has helped") → General.
+- **Problem vs vision** — Current problem → Bug or Suggestion. Desired future state → Feature. Neither → General.
 
 ### Multi-Category Handling
 
-**Sometimes feedback contains multiple types:**
-
-**Example:** "The post scheduler is broken (bug), and it would be great if it could handle multiple platforms at once (feature request)."
+Sometimes feedback contains multiple types. Example: *"The post scheduler is broken, and it would be great if it could handle multiple platforms at once."*
 
 **Action:**
-1. Split into separate feedback items if clearly distinct
-2. OR classify as primary type (the first/main concern)
-3. Note secondary type in feedback content
-4. Ask user: "I heard two things - a bug and a feature request. Should I record these separately?"
+1. Ask the user: "I heard two things — a bug and a feature request. Should I record these separately?"
+2. If yes, create two records.
+3. If no, classify as the primary concern (usually the bug) and note the secondary in `content`.
 
 =======================================================================
 ## CONFIDENCE SCORING
 
-### Confidence Levels
+Confidence is stored as a decimal between **0.00 and 1.00** in the `classification_confidence` column.
 
-**90-100% (Very High Confidence)**
-- Multiple strong keywords present
-- Clear explicit statement of type
-- Consistent with category characteristics
-- No ambiguity
+### Confidence Bands
 
-**Action:** Auto-classify, proceed confidently
-
-**75-89% (High Confidence)**
-- At least one strong keyword present
-- Context supports classification
-- Minor ambiguity possible
-- Likely correct
-
-**Action:** Auto-classify, mention confidence to user: "Sounds like a [type]..."
-
-**60-74% (Medium Confidence)**
-- Weak keyword matches
-- Some contextual support
-- Could fit multiple categories
-- Needs validation
-
-**Action:** Auto-classify but confirm with user: "This sounds like a [type] - is that right?"
-
-**Below 60% (Low Confidence)**
-- No clear keywords
-- Ambiguous context
-- Could fit any category
-- Unclear intent
-
-**Action:** Ask user directly to choose category
+| Range | Band | Meaning | Action |
+|---|---|---|---|
+| **0.90 – 1.00** | Very High | Multiple strong keywords, explicit type statement, no ambiguity | Auto-classify, proceed without confirming |
+| **0.75 – 0.89** | High | At least one strong keyword, context supports it | Auto-classify, mention casually: "Sounds like a [type]…" |
+| **0.60 – 0.74** | Medium | Weak match, could fit multiple categories | Auto-classify but confirm: "This sounds like a [type] — is that right?" |
+| **Below 0.60** | Low | No clear keywords, ambiguous | Ask user directly with category buttons |
 
 ### Confidence Calculation
 
+Pseudocode — values sum, then divide by 100 to produce the 0.00–1.00 score.
+
 ```javascript
-function calculateConfidence(feedback_content) {
-  let confidence = 0;
-  
-  // Check for primary keywords (each worth 30 points)
-  if (hasPrimaryKeywords(feedback_content)) confidence += 30;
-  
-  // Check for secondary keywords (each worth 20 points)
-  if (hasSecondaryKeywords(feedback_content)) confidence += 20;
-  
-  // Check sentence structure (worth 20 points)
-  if (matchesStructurePattern(feedback_content)) confidence += 20;
-  
-  // Check for explicit type statement (worth 30 points)
-  if (hasExplicitTypeStatement(feedback_content)) confidence += 30;
-  
-  return Math.min(confidence, 100); // Cap at 100%
+function calculateConfidence(content) {
+  let raw = 0;
+
+  if (hasExplicitTypeStatement(content)) raw += 30;  // "this is a bug report"
+  if (hasPrimaryKeywords(content))       raw += 30;  // strong indicators
+  if (hasSecondaryKeywords(content))     raw += 20;  // weaker indicators
+  if (matchesStructurePattern(content))  raw += 20;  // sentence/tense pattern
+
+  return Math.min(raw, 100) / 100;  // returns 0.00–1.00
 }
 ```
 
 =======================================================================
 ## CLASSIFICATION WORKFLOW
 
-### Step 1: Initial Analysis
+### Step 1 — Extract Content
+Get the user's complete description. Strip filler words but preserve key phrases.
 
-**Extract feedback content:**
-- Get user's complete description
-- Remove filler words (um, like, you know)
-- Preserve key phrases and intent
+### Step 2 — Scan Keywords
+Count keyword matches for each category. Highest count is the leading candidate.
 
-### Step 2: Keyword Scanning
+### Step 3 — Contextual Analysis
+Apply sentence structure, verb tense, and problem-vs-vision checks.
 
-**Check each category for keyword matches:**
-```javascript
-const bugKeywords = countBugKeywords(content);
-const featureKeywords = countFeatureKeywords(content);
-const suggestionKeywords = countSuggestionKeywords(content);
-const generalKeywords = countGeneralKeywords(content);
+### Step 4 — Calculate Confidence
+Use the formula above to get a value between 0.00 and 1.00.
 
-// Highest count suggests category
-```
+### Step 5 — Decide and Communicate
+- **≥ 0.75** → Auto-classify, inform user briefly
+- **0.60–0.74** → Auto-classify, confirm with user
+- **< 0.60** → Ask user directly with buttons
 
-### Step 3: Contextual Analysis
+### Step 6 — Store Classification
 
-**Analyze beyond keywords:**
-- Sentence structure patterns
-- Verb tenses used
-- Presence of negatives (not, broken, can't)
-- Presence of conditionals (would, could, wish)
+When the row is inserted, populate these fields:
 
-### Step 4: Confidence Calculation
-
-**Calculate confidence score for top candidate category:**
-```javascript
-const topCategory = getHighestMatch([bug, feature, suggestion, general]);
-const confidence = calculateConfidence(content, topCategory);
-```
-
-### Step 5: Classification Decision
-
-**Based on confidence:**
-
-**If confidence >= 75%:**
-- Auto-classify
-- Inform user: "Got it - sounds like a [type]."
-- Proceed with feedback collection
-
-**If confidence 60-74%:**
-- Auto-classify tentatively
-- Confirm with user: "This seems like a [type] - is that right?"
-- Allow correction if needed
-
-**If confidence < 60%:**
-- Ask user directly
-- Provide buttons for each category with descriptions
-- Use their selection
-
-### Step 6: Store Classification
-
-**In database record:**
 ```javascript
 {
   type: "bug_report" | "feature_request" | "suggestion" | "general_feedback",
-  classification_confidence: 85, // percentage
-  classification_method: "auto_keyword" | "auto_context" | "user_selected",
-  keywords_detected: ["broken", "not working", "error"],
-  // ... other fields
+  classification_confidence: 0.85,                          // decimal 0.00–1.00
+  classification_method: "auto_keyword" | "auto_context" | "user_selected" | "user_corrected",
+  keywords_detected: ["broken", "not working", "error"],    // stored in metadata jsonb
+  // ... other fields per system prompt
 }
 ```
 
@@ -347,68 +166,38 @@ const confidence = calculateConfidence(content, topCategory);
 ## SPECIAL CASES
 
 ### Ambiguous Feedback
+*"The agent creation process"* — could be anything.
 
-**Example:** "The agent creation process"
-- Could be: Bug (it's broken), Feature (want new capability), Suggestion (could be better), General (commenting on it)
-
-**Action:**
-1. Ask clarifying question: "Tell me more - is something not working correctly, or do you have ideas for improving it?"
-2. User response reveals true type
-3. Classify based on clarification
+**Action:** Ask "Tell me more — is something not working, or do you have ideas for improving it?" Then classify based on the answer.
 
 ### Negative General Feedback
+*"I'm disappointed with the performance"* — negative sentiment but no specific request.
 
-**Example:** "I'm disappointed with the performance"
-- Contains negative sentiment but no specific request
-- Not a bug report (no broken functionality stated)
-- Not a feature request (no new capability asked for)
-- Could be general feedback or suggestion
-
-**Action:**
-1. Classify as General Feedback initially
-2. Follow up: "I'm sorry to hear that. Can you share what specifically is disappointing? That will help me capture this properly."
-3. User's elaboration may shift classification
+**Action:** Classify as General Feedback initially, then ask for specifics. The elaboration may shift classification (often to Bug Report or Suggestion).
 
 ### Praise with Embedded Request
+*"I love Squidgy, but it would be even better if it had dark mode"*
 
-**Example:** "I love Squidgy, but it would be even better if it had dark mode"
-- Contains praise (general) AND feature request
-
-**Action:**
-1. Acknowledge both parts: "Thank you for the kind words!"
-2. Classify as Feature Request (the actionable part)
-3. Note the praise in feedback content
+**Action:** Acknowledge the praise, classify as **Feature Request** (the actionable part), note the praise in `content`.
 
 ### Vague Complaints
+*"This isn't great"* / *"Needs work"*
 
-**Example:** "This isn't great" or "Needs work"
-- Unclear what "this" refers to
-- No specific classification indicators
-
-**Action:**
-1. Ask for specifics: "I'd love to help - can you tell me what specifically isn't working well?"
-2. User elaboration provides classification clues
-3. Don't force classification without details
+**Action:** Don't force a classification. Ask: "Can you tell me what specifically isn't working well?"
 
 =======================================================================
 ## USER COMMUNICATION
 
-### High Confidence Classification
-
-**Example messages:**
-- "Got it - sounds like you've found a bug. Let me get the details..."
+### High Confidence (≥ 0.75)
+- "Got it — sounds like you've found a bug. Let me get the details..."
 - "Great feature idea! Let me capture this for the team..."
-- "Thanks for the suggestion on how to improve that..."
+- "Thanks for the suggestion — let me make sure we record it properly..."
 
-### Medium Confidence Classification
+### Medium Confidence (0.60–0.74)
+- "This sounds like a [type] — is that right?"
+- "Just to confirm, are you reporting a bug or suggesting an improvement?"
 
-**Example messages:**
-- "This sounds like a [type] - is that right?" (with buttons)
-- "Just to confirm, are you reporting a bug or suggesting an improvement?" (with buttons)
-
-### Low Confidence - Ask Directly
-
-**Example message:**
+### Low Confidence (< 0.60)
 "Thanks for sharing! To make sure I capture this correctly, what type of feedback is this?"
 
 $**Bug Report 🐛 | Something's broken**$
@@ -419,74 +208,31 @@ $**General Feedback 💬 | Comments or praise**$
 =======================================================================
 ## BEST PRACTICES
 
-### Classification Quality
-
-1. **Favor User Choice** - When in doubt, ask rather than guessing
-2. **Allow Corrections** - If user disagrees with classification, defer to them
-3. **Context Matters** - Same keywords can mean different things in different contexts
-4. **Track Accuracy** - Log classification confidence for quality improvement
-
-### User Experience
-
-1. **Be Confident** - Don't express uncertainty to user ("I think maybe...")
-2. **Quick Classification** - Don't make users wait through analysis
-3. **Natural Language** - Explain categories in simple terms
-4. **Show, Don't Tell** - Use emojis to make categories visual and friendly
-
-### Data Quality
-
-1. **Store Confidence** - Helps admins understand classification reliability
-2. **Store Keywords** - Documents why classification was made
-3. **Allow Reclassification** - Admins can correct if needed
-4. **Log Method** - Track auto vs. user-selected for analysis
+1. **Favour user choice** — when in doubt, ask
+2. **Allow corrections** — if the user disagrees, defer immediately and set `classification_method = "user_corrected"`
+3. **Be confident in tone** — don't say "I think maybe..."
+4. **Store the evidence** — keywords detected and method used both go in the row, useful for tuning Fiona later
+5. **Don't force-fit** — General Feedback is the fallback, never the default for vague content
 
 =======================================================================
 ## ERROR HANDLING
 
 ### Conflicting Keywords
-
-**Scenario:** Feedback contains both bug and feature keywords
-
-**Example:** "The scheduler is broken and needs a calendar view"
-
-**Action:**
-- Identify primary issue (bug is usually primary)
-- Classify as Bug Report
-- Note feature request in content
-- OR ask user which to address first
+Bug + feature in one message → ask user which to address first, or split into two records.
 
 ### No Keywords Match
+Default to asking the user. Don't use General Feedback as a force-fit.
 
-**Scenario:** Feedback is very vague or uses uncommon phrasing
-
-**Action:**
-- Default to asking user to choose type
-- Don't force-fit into category
-- Use General Feedback as fallback only if user can't decide
-
-### User Disagrees with Classification
-
-**Scenario:** Auto-classified as Bug, user says it's Feature Request
-
-**Action:**
-- Accept user's classification immediately
-- Update database with corrected type
-- Mark classification_method as "user_corrected"
-- Learn from the mismatch
+### User Disagrees with Auto-Classification
+Accept immediately. Update `type` and set `classification_method = "user_corrected"`.
 
 =======================================================================
 ## VALIDATION CHECKLIST
 
-Before finalizing classification:
-- ✅ Feedback content analyzed for keywords
+Before finalising classification:
+- ✅ Content analysed for keywords
 - ✅ Contextual patterns considered
-- ✅ Confidence score calculated
-- ✅ User confirmed or informed of classification (if confidence < 75%)
-- ✅ Type is one of: bug_report, feature_request, suggestion, general_feedback
-- ✅ Classification metadata stored (confidence, method, keywords)
-
-After classification:
-- ✅ User understands the type (via emoji and description)
-- ✅ Classification makes sense given feedback content
-- ✅ Appropriate priority scoring applied for that type
-- ✅ Feedback ready for storage with correct categorization
+- ✅ Confidence calculated as a 0.00–1.00 decimal
+- ✅ User confirmed if confidence < 0.75
+- ✅ `type` is one of the four valid values
+- ✅ `classification_confidence`, `classification_method`, and detected keywords are ready for storage

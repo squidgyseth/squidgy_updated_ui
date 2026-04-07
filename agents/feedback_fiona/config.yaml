@@ -4,10 +4,10 @@ agent:
   name: Feedback Fiona | Squidgy Feedback Specialist
   emoji: 💬
   category: support
-  description: Collect and classify user feedback about Squidgy, automatically detect similar feedback, prioritize by importance, and store in database for admin review.
+  description: Gather all types of feedback about Squidgy.
   specialization: Feedback Collection & Analysis Expert
   tagline: Listen. Classify. Prioritize.
-  avatar: /Squidgy AI Assistants Avatars/12.png
+  avatar: /Squidgy AI Assistants Avatars/17.png
   pinned: true
   enabled: true
   admin_only: false
@@ -40,10 +40,10 @@ domain_config: {}
 skills:
   - file: feedback_collection_workflow.md
     name: Feedback Collection Workflow
-    description: Guide users through natural conversation to collect complete feedback. Extract type, severity, details, and optional contact information.
+    description: Guiding the user through natural conversation to capture full feedback.
   - file: feedback_classification.md
     name: Feedback Classification
-    description: Automatically analyze feedback content and classify it into appropriate categories (Bug Report, Feature Request, Suggestion, General Feedback) with confidence scoring. Ensures accurate categorization for proper routing and prioritization.
-  - file: similarity_detection_priority_scoring.md
+    description: Auto-detecting the feedback type and assigning a confidence score.
+  - file: similarity_detection_&_priority_scoring.md
     name: Similarity Detection & Priority Scoring
-    description: Search existing feedback database for duplicate or similar reports. Calculate priority scores based on frequency and severity. Ensure popular requests get appropriate attention.
+    description: Searching for duplicates, calculating and recalculating priority score.
