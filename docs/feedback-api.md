@@ -31,7 +31,6 @@ Submit new feedback to the database with automatic similarity detection and prio
   "base_score": 6,
   "priority_score": 8,
   "admin_notified": false,
-  "attachment_count": 1,
   "attachments": [
     {
       "url": "https://example.com/file.png",
@@ -195,8 +194,7 @@ feedback_data = {
   "base_score": base_score,
   "priority_score": priority_score,
   "admin_notified": False,  # Optional: Set to True if admin should be notified immediately
-  "attachment_count": len(attachments) if attachments else 0,  # Optional: Count of attachments
-  "attachments": attachments,  # Optional: List of attachment objects
+  "attachments": attachments,  # Optional: List of attachment objects (auto-calculates count)
   "classification_confidence": 0.85,
   "classification_method": "auto_keyword",
   "metadata": {
