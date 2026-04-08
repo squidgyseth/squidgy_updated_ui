@@ -48,7 +48,6 @@ CREATE TABLE IF NOT EXISTS public.feedback_submissions (
   -- user_id is a plain uuid (no FK). The profiles table lives on Supabase,
   -- so Fiona must validate user_id against Supabase auth before insert.
   user_id                   uuid          NOT NULL,
-  user_email                text,
   contact_preference        text          NOT NULL DEFAULT 'no'
                                           CHECK (contact_preference IN ('yes', 'critical_only', 'no')),
 
@@ -60,27 +59,21 @@ CREATE TABLE IF NOT EXISTS public.feedback_submissions (
 
   -- Content
   content                   text          NOT NULL CHECK (char_length(content) >= 20),
-  summary                   text,
-  category                  text          CHECK (category IN ('agent_behaviour', 'ui_ux', 'integrations', 'billing', 'onboarding', 'performance', 'other')),
-  feature_area              text,         -- granular: missy, social_planner, kb_sync, ghl_integration, etc.
 
-  -- Severity & priority
-  severity                  text          CHECK (severity IN ('critical', 'high', 'medium', 'low')),
+  -- Priority
   base_score                smallint      NOT NULL CHECK (base_score BETWEEN 1 AND 10),
-  impact_score              smallint      NOT NULL DEFAULT 0 CHECK (impact_score BETWEEN 0 AND 7),
   priority_score            smallint      NOT NULL CHECK (priority_score BETWEEN 1 AND 10),
 
   -- Similarity tracking (1536 = OpenAI text-embedding-3-small; change if using a different model)
   embedding                 vector(1536),
   similar_feedback_ids      uuid[]        NOT NULL DEFAULT '{}',
   similar_count             integer       NOT NULL DEFAULT 0 CHECK (similar_count >= 0),
-  duplicate_of              uuid          REFERENCES public.feedback_submissions(id) ON DELETE SET NULL,
 
   -- Attachments (Supabase Storage public bucket URLs)
   -- Format: [{"url": "...", "description": "...", "filename": "...", "mime_type": "image/png", "size_bytes": 12345}, ...]
   attachments               jsonb         NOT NULL DEFAULT '[]'::jsonb
                                           CHECK (jsonb_typeof(attachments) = 'array'),
-  attachment_count          smallint      GENERATED ALWAYS AS (jsonb_array_length(attachments)) STORED,
+  attachment_count          smallint      NOT NULL DEFAULT 0 CHECK (attachment_count >= 0),
 
   -- Lifecycle
   status                    text          NOT NULL DEFAULT 'new'
@@ -93,10 +86,8 @@ CREATE TABLE IF NOT EXISTS public.feedback_submissions (
   -- Admin notification (n8n webhook routing)
   admin_notified            boolean       NOT NULL DEFAULT false,
   admin_notified_at         timestamptz,
-  n8n_workflow_triggered    text,
-  n8n_triggered_at          timestamptz,
 
-  -- Catch-all: keywords_detected, user_agent, page_url, search_error, app_version, etc.
+  -- Catch-all: keywords_detected, user_agent, page_url, search_error, app_version, category, feature_area, severity, etc.
   metadata                  jsonb         NOT NULL DEFAULT '{}'::jsonb
 );
 
@@ -116,8 +107,6 @@ CREATE INDEX IF NOT EXISTS idx_feedback_critical
 
 CREATE INDEX IF NOT EXISTS idx_feedback_type        ON public.feedback_submissions (type);
 CREATE INDEX IF NOT EXISTS idx_feedback_user        ON public.feedback_submissions (user_id);
-CREATE INDEX IF NOT EXISTS idx_feedback_category    ON public.feedback_submissions (category);
-CREATE INDEX IF NOT EXISTS idx_feedback_feature     ON public.feedback_submissions (feature_area);
 
 CREATE INDEX IF NOT EXISTS idx_feedback_embedding
   ON public.feedback_submissions
@@ -200,7 +189,6 @@ RETURNS TABLE (
   out_type              text,
   out_priority_score    smallint,
   out_base_score        smallint,
-  out_impact_score      smallint,
   out_similar_count     integer,
   out_similarity_score  float,
   out_created_at        timestamptz
@@ -213,7 +201,6 @@ AS $$
     f.type,
     f.priority_score,
     f.base_score,
-    f.impact_score,
     f.similar_count,
     (1 - (f.embedding <=> query_embedding))::float AS similarity_score,
     f.created_at
@@ -240,20 +227,18 @@ $$;
 
 
 -- 7. Column comments ----------------------------------------------------------
-COMMENT ON TABLE  public.feedback_submissions IS 'User feedback on the Squidgy platform — collected by Feedback Fiona. Lives on Neon.';
+COMMENT ON TABLE  public.feedback_submissions IS 'User feedback on the Squidgy platform - collected by Feedback Fiona. Lives on Neon.';
 
 COMMENT ON COLUMN public.feedback_submissions.id                        IS 'Primary key. Auto-generated uuid.';
 COMMENT ON COLUMN public.feedback_submissions.user_id                   IS 'Plain uuid, no FK. Maps to profiles.user_id on Supabase. Validation is the application layer responsibility (Fiona must check the session before insert).';
-COMMENT ON COLUMN public.feedback_submissions.base_score                IS 'Score from severity (or type fallback) before impact and frequency multipliers. Never recalculated.';
-COMMENT ON COLUMN public.feedback_submissions.impact_score              IS 'Sum of impact multipliers (user reach, workflow blocking, security, data risk). Never recalculated.';
-COMMENT ON COLUMN public.feedback_submissions.priority_score            IS 'Final priority = min(max(base + impact + frequency, 1), 10). Recalculated when similar_count changes.';
-COMMENT ON COLUMN public.feedback_submissions.classification_confidence IS 'Decimal 0.00-1.00. Below 0.75 means Fiona asked the user to confirm the type.';
+COMMENT ON COLUMN public.feedback_submissions.base_score                IS 'Base priority score (1-10). Includes severity and impact calculations.';
+COMMENT ON COLUMN public.feedback_submissions.priority_score            IS 'Final priority score (1-10). Calculated from base_score + frequency bonus.';
+COMMENT ON COLUMN public.feedback_submissions.classification_confidence IS 'Decimal 0.00-1.00. Below 0.75 means Fiona asked user to confirm type.';
 COMMENT ON COLUMN public.feedback_submissions.embedding                 IS 'pgvector embedding of content for semantic similarity search at threshold 0.75. Generated by Fiona before insert.';
-COMMENT ON COLUMN public.feedback_submissions.duplicate_of              IS 'Set when similarity to an existing record is >= 0.90 (near-duplicate). Self-FK to feedback_submissions.id.';
 COMMENT ON COLUMN public.feedback_submissions.similar_feedback_ids      IS 'All feedback rows with similarity >= 0.75 to this one. Bidirectionally maintained.';
-COMMENT ON COLUMN public.feedback_submissions.attachments               IS 'JSONB array of file attachments. Each item: {url, description, filename, mime_type, size_bytes}. URLs point to the Supabase Storage public bucket (cross-database, stored as plain text).';
+COMMENT ON COLUMN public.feedback_submissions.attachments               IS 'JSONB array of file attachments. Each item: {url, description, filename, mime_type, size_bytes}. URLs point to Supabase Storage public bucket (cross-database, stored as plain text).';
 COMMENT ON COLUMN public.feedback_submissions.attachment_count          IS 'Auto-computed count of items in attachments array. Useful for filtering feedback that includes screenshots.';
 COMMENT ON COLUMN public.feedback_submissions.admin_notified            IS 'True when priority_score >= 8. Triggers n8n alert workflow.';
-COMMENT ON COLUMN public.feedback_submissions.metadata                  IS 'JSON catch-all: keywords_detected, user_agent, page_url, search_error, app_version, etc.';
+COMMENT ON COLUMN public.feedback_submissions.metadata                  IS 'JSON catch-all: keywords_detected, user_agent, page_url, search_error, app_version, category, feature_area, severity, etc.';
 
 COMMIT;
