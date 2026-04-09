@@ -902,17 +902,17 @@ class ReferralService {
   }
 
   // =====================================================
-  // REFERRAL CODE VALIDATION
+  // REFERRAL CODE VALIDATION (UPDATED FOR SIMPLIFIED SCHEMA)
   // =====================================================
 
   /**
-   * Validate a referral code
-   * Returns true if code exists in referral_codes table, is active, and hasn't been used
+   * Validate a referral/activation code
+   * Returns true if code exists in limited_activation_codes table, is active, and has remaining uses
    * OR if code is the master code "SQUIDWINS"
    */
   async validateReferralCode(code: string): Promise<boolean> {
     try {
-      // Trim and uppercase the code for comparison
+      // Trim and uppercase code for comparison
       const trimmedCode = code.trim().toUpperCase();
 
       // Check for master code (never expires, always valid)
@@ -920,10 +920,10 @@ class ReferralService {
         return true;
       }
 
-      // Check if code exists in database and is active
+      // Check limited activation codes table (now handles all types)
       const { data, error } = await supabase
-        .from('referral_codes')
-        .select('code, id, used_at')
+        .from('limited_activation_codes')
+        .select('id, max_uses, current_uses, is_active, expires_at, registered_users')
         .eq('code', trimmedCode)
         .eq('is_active', true)
         .single();
@@ -932,8 +932,13 @@ class ReferralService {
         return false;
       }
 
-      // Check if code has already been used (one-time use)
-      if (data.used_at) {
+      // Check if code has expired
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        return false;
+      }
+
+      // Check if usage limit has been reached
+      if (data.current_uses >= data.max_uses) {
         return false;
       }
 
@@ -945,78 +950,95 @@ class ReferralService {
   }
 
   /**
-   * Mark a referral code as used
+   * Get information about a limited activation code
+   * Returns details about remaining uses, expiration, etc.
+   */
+  async getLimitedActivationCodeInfo(code: string): Promise<{
+    exists: boolean;
+    maxUses?: number;
+    currentUses?: number;
+    remainingUses?: number;
+    expiresAt?: string;
+    isActive?: boolean;
+    description?: string;
+  } | null> {
+    try {
+      const trimmedCode = code.trim().toUpperCase();
+
+      const { data, error } = await supabase
+        .from('limited_activation_codes')
+        .select('code, max_uses, current_uses, expires_at, is_active, description')
+        .eq('code', trimmedCode)
+        .single();
+
+      if (error || !data) {
+        return null;
+      }
+
+      return {
+        exists: true,
+        maxUses: data.max_uses,
+        currentUses: data.current_uses,
+        remainingUses: data.max_uses - data.current_uses,
+        expiresAt: data.expires_at,
+        isActive: data.is_active,
+        description: data.description
+      };
+    } catch (error) {
+      console.error('Error getting limited activation code info:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Mark a referral/activation code as used
    * Master code "SQUIDWINS" is never marked as used (reusable)
+   * Limited activation codes are handled by the database function
    */
   async markCodeAsUsed(code: string, usedByUserId: string): Promise<boolean> {
     try {
       const trimmedCode = code.trim().toUpperCase();
 
       // Master code is reusable - don't mark it as used
-      // But track the user in referrals table with placeholder referrer
       if (trimmedCode === 'SQUIDWINS') {
-        // Log master code usage for tracking
         console.log(`Master code SQUIDWINS used by user: ${usedByUserId}`);
+        return true;
+      }
 
-        // Get or create SQUIDWINS code entry in referral_codes table
-        let squidwinsCodeId: string | null = null;
+      // Check for limited activation codes
+      const { data: limitedCode, error: limitedError } = await supabase
+        .from('limited_activation_codes')
+        .select('id, max_uses, current_uses')
+        .eq('code', trimmedCode)
+        .eq('is_active', true)
+        .single();
 
-        const { data: existingCode } = await supabase
-          .from('referral_codes')
-          .select('id')
-          .eq('code', 'SQUIDWINS')
-          .maybeSingle();
-
-        if (existingCode) {
-          squidwinsCodeId = existingCode.id;
-        } else {
-          // Create SQUIDWINS code entry if it doesn't exist
-          const { data: newCode } = await supabase
-            .from('referral_codes')
-            .insert({
-              user_id: '00000000-0000-0000-0000-000000000001', // System user placeholder
-              code: 'SQUIDWINS',
-              referral_link: 'https://app.squidgy.ai/register?ref=SQUIDWINS',
-              is_active: true
-            })
-            .select('id')
-            .single();
-
-          squidwinsCodeId = newCode?.id || null;
-        }
-
-        // Create referral entry with actual referral_code_id
-        await supabase
-          .from('referrals')
-          .insert({
-            referrer_id: '00000000-0000-0000-0000-000000000001', // Placeholder for master code
-            referee_id: usedByUserId,
-            referral_code_id: squidwinsCodeId, // Actual code ID from referral_codes table
-            status: 'completed',
-            referral_source: 'SQUIDWINS',
-            signed_up_at: new Date().toISOString(),
-            activated_at: new Date().toISOString()
+      if (!limitedError && limitedCode) {
+        // Use the database function to validate and use the limited code
+        const { data: result, error: usageError } = await supabase
+          .rpc('validate_and_use_limited_code', {
+            p_code: trimmedCode,
+            p_user_id: usedByUserId
           });
 
-        return true; // Success, code remains valid
+        if (usageError) {
+          console.error('Error using limited activation code:', usageError);
+          return false;
+        }
+
+        // Check the result from the function
+        if (result?.success) {
+          console.log(`Limited activation code ${trimmedCode} used successfully. Remaining uses: ${result.remaining_uses}`);
+          return true;
+        } else {
+          console.error('Limited activation code usage failed:', result?.message);
+          return false;
+        }
       }
 
-      // Regular code - mark as used (one-time use)
-      const { error } = await supabase
-        .from('referral_codes')
-        .update({
-          used_at: new Date().toISOString(),
-          used_by_user_id: usedByUserId,
-          is_active: false
-        })
-        .eq('code', trimmedCode);
-
-      if (error) {
-        console.error('Error marking code as used:', error);
-        return false;
-      }
-
-      return true;
+      // If we get here, the code wasn't found
+      console.error(`Code ${trimmedCode} not found in limited_activation_codes table`);
+      return false;
     } catch (error) {
       console.error('Error marking code as used:', error);
       return false;

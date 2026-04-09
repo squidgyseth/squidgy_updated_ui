@@ -76,8 +76,30 @@ export default function Register() {
       const isValidCode = await referralService.validateReferralCode(referralCode);
 
       if (!isValidCode) {
-        toast.error('Invalid referral code. Please check and try again.');
+        // Check if it's a limited activation code to show specific error
+        const limitedCodeInfo = await referralService.getLimitedActivationCodeInfo(referralCode);
+        if (limitedCodeInfo?.exists) {
+          if (!limitedCodeInfo.isActive) {
+            toast.error('This activation code is no longer active.');
+          } else if (limitedCodeInfo.expiresAt && new Date(limitedCodeInfo.expiresAt) < new Date()) {
+            toast.error('This activation code has expired.');
+          } else if (limitedCodeInfo.remainingUses !== undefined && limitedCodeInfo.remainingUses <= 0) {
+            toast.error('This activation code has reached its usage limit.');
+          } else {
+            toast.error('This activation code is currently unavailable.');
+          }
+        } else {
+          toast.error('Invalid referral code. Please check and try again.');
+        }
         return;
+      } else {
+        // Show success message for limited activation codes
+        const limitedCodeInfo = await referralService.getLimitedActivationCodeInfo(referralCode);
+        if (limitedCodeInfo?.exists && limitedCodeInfo.remainingUses !== undefined) {
+          // Show remaining uses AFTER current user registers (subtract 1)
+          const remainingAfterRegistration = limitedCodeInfo.remainingUses - 1;
+          toast.success(`Valid activation code! ${remainingAfterRegistration} uses remaining.`);
+        }
       }
     }
 
@@ -285,7 +307,7 @@ export default function Register() {
             {/* Referral Code Field */}
             <div>
               <label htmlFor="referralCode" className="block text-[14px] text-[#364153] mb-1 font-['Open_Sans']">
-                Referral Code
+                Referral / Activation Code
               </label>
               <input
                 id="referralCode"
@@ -293,11 +315,11 @@ export default function Register() {
                 value={referralCode}
                 onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                 className="w-full px-[13px] py-4 border border-[#D1D5DC] rounded-[10px] text-[15px] placeholder:text-[rgba(10,10,10,0.5)] font-['Open_Sans'] focus:outline-none focus:ring-2 focus:ring-[#5E17EB] focus:border-transparent uppercase"
-                placeholder="Enter referral code"
+                placeholder="Enter referral or activation code"
                 required
               />
               <p className="mt-2 text-xs text-[#6A7282] font-['Open_Sans']">
-                💡 Enter a valid referral code
+                💡 Enter a valid referral code or activation code
               </p>
             </div>
 
