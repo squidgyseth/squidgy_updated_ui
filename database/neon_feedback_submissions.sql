@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS public.feedback_submissions (
                                           CHECK (status IN ('new', 'triaged', 'in_progress', 'resolved', 'wont_fix', 'duplicate')),
   assigned_to               text,
   linked_issue_url          text,
+  linear_task_id            text,
   resolved_at               timestamptz,
   resolution_notes          text,
 
