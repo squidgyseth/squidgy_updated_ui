@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Deployment script for Squidgy - Automatically uses shared email for deployment commits
-# RESTRICTED: Only for authorized team members
+# RESTRICTED: staging/main only for authorized users, dev branch open to all
 # Usage: ./deploy-mac.sh "commit message" [branch]
 # Example: ./deploy-mac.sh "fix: update user dashboard" dev
 
@@ -17,46 +17,51 @@ NC='\033[0m' # No Color
 DEPLOY_EMAIL="development@squidgy.ai"
 DEPLOY_NAME="Squidgy-Development"
 
-# Security: Only allow authorized users to use this script
-ALLOWED_EMAILS=("farzin.mag@gmail.com" "sa@squidgy.ai")
-
-# Check current user
-CURRENT_EMAIL=$(git config user.email || echo "")
-
-# Check if current email is in allowed list
-AUTHORIZED=false
-for email in "${ALLOWED_EMAILS[@]}"; do
-    if [ "$CURRENT_EMAIL" = "$email" ]; then
-        AUTHORIZED=true
-        break
-    fi
-done
-
-if [ "$AUTHORIZED" = false ]; then
-    echo -e "${RED}❌ Access Denied${NC}"
-    echo ""
-    echo "This deployment script is restricted to authorized team members only."
-    echo "Your email: $CURRENT_EMAIL"
-    echo "Allowed emails: ${ALLOWED_EMAILS[*]}"
-    echo ""
-    echo "Please set your git email to one of the allowed emails:"
-    echo "  git config user.email \"your-authorized-email\""
-    exit 1
-fi
-
-echo -e "${GREEN}✅ User verified: $CURRENT_EMAIL${NC}"
-echo ""
+# Security: Authorized users for staging/main branches
+AUTHORIZED_EMAILS=("farzin.mag@gmail.com" "sa@squidgy.ai")
 
 # Check if commit message is provided
 if [ -z "$1" ]; then
     echo -e "${RED}Error: Commit message required${NC}"
-    echo "Usage: ./deploy.sh \"commit message\" [branch]"
-    echo "Example: ./deploy.sh \"fix: update dashboard\" dev"
+    echo "Usage: ./deploy-mac.sh \"commit message\" [branch]"
+    echo "Example: ./deploy-mac.sh \"fix: update dashboard\" dev"
     exit 1
 fi
 
 COMMIT_MESSAGE="$1"
 BRANCH="${2:-$(git branch --show-current)}"  # Use provided branch or current branch
+
+# Check current user
+CURRENT_EMAIL=$(git config user.email || echo "")
+
+# Check authorization based on branch
+if [ "$BRANCH" = "staging" ] || [ "$BRANCH" = "main" ]; then
+    # For staging/main: Only authorized users
+    AUTHORIZED=false
+    for email in "${AUTHORIZED_EMAILS[@]}"; do
+        if [ "$CURRENT_EMAIL" = "$email" ]; then
+            AUTHORIZED=true
+            break
+        fi
+    done
+
+    if [ "$AUTHORIZED" = false ]; then
+        echo -e "${RED}❌ Access Denied${NC}"
+        echo ""
+        echo "Deployment to '$BRANCH' branch is restricted to authorized team members only."
+        echo "Your email: $CURRENT_EMAIL"
+        echo "Allowed emails: ${AUTHORIZED_EMAILS[*]}"
+        echo ""
+        echo "Note: You can deploy to 'dev' branch without restrictions."
+        exit 1
+    fi
+    echo -e "${GREEN}✅ User verified for $BRANCH: $CURRENT_EMAIL${NC}"
+else
+    # For dev and other branches: Anyone can deploy
+    echo -e "${GREEN}✅ Deploying to $BRANCH branch: $CURRENT_EMAIL${NC}"
+fi
+
+echo ""
 
 echo -e "${YELLOW}🚀 Starting deployment process...${NC}"
 echo "Branch: $BRANCH"

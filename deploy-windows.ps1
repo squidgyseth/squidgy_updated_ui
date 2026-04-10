@@ -1,5 +1,5 @@
 # Deployment script for Squidgy - Windows PowerShell version
-# RESTRICTED: Only for authorized team members
+# RESTRICTED: staging/main only for authorized users, dev branch open to all
 # Usage: .\deploy-windows.ps1 "commit message" [branch]
 # Example: .\deploy-windows.ps1 "fix: update user dashboard" dev
 
@@ -15,31 +15,37 @@ param(
 $DEPLOY_EMAIL = "development@squidgy.ai"
 $DEPLOY_NAME = "Squidgy-Development"
 
-# Security: Only allow authorized users to use this script
-$ALLOWED_EMAILS = @("farzin.mag@gmail.com", "sa@squidgy.ai")
-
-# Check current user
-$CURRENT_EMAIL = git config user.email 2>$null
-
-if ($CURRENT_EMAIL -notin $ALLOWED_EMAILS) {
-    Write-Host "[X] Access Denied" -ForegroundColor Red
-    Write-Host ""
-    Write-Host "This deployment script is restricted to authorized team members only."
-    Write-Host "Your email: $CURRENT_EMAIL"
-    Write-Host "Allowed emails: $($ALLOWED_EMAILS -join ', ')"
-    Write-Host ""
-    Write-Host "Please set your git email to one of the allowed emails:"
-    Write-Host "  git config user.email `"your-authorized-email`""
-    exit 1
-}
-
-Write-Host "[OK] User verified: $CURRENT_EMAIL" -ForegroundColor Green
-Write-Host ""
+# Security: Authorized users for staging/main branches
+$AUTHORIZED_EMAILS = @("farzin.mag@gmail.com", "sa@squidgy.ai")
 
 # Get current branch if not specified
 if (-not $Branch) {
     $Branch = git branch --show-current
 }
+
+# Check current user
+$CURRENT_EMAIL = git config user.email 2>$null
+
+# Check authorization based on branch
+if ($Branch -eq "staging" -or $Branch -eq "main") {
+    # For staging/main: Only authorized users
+    if ($CURRENT_EMAIL -notin $AUTHORIZED_EMAILS) {
+        Write-Host "[X] Access Denied" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "Deployment to '$Branch' branch is restricted to authorized team members only."
+        Write-Host "Your email: $CURRENT_EMAIL"
+        Write-Host "Allowed emails: $($AUTHORIZED_EMAILS -join ', ')"
+        Write-Host ""
+        Write-Host "Note: You can deploy to 'dev' branch without restrictions."
+        exit 1
+    }
+    Write-Host "[OK] User verified for $Branch: $CURRENT_EMAIL" -ForegroundColor Green
+} else {
+    # For dev and other branches: Anyone can deploy
+    Write-Host "[OK] Deploying to $Branch branch: $CURRENT_EMAIL" -ForegroundColor Green
+}
+
+Write-Host ""
 
 Write-Host "[>>] Starting deployment process..." -ForegroundColor Yellow
 Write-Host "Branch: $Branch"
