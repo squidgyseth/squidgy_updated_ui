@@ -761,22 +761,30 @@ export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<
     // With session persistence, automation completes in ~5-30 seconds, but allow 3 minutes for safety
     const stuckThresholdMinutes = 3;
     let isStuck = false;
-    if ((automationStatus === 'running' || automationStatus === 'pit_running' || automationStatus === 'token_refresh_running') && updatedAt) {
+    if ((automationStatus === 'running' || automationStatus === 'pit_running' || 
+         automationStatus === 'token_refresh_running' || automationStatus === 'pending_token_capture') && updatedAt) {
       const updatedTime = new Date(updatedAt);
       const currentTime = new Date();
       const minutesRunning = (currentTime.getTime() - updatedTime.getTime()) / (1000 * 60);
       
-      if (minutesRunning > stuckThresholdMinutes) {
-        console.log(`[GHL CHECK] Automation stuck in '${automationStatus}' for ${minutesRunning.toFixed(1)} minutes - will retry`);
+      console.log(`[GHL CHECK] Automation in '${automationStatus}' for ${minutesRunning.toFixed(1)} minutes (threshold: ${stuckThresholdMinutes} min)`);
+      
+      // Handle negative time (clock sync issues) or very large positive time (stuck)
+      // If time is negative or > threshold, consider it stuck
+      if (minutesRunning < -1 || minutesRunning > stuckThresholdMinutes) {
+        const reason = minutesRunning < -1 
+          ? `timestamp issue (${minutesRunning.toFixed(1)} min)` 
+          : `exceeded threshold (${minutesRunning.toFixed(1)} min)`;
+        console.log(`[GHL CHECK] Automation stuck - ${reason} - will retry`);
         isStuck = true;
       }
     }
     
     // Skip if automation is actively running (not stuck), pending creation, or just started by backend
     if (!isStuck && (automationStatus === 'running' || automationStatus === 'pit_running' || 
-        automationStatus === 'token_refresh_running' || automationStatus === 'not_started' ||
-        creationStatus === 'pending' || creationStatus === 'creating')) {
-      console.log(`[GHL CHECK] Automation already in progress (creation: ${creationStatus}, automation: ${automationStatus}) - skipping`);
+        automationStatus === 'token_refresh_running' || automationStatus === 'pending_token_capture' ||
+        automationStatus === 'not_started' || creationStatus === 'pending' || creationStatus === 'creating')) {
+      console.log(`[GHL CHECK] Automation already in progress (creation: ${creationStatus}, automation: ${automationStatus}) - skipping (will retry if stuck after ${stuckThresholdMinutes} min)`);
       return { hasPitToken: false, triggered: false };
     }
     
