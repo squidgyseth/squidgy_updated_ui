@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Deployment script for Squidgy - Automatically uses shared email for deployment commits
-# RESTRICTED: Only for Farzin's use
-# Usage: ./deploy.sh "commit message" [branch]
-# Example: ./deploy.sh "fix: update user dashboard" dev
+# RESTRICTED: Only for authorized team members
+# Usage: ./deploy-mac.sh "commit message" [branch]
+# Example: ./deploy-mac.sh "fix: update user dashboard" dev
 
 set -e  # Exit on error
 
@@ -17,26 +17,34 @@ NC='\033[0m' # No Color
 DEPLOY_EMAIL="development@squidgy.ai"
 DEPLOY_NAME="Squidgy-Development"
 
-# Security: Only allow Farzin to use this script
-ALLOWED_EMAIL="farzin.mag@gmail.com"
-ALLOWED_GITHUB_USER="Farzinkh"
+# Security: Only allow authorized users to use this script
+ALLOWED_EMAILS=("farzin.mag@gmail.com" "sa@squidgy.ai")
 
 # Check current user
 CURRENT_EMAIL=$(git config user.email || echo "")
 
-if [ "$CURRENT_EMAIL" != "$ALLOWED_EMAIL" ]; then
+# Check if current email is in allowed list
+AUTHORIZED=false
+for email in "${ALLOWED_EMAILS[@]}"; do
+    if [ "$CURRENT_EMAIL" = "$email" ]; then
+        AUTHORIZED=true
+        break
+    fi
+done
+
+if [ "$AUTHORIZED" = false ]; then
     echo -e "${RED}❌ Access Denied${NC}"
     echo ""
-    echo "This deployment script is restricted to Farzin only."
-    echo "Expected email: $ALLOWED_EMAIL"
+    echo "This deployment script is restricted to authorized team members only."
     echo "Your email: $CURRENT_EMAIL"
+    echo "Allowed emails: ${ALLOWED_EMAILS[*]}"
     echo ""
-    echo "If you're Farzin, please set your git email:"
-    echo "  git config user.email \"$ALLOWED_EMAIL\""
+    echo "Please set your git email to one of the allowed emails:"
+    echo "  git config user.email \"your-authorized-email\""
     exit 1
 fi
 
-echo -e "${GREEN}✅ User verified: $ALLOWED_GITHUB_USER${NC}"
+echo -e "${GREEN}✅ User verified: $CURRENT_EMAIL${NC}"
 echo ""
 
 # Check if commit message is provided

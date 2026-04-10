@@ -1,12 +1,12 @@
 # Deployment script for Squidgy - Windows PowerShell version
-# RESTRICTED: Only for Farzin's use
-# Usage: .\deploy.ps1 "commit message" [branch]
-# Example: .\deploy.ps1 "fix: update user dashboard" dev
+# RESTRICTED: Only for authorized team members
+# Usage: .\deploy-windows.ps1 "commit message" [branch]
+# Example: .\deploy-windows.ps1 "fix: update user dashboard" dev
 
 param(
     [Parameter(Mandatory=$true)]
     [string]$CommitMessage,
-    
+
     [Parameter(Mandatory=$false)]
     [string]$Branch
 )
@@ -15,26 +15,25 @@ param(
 $DEPLOY_EMAIL = "development@squidgy.ai"
 $DEPLOY_NAME = "Squidgy-Development"
 
-# Security: Only allow Farzin to use this script
-$ALLOWED_EMAIL = "farzin.mag@gmail.com"
-$ALLOWED_GITHUB_USER = "Farzinkh"
+# Security: Only allow authorized users to use this script
+$ALLOWED_EMAILS = @("farzin.mag@gmail.com", "sa@squidgy.ai")
 
 # Check current user
 $CURRENT_EMAIL = git config user.email 2>$null
 
-if ($CURRENT_EMAIL -ne $ALLOWED_EMAIL) {
+if ($CURRENT_EMAIL -notin $ALLOWED_EMAILS) {
     Write-Host "[X] Access Denied" -ForegroundColor Red
     Write-Host ""
-    Write-Host "This deployment script is restricted to Farzin only."
-    Write-Host "Expected email: $ALLOWED_EMAIL"
+    Write-Host "This deployment script is restricted to authorized team members only."
     Write-Host "Your email: $CURRENT_EMAIL"
+    Write-Host "Allowed emails: $($ALLOWED_EMAILS -join ', ')"
     Write-Host ""
-    Write-Host "If you're Farzin, please set your git email:"
-    Write-Host "  git config user.email `"$ALLOWED_EMAIL`""
+    Write-Host "Please set your git email to one of the allowed emails:"
+    Write-Host "  git config user.email `"your-authorized-email`""
     exit 1
 }
 
-Write-Host "[OK] User verified: $ALLOWED_GITHUB_USER" -ForegroundColor Green
+Write-Host "[OK] User verified: $CURRENT_EMAIL" -ForegroundColor Green
 Write-Host ""
 
 # Get current branch if not specified
