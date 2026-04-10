@@ -29,7 +29,7 @@ Search the existing feedback database for duplicate or related reports, calculat
 | Table | `feedback_submissions` |
 | Column | `embedding` (vector(1536), pgvector) |
 | Distance metric | Cosine similarity |
-| Related threshold | **0.75** |
+| Similar threshold | **0.70** |
 | Near-duplicate threshold | **0.90** |
 | Result limit | 5 |
 
@@ -51,7 +51,7 @@ query: "upload freeze"
 const similarFeedback = await search_feedback({
   query: feedback_content,
   table: "feedback_submissions",
-  threshold: 0.75,
+  threshold: 0.70,
   limit: 5
 });
 ```
@@ -78,9 +78,8 @@ const similarFeedback = await search_feedback({
 | Range | Meaning |
 |---|---|
 | 0.90 – 1.00 | Near-duplicate — set `duplicate_of` on the new record |
-| 0.80 – 0.89 | Same issue, different wording — link as related |
-| 0.75 – 0.79 | Related (same topic, possibly different aspect) — link as related |
-| Below 0.75 | Not similar — treat as unique |
+| 0.70 – 0.89 | Almost the same feedback — link as related, update Linear task if exists |
+| Below 0.70 | Not similar — treat as unique |
 
 =======================================================================
 ## PRIORITY SCORING
@@ -189,7 +188,8 @@ When similar feedback is found, store bidirectional links.
   feedback_id: "new-uuid",
   similar_feedback_ids: ["existing-uuid-1", "existing-uuid-2"],
   similar_count: 2,
-  duplicate_of: "existing-uuid-1"  // only if similarity >= 0.90
+  duplicate_of: "existing-uuid-1",  // only if similarity >= 0.90
+  linear_task_id: "LIN-123"  // copied from similar feedback if it exists
 }
 ```
 
@@ -201,9 +201,20 @@ When similar feedback is found, store bidirectional links.
   similar_feedback_ids: [...old_ids, "new-uuid"],
   similar_count: old_count + 1,
   priority_score: recalculatePriority(record, old_count + 1),
+  linear_task_id: "LIN-123",  // if exists, update this Linear task instead of creating new
   updated_at: now()
 }
 ```
+
+### Linear Task Updates
+
+When similar feedback has a `linear_task_id`:
+- **Do NOT create a new Linear task**
+- **Update the existing task:**
+  - Add a comment with the new feedback details and user info
+  - Increase task priority based on recalculated `priority_score`
+  - Update description to show "X users reported this issue"
+- **Link the new feedback:** Store the same `linear_task_id` on the new feedback record
 
 ### Benefits
 
@@ -211,6 +222,8 @@ When similar feedback is found, store bidirectional links.
 2. Users see their voice contributes to a tracked trend
 3. Resolving one record can resolve all linked ones
 4. Analytics reveal the most common issues
+5. Linear tasks are updated instead of duplicated, keeping project management clean
+6. Task priority automatically increases as more users report the same issue
 
 =======================================================================
 ## COMPLETE WORKFLOW
@@ -222,14 +235,15 @@ When similar feedback is found, store bidirectional links.
 4. Vector search for similar feedback (threshold 0.75)
 5. Calculate frequency multiplier from result count
 6. Calculate priority_score = min(max(base + impact + frequency, 1), 10)
-7. Insert new row with base_score, impact_score, priority_score
+7. Insert new row with content (including conversation summary), base_score, impact_score, priority_score
 8. For each similar record found:
      - Increment similar_count
      - Recalculate priority_score
      - Append new feedback_id to similar_feedback_ids
      - Update updated_at
-9. If priority_score >= 8 → set admin_notified = true
-10. Confirm to user (with similar-feedback context if applicable)
+     - If linear_task_id exists: update Linear task (add comment, increase priority)
+     - Store linear_task_id on new feedback to link them
+9. Confirm to user (with similar-feedback context if applicable)
 ```
 
 =======================================================================
@@ -262,7 +276,7 @@ When similar feedback is found, store bidirectional links.
 
 ### Search Quality
 - Always pass full context, not keywords
-- Trust the 0.75 threshold — it's the calibrated sweet spot
+- Use 0.70 threshold — feedback above this is almost the same
 - Use 0.90 only for true near-duplicate detection (sets `duplicate_of`)
 
 ### Priority Calculation
@@ -308,9 +322,9 @@ Before storing a new feedback row:
 - ✅ `base_score` is between 1 and 10
 - ✅ `impact_score` is calculated and stored
 - ✅ `priority_score` is calculated, capped at 10, floored at 1
+- ✅ `content` includes conversation summary (what was asked + user responses)
 - ✅ `similar_feedback_ids` and `similar_count` populated
 - ✅ `duplicate_of` set if any similarity ≥ 0.90
-- ✅ `admin_notified = true` if `priority_score >= 8`
 
 After storing:
 - ✅ New record created

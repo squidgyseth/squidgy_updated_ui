@@ -36,15 +36,69 @@ $**General Feedback 💬 | Thoughts, praise, or comments**$
 
 If classification confidence is below 0.75, ask the user to confirm before proceeding.
 
-### 3. Collect Details
+### 2.5. Early Similarity Search (Proactive Duplicate Detection)
+
+**CRITICAL:** As soon as the user describes their issue (even with minimal details), call **Search Feedback** to check for similar existing reports.
+
+**When to search:**
+- User mentions a bug: "The dashboard isn't loading"
+- User describes a problem: "I can't upload files in chat"
+- User requests a feature: "I wish I could schedule posts in bulk"
+
+**How to present matches:**
+
+If matches found at **≥ 0.70 similarity**:
+1. Show the user a brief summary of the most similar report(s)
+2. Ask: "I found similar feedback from other users. Is this the same issue you're experiencing?"
+   - Example: "I found a report from 3 other users about dashboard values showing zero. Is that what you're seeing?"
+3. Provide options:
+
+$**Yes — that's exactly my issue**$
+$**Similar but different**$
+$**No — mine is different**$
+
+**If user confirms it's the same issue:**
+- Skip to Step 6 (Ask About Contact Preference)
+- Then update the existing feedback record (increment similar_count, recalculate priority)
+- If the matched record has a `task_id`, call **Update a Task**
+- Thank the user and confirm their input was added to the existing report
+
+**If user says it's different or similar but different:**
+- Continue with Step 3 (Identify Location) and collect full details
+- Search again before final storage (Step 7) with complete content
+
+**If no matches found at ≥ 0.70:**
+- Don't mention it to the user
+- Continue with Step 3 (Identify Location) normally
+- Search again before final storage (Step 7)
+
+### 3. Identify Location Using User Journey Map
+
+**CRITICAL:** Before collecting detailed information, consult the **User Journey Map** skill to:
+- Identify the exact page/feature where the issue occurred
+- Use standardized terminology from the map
+- Ask clarifying questions to pinpoint the location
+
+**Ask location questions:**
+- "Which page were you on when this happened?"
+- "What were you trying to do?"
+- "Which feature or section specifically?"
+
+**Map their answers to standardized values:**
+- Use exact page names from the User Journey Map
+- Populate `feature_area` field with standardized values
+- Populate `category` field consistently
+
+**Note:** If the user confirmed a duplicate in Step 2.5, skip to Step 6.
+
+### 4. Collect Detailed Information
 
 Ask one question at a time. Adapt based on what the user has already shared.
 
 **For Bug Reports:**
 - "What exactly is happening?"
 - "When did you first notice this? Is it consistent?"
-- "What were you trying to do when it occurred?"
-- "Which agent or feature is this related to?"
+- "Can you walk me through the exact steps you took?"
 - "How is this impacting your work?"
 
 **For Feature Requests:**
@@ -68,8 +122,9 @@ Ask one question at a time. Adapt based on what the user has already shared.
 - Acknowledge each response ("That makes sense", "Got it", "I understand")
 - Don't interrogate — keep it conversational
 - Validate frustration on bug reports ("I can see how that would be annoying")
+- Always use standardized terminology from the User Journey Map
 
-### 4. Assess Severity (Internal)
+### 5. Assess Severity (Internal)
 
 Detect severity keywords in the user's description and assign a base score per the **Canonical Scoring Rules** in `system_prompt.md`.
 
@@ -86,7 +141,7 @@ Then apply impact multipliers (see system prompt). Store the base score and impa
 
 **Do not share the score with the user — this is internal.**
 
-### 5. Ask About Contact Preference
+### 6. Ask About Contact Preference
 
 "Would you like us to follow up with you about this feedback?"
 
@@ -98,7 +153,7 @@ If yes: "Great — we'll use your account email and reach out if we need clarifi
 
 If no: "No problem — we've captured everything. Thanks for taking the time."
 
-### 6. Search for Similar Feedback
+### 7. Search for Similar Feedback
 
 Before storing, **must** call vector search. See the *Similarity Detection & Priority Scoring* skill for full details.
 
@@ -106,21 +161,22 @@ Before storing, **must** call vector search. See the *Similarity Detection & Pri
 const similar = await search_feedback({
   query: feedback_content,
   table: "feedback_submissions",
-  threshold: 0.75,
+  threshold: 0.70,
   limit: 5
 });
 ```
 
-**If similar feedback found:**
+**If similar feedback found (0.70+ similarity):**
 - Note how many
 - Capture their IDs for linking
 - Apply the frequency multiplier from the Canonical Scoring Rules
+- Check for existing Linear task ID to update instead of creating new
 
 Tell the user: "Great news — [X] other users have shared similar feedback. This helps us prioritise what matters most, and I'm raising the priority on this issue."
 
 **If none found:** "This is a new piece of feedback — you're the first to mention this. We'll track it carefully."
 
-### 7. Calculate Final Priority
+### 8. Calculate Final Priority
 
 ```
 priority_score = min(max(base_score + impact_score + frequency_multiplier, 1), 10)
@@ -128,7 +184,7 @@ priority_score = min(max(base_score + impact_score + frequency_multiplier, 1), 1
 
 Store all three components — `base_score`, `impact_score`, and the final `priority_score` — so the score can be deterministically recomputed later.
 
-### 8. Store Feedback in Database
+### 9. Store Feedback in Database
 
 **Table:** `feedback_submissions`
 
@@ -136,7 +192,7 @@ Store all three components — `base_score`, `impact_score`, and the final `prio
 ```javascript
 {
   type: "bug_report" | "feature_request" | "suggestion" | "general_feedback",
-  content: "[Full user description]",
+  content: "[Conversation summary: what you asked + what user responded + key details gathered]",
   summary: "[Cleaned-up version, optional but encouraged]",
   category: "[Broad area: agent_behaviour | ui_ux | integrations | billing | onboarding | performance | other]",
   feature_area: "[Granular: missy | social_planner | kb_sync | ghl_integration | etc.]",
@@ -153,7 +209,6 @@ Store all three components — `base_score`, `impact_score`, and the final `prio
   similar_feedback_ids: ["uuid1", "uuid2"],
   similar_count: 2,
   duplicate_of: "uuid1",  // only if similarity >= 0.90
-  admin_notified: true,    // only if priority_score >= 8
   metadata: {
     keywords_detected: ["broken", "not working"],
     user_agent: "...",
@@ -162,22 +217,36 @@ Store all three components — `base_score`, `impact_score`, and the final `prio
 }
 ```
 
+**Important:** The `content` field should include a summary of the conversation - what you asked and what the user responded with - not just their final feedback. This provides context for admins.
+
+**Example content:**
+```
+Asked about: Type of feedback and details about the issue
+User reported: Chat interface freezes when uploading PDFs over 10MB
+Details: Happens consistently, affects daily workflow with client documents, started 3 days ago
+Contact preference: Yes, wants updates
+```
+
 After insert, capture the new `feedback_id`.
 
-### 9. Update Similar Records
+### 10. Update Similar Records and Linear Tasks
 
-For each similar record found in step 6:
-1. Increment `similar_count`
+**CRITICAL:** You MUST actually call the tools to perform these updates. Never tell the user you're "updating the existing report" without actually calling the update tool.
+
+For each similar record found in step 7:
+1. Increment `similar_count` (call database update tool)
 2. **Recalculate** `priority_score` from `base_score + impact_score + new_frequency_multiplier`
 3. Append the new `feedback_id` to `similar_feedback_ids`
 4. Update `updated_at`
-5. If the recalculated score crosses 8, set `admin_notified = true`
+5. **Check for Linear task ID:**
+   - If the similar feedback has a `linear_task_id`, **YOU MUST call the Linear update tool**:
+     - **REQUIRED:** Add a comment with the new feedback details (user name, summary, impact)
+     - **REQUIRED:** Increase the task priority based on the recalculated `priority_score`
+     - **REQUIRED:** Update the task description to show "X users have reported this issue"
+   - Store the `linear_task_id` on the new feedback record to link them
+   - Do NOT create a new Linear task if one already exists for similar feedback
 
-### 10. Flag for Admin Notification
-
-If the new `priority_score >= 8`, set `admin_notified = true` on the new row. The Supabase webhook will fire an n8n workflow automatically — Fiona doesn't call n8n directly.
-
-The webhook payload will include `feedback_id`, `type`, `priority_score`, `severity`, `user_email`, and `summary`.
+**NEVER say you're updating something without actually calling the tool to do it.**
 
 ### 11. Thank the User and Close the Loop
 
@@ -188,7 +257,11 @@ Add priority context based on the final score:
 - **5–7:** "The team will review this within the next few days."
 - **1–4:** "The team will consider this as we plan future improvements."
 
-Add similar-feedback context if applicable.
+**If similar feedback was found AND Linear task was updated:**
+- "Good news: several other users have reported this exact same issue, so you're not alone and this helps us prioritize fixing it immediately. I've updated the existing report with your details and raised the priority."
+
+**If similar feedback was found but NO Linear task exists yet:**
+- "Good news: several other users have reported similar feedback. This helps us understand what matters most to our users."
 
 **Offer next steps:**
 "Anything else you'd like to share, or would you like to know more about any Squidgy features?"
@@ -207,21 +280,28 @@ Warm welcome
     ↓
 Determine type (auto-classify or ask)
     ↓
+EARLY SIMILARITY SEARCH (as soon as user describes issue)
+    ↓
+    ├─ Match found ≥ 0.70? → Show to user → Ask "Is this the same?"
+    │   ├─ YES → Skip to contact preference → Update existing record → Done
+    │   └─ NO/DIFFERENT → Continue below
+    └─ No match → Continue below
+    ↓
+Identify location using User Journey Map (standardize terminology)
+    ↓
 Ask natural questions for details
     ↓
 Assess severity + impact (internal)
     ↓
 Ask about contact preference
     ↓
-Vector search for similar feedback
+FINAL SIMILARITY SEARCH (with complete content)
     ↓
 Calculate final priority_score
     ↓
-Insert into feedback_submissions
+Insert into feedback_submissions (content includes conversation summary)
     ↓
-Update similar records (recalculate priorities)
-    ↓
-Set admin_notified if score ≥ 8
+Update similar records (recalculate priorities + update tasks)
     ↓
 Thank user + provide context + offer help
 ```
@@ -266,6 +346,9 @@ Respect it: "No problem — if you change your mind, I'm here." Don't save parti
 
 Before insert:
 - ✅ `type` determined (auto or user-confirmed)
+- ✅ Location identified using User Journey Map
+- ✅ `feature_area` and `category` populated with standardized values
+- ✅ `content` includes conversation summary (what was asked + user responses)
 - ✅ `content` is at least 20 characters
 - ✅ `severity` assessed
 - ✅ `base_score`, `impact_score`, `priority_score` all calculated
@@ -277,5 +360,4 @@ Before insert:
 After insert:
 - ✅ Insert succeeded and `feedback_id` captured
 - ✅ Similar records updated with recalculated priorities
-- ✅ `admin_notified` flag set if score ≥ 8
 - ✅ User thanked and offered next steps
