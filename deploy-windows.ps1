@@ -27,8 +27,8 @@ if (-not $Branch) {
 $CURRENT_EMAIL = git config user.email 2>$null
 
 # Check authorization based on branch
-if ($Branch -eq "staging" -or $Branch -eq "main") {
-    # For staging/main: Only authorized users
+if ($Branch -eq "staging" -or $Branch -eq "main" -or $Branch -eq "main_render") {
+    # For staging/main/main_render: Only authorized users
     if ($CURRENT_EMAIL -notin $AUTHORIZED_EMAILS) {
         Write-Host "[X] Access Denied" -ForegroundColor Red
         Write-Host ""

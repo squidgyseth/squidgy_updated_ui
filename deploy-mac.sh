@@ -35,8 +35,8 @@ BRANCH="${2:-$(git branch --show-current)}"  # Use provided branch or current br
 CURRENT_EMAIL=$(git config user.email || echo "")
 
 # Check authorization based on branch
-if [ "$BRANCH" = "staging" ] || [ "$BRANCH" = "main" ]; then
-    # For staging/main: Only authorized users
+if [ "$BRANCH" = "staging" ] || [ "$BRANCH" = "main" ] || [ "$BRANCH" = "main_render" ]; then
+    # For staging/main/main_render: Only authorized users
     AUTHORIZED=false
     for email in "${AUTHORIZED_EMAILS[@]}"; do
         if [ "$CURRENT_EMAIL" = "$email" ]; then
