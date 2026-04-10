@@ -78,12 +78,10 @@ try {
     git config user.email "$DEPLOY_EMAIL"
     git config user.name "$DEPLOY_NAME"
 
-    # Update LAST_UPDATED.txt for protected branches
-    if ($Branch -eq "staging" -or $Branch -eq "main" -or $Branch -eq "main_render") {
-        Write-Host "[*] Updating deployment timestamp..." -ForegroundColor Yellow
-        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        Set-Content -Path "LAST_UPDATED.txt" -Value "Last deployment: $timestamp"
-    }
+    # Update LAST_UPDATED.txt for all branches
+    Write-Host "[*] Updating deployment timestamp..." -ForegroundColor Yellow
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    Set-Content -Path "LAST_UPDATED.txt" -Value "Last deployment: $timestamp"
 
     # Check for uncommitted changes
     git diff-index --quiet HEAD -- 2>$null

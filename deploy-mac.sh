@@ -96,11 +96,9 @@ echo -e "${YELLOW}🔧 Setting deployment credentials...${NC}"
 git config user.email "$DEPLOY_EMAIL"
 git config user.name "$DEPLOY_NAME"
 
-# Update LAST_UPDATED.txt for protected branches
-if [ "$BRANCH" = "staging" ] || [ "$BRANCH" = "main" ] || [ "$BRANCH" = "main_render" ]; then
-    echo -e "${YELLOW}📝 Updating deployment timestamp...${NC}"
-    echo "Last deployment: $(date '+%Y-%m-%d %H:%M:%S')" > LAST_UPDATED.txt
-fi
+# Update LAST_UPDATED.txt for all branches
+echo -e "${YELLOW}📝 Updating deployment timestamp...${NC}"
+echo "Last deployment: $(date '+%Y-%m-%d %H:%M:%S')" > LAST_UPDATED.txt
 
 # Check for uncommitted changes
 if ! git diff-index --quiet HEAD --; then
