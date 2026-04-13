@@ -78,7 +78,10 @@ try {
     git config user.email "$DEPLOY_EMAIL"
     git config user.name "$DEPLOY_NAME"
 
-    # Update LAST_UPDATED.txt for all branches
+    # Create or update LAST_UPDATED.txt for all branches
+    if (-not (Test-Path "LAST_UPDATED.txt")) {
+        Write-Host "[*] Creating LAST_UPDATED.txt..." -ForegroundColor Yellow
+    }
     Write-Host "[*] Updating deployment timestamp..." -ForegroundColor Yellow
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     Set-Content -Path "LAST_UPDATED.txt" -Value "Last deployment: $timestamp"

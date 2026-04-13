@@ -96,7 +96,10 @@ echo -e "${YELLOW}🔧 Setting deployment credentials...${NC}"
 git config user.email "$DEPLOY_EMAIL"
 git config user.name "$DEPLOY_NAME"
 
-# Update LAST_UPDATED.txt for all branches
+# Create or update LAST_UPDATED.txt for all branches
+if [ ! -f "LAST_UPDATED.txt" ]; then
+    echo -e "${YELLOW}📄 Creating LAST_UPDATED.txt...${NC}"
+fi
 echo -e "${YELLOW}📝 Updating deployment timestamp...${NC}"
 echo "Last deployment: $(date '+%Y-%m-%d %H:%M:%S')" > LAST_UPDATED.txt
 
