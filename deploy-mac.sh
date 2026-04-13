@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Deployment script for Squidgy - Automatically uses shared email for deployment commits
-# RESTRICTED: Only for Farzin's use
-# Usage: ./deploy.sh "commit message" [branch]
-# Example: ./deploy.sh "fix: update user dashboard" dev
+# RESTRICTED: staging/main only for authorized users, dev branch open to all
+# Usage: ./deploy-mac.sh "commit message" [branch]
+# Example: ./deploy-mac.sh "fix: update user dashboard" dev
 
 set -e  # Exit on error
 
@@ -17,38 +17,51 @@ NC='\033[0m' # No Color
 DEPLOY_EMAIL="development@squidgy.ai"
 DEPLOY_NAME="Squidgy-Development"
 
-# Security: Only allow Farzin to use this script
-ALLOWED_EMAIL="farzin.mag@gmail.com"
-ALLOWED_GITHUB_USER="Farzinkh"
-
-# Check current user
-CURRENT_EMAIL=$(git config user.email || echo "")
-
-if [ "$CURRENT_EMAIL" != "$ALLOWED_EMAIL" ]; then
-    echo -e "${RED}❌ Access Denied${NC}"
-    echo ""
-    echo "This deployment script is restricted to Farzin only."
-    echo "Expected email: $ALLOWED_EMAIL"
-    echo "Your email: $CURRENT_EMAIL"
-    echo ""
-    echo "If you're Farzin, please set your git email:"
-    echo "  git config user.email \"$ALLOWED_EMAIL\""
-    exit 1
-fi
-
-echo -e "${GREEN}✅ User verified: $ALLOWED_GITHUB_USER${NC}"
-echo ""
+# Security: Authorized users for staging/main branches
+AUTHORIZED_EMAILS=("farzin.mag@gmail.com" "sa@squidgy.ai")
 
 # Check if commit message is provided
 if [ -z "$1" ]; then
     echo -e "${RED}Error: Commit message required${NC}"
-    echo "Usage: ./deploy.sh \"commit message\" [branch]"
-    echo "Example: ./deploy.sh \"fix: update dashboard\" dev"
+    echo "Usage: ./deploy-mac.sh \"commit message\" [branch]"
+    echo "Example: ./deploy-mac.sh \"fix: update dashboard\" dev"
     exit 1
 fi
 
 COMMIT_MESSAGE="$1"
 BRANCH="${2:-$(git branch --show-current)}"  # Use provided branch or current branch
+
+# Check current user
+CURRENT_EMAIL=$(git config user.email || echo "")
+
+# Check authorization based on branch
+if [ "$BRANCH" = "staging" ] || [ "$BRANCH" = "main" ] || [ "$BRANCH" = "main_render" ]; then
+    # For staging/main/main_render: Only authorized users
+    AUTHORIZED=false
+    for email in "${AUTHORIZED_EMAILS[@]}"; do
+        if [ "$CURRENT_EMAIL" = "$email" ]; then
+            AUTHORIZED=true
+            break
+        fi
+    done
+
+    if [ "$AUTHORIZED" = false ]; then
+        echo -e "${RED}❌ Access Denied${NC}"
+        echo ""
+        echo "Deployment to '$BRANCH' branch is restricted to authorized team members only."
+        echo "Your email: $CURRENT_EMAIL"
+        echo "Allowed emails: ${AUTHORIZED_EMAILS[*]}"
+        echo ""
+        echo "Note: You can deploy to 'dev' branch without restrictions."
+        exit 1
+    fi
+    echo -e "${GREEN}✅ User verified for $BRANCH: $CURRENT_EMAIL${NC}"
+else
+    # For dev and other branches: Anyone can deploy
+    echo -e "${GREEN}✅ Deploying to $BRANCH branch: $CURRENT_EMAIL${NC}"
+fi
+
+echo ""
 
 echo -e "${YELLOW}🚀 Starting deployment process...${NC}"
 echo "Branch: $BRANCH"
@@ -82,6 +95,13 @@ trap restore_config EXIT
 echo -e "${YELLOW}🔧 Setting deployment credentials...${NC}"
 git config user.email "$DEPLOY_EMAIL"
 git config user.name "$DEPLOY_NAME"
+
+# Create or update LAST_UPDATED.txt for all branches
+if [ ! -f "LAST_UPDATED.txt" ]; then
+    echo -e "${YELLOW}📄 Creating LAST_UPDATED.txt...${NC}"
+fi
+echo -e "${YELLOW}📝 Updating deployment timestamp...${NC}"
+echo "Last deployment: $(date '+%Y-%m-%d %H:%M:%S')" > LAST_UPDATED.txt
 
 # Check for uncommitted changes
 if ! git diff-index --quiet HEAD --; then

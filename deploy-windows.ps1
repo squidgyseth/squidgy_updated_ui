@@ -1,12 +1,12 @@
 # Deployment script for Squidgy - Windows PowerShell version
-# RESTRICTED: Only for Farzin's use
-# Usage: .\deploy.ps1 "commit message" [branch]
-# Example: .\deploy.ps1 "fix: update user dashboard" dev
+# RESTRICTED: staging/main only for authorized users, dev branch open to all
+# Usage: .\deploy-windows.ps1 "commit message" [branch]
+# Example: .\deploy-windows.ps1 "fix: update user dashboard" dev
 
 param(
     [Parameter(Mandatory=$true)]
     [string]$CommitMessage,
-    
+
     [Parameter(Mandatory=$false)]
     [string]$Branch
 )
@@ -15,32 +15,37 @@ param(
 $DEPLOY_EMAIL = "development@squidgy.ai"
 $DEPLOY_NAME = "Squidgy-Development"
 
-# Security: Only allow Farzin to use this script
-$ALLOWED_EMAIL = "farzin.mag@gmail.com"
-$ALLOWED_GITHUB_USER = "Farzinkh"
-
-# Check current user
-$CURRENT_EMAIL = git config user.email 2>$null
-
-if ($CURRENT_EMAIL -ne $ALLOWED_EMAIL) {
-    Write-Host "[X] Access Denied" -ForegroundColor Red
-    Write-Host ""
-    Write-Host "This deployment script is restricted to Farzin only."
-    Write-Host "Expected email: $ALLOWED_EMAIL"
-    Write-Host "Your email: $CURRENT_EMAIL"
-    Write-Host ""
-    Write-Host "If you're Farzin, please set your git email:"
-    Write-Host "  git config user.email `"$ALLOWED_EMAIL`""
-    exit 1
-}
-
-Write-Host "[OK] User verified: $ALLOWED_GITHUB_USER" -ForegroundColor Green
-Write-Host ""
+# Security: Authorized users for staging/main branches
+$AUTHORIZED_EMAILS = @("farzin.mag@gmail.com", "sa@squidgy.ai")
 
 # Get current branch if not specified
 if (-not $Branch) {
     $Branch = git branch --show-current
 }
+
+# Check current user
+$CURRENT_EMAIL = git config user.email 2>$null
+
+# Check authorization based on branch
+if ($Branch -eq "staging" -or $Branch -eq "main" -or $Branch -eq "main_render") {
+    # For staging/main/main_render: Only authorized users
+    if ($CURRENT_EMAIL -notin $AUTHORIZED_EMAILS) {
+        Write-Host "[X] Access Denied" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "Deployment to '$Branch' branch is restricted to authorized team members only."
+        Write-Host "Your email: $CURRENT_EMAIL"
+        Write-Host "Allowed emails: $($AUTHORIZED_EMAILS -join ', ')"
+        Write-Host ""
+        Write-Host "Note: You can deploy to 'dev' branch without restrictions."
+        exit 1
+    }
+    Write-Host "[OK] User verified for $Branch: $CURRENT_EMAIL" -ForegroundColor Green
+} else {
+    # For dev and other branches: Anyone can deploy
+    Write-Host "[OK] Deploying to $Branch branch: $CURRENT_EMAIL" -ForegroundColor Green
+}
+
+Write-Host ""
 
 Write-Host "[>>] Starting deployment process..." -ForegroundColor Yellow
 Write-Host "Branch: $Branch"
@@ -72,6 +77,14 @@ try {
     Write-Host "[*] Setting deployment credentials..." -ForegroundColor Yellow
     git config user.email "$DEPLOY_EMAIL"
     git config user.name "$DEPLOY_NAME"
+
+    # Create or update LAST_UPDATED.txt for all branches
+    if (-not (Test-Path "LAST_UPDATED.txt")) {
+        Write-Host "[*] Creating LAST_UPDATED.txt..." -ForegroundColor Yellow
+    }
+    Write-Host "[*] Updating deployment timestamp..." -ForegroundColor Yellow
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    Set-Content -Path "LAST_UPDATED.txt" -Value "Last deployment: $timestamp"
 
     # Check for uncommitted changes
     git diff-index --quiet HEAD -- 2>$null
