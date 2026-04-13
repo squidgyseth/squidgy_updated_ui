@@ -28,6 +28,7 @@ class PostHogService {
         person_profiles: 'identified_only',
         capture_pageview: false, // We'll manually capture pageviews
         capture_pageleave: true,
+        capture_exceptions: true,
       });
       this.initialized = true;
     }

@@ -47,6 +47,9 @@ skills:
   - file: similarity_detection_&_priority_scoring.md
     name: Similarity Detection & Priority Scoring
     description: Searching for duplicates, calculating and recalculating priority score.
+  - file: file_attachment_handling.md
+    name: File Attachment Handling
+    description: Extracting file URLs from messages and attaching them to feedback and Linear tasks.
   - file: user_journey_map.md
     name: User Journey Map
     description: Complete map of what regular users see after login - all pages, features, and workflows.
