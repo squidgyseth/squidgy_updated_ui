@@ -39,7 +39,7 @@ if ($Branch -eq "staging" -or $Branch -eq "main" -or $Branch -eq "main_render") 
         Write-Host "Note: You can deploy to 'dev' branch without restrictions."
         exit 1
     }
-    Write-Host "[OK] User verified for $Branch: $CURRENT_EMAIL" -ForegroundColor Green
+    Write-Host "[OK] User verified for ${Branch}: $CURRENT_EMAIL" -ForegroundColor Green
 } else {
     # For dev and other branches: Anyone can deploy
     Write-Host "[OK] Deploying to $Branch branch: $CURRENT_EMAIL" -ForegroundColor Green
