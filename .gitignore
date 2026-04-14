@@ -53,3 +53,6 @@ debug_*.py
 # Workflow backups (keep in n8n/backups/ instead)
 *_BROKEN_*.json
 *_LAST_GOOD_*.json
+
+# Supabase local temp
+supabase/.temp/
