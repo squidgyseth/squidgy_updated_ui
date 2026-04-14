@@ -2,86 +2,10 @@
  * Utility functions for phone number formatting and country detection
  */
 
-export interface CountryConfig {
-  code: string;
-  name: string;
-  flag: string;
-  dialCode: string;
-  format: string; // Example format pattern
-}
+import { COUNTRIES, CountryConfig } from './countries';
 
-export const COUNTRIES: CountryConfig[] = [
-  {
-    code: 'GB',
-    name: 'United Kingdom',
-    flag: '🇬🇧',
-    dialCode: '+44',
-    format: '+44 20 1234 5678'
-  },
-  {
-    code: 'US',
-    name: 'United States',
-    flag: '🇺🇸',
-    dialCode: '+1',
-    format: '+1 (555) 123-4567'
-  },
-  {
-    code: 'CA',
-    name: 'Canada',
-    flag: '🇨🇦',
-    dialCode: '+1',
-    format: '+1 (555) 123-4567'
-  },
-  {
-    code: 'AU',
-    name: 'Australia',
-    flag: '🇦🇺',
-    dialCode: '+61',
-    format: '+61 2 1234 5678'
-  },
-  {
-    code: 'DE',
-    name: 'Germany',
-    flag: '🇩🇪',
-    dialCode: '+49',
-    format: '+49 30 12345678'
-  },
-  {
-    code: 'FR',
-    name: 'France',
-    flag: '🇫🇷',
-    dialCode: '+33',
-    format: '+33 1 23 45 67 89'
-  },
-  {
-    code: 'ES',
-    name: 'Spain',
-    flag: '🇪🇸',
-    dialCode: '+34',
-    format: '+34 91 123 45 67'
-  },
-  {
-    code: 'IT',
-    name: 'Italy',
-    flag: '🇮🇹',
-    dialCode: '+39',
-    format: '+39 06 1234 5678'
-  },
-  {
-    code: 'NL',
-    name: 'Netherlands',
-    flag: '🇳🇱',
-    dialCode: '+31',
-    format: '+31 20 123 4567'
-  },
-  {
-    code: 'BE',
-    name: 'Belgium',
-    flag: '🇧🇪',
-    dialCode: '+32',
-    format: '+32 2 123 45 67'
-  }
-];
+export { COUNTRIES };
+export type { CountryConfig };
 
 /**
  * Get country configuration by country code
@@ -264,5 +188,6 @@ export const detectCountryFromWebsite = (websiteUrl: string, websiteContent?: st
  */
 export const getPhoneNumberPlaceholder = (countryCode: string): string => {
   const country = getCountryByCode(countryCode);
-  return country ? country.format : '+44 20 1234 5678';
+  if (!country) return '+44 20 1234 5678';
+  return country.format || `${country.dialCode} ...`;
 };

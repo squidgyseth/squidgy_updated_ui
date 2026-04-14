@@ -53,16 +53,6 @@ const teamSizes = [
   '500+ employees'
 ];
 
-const countries = [
-  { code: 'US', name: 'United States', flag: '🇺🇸' },
-  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
-  { code: 'CA', name: 'Canada', flag: '🇨🇦' },
-  { code: 'AU', name: 'Australia', flag: '🇦🇺' },
-  { code: 'DE', name: 'Germany', flag: '🇩🇪' },
-  { code: 'FR', name: 'France', flag: '🇫🇷' },
-  { code: 'IN', name: 'India', flag: '🇮🇳' },
-];
-
 export default function BusinessSettings() {
   const navigate = useNavigate();
   const { user, profile, isReady, isAuthenticated } = useUser();
@@ -588,7 +578,7 @@ export default function BusinessSettings() {
                 onChange={(e) => setSettings({ ...settings, country: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none bg-white"
               >
-                {countries.map((country) => (
+                {COUNTRIES.map((country) => (
                   <option key={country.code} value={country.code}>
                     {country.flag} {country.name}
                   </option>
