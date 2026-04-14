@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Deployment script for Squidgy - Automatically uses shared email for deployment commits
-# RESTRICTED: staging/main only for authorized users, dev branch open to all
+# RESTRICTED: staging/main/dev/main_render only for authorized users
 # Usage: ./deploy-mac.sh "commit message" [branch]
 # Example: ./deploy-mac.sh "fix: update user dashboard" dev
 
@@ -35,8 +35,8 @@ BRANCH="${2:-$(git branch --show-current)}"  # Use provided branch or current br
 CURRENT_EMAIL=$(git config user.email || echo "")
 
 # Check authorization based on branch
-if [ "$BRANCH" = "staging" ] || [ "$BRANCH" = "main" ] || [ "$BRANCH" = "main_render" ]; then
-    # For staging/main/main_render: Only authorized users
+if [ "$BRANCH" = "staging" ] || [ "$BRANCH" = "main" ] || [ "$BRANCH" = "main_render" ] || [ "$BRANCH" = "dev" ]; then
+    # For staging/main/main_render/dev: Only authorized users
     AUTHORIZED=false
     for email in "${AUTHORIZED_EMAILS[@]}"; do
         if [ "$CURRENT_EMAIL" = "$email" ]; then
@@ -52,12 +52,12 @@ if [ "$BRANCH" = "staging" ] || [ "$BRANCH" = "main" ] || [ "$BRANCH" = "main_re
         echo "Your email: $CURRENT_EMAIL"
         echo "Allowed emails: ${AUTHORIZED_EMAILS[*]}"
         echo ""
-        echo "Note: You can deploy to 'dev' branch without restrictions."
+        echo "Note: You can deploy to feature branches without restrictions."
         exit 1
     fi
     echo -e "${GREEN}✅ User verified for $BRANCH: $CURRENT_EMAIL${NC}"
 else
-    # For dev and other branches: Anyone can deploy
+    # For feature branches and other branches: Anyone can deploy
     echo -e "${GREEN}✅ Deploying to $BRANCH branch: $CURRENT_EMAIL${NC}"
 fi
 

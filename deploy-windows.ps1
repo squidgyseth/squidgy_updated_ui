@@ -1,5 +1,5 @@
 # Deployment script for Squidgy - Windows PowerShell version
-# RESTRICTED: staging/main only for authorized users, dev branch open to all
+# RESTRICTED: staging/main/dev/main_render only for authorized users
 # Usage: .\deploy-windows.ps1 "commit message" [branch]
 # Example: .\deploy-windows.ps1 "fix: update user dashboard" dev
 
@@ -27,8 +27,8 @@ if (-not $Branch) {
 $CURRENT_EMAIL = git config user.email 2>$null
 
 # Check authorization based on branch
-if ($Branch -eq "staging" -or $Branch -eq "main" -or $Branch -eq "main_render") {
-    # For staging/main/main_render: Only authorized users
+if ($Branch -eq "staging" -or $Branch -eq "main" -or $Branch -eq "main_render" -or $Branch -eq "dev") {
+    # For staging/main/main_render/dev: Only authorized users
     if ($CURRENT_EMAIL -notin $AUTHORIZED_EMAILS) {
         Write-Host "[X] Access Denied" -ForegroundColor Red
         Write-Host ""
@@ -36,12 +36,12 @@ if ($Branch -eq "staging" -or $Branch -eq "main" -or $Branch -eq "main_render") 
         Write-Host "Your email: $CURRENT_EMAIL"
         Write-Host "Allowed emails: $($AUTHORIZED_EMAILS -join ', ')"
         Write-Host ""
-        Write-Host "Note: You can deploy to 'dev' branch without restrictions."
+        Write-Host "Note: You can deploy to feature branches without restrictions."
         exit 1
     }
     Write-Host "[OK] User verified for ${Branch}: $CURRENT_EMAIL" -ForegroundColor Green
 } else {
-    # For dev and other branches: Anyone can deploy
+    # For feature branches and other branches: Anyone can deploy
     Write-Host "[OK] Deploying to $Branch branch: $CURRENT_EMAIL" -ForegroundColor Green
 }
 
