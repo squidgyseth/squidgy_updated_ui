@@ -1,0 +1,241 @@
+{
+  "name": "SA_File_Upload",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## SA_File_Upload Workflow\n\nSub-workflow called by SA_Personal_Assistant when user uploads a file in chat.\n\n### Accepts:\n- userID: User's UUID\n- file_url: Supabase storage public URL\n- file_name: Original filename (e.g. report.pdf)\n- file_type: Extension (e.g. pdf, txt, docx)\n- category: KB category (default: documents)\n\n### Supported file types:\nPDF, DOCX, TXT, MD, JSON (all extracted by backend)\n\n### Flow:\n1. Receive inputs from parent workflow\n2. Call backend /api/file/extract-text → returns pre-chunked text\n3. Output one item per chunk\n4. Generate embedding per chunk (OpenRouter text-embedding-3-small)\n5. INSERT each chunk into user_vector_knowledge_base (Neon)\n6. Return success response with chunk count\n\n### Chunking:\n- Backend splits at ~1500 chars with 200 char overlap\n- Each chunk = separate DB row with its own embedding\n- Handles large PDFs safely (no token limit issues)",
+        "height": 640,
+        "width": 420,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1136,
+        64
+      ],
+      "typeVersion": 1,
+      "id": "48f8973c-c5c4-4866-b7ce-1f9c7cf1adac",
+      "name": "Overview"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "userID"
+            },
+            {
+              "name": "file_url"
+            },
+            {
+              "name": "file_name"
+            },
+            {
+              "name": "file_type"
+            },
+            {
+              "name": "category"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -640,
+        320
+      ],
+      "id": "2892abe2-77b0-4168-af6c-b3319eb01d85",
+      "name": "When Called"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://squidgy-backend-00f664bf1f3d.herokuapp.com/api/file/extract-text",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file_url",
+              "value": "={{ $json.file_url }}"
+            },
+            {
+              "name": "file_name",
+              "value": "={{ $json.file_name }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -384,
+        320
+      ],
+      "id": "2478e605-10a1-4c5d-8146-b2e3d9de6fb5",
+      "name": "Extract Text (Backend)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process backend response — output one item per chunk\nconst input = $('When Called').first().json;\nconst backendResponse = $input.first().json;\n\n// Backend returns: { success, file_name, extracted_text, chunks, chunk_count, char_count }\nconst chunks = backendResponse.chunks || [];\nconst fileName = input.file_name || backendResponse.file_name || 'uploaded_file';\nconst userId = input.userID;\nconst category = input.category || 'documents';\n\nif (!chunks.length) {\n  // Fallback: use extracted_text as single chunk\n  const extractedText = backendResponse.extracted_text || '';\n  if (!extractedText.trim()) {\n    throw new Error(`No text could be extracted from file: ${fileName}`);\n  }\n  return {\n    json: {\n      user_id: userId,\n      category: category,\n      document: `File: ${fileName}\\n\\n${extractedText}`,\n      source: 'file_upload',\n      file_name: fileName,\n      chunk_index: 0,\n      total_chunks: 1\n    }\n  };\n}\n\n// Return one item per chunk\nreturn chunks.map((chunk, index) => ({\n  json: {\n    user_id: userId,\n    category: category,\n    document: `File: ${fileName} [Part ${index + 1}/${chunks.length}]\\n\\n${chunk}`,\n    source: 'file_upload',\n    file_name: fileName,\n    chunk_index: index,\n    total_chunks: chunks.length\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        320
+      ],
+      "id": "f271ff03-175b-46e3-8761-fab2d7ab7308",
+      "name": "Process File Chunks"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer OPENROUTER_API_KEY_REDACTED"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "openai/text-embedding-3-small"
+            },
+            {
+              "name": "input",
+              "value": "={{ $json.document }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        96,
+        320
+      ],
+      "id": "37303373-12bc-4e02-8755-eeada44b987c",
+      "name": "Get Embedding"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.user_vector_knowledge_base (user_id, document, category, embedding, source)\nVALUES (\n  '{{ $('Process File Chunks').item.json.user_id }}',\n  '{{ $('Process File Chunks').item.json.document.replace(/'/g, \"''\").replace(/\\n/g, ' ') }}',\n  '{{ $('Process File Chunks').item.json.category }}',\n  '{{ JSON.stringify($json.data[0].embedding) }}',\n  '{{ $('Process File Chunks').item.json.source }}'\n)\nRETURNING id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        336,
+        320
+      ],
+      "id": "f8925769-24f6-4ded-8e29-6f8aed766f28",
+      "name": "Insert to Neon",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all inserted chunk IDs and return final response\nconst allItems = $input.all();\nconst insertedIds = allItems.map(item => item.json?.id || null).filter(Boolean);\n\nconst input = $('When Called').first().json;\nconst fileName = input.file_name || 'uploaded_file';\n\nreturn {\n  json: {\n    success: true,\n    action: 'file_uploaded',\n    user_id: input.userID,\n    file_name: fileName,\n    file_type: input.file_type || '',\n    category: input.category || 'documents',\n    chunks_inserted: insertedIds.length,\n    inserted_ids: insertedIds,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        320
+      ],
+      "id": "184e1f57-0f8d-4893-8f23-dc75d6ad0df8",
+      "name": "Response"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called": {
+      "main": [
+        [
+          {
+            "node": "Extract Text (Backend)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text (Backend)": {
+      "main": [
+        [
+          {
+            "node": "Process File Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process File Chunks": {
+      "main": [
+        [
+          {
+            "node": "Get Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Embedding": {
+      "main": [
+        [
+          {
+            "node": "Insert to Neon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert to Neon": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9abffacd-acfc-4647-88c1-d685bfe3896e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "yDwKGhEBbVT8hQyh",
+  "tags": []
+}

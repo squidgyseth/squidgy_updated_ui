@@ -20,6 +20,8 @@ export interface ChatHistoryRecord {
   content_repurposer_history_id?: string; // Database record ID for content repurposer
   execution_id?: string | number; // n8n execution ID for agent responses
   workflow_id?: string; // n8n workflow ID for building execution URL
+  file_url?: string; // File URL for file uploads
+  file_name?: string; // File name for file uploads
 }
 
 export interface ChatSession {
@@ -89,7 +91,9 @@ export class ChatHistoryService {
           agent_id: record.agent_id,
           message_hash: messageHash,
           execution_id: record.execution_id ? String(record.execution_id) : null,
-          workflow_id: record.workflow_id || null
+          workflow_id: record.workflow_id || null,
+          file_url: record.file_url || null,
+          file_name: record.file_name || null
         });
 
       if (error) {

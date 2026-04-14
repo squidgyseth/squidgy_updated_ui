@@ -10,9 +10,10 @@ import {
   solarSetupApi,
   businessDetailsApi
 } from './supabase-api';
+import { getBackendUrl, getN8nWebhookUrl } from './envConfig';
 
-// API client for Squidgy backend
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+// API client for Squidgy backend (environment-specific)
+const BACKEND_URL = getBackendUrl();
 
 interface ApiResponse<T = any> {
   data?: T;
@@ -642,6 +643,211 @@ export const getCurrentUser = async (): Promise<{ user: any; profile: any | null
   return authService.getCurrentUser();
 };
 
+// Check PIT token status WITHOUT triggering any automation
+// Used for social media agent to verify setup status only
+export const checkPitTokenStatus = async (firmUserId: string): Promise<{ 
+  hasPitToken: boolean; 
+  error?: string;
+}> => {
+  try {
+    // Check ghl_subaccounts for pit_token
+    const { data: ghlDataArray, error } = await ghlSubaccountsApi.getByUserId(firmUserId);
+    
+    if (error) {
+      console.error('[PIT CHECK] Error checking GHL subaccounts:', error);
+      return { hasPitToken: false, error: error.message };
+    }
+    
+    // Find the SOL agent record (default agent)
+    const ghlData = Array.isArray(ghlDataArray) 
+      ? ghlDataArray.find(item => item.agent_id === 'SOL') 
+      : null;
+    
+    // If no GHL record exists, PIT token doesn't exist
+    if (!ghlData) {
+      console.log('[PIT CHECK] No GHL subaccount found - no PIT token');
+      return { hasPitToken: false };
+    }
+    
+    // Check if pit_token exists
+    const hasPitToken = !!ghlData.pit_token;
+    console.log(`[PIT CHECK] PIT token status: ${hasPitToken ? 'exists' : 'missing'}`);
+    
+    return { hasPitToken };
+  } catch (error) {
+    console.error('[PIT CHECK] Error:', error);
+    return { 
+      hasPitToken: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+};
+
+// GHL Onboarding Check - Check if pit_token exists, trigger retry if missing
+// ONLY for existing users - does NOT run for newly registered users
+export const checkAndTriggerGhlOnboarding = async (firmUserId: string): Promise<{ 
+  hasPitToken: boolean; 
+  triggered: boolean;
+  error?: string;
+}> => {
+  try {
+    // Check ghl_subaccounts for pit_token
+    const { data: ghlDataArray, error } = await ghlSubaccountsApi.getByUserId(firmUserId);
+    
+    if (error) {
+      console.error('[GHL CHECK] Error checking GHL subaccounts:', error);
+      return { hasPitToken: false, triggered: false, error: error.message };
+    }
+    
+    // Find the SOL agent record (default agent)
+    const ghlData = Array.isArray(ghlDataArray) 
+      ? ghlDataArray.find(item => item.agent_id === 'SOL') 
+      : null;
+    
+    // If no GHL record exists = NEW USER - initiate automation immediately
+    if (!ghlData) {
+      console.log('[GHL CHECK] No GHL subaccount found - new user, initiating automation...');
+      
+      // Get user profile to get actual email and name
+      try {
+        // Get user profile first to have the correct email
+        const { data: profile } = await profilesApi.getByUserId(firmUserId);
+        
+        if (!profile || !profile.email) {
+          console.error('[GHL CHECK] No user profile found or missing email');
+          return { hasPitToken: false, triggered: false, error: 'User profile not found' };
+        }
+        
+        // Trigger automation for new user using registration endpoint
+        const response = await fetch(`${BACKEND_URL}/api/ghl/create-subaccount-and-user-registration`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            full_name: profile.full_name || 'Solar User',
+            email: profile.email,
+            phone: profile.phone || '+17166044029',
+            address: profile.address || '456 Solar Demo Avenue',
+            city: profile.city || 'Buffalo',
+            state: profile.state || 'NY',
+            country: profile.country || 'US',
+            postal_code: profile.postal_code || '14201',
+            website: profile.website || 'https://example.com'
+          })
+        });
+        
+        if (response.ok) {
+          console.log('[GHL CHECK] New user automation triggered successfully');
+          return { hasPitToken: false, triggered: true };
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('[GHL CHECK] Failed to trigger new user automation:', errorData);
+          return { hasPitToken: false, triggered: false, error: errorData.detail || 'Failed to trigger automation' };
+        }
+      } catch (error) {
+        console.error('[GHL CHECK] Error triggering new user automation:', error);
+        return { hasPitToken: false, triggered: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+    
+    // Record exists = EXISTING USER - proceed with pit_token check
+    console.log('[GHL CHECK] GHL subaccount exists - checking pit_token for existing user');
+    
+    // Check automation status - don't trigger if already running or pending
+    const automationStatus = ghlData.automation_status;
+    const creationStatus = ghlData.creation_status;
+    const updatedAt = ghlData.updated_at;
+    
+    // Check if automation is stuck (running for more than 3 minutes)
+    // With session persistence, automation completes in ~5-30 seconds, but allow 3 minutes for safety
+    const stuckThresholdMinutes = 3;
+    let isStuck = false;
+    if ((automationStatus === 'running' || automationStatus === 'pit_running' || 
+         automationStatus === 'token_refresh_running' || automationStatus === 'pending_token_capture') && updatedAt) {
+      const updatedTime = new Date(updatedAt);
+      const currentTime = new Date();
+      const minutesRunning = (currentTime.getTime() - updatedTime.getTime()) / (1000 * 60);
+      
+      console.log(`[GHL CHECK] Automation in '${automationStatus}' for ${minutesRunning.toFixed(1)} minutes (threshold: ${stuckThresholdMinutes} min)`);
+      
+      // Handle negative time (clock sync issues) or very large positive time (stuck)
+      // If time is negative or > threshold, consider it stuck
+      if (minutesRunning < -1 || minutesRunning > stuckThresholdMinutes) {
+        const reason = minutesRunning < -1 
+          ? `timestamp issue (${minutesRunning.toFixed(1)} min)` 
+          : `exceeded threshold (${minutesRunning.toFixed(1)} min)`;
+        console.log(`[GHL CHECK] Automation stuck - ${reason} - will retry`);
+        isStuck = true;
+      }
+    }
+    
+    // Skip if automation is actively running (not stuck), pending creation, or just started by backend
+    if (!isStuck && (automationStatus === 'running' || automationStatus === 'pit_running' || 
+        automationStatus === 'token_refresh_running' || automationStatus === 'pending_token_capture' ||
+        automationStatus === 'not_started' || creationStatus === 'pending' || creationStatus === 'creating')) {
+      console.log(`[GHL CHECK] Automation already in progress (creation: ${creationStatus}, automation: ${automationStatus}) - skipping (will retry if stuck after ${stuckThresholdMinutes} min)`);
+      return { hasPitToken: false, triggered: false };
+    }
+    
+    // Check if pit_token exists (only check pit_token, not access_token)
+    const hasPitToken = !!ghlData.pit_token;
+    
+    // CRITICAL: If automation is stuck, retry regardless of token presence
+    // Otherwise, only trigger retry if pit_token is missing OR status is empty/null
+    const shouldRetry = ghlData.ghl_location_id && (
+      // Case 1: Automation is stuck (force retry even if token exists)
+      isStuck ||
+      // Case 2: Status is empty/null/undefined (incomplete setup)
+      (!automationStatus || automationStatus === '') ||
+      // Case 3: Creation failed and automation not started (needs retry)
+      (creationStatus === 'failed' && automationStatus === 'not_started') ||
+      // Case 4: No token AND (failed status OR completed without proper token)
+      (!hasPitToken && (
+        automationStatus === 'failed' || 
+        automationStatus === 'pit_failed' || 
+        automationStatus === 'token_capture_failed' || 
+        automationStatus === 'completed'
+      ))
+    );
+    
+    if (shouldRetry) {
+      const reason = isStuck 
+        ? 'Automation stuck - forcing retry' 
+        : (!automationStatus || automationStatus === '')
+          ? 'Automation status empty - incomplete setup'
+          : (creationStatus === 'failed' && automationStatus === 'not_started')
+            ? 'Creation failed and automation not started - retrying'
+            : 'PIT token missing for existing user';
+      console.log(`[GHL CHECK] ${reason} - triggering retry automation...`);
+      
+      // Trigger retry automation endpoint
+      const response = await fetch(`${BACKEND_URL}/api/ghl/retry-automation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firm_user_id: firmUserId })
+      });
+      
+      if (response.ok) {
+        console.log('[GHL CHECK] Retry automation triggered successfully');
+        return { hasPitToken, triggered: true };
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[GHL CHECK] Failed to trigger retry automation:', errorData);
+        return { hasPitToken, triggered: false, error: errorData.detail || 'Failed to trigger automation' };
+      }
+    }
+    
+    console.log(`[GHL CHECK] No action needed (hasPitToken: ${hasPitToken}, status: ${automationStatus})`);
+    return { hasPitToken, triggered: false };
+  } catch (error) {
+    console.error('[GHL CHECK] Error:', error);
+    return { 
+      hasPitToken: false, 
+      triggered: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+};
+
 // N8N Webhook API
 interface N8NWebhookRequest {
   user_id: string;
@@ -664,8 +870,8 @@ interface N8NWebhookResponse {
 export const callN8NWebhook = async (data: N8NWebhookRequest): Promise<N8NWebhookResponse> => {
   try {
     // Use the N8N webhook URL from environment variables
-    const n8nUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
-    
+    const n8nUrl = getN8nWebhookUrl();
+
     const response = await fetch(n8nUrl, {
       method: 'POST',
       headers: {
@@ -1107,5 +1313,29 @@ export const saveBusinessDetails = async (data: BusinessDetailsData): Promise<{ 
   } catch (error) {
     console.error('Save business details error:', error);
     throw new Error(error instanceof Error ? error.message : 'Failed to save business details');
+  }
+};
+
+// Admin Impersonation APIs
+export const adminApi = {
+  impersonateUser: async (targetUserId: string, adminUserId: string): Promise<{ success: boolean; profile: any; impersonation_data: any; message: string }> => {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/admin/impersonate-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        target_user_id: targetUserId,
+        admin_user_id: adminUserId
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to impersonate user' }));
+      throw new Error(error.detail || 'Failed to impersonate user');
+    }
+    
+    return response.json();
   }
 };

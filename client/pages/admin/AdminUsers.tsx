@@ -8,12 +8,13 @@ import { supabase } from '../../lib/supabase';
 import { 
   Users, Search, ChevronLeft, ChevronRight, Shield, ShieldOff, 
   Trash2, Edit2, X, Check, ArrowLeft, Filter, ArrowUpDown, Building2, Bot, Copy,
-  MessageSquare, Clock, User as UserIcon, History, Hash, Mail, KeyRound, Send, BarChart3
+  MessageSquare, Clock, User as UserIcon, History, Hash, Mail, KeyRound, Send, BarChart3, LogIn
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { ALL_AGENTS, AgentConfig } from '../../data/agents';
+import DatabaseAgentService, { type AgentConfig } from '../../services/databaseAgentService';
 import { chatSessionService, ChatSession as ChatSessionType, ChatMessage as ChatMessageType } from '../../services/chatSessionService';
 import ChatMessageBubble from '../../components/chat/ChatMessageBubble';
+import { getBackendUrl } from '@/lib/envConfig';
 
 interface UserProfile {
   id: string;
@@ -54,7 +55,7 @@ type FilterStatus = '' | 'active' | 'deleted' | 'admin';
 
 export default function AdminUsers() {
   const navigate = useNavigate();
-  const { userId } = useUser();
+  const { userId, impersonateUser } = useUser();
   const { isAdmin, isLoading: adminLoading } = useAdmin();
   
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -199,7 +200,7 @@ export default function AdminUsers() {
   const handleDeleteUser = async (targetUserId: string) => {
     try {
       // Hard delete - call backend API to remove user from all tables
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://squidgy-backend.onrender.com';
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/admin/delete-user`, {
         method: 'POST',
         headers: {
@@ -243,6 +244,17 @@ export default function AdminUsers() {
       loadUsers();
     } catch (error: any) {
       toast.error(error.message || 'Failed to update user');
+    }
+  };
+
+  const handleImpersonateUser = async (user: UserProfile) => {
+    try {
+      const targetUserId = user.user_id || user.id;
+      toast.loading('Logging in as user...');
+      await impersonateUser(targetUserId);
+    } catch (error: any) {
+      toast.dismiss();
+      toast.error(error.message || 'Failed to impersonate user');
     }
   };
 
@@ -498,6 +510,13 @@ export default function AdminUsers() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleImpersonateUser(user)}
+                            className="p-2 hover:bg-green-100 text-green-600 rounded-lg transition-colors"
+                            title="Login as user"
+                          >
+                            <LogIn className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => handleToggleAdmin(user)}
                             className={`p-2 rounded-lg transition-colors ${
@@ -918,15 +937,17 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
     try {
       setLoadingAssistant(true);
       
-      // Use frontend agent definitions as source of truth (not the agents table)
-      // ALL_AGENTS is imported from client/data/agents.ts
-      const frontendAgents = ALL_AGENTS.map(config => ({
+      // Load agent definitions from database
+      const agentService = DatabaseAgentService.getInstance();
+      const agentConfigs = await agentService.getAllAgents();
+      
+      const frontendAgents = agentConfigs.map(config => ({
         id: config.agent.id,
         name: config.agent.name,
         description: config.agent.description,
         emoji: config.agent.emoji,
         category: config.agent.category,
-        enabled: config.agent.enabled // personal_assistant has enabled: true
+        enabled: config.agent.enabled
       }));
       
       // Load user's personalizations from Supabase
@@ -1023,7 +1044,7 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
       
       // Notify backend to refresh user view
       try {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+        const backendUrl = getBackendUrl();
         await fetch(`${backendUrl}/api/agents/notify-enablement`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1165,6 +1186,26 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
             </div>
           ) : activeTab === 'profile' ? (
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-gray-900">Profile Information</h3>
+                {(user.user_id || user.id) && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">User ID: {user.user_id || user.id}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(user.user_id || user.id || '');
+                        toast.success('User ID copied');
+                      }}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      title="Copy User ID"
+                    >
+                      <Copy className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Regular Editable Fields (non-boolean) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {profileFields
@@ -1470,6 +1511,12 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                               <span className="text-sm text-gray-600">Firebase Token Captured</span>
                             </div>
                             <div className="flex items-center gap-2">
+                              <span className={ghl.pit_token ? 'text-green-500' : 'text-gray-300'}>
+                                {ghl.pit_token ? '✓' : '○'}
+                              </span>
+                              <span className="text-sm text-gray-600">PIT Token Captured</span>
+                            </div>
+                            <div className="flex items-center gap-2">
                               <span className={automationStatus === 'completed' || automationStatus === 'ready' ? 'text-green-500' : 'text-gray-300'}>
                                 {automationStatus === 'completed' || automationStatus === 'ready' ? '✓' : '○'}
                               </span>
@@ -1521,15 +1568,15 @@ function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
                           )}
                         </div>
                         
-                        {/* Retry Button for Failed Status */}
-                        {(creationStatus === 'failed' || automationStatus === 'failed' || automationStatus === 'pit_failed' || automationStatus === 'token_capture_failed') && (
+                        {/* Retry Button for Failed Status or Missing PIT Token */}
+                        {(creationStatus === 'failed' || automationStatus === 'failed' || automationStatus === 'pit_failed' || automationStatus === 'token_capture_failed' || !ghl.pit_token) && (
                           <div className="flex justify-end pt-4 border-t border-gray-200">
                             <button
                               type="button"
                               onClick={async () => {
                                 try {
                                   setSavingGhl(true);
-                                  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+                                  const backendUrl = getBackendUrl();
                                   const response = await fetch(`${backendUrl}/api/ghl/retry-automation`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -1996,7 +2043,7 @@ function PostHogActivityModal({ user, onClose }: PostHogActivityModalProps) {
   const [activityData, setActivityData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+  const BACKEND_URL = getBackendUrl();
 
   useEffect(() => {
     const fetchActivity = async () => {

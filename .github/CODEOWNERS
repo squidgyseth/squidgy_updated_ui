@@ -1,0 +1,13 @@
+# GitHub CODEOWNERS
+# These files require approval from designated code owners
+
+# Branch protection workflow - RESTRICTED
+# Only SA and Farzin can approve changes to this file
+/.github/workflows/branch-protection.yml @Squidgy-AI/admins
+
+# Deployment scripts - RESTRICTED
+/deploy-mac.sh @Squidgy-AI/admins
+/deploy-windows.ps1 @Squidgy-AI/admins
+
+# CODEOWNERS file itself - RESTRICTED
+/.github/CODEOWNERS @Squidgy-AI/admins

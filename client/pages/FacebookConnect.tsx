@@ -8,6 +8,7 @@ import { useUser } from "../hooks/useUser";
 import { toast } from "sonner";
 import { supabase } from "../lib/supabase";
 import { profilesApi } from "../lib/supabase-api";
+import { getSupabaseConfig, getBackendUrl, getFrontendUrl } from '@/lib/envConfig';
 
 // Helper function to generate logger ID
 const generateLoggerId = (): string => {
@@ -71,8 +72,8 @@ export default function FacebookConnect() {
 
     setIsLoading(true);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      
+      const backendUrl = getBackendUrl();
+
       // First check if we have a GHL location ID
       const checkResponse = await fetch(`${backendUrl}/api/facebook/check-integration-status`, {
         method: 'POST',
@@ -162,8 +163,8 @@ export default function FacebookConnect() {
 
     setIsLoading(true);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      
+      const backendUrl = getBackendUrl();
+
       // Directly try to fetch pages using our new simple endpoint
       const response = await fetch(`${backendUrl}/api/facebook/get-pages-from-integration`, {
         method: 'POST',
@@ -220,8 +221,8 @@ export default function FacebookConnect() {
 
     setIsLoading(true);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      
+      const backendUrl = getBackendUrl();
+
       const response = await fetch(`${backendUrl}/api/facebook/connect-selected-pages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -269,8 +270,8 @@ export default function FacebookConnect() {
 
     setIsRetrying(true);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      
+      const backendUrl = getBackendUrl();
+
       const response = await fetch(`${backendUrl}/api/facebook/retry-token-capture`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

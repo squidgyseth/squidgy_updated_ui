@@ -51,7 +51,7 @@ export default function Index() {
   const { companyName, isLoading } = useCompanyBranding();
   const { user, userId, profile, isReady } = useUser();
   const { isAdmin, isLoading: isAdminLoading } = useAdmin();
-
+  
   // Check if we should show onboarding modal - SIMPLE LOGIC
   // Admin users should never see onboarding modal
   useEffect(() => {
@@ -100,7 +100,7 @@ export default function Index() {
     setIsLoadingUserName(false);
   }, [profile]);
 
-  // Fetch enabled agents from assistant_personalizations
+  // Fetch enabled agents from database and user personalizations
   useEffect(() => {
     const fetchEnabledAgents = async () => {
       // Wait for auth to be ready and profile to be loaded
@@ -112,6 +112,29 @@ export default function Index() {
       const profileUserId = profile.user_id;
 
       try {
+        // Check if we should show all agents (local development override)
+        const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';
+        
+        // Get platform-enabled agents from database
+        let platformEnabledIds: Set<string>;
+        
+        if (showAllAgents) {
+          // In local development with show_all_agents, all agents are considered platform-enabled
+          platformEnabledIds = new Set(['personal_assistant', 'social_media', 'content_repurposer', 'newsletter_multi']);
+        } else {
+          // Use DatabaseAgentService to get enabled agents
+          const { default: DatabaseAgentService } = await import('../services/databaseAgentService');
+          const agentService = DatabaseAgentService.getInstance();
+          const allAgents = await agentService.getAllAgents();
+          
+          platformEnabledIds = new Set(
+            allAgents
+              .filter(agent => agent.agent.enabled)
+              .map(agent => agent.agent.id)
+          );
+        }
+        
+        // Get user-enabled agents from assistant_personalizations
         const { data, error } = await supabase
           .from('assistant_personalizations')
           .select('assistant_id')
@@ -123,7 +146,15 @@ export default function Index() {
           return;
         }
 
-        const agentIds = data?.map((row: { assistant_id: string }) => row.assistant_id) || [];
+        const userEnabledIds = new Set(data?.map((row: { assistant_id: string }) => row.assistant_id) || []);
+        
+        // Always include Personal Assistant
+        platformEnabledIds.add('personal_assistant');
+        userEnabledIds.add('personal_assistant');
+        
+        // Filter to only show agents that are BOTH platform-enabled AND user-enabled
+        const agentIds = Array.from(userEnabledIds).filter(id => platformEnabledIds.has(id));
+        
         setEnabledAgentIds(agentIds);
       } catch (error) {
         console.error('Dashboard: Error in fetchEnabledAgents:', error);
@@ -182,7 +213,7 @@ export default function Index() {
                     {isLoading ? 'Loading...' : (companyName && companyName.trim() !== '' ? `${companyName} Team` : 'Team')}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {user?.email || 'admin@example.com'}
+                    {profile?.email || user?.email || 'admin@example.com'}
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full flex items-center justify-center overflow-hidden">
@@ -246,7 +277,7 @@ export default function Index() {
           </Card>
 
           {/* Social Media Manager Card - Only show if enabled */}
-          {enabledAgentIds.includes('social_media_agent') && (
+          {enabledAgentIds.includes('social_media') && (
             <Card className="border-2 border-blue-400 bg-blue-50">
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
@@ -260,7 +291,7 @@ export default function Index() {
                     <p className="text-[15px] text-gray-600 font-open-sans mt-1">Manage and schedule social media content across Facebook, Instagram, and LinkedIn.</p>
                   </div>
                   <Button
-                    onClick={() => navigate('/chat/social_media_agent')}
+                    onClick={() => navigate('/chat/social_media')}
                     className="bg-squidgy-gradient text-white gap-2 px-6 py-2.5 h-auto text-sm font-semibold"
                   >
                     <MessageCircle className="w-5 h-5" />

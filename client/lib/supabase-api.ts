@@ -1,8 +1,9 @@
 // supabase-api.ts - Direct Supabase REST API utility to replace hanging Supabase client calls
 // This bypasses the Supabase JS client which hangs in production environments
 
-// Import newsletter webhook service for editor save operations  
+// Import newsletter webhook service for editor save operations
 import newslettersWebhookService from '../services/newslettersWebhookService';
+import { getSupabaseConfig, getBackendUrl, getFrontendUrl } from './envConfig';
 
 interface SupabaseApiConfig {
   url: string;
@@ -14,8 +15,8 @@ class SupabaseDirectApi {
 
   constructor() {
     this.config = {
-      url: import.meta.env.VITE_SUPABASE_URL,
-      key: import.meta.env.VITE_SUPABASE_ANON_KEY
+      url: getSupabaseConfig().url,
+      key: getSupabaseConfig().anonKey
     };
   }
 

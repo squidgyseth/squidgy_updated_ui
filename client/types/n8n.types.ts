@@ -13,6 +13,7 @@ export interface N8nRequest {
   agent_name: string;
   timestamp_of_call_made: string;
   request_id: string;
+  sending_from: string; // Fixed value: "User"
   newsletter_id?: string; // Optional newsletter ID for content_repurposer agent
   state?: Record<string, unknown>; // Conversation state for multi-turn agents (newsletter_multi)
 }
@@ -94,11 +95,16 @@ export interface FileUploadInfo {
   fileName: string;
   fileUrl: string;
   fileId: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'extracting' | 'extracted' | 'embedding' | 'saving';
   agentId: string;
   agentName: string;
   extractedText?: string;
   errorMessage?: string;
+  processingProgress?: {
+    status: string;
+    message: string;
+    progress: number;
+  };
 }
 
 /**
@@ -113,6 +119,8 @@ export interface ChatMessage {
   isHtml?: boolean;
   type?: 'demo_stream' | 'regular';
   isStreaming?: boolean;
-  fileUpload?: FileUploadInfo;
+  fileUpload?: FileUploadInfo; // Legacy: single file upload (kept for backward compatibility)
+  fileUploads?: FileUploadInfo[]; // New: multiple file uploads
   content_repurposer_history_id?: string; // Database record ID for content repurposer
+  isProcessingStatus?: boolean; // Flag for file processing status messages (not saved to history)
 }

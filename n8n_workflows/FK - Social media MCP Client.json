@@ -1,0 +1,3655 @@
+{
+  "name": "FK - Social media MCP Client",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# Website Tools",
+        "height": 308,
+        "width": 536,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -688,
+        560
+      ],
+      "typeVersion": 1,
+      "id": "81b298bb-7847-4a0f-8fae-a33f1417f9a8",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2480,
+        976
+      ],
+      "id": "4c448696-53f3-4d74-a16f-69aa5e2111d2",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "xeFNBBSMiFQf7cQv",
+          "name": "OpenAi account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-sonnet-4.5",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        32,
+        416
+      ],
+      "id": "b2283ac8-43a3-42bf-b9c7-89ca69a66eec",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "7hB3eGzzdDVoxaV5",
+          "name": "Claude_Demo_SMM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code in JavaScript').item.json.body.session_id }}",
+        "contextWindowLength": "=5"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        176,
+        416
+      ],
+      "id": "a8c51b6b-4a6a-47b0-97f1-b978031d5eb3",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "httpMethod": [
+          "POST"
+        ],
+        "path": "social_media_agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "GA Main Workflow",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        224
+      ],
+      "id": "423e7e79-f562-464e-97ee-601f8fa97202",
+      "webhookId": "27510a69-c31b-4d2f-b8cf-56baa278f6d3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Code in JavaScript').item.json.body.user_mssg }} {{ $('Code in JavaScript').item.json.url }}",
+        "options": {
+          "systemMessage": "=# Social Media Management Assistant\n\nYou are a Social Media Manager with tools for scheduling posts, generating branded images, searching Unsplash, managing files, and accessing the Knowledge Base (KB).\n\n**CRITICAL INSTRUCTION**: Do not delete existing posts or posts already scheduled without confirming how many posts are being deleted, and asking for double confirmation. Warn that this cannot be reversed.\n\n=======================================================================\n## CORE PRINCIPLES\n\n1. **KB FIRST** - Before creating ANY content, silently search KB for brand info (colors, voice, audience, offers, logo assets). Use findings as constraints.\n\n2. **SILENT EXECUTION** - Never narrate tool calls. Never say \"Let me search...\" or \"Getting accounts...\". Just do it and present results.\n\n3. **COMPLETE ACTIONS** - If you decide to do something, call the tool in the SAME response. Never describe intent without executing.\n\n4. **BUTTONS FOR EVERYTHING** - Every question or choice must include clickable $**buttons**$. No plain text options.\n\n5. **DYNAMIC DATA ONLY** - Never assume accounts, times, or user data. Always fetch dynamically.\n\n6. **CONSULT → CONFIRM → EXECUTE** - Generate post ideas, captions, and suggest media first. STOP and ask for explicit confirmation. Only then schedule posts.\n\n=======================================================================\n## WORKFLOW: CREATING A POST/STORY\n\n**Order matters - follow this sequence:**\n\n1. **SUBJECT FIRST** → Ask what the post is about (suggest from KB if available)\n2. **PLATFORM** → Which platform (if not specified)\n3. **IMAGE** → Automatically search Unsplash based on content topic and select best match (silently)\n4. **COLOR** → Automatically choose brand color that matches message tone (silently)\n5. **GENERATE** → Create branded image with template + text overlay\n6. **CAPTION** → Write engaging caption following voice guidelines\n7. **CONFIRM** → Present complete post preview (image + caption) for approval\n8. **ACCOUNT CHECK** → Only NOW fetch accounts - if none connected, prompt user to connect\n9. **SCHEDULE** → Get current time, set future time, execute\n\n**IMPORTANT: Do NOT check account connection until step 8.** Generate all content first (image, caption, preview) regardless of whether accounts are connected. Only check/prompt for account connection when user approves and is ready to schedule.\n\n**AUTONOMOUS DECISIONS (do NOT ask user):**\n- Background image selection → Choose based on content topic\n- Color selection → Match to message tone (urgency=orange, growth=green, etc.)\n- Template format → Based on platform (portrait for stories, square for feed)\n- Hashtags → Generate appropriate ones for platform\n\n**⚠️ TEMPLATE RENDERING WORKFLOW (MANDATORY):**\n1. **FIRST** - Call `get_templates` to retrieve all available template groups\n2. **SELECT** - Use `template_name` to choose the template group, then select the specific template variant from `templates` array based on size (use `description` to identify format: \"Square\", \"Mid\", \"Wide\", etc.)\n3. **THEN** - Call `render_template` using the **Template ID** from the selected variant and **ALL layer parameters** from the group's `layers` array\n4. **FINALLY** - Call `vision` tool to verify the rendered image looks correct before presenting to user\n\n**Template Response Structure:**\n```json\n{\n  \"template_name\": \"GroupName\",        // e.g., \"TwoTone\", \"Split\", \"Photo\"\n  \"templates\": [                        // All variants in this group\n    {\n      \"id\": \"template-id-1\",\n      \"description\": \"Square-WL\",       // Format suffix (Square, Mid, Wide, etc.)\n      \"preview\": \"https://...\",\n      \"size\": { \"width\": 1080, \"height\": 1080 }\n    },\n    {\n      \"id\": \"template-id-2\", \n      \"description\": \"Mid-WL\",\n      \"preview\": \"https://...\",\n      \"size\": { \"width\": 1080, \"height\": 1350 }\n    }\n  ],\n  \"template_count\": 3,\n  \"layers\": [...]                       // Shared layers for ALL templates in group\n}\n```\n\n**Template Selection Criteria:**\n- Use `template_name` to match content style (e.g., \"TwoTone\" for bold graphics, \"Photo\" for image-heavy)\n- Use template `size` to match platform requirements:\n  - 1080x1080 (Square) → Facebook feed, LinkedIn\n  - 1080x1350 (Mid/Portrait) → Instagram feed\n  - 1920x1080 (Wide) → YouTube thumbnails, banners\n- Use `description` to identify the format variant within the group\n\n**Layer types and required fields:**\n- Text layers: `{\"text\": \"Your text here\"}` - also includes fontFamily, color\n- Shape layers: `{\"color\": \"#HEXCOLOR\"}`\n- Image layers: `{\"image_url\": \"https://...\"}`\n\n**CRITICAL**: \n- You MUST pass **ALL layers** from the group's `layers` array when calling `render_template`\n- Layer names are case-sensitive and must match exactly (e.g., \"bg-image\", \"Boost\", \"top-left-circle\")\n- All templates in a group share the SAME layer structure - use the group's `layers` array for any template variant\n- Using wrong layer names or missing layers will cause rendering to fail\n\n**Template text constraints (HARD LIMIT):**\n- line1, line2, line3: **2-3 WORDS MAXIMUM per line** - this is a hard constraint, not a suggestion\n- Text WILL NOT render correctly if lines exceed 3 words\n- Use hierarchy: Top line = hook, middle = context, bottom = stat/punch\n- Examples: \"Scale Your\" | \"Business\" | \"Now\" ✓\n- Wrong: \"Are you ready to scale\" ❌ (too long)\n\n=======================================================================\n## BRANDED IMAGES (DEFAULT BEHAVIOR)\n\nRaw images are BACKGROUNDS, not final posts. Always:\n1. Take user's image OR search Unsplash\n2. **VERIFY URL is accessible** before using (see URL VERIFICATION below)\n3. **Call `Get Business Logo` tool** to retrieve the user's logo URL (do NOT use hardcoded URLs)\n4. **BEFORE RENDERING: Call `get_templates`** to retrieve all templates with their IDs, layers, and properties\n5. Select the appropriate template based on name, description, and size for the platform\n6. Pass background as `background_image` and logo URL as `logo_image` to Generate Branded Image\n7. Add text overlay using the EXACT layer names from step 4 - **2-3 words max per line**\n8. Use brand colors from KB (hex format: #XXXXXX)\n9. **AFTER RENDERING: Call `vision` tool** to verify the output image looks correct\n\n**LOGO HANDLING (CRITICAL):**\n- **ALWAYS** call `Get Business Logo` tool to get the user's actual logo URL\n- **NEVER** hardcode logo URLs like `https://squidgy.ai/squidgy-logo.png`\n- Use the returned URL from `Get Business Logo` as the `logo_image` parameter\n- If tool returns no logo, ask user to upload one or skip logo placement\n\n**Only post raw images if user explicitly says:** \"post as-is\", \"no text\", \"without overlay\"\n\n=======================================================================\n## MEDIA HANDLING & STORAGE\n\nThe Social Planner requires public URLs for all media.\n\n**Scenario A (User has a URL):** Use it directly in the media parameter.\n\n**Scenario B (User has a file/generated image):** Upload to file storage first to get a URL.\n- Action: Call Upload to File Storage\n- Limit: Max file size 25MB\n- Use the returned URL in the scheduling tool\n\n**Scenario C (Reuse Media):** Use Get File Storage to find URLs of previously uploaded media.\n\n=======================================================================\n## URL VERIFICATION (CRITICAL)\n\nBefore using ANY URL as `background_image` or `logo_image`, you MUST verify it's accessible:\n\n**Verify that URL:**\n- Is publicly accessible (not expired, not behind auth)\n- Returns actual image (not 404/redirect/error)\n- Is supported format (jpg, jpeg, png, webp, gif)\n\n**If URL fails or uncertain:**\n\"I couldn't verify that image URL. Could you:\n\n$**Provide a different URL**$\n$**Upload the image directly**$\n$**Search Unsplash instead**$\n$**Use solid color background**$\"\n\n**Why this matters:** Invalid URLs cause templates to render with blank/broken backgrounds or missing logos.\n\n=======================================================================\n## CAPTION & COPY VOICE\n\n**Tone:** Friendly, knowledgeable, approachable, confident but not arrogant\n\n**Writing Principles:**\n- Short sentences, active voice, everyday language\n- Lead with value, state benefits clearly\n- Use \"you\" and \"we\", ask questions, use contractions\n- One idea per sentence\n\n**Caption Framework:**\n```\n[HOOK - grab attention]\n\n[BODY - deliver value in 2-3 short sentences]\n\n[CTA - clear next step]\n\n[HASHTAGS - platform-appropriate count]\n```\n\n**Hook Types:**\n- Question: \"Still doing [task] manually?\"\n- Stat: \"87% of businesses waste 10+ hours weekly on [task].\"\n- Bold Statement: \"Your competitors are already doing this. Are you?\"\n- Problem: \"Tired of [pain point]?\"\n- Curiosity: \"What if you could [benefit] in half the time?\"\n\n**Headline Formulas:**\n- [Number] ways to [benefit]\n- How to [achieve goal] without [pain point]\n- The [adjective] way to [verb]\n- Stop [pain] and start [benefit]\n\n**Power Words:**\n- Action: Boost, Cut, Save, Unlock, Transform, Automate, Simplify\n- Benefit: Free, Fast, Easy, Smart, Proven, Instant, Effortless\n- Emotion: Finally, Imagine, Discover, Secret, Behind-the-scenes\n\n**CTA Phrases:**\n- \"Ready to transform your workflow?\"\n- \"Will you give this a try? Leave a comment below\"\n- \"Save this for later\"\n- \"Share with someone who needs this\"\n- \"Link in bio for more\"\n\n=======================================================================\n## COLOR PSYCHOLOGY & USAGE\n\nMatch circle/accent color to message tone:\n\n| Color | Hex | Use For |\n|-------|-----|---------|\n| Orange | #F94602 | Urgency, energy, warnings |\n| Green | #02B681 | Success, growth, highlights |\n| Purple | #6E2AF5 | Authority, brand, CTAs |\n| Blue | #4264FF | Trust, technology |\n| Yellow | #F9C602 | Optimism, highlights |\n| Pink | #FE99D9 | Playful, soft accents |\n\n**Rules:**\n- Max 3 colors per design for clarity\n- Always check contrast for text readability\n- Avoid very dark colors (text won't be readable)\n- Avoid very light colors (may lack contrast)\n\n=======================================================================\n## TEMPLATE TYPES & SELECTION\n\n| Content Type | Template Style | Best For |\n|--------------|----------------|----------|\n| Stats/Claims | PHOTO_OVERLAY | Bold statistics, value props |\n| Educational | CAROUSEL_CONTENT | Tips, how-tos, listicles |\n| Brand Statement | MULTI_STRIPE | Impact messaging |\n| Value Prop | SOLID_COLOR_ILLUSTRATED | With character illustrations |\n| Section Header | SOLID_COLOR_TEXT | Cover slides, titles |\n| Testimonial | TESTIMONIAL_QUOTE | Customer quotes |\n\n**Platform Size Requirements:**\n| Platform | Format | Size |\n|----------|--------|------|\n| Instagram Stories/Reels | Story | 1080x1920 |\n| Instagram Feed | Portrait | 1080x1350 |\n| Facebook Stories | Story | 1080x1920 |\n| Facebook Feed | Square | 1080x1080 |\n| LinkedIn | Square | 1080x1080 |\n| TikTok | Story | 1080x1920 |\n\n**Always call `get_templates` first**, then select the template with matching size and appropriate name/description for the content.\n\n=======================================================================\n## CAROUSEL CONTENT\n\n**Slide Progression:**\n- Slide 1 (Cover): Bold hook or question\n- Slides 2-7: One clear point per slide\n- Final Slide: CTA with engagement prompt\n\n**Content Slide Writing:**\n- Start with action verb\n- Deliver immediate value\n- Be scannable in 3 seconds\n- Connect to next slide\n\n**Carousel Rules:**\n- Consistent template across all slides\n- Same logo placement throughout\n- Use \"swipe\" or arrow indicators\n- 5-10 slides optimal\n\n=======================================================================\n## GATHERING MISSING INFO\n\nWhen KB is missing required info, ASK with buttons - don't guess:\n\n**Missing brand colors:**\n\"I need your brand colors for the image. Choose an option:\n\n$**Use blue theme - #4264FF**$\n$**Use green theme - #02B681**$\n$**Use purple theme - #6E2AF5**$\n$**I'll provide my hex color**$\"\n\n**Missing subject/topic:**\n\"What should this post be about?\n\n$**[KB topic 1]**$\n$**[KB topic 2]**$\n$**Custom - I'll type it**$\"\n\n=======================================================================\n## NO ACCOUNTS FOUND (AT SCHEDULING STEP ONLY)\n\n**Check accounts ONLY after content is generated and user has approved the preview.**\n\nIf account fetch returns empty or fails at scheduling time:\n\n\"Your post is ready! But no [platform] accounts are connected yet.\n\nConnect your account here:\n[Integrations Settings](https://app.squidgy.ai/integrations-settings)\n\n$**I've connected - schedule now**$\n$**Save content and connect later**$\n$**Try different platform**$\"\n\n**Never block content creation due to missing accounts.** The user should see their complete post preview before being asked to connect.\n\n=======================================================================\n## SCHEDULING RULES\n\n- **Always get current time first** (silently)\n- **Schedule minimum 10 minutes in future**\n- **Convert to UTC** format: `2026-01-03T16:00:00Z`\n- **Stories need NO caption** - only media URL and schedule time\n- **Feed posts need caption** - prepare engaging text with hashtags\n\n**Staggered Timing:** For multi-platform posts, use 30-minute intervals to maximize reach.\n\n**Hashtag Strategy:**\n- Instagram: 5-10 hashtags\n- LinkedIn: 3-5 hashtags\n- Facebook: 1-3 hashtags or none\n\n=======================================================================\n## EMOJI USAGE\n\n**Do:**\n- Use to add visual interest\n- Place at end of sentences\n- 1-3 per caption maximum\n- Match emoji to content\n\n**Don't:**\n- Replace words with emojis\n- Use multiple in a row\n- Use unrelated emojis\n- Overuse (keeps brand professional)\n\n=======================================================================\n## UNSPLASH SEARCH (AUTOMATIC SELECTION)\n\n**You decide the background - do NOT ask user to select.**\n\nWorkflow:\n1. Analyze content topic/message\n2. Search Unsplash with relevant query (silently)\n3. Select the best matching image automatically\n4. Use it as background in Generate Branded Image\n5. Present final result to user for approval\n\n**Search Strategy (use creative fallback silently):**\n1. Try exact topic → 2. Broader category → 3. Abstract/mood → 4. Universal backgrounds\n\n**Photo Selection Criteria:**\n- High resolution (min 2x output size)\n- Professional, contemporary styling\n- Diverse representation\n- Relevant to content topic\n- Avoid busy/cluttered backgrounds\n- Good contrast for text overlay\n\n**Topic-to-Search Mapping Examples:**\n| Content Topic | Search Query |\n|---------------|-------------|\n| Business growth | \"business success\", \"growth chart\", \"professional office\" |\n| Technology/AI | \"technology\", \"digital\", \"futuristic\" |\n| Productivity | \"workspace\", \"efficiency\", \"organized desk\" |\n| Time-saving | \"clock\", \"time management\", \"speed\" |\n| Team/Collaboration | \"teamwork\", \"meeting\", \"collaboration\" |\n| Warning/Urgency | \"attention\", \"alert\", \"important\" |\n\n**Only ask user to select if:**\n- User explicitly requests to choose\n- Search returns no suitable results\n- Content topic is ambiguous\n\n=======================================================================\n## SERIES-BASED CONTENT\n\nFor campaign requests, develop series-based content:\n- Create 5-50 post campaigns around specific themes\n- Maintain consistent messaging while varying visuals\n- Adapt copy for each platform's style\n- Use staggered timing across platforms\n\n**Platform Adaptation:**\n- Instagram: More hashtags, conversational tone\n- LinkedIn: Professional thought leadership positioning\n- Facebook: Moderate detail with clear CTAs\n\n=======================================================================\n## ERROR HANDLING\n\nNever expose technical errors. Silently retry with correct parameters.\n\n- \"Schedule date in past\" → Get current time, add buffer, retry\n- \"Account not found\" → Re-fetch accounts, use correct name\n- \"Media URL invalid\" → Re-upload or get new URL\n\n=======================================================================\n## SAVE TO KB\n\nYou have NO memory between sessions. Save important findings:\n- Brand colors, voice, messaging discovered\n- Logo assets and their URLs\n- User preferences (posting times, hashtags)\n- Content patterns that work\n- Audience insights\n\nBefore saving, search KB first to merge with existing data.\n\n=======================================================================\n## DO NOT\n\n- Use markdown headers (###, ##, #)\n- Ask questions without buttons\n- Narrate tool calls or internal process\n- Stop mid-action without completing tool call\n- Assume account names or user data\n- Post raw images without branded overlay (unless explicitly requested)\n- Delete posts without double confirmation and warning\n- Expose technical errors\n- Use jargon or corporate speak in captions\n- Exceed 3 words per template text line\n- **Call render_template without first calling get_templates** - template IDs and layer names must be retrieved dynamically, never hardcoded or guessed\n- Skip vision verification after rendering images\n\n=======================================================================\n## RESPONSE FORMAT\n\n- Plain text with **bold** for emphasis\n- Bullet points with `-`\n- ALL CAPS for section titles\n- `$**text**$` for clickable buttons (no emojis in buttons)\n- `[link text](url)` for links\n",
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        112,
+        224
+      ],
+      "id": "5816ce8e-7b62-414e-aa7d-dcf2808849be",
+      "name": "GA AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.body.user_mssg;\nconst body = $input.first().json.body;  \nconst userId = body.user_id;\n// Extract URL from message (uploaded file)\nconst urlMatch = text.match(/https?:\\/\\/[^\\s]+/);\nconst url = urlMatch ? urlMatch[0] : null;\n// Extract Supabase base URL from the uploaded file URL\nlet supabaseUrl = '';\nif (url) {\n  const baseMatch = url.match(/^(https:\\/\\/[^\\/]+\\.supabase\\.co)/);\n  supabaseUrl = baseMatch ? baseMatch[1] : '';\n}\n// Extract file extension from URL or filename\nlet format = null;\nif (url) {\n  const cleanUrl = url.split('?')[0];\n  format = cleanUrl.split('.').pop();\n}\n// Generate download links for all 12 KB files\nconst kbFiles = [\n  '01-company-overview.md',\n  '02-icp-target-audience.md',\n  '03-branding-identity.md',\n  '04-messaging-positioning.md',\n  '05-product-services.md',\n  '06-sales-process.md',\n  '07-marketing-channels.md',\n  '08-development-technical.md',\n  '09-operations-workflows.md',\n  '10-contacts-stakeholders.md',\n  '11-customer-success.md',\n  '12-competitive-landscape.md'\n];\n// Build download URLs for existing KB files\n// Path: knowledge-base/{user_id}/{filename}\nconst kbDownloadLinks = kbFiles.map(filename => ({\n  filename: filename,\n  download_url: `${supabaseUrl}/storage/v1/object/public/knowledge-base/${userId}/${filename}`\n}));\nreturn [\n  {\n    url,\n    format,\n    body,\n    user_id: userId,\n    supabase_url: supabaseUrl,\n    kb_files: kbDownloadLinks\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        224
+      ],
+      "id": "9ad88041-b8a7-447c-b76f-ba3ecfa1e49f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        736
+      ],
+      "id": "17743425-e4b0-46c4-a812-0acc91f0e874",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "xeFNBBSMiFQf7cQv",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the knowledge base for relevant information about the user, their preferences, previous conversations, uploaded documents, or saved context. Use this tool when you need to recall information the user has shared before or check if specific information has been saved. Query with natural language describing what you're looking for.",
+        "tableName": "user_vector_knowledge_base",
+        "topK": 10,
+        "options": {
+          "columnNames": {
+            "values": {
+              "contentColumnName": "document"
+            }
+          },
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "user_id",
+                "value": "={{ $('Code in JavaScript').item.json.body.user_id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        -80,
+        624
+      ],
+      "id": "3308fa24-cd77-4e24-875e-4b29847bff4f",
+      "name": "Postgres PGVector RAG",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get AI response - it's already just a message string\nconst aiResponse = $input.item.json.output || $input.item.json.text || $input.item.json;\nconst inputData = $input.first().json;\n// Clean the response (remove any accidental JSON formatting if present)\nlet userMessage;\ntry {\n  // Check if AI accidentally returned JSON\n  const parsed = JSON.parse(aiResponse);\n  userMessage = parsed.message || aiResponse;\n} catch (e) {\n  // It's already a plain string, use it directly\n  userMessage = aiResponse;\n}\n// Convert HTML anchor tags to markdown links\n// Matches: <a href=\"url\" ...>text</a> and converts to [text](url)\nuserMessage = userMessage.replace(/<a\\s+[^>]*href=[\"']([^\"']+)[\"'][^>]*>([^<]+)<\\/a>/gi, '[$2]($1)');\n// Also clean up any leftover HTML attributes that might appear as text\nuserMessage = userMessage.replace(/target=[\"'][^\"']*[\"']\\s*/gi, '');\nuserMessage = userMessage.replace(/rel=[\"'][^\"']*[\"']\\s*/gi, '');\nuserMessage = userMessage.replace(/style=[\"'][^\"']*[\"']\\s*/gi, '');\n// Return EXACTLY 5 keys\nreturn {\n  json: {\n    user_id: $('GA Main Workflow').first().json.body.user_id,\n    session_id: $('GA Main Workflow').first().json.body.session_id,\n    agent_name: $('GA Main Workflow').first().json.body.agent_name,\n    timestamp_of_call_made: new Date().toISOString(),\n    request_id: $('GA Main Workflow').first().json.body.request_id,\n    agent_response: userMessage.trim()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        224
+      ],
+      "id": "0d6b4f14-aac8-4edd-a8ef-797901c4a004",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"user_id\": \"{{ $json.user_id }}\",\n  \"session_id\": \"{{ $json.session_id }}\",\n  \"agent_name\": \"{{ $json.agent_name }}\",\n  \"timestamp_of_call_made\": \"{{ $json.timestamp_of_call_made }}\",\n  \"request_id\": \"{{ $json.request_id }}\",\n  \"agent_response\": {{ JSON.stringify($json.agent_response) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        816,
+        224
+      ],
+      "id": "13f68bb8-e23f-45de-b80b-a8ca3941c43e",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://n8n.theaiteam.uk/mcp/a5c85edf-4aa1-4984-a183-668c52ae0889",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        2672,
+        976
+      ],
+      "id": "aaee35d4-fc40-4360-acf8-d0d62d3b8935",
+      "name": "MCP Client"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Makes an HTTP request using users website and returns the response data of the website for quick analysis \n\nProvide a structured summary in exactly this format: Company name: [Extract from website or state 'Not found'] | Website: {url} | Contact Information: [Only include actual contact details found on the website - email, phone, address. If not found, state 'Not available on website'] | Description: [2-3 sentences about what the company actually does based on website content] | Tags: [Actual business categories found on site or in general found on internet, separated by periods] | Takeaways: [Real value propositions mentioned on the website] | Niche: [Specific market/audience the company actually serves based on website content] | IMPORTANT: Only include information that is explicitly stated on the website. Do not infer, assume, or make up any data",
+        "method": "POST",
+        "url": "https://squidgy-backend-00f664bf1f3d.herokuapp.com/api/website/analysis_complete",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', `the url of the website`, 'string') }}"
+            },
+            {
+              "name": "firm_user_id",
+              "value": "={{ $('Code in JavaScript').item.json.user_id }}"
+            },
+            {
+              "name": "agent_id",
+              "value": "personal_assistant"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -368,
+        736
+      ],
+      "id": "9b3f1504-a736-4e31-b123-66793f475a35",
+      "name": "Web Analysis Full"
+    },
+    {
+      "parameters": {
+        "description": "Save information to the knowledge base\n\n⚠️ MANDATORY PREREQUISITE: You MUST call \"Postgres PGVector RAG\" tool FIRST before using this tool. Never save without searching first.\n\nWHEN TO USE:\n- User shares preferences or settings\n- Analysis results need to be stored for future reference\n- User provides custom instructions for how you should behave\n\nNOTE: File uploads are handled separately via the Agent Settings page. This tool is for saving TEXT-BASED information only.\n\nREQUIRED WORKFLOW (NEVER SKIP):\n1. ⚡ ALWAYS call \"Postgres PGVector RAG\" tool first to search for existing related content\n2. Review search results to determine if this is NEW or UPDATE\n3. Then call this save tool with appropriate parameters\n\nPARAMETERS:\n- query: The information to save (clear, structured text)\n- category: MUST be one of:\n  - \"user_preferences\" - User settings, likes/dislikes, personal choices\n  - \"result_of_analysis\" - Outputs from analysis tasks (website analysis, competitor research, etc.)\n  - \"custom_instructions\" - User-defined rules for how the agent should behave\n- source: Origin/topic identifier (e.g., \"brand_voice\", \"website_analysis\", \"posting_rules\")\n- updating: TRUE if updating existing content, FALSE if saving new content\n\nDECISION LOGIC AFTER RAG SEARCH:\n- If RAG returns NO relevant results → updating=false (new entry)\n- If RAG returns EXISTING content on same topic → updating=true (replaces old entry with same source)\n\nEXAMPLES:\n\nNEW user preference:\nUser: \"I prefer posting in the morning\"\n1. RAG search \"posting time preference\" → No results\n2. Save: query=\"User prefers posting in the morning\", category=\"user_preferences\", source=\"posting_schedule\", updating=false\n\nUPDATE custom instruction:\nUser: \"Actually, never use more than 2 hashtags\"\n1. RAG search \"hashtag\" → Found existing hashtag rule\n2. Save: query=\"Never use more than 2 hashtags per post\", category=\"custom_instructions\", source=\"hashtag_rules\", updating=true\n\nSave analysis result:\nAfter completing website analysis:\n1. RAG search \"website analysis\" → No results\n2. Save: query=\"[analysis summary]\", category=\"result_of_analysis\", source=\"website_analysis\", updating=false\n\n🚫 DO NOT:\n- Save without searching RAG first\n- Use categories other than: user_preferences, result_of_analysis, custom_instructions\n- Set updating=true without finding existing content in RAG\n- Use for file uploads",
+        "workflowId": {
+          "__rl": true,
+          "value": "mrMpEHjl5tpKaY1F",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/mrMpEHjl5tpKaY1F",
+          "cachedResultName": "FK - RAG"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('query', `The information to save to the knowledge base. Provide clear, well-structured text. For files, break down information into logical sections. Be specific and detailed.\n\nExample formats:\n- \"Company name: The AI Team | Location: London, UK | Founded: 2023\"\n- \"Product: Workflow automation | Price: £500/month | Features: AI-powered, No-code\"\n- \"Target customers: Marketing agencies | Size: 10-50 employees | Pain point: Manual tasks\"`, 'string') }}",
+            "userID": "={{ $('Code in JavaScript').item.json.body.user_id }}",
+            "category": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('category', `It should be either \"user_preferences\", the \"result_of_analysis\", or user defined \"custom_instructions\".`, 'string') }}",
+            "agentID": "social_media",
+            "source": "chat",
+            "Updating": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Updating', `if you want to update a previously seved content in knowledge base pass True`, 'boolean') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "userID",
+              "displayName": "userID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "agentID",
+              "displayName": "agentID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Updating",
+              "displayName": "Updating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        192,
+        624
+      ],
+      "id": "f3c17c44-4386-4f28-852e-06397083c4ae",
+      "name": "Call 'FK - RAG'"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Retrieves a list of all files the user has previously uploaded. Use this tool when the user asks about, references, or wants to access their uploaded files, documents, or attachments. Returns file names, download URLs, and upload dates.\n\nWhen to use:\n\nUser asks \"what files have I uploaded?\"\nUser mentions \"my documents\" or \"my files\"\nUser wants to find a specific previously uploaded file\nUser asks to download or access something they uploaded before\nUser says things like \"that PDF I sent you\" or \"the document I shared earlier\"\n",
+        "url": "https://aoteeitreschwzkbpqyd.supabase.co/rest/v1/firm_users_knowledge_base",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "firm_user_id",
+              "value": "=eq.{{ $('Code in JavaScript').item.json.body.user_id }}"
+            },
+            {
+              "name": "select",
+              "value": "file_id,file_name,file_url,created_at,agent_id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        1232,
+        544
+      ],
+      "id": "c425f610-d577-4c63-aa4c-5e9ff779e1cd",
+      "name": "Retrive save files from supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Downloads and reads the content of a file from Supabase storage. Use this tool when you have a file URL from the user's uploaded files and need to read or extract the actual content from that file. Pass the Supabase storage URL to retrieve the file's text content.\n\n\nWhen to use:\n\nAfter using Retrive save files from supabase tool to find a file URL\nWhen user asks about the content inside a specific uploaded file\nWhen user wants you to summarize, analyze, or extract information from their uploaded document\nWhen you need to answer questions based on file content",
+        "workflowId": {
+          "__rl": true,
+          "value": "2utOmEGxj9VTBAL2",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/2utOmEGxj9VTBAL2",
+          "cachedResultName": "Read Files as a Tool"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "download_url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('download_url', `pass download url that you found here`, 'string') }}"
+          },
+          "matchingColumns": [
+            "download_url"
+          ],
+          "schema": [
+            {
+              "id": "download_url",
+              "displayName": "download_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1232,
+        400
+      ],
+      "id": "887fbfc3-d3af-4b99-a2e5-27ecf8c759fe",
+      "name": "Call 'Read Files as a Tool'"
+    },
+    {
+      "parameters": {
+        "content": "## Reading previous files",
+        "height": 384,
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1120,
+        320
+      ],
+      "typeVersion": 1,
+      "id": "c536d63e-9768-4f90-b9e0-2f0a5f650339",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# RAG",
+        "height": 308,
+        "width": 440,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -128,
+        560
+      ],
+      "typeVersion": 1,
+      "id": "47cb8754-79d6-4e04-9157-f1f85b0e66df",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "ghl_subaccounts",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "firm_user_id",
+              "keyValue": "={{ $('Code in JavaScript').item.json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        224
+      ],
+      "id": "c209a4c1-02b5-4cf5-93de-83a47970996a",
+      "name": "Get GHL configs for user from supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Generate a branded social media image using a template. Creates professional graphics with customizable text and colors.\n \nParameters:\n- line1 (required): Top headline text (e.g., \"Boost\")\n- line2 (required): Middle text (e.g., \"productivity\")  \n- line3 (required): Bottom text (e.g., \"by 20%\")\n- color (required): Brand color in hex format (e.g., \"#F94602\")\n- background_image (optional): URL of background image\n- logo_image (optional): URL of logo to replace default\n- template (optional): \"portrait\" (default) or \"square\"\n \nReturns: URL of the generated image\n \nExample usage:\n- line1: \"Save\"\n- line2: \"time & money\"\n- line3: \"with AI\"\n- color: \"#F94602\"\n",
+        "method": "POST",
+        "url": "https://api.templated.io/v1/render",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"template\": \"{{ $fromAI('template_id', 'Template ID: portrait=71dc6015-5b3c-4ab6-8021-d4cd004ab354 square=549259c2-e1fc-45aa-b32f-1984dab5768d', 'string') }}\",\n  \"layers\": {\n    \"Boost\": {\n      \"text\": \"{{ $fromAI('line1', 'Top headline text 2 or 3 words max', 'string') }}\"\n    },\n    \"productivity\": {\n      \"text\": \"{{ $fromAI('line2', 'Middle text 2 or 3 words max', 'string') }}\"\n    },\n    \"by-20%\": {\n      \"text\": \"{{ $fromAI('line3', 'Bottom text 2 or 3 words max', 'string') }}\"\n    },\n    \"center-circle\": {\n      \"fill\": \"{{ $fromAI('main_color', 'Main circle color in hex (e.g. #1ABC9C)', 'string') }}\"\n    },\n    \"top-left-circle\": {\n      \"fill\": \"{{ $fromAI('accent_color', 'Accent circle color in hex (e.g. #1ABC9C)', 'string') }}\"\n    },\n    \"bg-image\": {\n      \"image_url\": \"{{ $fromAI('background_image', 'Background image URL', 'string') }}\"\n    },\n    \"ait-logo-bare\": {\n      \"image_url\": \"{{ $fromAI('logo_image', 'Brand logo image URL', 'string') }}\"\n    }\n  },\n  \"format\": \"png\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        2704,
+        688
+      ],
+      "id": "634e3e46-3712-46ef-8fb6-163bf0d754bd",
+      "name": "SW - Template.io Image Render",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SzvEfywJir5nb46m",
+          "name": "Templated API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Search Unsplash for free photos. Parameters: query (search term like \"office\" or \"technology\"). sometimes it returns damaged links verify them with link verifiaction tool before sending them to user.",
+        "url": "https://api.unsplash.com/search/photos",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', `Search term`, 'string') }}"
+            },
+            {
+              "name": "per_page",
+              "value": "5"
+            },
+            {
+              "name": "orientation",
+              "value": "portrait"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Client-ID rxGHd99g4v3JIoaGsU21cHWli7UUGmwmKkFWn09qsAI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -656,
+        736
+      ],
+      "id": "f67d9cd1-eade-4067-a984-163cd4e5c7ae",
+      "name": "Unsplash Search"
+    },
+    {
+      "parameters": {
+        "description": "Get current date and time in UTC timezone. Use for: scheduling, planning, checking deadlines, knowing current day/date/time. All times returned are in UTC. Returns: dateTime, date, time, year, month, day, hour, minute, dayOfWeek, timestamp, timezone.",
+        "jsCode": "// Returns current time in UTC\nconst now = new Date();\nconst result = {\n  dateTime: now.toISOString(),\n  date: now.toISOString().split('T')[0],\n  time: now.toISOString().split('T')[1].split('.')[0],\n  year: now.getUTCFullYear(),\n  month: now.getUTCMonth() + 1,\n  day: now.getUTCDate(),\n  hour: now.getUTCHours(),\n  minute: now.getUTCMinutes(),\n  dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getUTCDay()],\n  timestamp: now.getTime(),\n  timezone: 'UTC'\n};\nreturn JSON.stringify(result);"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        -256,
+        672
+      ],
+      "id": "623e0aee-3a9c-493e-87b7-ca9ca5657d89",
+      "name": "get_current_time"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "853cd102-cd29-4cac-9efb-6c73c7c8f0ba",
+              "leftValue": "={{ $json.body.type }}",
+              "rightValue": "post",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        96,
+        1552
+      ],
+      "id": "620829d3-e260-4981-8eca-dde1096c6e6f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        608,
+        1616
+      ],
+      "id": "2875e3ea-e385-4764-b6ff-5103f44bd893",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "social_media_agent_spliter",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        1552
+      ],
+      "id": "7a043ae0-0db1-4343-b1e1-8f2970358f37",
+      "name": "Facebook",
+      "webhookId": "00611035-a7fc-43cc-a66a-3f0a6f530c15"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        608,
+        1456
+      ],
+      "id": "f01cd90b-8b0a-40af-9ce3-94938cf32344",
+      "name": "Respond to Webhook2"
+    },
+    {
+      "parameters": {
+        "content": "## Facebook\n",
+        "height": 464,
+        "width": 688,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        448,
+        928
+      ],
+      "typeVersion": 1,
+      "id": "116fd93b-4a85-487a-a824-78b511a165dd",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Instagram\n",
+        "height": 448,
+        "width": 544,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -160,
+        944
+      ],
+      "typeVersion": 1,
+      "id": "f7a85d8c-64b9-4de5-9603-cf3d745d1f82",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Linkedin\n",
+        "height": 448,
+        "width": 352,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -560,
+        944
+      ],
+      "typeVersion": 1,
+      "id": "4eb83672-baa4-4853-9364-6a090975c85e",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publish an image post to Instagram via GoHighLevel (GHL).\n\nRequired parameters:\n- accountId: The Instagram account ID (get this from get_ghl_accounts tool first)\n- imageUrl: Public URL of the image to post\n- caption: Text content for the post\n\nAlways call get_ghl_accounts first to verify the account exists and get the correct accountId.",
+        "method": "POST",
+        "url": "https://n8n.theaiteam.uk/webhook/social_media_agent_spliter",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "type",
+              "value": "post"
+            },
+            {
+              "name": "summary",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `Write the caption`, 'string') }}"
+            },
+            {
+              "name": "status",
+              "value": "scheduled"
+            },
+            {
+              "name": "scheduleDate",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `ISO datetime like 2026-01-03T16:00:00Z`, 'string') }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ [$fromAI('parameters6_Value', `userID from calling get_ghl_accounts like:\n\n\"696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page\"\n`, 'string')] }}"
+            },
+            {
+              "name": "Details",
+              "value": "{ \"type\": \"post\" }"
+            },
+            {
+              "name": "Url_of_the_Media",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters7_Value', `The url of the media \n(Just the string of the url please`, 'string') }}"
+            },
+            {
+              "name": "Caption",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters8_Value', `the caption for the image (string)`, 'string') }}"
+            },
+            {
+              "name": "media_type",
+              "value": "image/png"
+            },
+            {
+              "name": "Access Token",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Detailname",
+              "value": "instagramPostDetails"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "ba87a5e1-e7a9-4638-bf6b-ba9ed68897f8",
+      "name": "Instagram Image Post",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -80,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publish a text post to Facebook via GoHighLevel (GHL).\n\nRequired parameters:\n- accountId: The facebook account ID (get this from get_ghl_accounts tool first ) \n- scheduleDate: time to be scheduled for\n- summary: Text content for the post\n\nAlways call get_ghl_accounts first to verify the account exists and get the correct profileId.",
+        "method": "POST",
+        "url": "=https://services.leadconnectorhq.com/social-media-posting/{{ $json.ghl_location_id }}/posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "type",
+              "value": "post"
+            },
+            {
+              "name": "summary",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `Write a short Facebook post `, 'string') }}"
+            },
+            {
+              "name": "status",
+              "value": "scheduled"
+            },
+            {
+              "name": "scheduleDate",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `ISO date like 2026-01-03T16:00:00Z`, 'string') }}"
+            },
+            {
+              "name": "media",
+              "value": "={{ [] }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ [$fromAI('parameters6_Value', `userID from calling get_ghl_accounts like:\n\n\"696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page\"\n`, 'string')] }}"
+            },
+            {
+              "name": "facebookPostDetails",
+              "value": "={{ { \"type\": \"post\" } }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        },
+        "optimizeResponse": true
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        496,
+        1232
+      ],
+      "id": "fbb134ed-8a19-48e8-99a2-a760ed01931a",
+      "name": "Facebook Text Post"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publish an image post to Facebook via GoHighLevel (GHL).\n\nRequired parameters:\n- accountId: The facebook account ID (get this from get_ghl_accounts tool first)\n- imageUrl: Public URL of the image to post\n- caption: Text content for the post\n\nAlways call get_ghl_accounts first to verify the account exists and get the correct accountId.",
+        "method": "POST",
+        "url": "=https://n8n.theaiteam.uk/webhook/social_media_agent_spliter",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "type",
+              "value": "post"
+            },
+            {
+              "name": "summary",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `Write a short Facebook post `, 'string') }}"
+            },
+            {
+              "name": "status",
+              "value": "scheduled"
+            },
+            {
+              "name": "scheduleDate",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `ISO date like 2026-01-03T16:00:00Z`, 'string') }}"
+            },
+            {
+              "name": "media",
+              "value": "={{ [] }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ [$fromAI('parameters6_Value', `userID from calling get_ghl_accounts like:\n\n\"696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page\"\n`, 'string')] }}"
+            },
+            {
+              "name": "Details",
+              "value": "{ \"type\": \"post\" } "
+            },
+            {
+              "name": "Access Token",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Url_of_the_Media",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters9_Value', `The url of the media \n(Just the string of the url please`, 'string') }}"
+            },
+            {
+              "name": "media_type",
+              "value": "image/png"
+            },
+            {
+              "name": "Caption",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters11_Value', `the caption for the image (string)`, 'string') }}"
+            },
+            {
+              "name": "Detailname",
+              "value": "facebookPostDetails"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        },
+        "optimizeResponse": true
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        608,
+        1088
+      ],
+      "id": "6dc458dc-ff21-4af5-a023-28f207defdeb",
+      "name": "Facebook Image Post"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publish an image story post to Facebook via GoHighLevel (GHL).\n\nRequired parameters:\n- accountId: The facebook account ID (get this from get_ghl_accounts tool first)\n- imageUrl: Public URL of the image to post\n- caption: Text content for the post\n\nAlways call get_ghl_accounts first to verify the account exists and get the correct accountId.",
+        "method": "POST",
+        "url": "=https://n8n.theaiteam.uk/webhook/social_media_agent_spliter",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "type",
+              "value": "story"
+            },
+            {
+              "name": "summary",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `Write a short Facebook post `, 'string') }}"
+            },
+            {
+              "name": "status",
+              "value": "scheduled"
+            },
+            {
+              "name": "scheduleDate",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `ISO date like 2026-01-03T16:00:00Z`, 'string') }}"
+            },
+            {
+              "name": "media",
+              "value": "={{ [] }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ [$fromAI('parameters6_Value', `userID from calling get_ghl_accounts like:\n\n\"696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page\"\n`, 'string')] }}"
+            },
+            {
+              "name": "Details",
+              "value": "{ \"type\": \"story\" }"
+            },
+            {
+              "name": "Access Token",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Url_of_the_Media",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters9_Value', `The url of the media \n(Just the string of the url please`, 'string') }}"
+            },
+            {
+              "name": "media_type",
+              "value": "image/png"
+            },
+            {
+              "name": "Caption",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters11_Value', `the caption for the image (string)`, 'string') }}"
+            },
+            {
+              "name": "Detailname",
+              "value": "facebookPostDetails"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        },
+        "optimizeResponse": true
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        736,
+        1232
+      ],
+      "id": "71d394d3-39ca-4987-9599-667851b23ab5",
+      "name": "Facebook Image Story Post"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publish a video post to Facebook via GoHighLevel (GHL).\n\nRequired parameters:\n- accountId: The facebook account ID (get this from get_ghl_accounts tool first)\n- imageUrl: Public URL of the image to post\n- caption: Text content for the post\n\nAlways call get_ghl_accounts first to verify the account exists and get the correct accountId.",
+        "method": "POST",
+        "url": "=https://n8n.theaiteam.uk/webhook/social_media_agent_spliter",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "type",
+              "value": "post"
+            },
+            {
+              "name": "summary",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `Write a short Facebook post `, 'string') }}"
+            },
+            {
+              "name": "status",
+              "value": "scheduled"
+            },
+            {
+              "name": "scheduleDate",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `ISO date like 2026-01-03T16:00:00Z`, 'string') }}"
+            },
+            {
+              "name": "media",
+              "value": "={{ [] }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ [$fromAI('parameters6_Value', `userID from calling get_ghl_accounts like:\n\n\"696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page\"\n`, 'string')] }}"
+            },
+            {
+              "name": "Details",
+              "value": "{ \"type\": \"post\" }"
+            },
+            {
+              "name": "Access Token",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Url_of_the_Media",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters9_Value', `The url of the media \n(Just the string of the url please`, 'string') }}"
+            },
+            {
+              "name": "media_type",
+              "value": "video/mp4"
+            },
+            {
+              "name": "Caption",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters11_Value', `the caption for the image (string)`, 'string') }}"
+            },
+            {
+              "name": "Detailname",
+              "value": "facebookPostDetails"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        },
+        "optimizeResponse": true
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        848,
+        1104
+      ],
+      "id": "ecfe1997-c00b-4e0c-90c1-51de142471ba",
+      "name": "Facebook Video Post"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publish an video post to Instagram via GoHighLevel (GHL).\n\nRequired parameters:\n- accountId: The Instagram account ID (get this from get_ghl_accounts tool first)\n- imageUrl: Public URL of the image to post\n- caption: Text content for the post\n\nAlways call get_ghl_accounts first to verify the account exists and get the correct accountId.",
+        "method": "POST",
+        "url": "https://n8n.theaiteam.uk/webhook/social_media_agent_spliter",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "type",
+              "value": "post"
+            },
+            {
+              "name": "summary",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `Write the caption`, 'string') }}"
+            },
+            {
+              "name": "status",
+              "value": "scheduled"
+            },
+            {
+              "name": "scheduleDate",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `ISO datetime like 2026-01-03T16:00:00Z`, 'string') }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ [$fromAI('parameters6_Value', `userID from calling get_ghl_accounts like:\n\n\"696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page\"\n`, 'string')] }}"
+            },
+            {
+              "name": "Details",
+              "value": "{ \"type\": \"post\" }"
+            },
+            {
+              "name": "Url_of_the_Media",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters7_Value', `The url of the media \n(Just the string of the url please`, 'string') }}"
+            },
+            {
+              "name": "Caption",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters8_Value', `the caption for the video (string)`, 'string') }}"
+            },
+            {
+              "name": "media_type",
+              "value": "video/mp4"
+            },
+            {
+              "name": "Access Token",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Detailname",
+              "value": "instagramPostDetails"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "7d63c7ec-eff6-43dc-bc1b-29142230f0fa",
+      "name": "Instagram Video Post",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        16,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publish an image story post to Instagram via GoHighLevel (GHL).\n\nRequired parameters:\n- accountId: The Instagram account ID (get this from get_ghl_accounts tool first)\n- imageUrl: Public URL of the image to post\n- caption: Text content for the post\n\nAlways call get_ghl_accounts first to verify the account exists and get the correct accountId.",
+        "method": "POST",
+        "url": "https://n8n.theaiteam.uk/webhook/social_media_agent_spliter",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "type",
+              "value": "story"
+            },
+            {
+              "name": "summary",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `Write the caption`, 'string') }}"
+            },
+            {
+              "name": "status",
+              "value": "scheduled"
+            },
+            {
+              "name": "scheduleDate",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `ISO datetime like 2026-01-03T16:00:00Z`, 'string') }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ [$fromAI('parameters6_Value', `userID from calling get_ghl_accounts like:\n\n\"696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page\"\n`, 'string')] }}"
+            },
+            {
+              "name": "Details",
+              "value": "{ \"type\": \"story\" }"
+            },
+            {
+              "name": "Url_of_the_Media",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters7_Value', `The url of the media \n(Just the string of the url please`, 'string') }}"
+            },
+            {
+              "name": "Caption",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters8_Value', `the caption for the image (string)`, 'string') }}"
+            },
+            {
+              "name": "media_type",
+              "value": "image/png"
+            },
+            {
+              "name": "Access Token",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Detailname",
+              "value": "instagramPostDetails"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "8582f5e6-5a0a-4641-9714-0b855946a386",
+      "name": "Instagram Image Story Post",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        112,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publish an Video story post to Instagram via GoHighLevel (GHL).\n\nRequired parameters:\n- accountId: The Instagram account ID (get this from get_ghl_accounts tool first)\n- imageUrl: Public URL of the image to post\n- caption: Text content for the post\n\nAlways call get_ghl_accounts first to verify the account exists and get the correct accountId.",
+        "method": "POST",
+        "url": "https://n8n.theaiteam.uk/webhook/social_media_agent_spliter",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "type",
+              "value": "story"
+            },
+            {
+              "name": "summary",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `Write the caption`, 'string') }}"
+            },
+            {
+              "name": "status",
+              "value": "scheduled"
+            },
+            {
+              "name": "scheduleDate",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `ISO datetime like 2026-01-03T16:00:00Z`, 'string') }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ [$fromAI('parameters6_Value', `userID from calling get_ghl_accounts like:\n\n\"696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page\"\n`, 'string')] }}"
+            },
+            {
+              "name": "Details",
+              "value": "{ \"type\": \"story\" }"
+            },
+            {
+              "name": "Url_of_the_Media",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters7_Value', `The url of the media \n(Just the string of the url please`, 'string') }}"
+            },
+            {
+              "name": "Caption",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters8_Value', `the caption for the video (string)`, 'string') }}"
+            },
+            {
+              "name": "media_type",
+              "value": "video/mp4"
+            },
+            {
+              "name": "Access Token",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Detailname",
+              "value": "instagramPostDetails"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "b47e8df8-cf26-4aca-9044-37e1a4cc34ae",
+      "name": "Instagram Video Story Post",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        240,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publish a video story post to Facebook via GoHighLevel (GHL).\n\nRequired parameters:\n- accountId: The facebook account ID (get this from get_ghl_accounts tool first)\n- imageUrl: Public URL of the image to post\n- caption: Text content for the post\n\nAlways call get_ghl_accounts first to verify the account exists and get the correct accountId.",
+        "method": "POST",
+        "url": "=https://n8n.theaiteam.uk/webhook/social_media_agent_spliter",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "type",
+              "value": "story"
+            },
+            {
+              "name": "summary",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `Write a short Facebook post `, 'string') }}"
+            },
+            {
+              "name": "status",
+              "value": "scheduled"
+            },
+            {
+              "name": "scheduleDate",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `ISO date like 2026-01-03T16:00:00Z`, 'string') }}"
+            },
+            {
+              "name": "media",
+              "value": "={{ [] }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ [$fromAI('parameters6_Value', `userID from calling get_ghl_accounts like:\n\n\"696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page\"\n`, 'string')] }}"
+            },
+            {
+              "name": "Details",
+              "value": "={ \"type\": \"story\" }"
+            },
+            {
+              "name": "Access Token",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Url_of_the_Media",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters9_Value', `The url of the media \n(Just the string of the url please`, 'string') }}"
+            },
+            {
+              "name": "media_type",
+              "value": "video/mp4"
+            },
+            {
+              "name": "Caption",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters11_Value', `the caption for the image (string)`, 'string') }}"
+            },
+            {
+              "name": "Detailname",
+              "value": "facebookPostDetails"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        },
+        "optimizeResponse": true
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        1008,
+        1232
+      ],
+      "id": "4f7dc821-322f-41d0-b1d5-7badb69c10de",
+      "name": "Facebook Video Story Post"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publish a text post to Linkedin via GoHighLevel (GHL).\n\nRequired parameters:\n- accountId: The facebook account ID (get this from get_ghl_accounts tool first ) \n- scheduleDate: time to be scheduled for\n- summary: Text content for the post\n\nAlways call get_ghl_accounts first to verify the account exists and get the correct profileId.",
+        "method": "POST",
+        "url": "=https://services.leadconnectorhq.com/social-media-posting/{{ $json.ghl_location_id }}/posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "type",
+              "value": "post"
+            },
+            {
+              "name": "summary",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `Write a short Linkedin post `, 'string') }}"
+            },
+            {
+              "name": "status",
+              "value": "scheduled"
+            },
+            {
+              "name": "scheduleDate",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `ISO date like 2026-01-03T16:00:00Z`, 'string') }}"
+            },
+            {
+              "name": "media",
+              "value": "={{ [] }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ [$fromAI('parameters6_Value', `userID from calling get_ghl_accounts like:\n\n\"696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page\"\n`, 'string')] }}"
+            },
+            {
+              "name": "linkedinPostDetails",
+              "value": "{ \"postAsPdf\": false }"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        },
+        "optimizeResponse": true
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -528,
+        1056
+      ],
+      "id": "c2264b90-4827-4619-bd27-fcfd8e301d14",
+      "name": "Linkedin Text Post"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publish an image post to Linkedin via GoHighLevel (GHL).\n\nRequired parameters:\n- accountId: The Instagram account ID (get this from get_ghl_accounts tool first)\n- imageUrl: Public URL of the image to post\n- caption: Text content for the post\n\nAlways call get_ghl_accounts first to verify the account exists and get the correct accountId.",
+        "method": "POST",
+        "url": "https://n8n.theaiteam.uk/webhook/social_media_agent_spliter",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "type",
+              "value": "post"
+            },
+            {
+              "name": "summary",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `Write the caption`, 'string') }}"
+            },
+            {
+              "name": "status",
+              "value": "scheduled"
+            },
+            {
+              "name": "scheduleDate",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `ISO datetime like 2026-01-03T16:00:00Z`, 'string') }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ [$fromAI('parameters6_Value', `userID from calling get_ghl_accounts like:\n\n\"696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page\"\n`, 'string')] }}"
+            },
+            {
+              "name": "Details",
+              "value": "{ \"postAsPdf\": false }"
+            },
+            {
+              "name": "Url_of_the_Media",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters7_Value', `The url of the media \n(Just the string of the url please`, 'string') }}"
+            },
+            {
+              "name": "Caption",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters8_Value', `the caption for the image (string)`, 'string') }}"
+            },
+            {
+              "name": "media_type",
+              "value": "image/png"
+            },
+            {
+              "name": "Access Token",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Detailname",
+              "value": "linkedinPostDetails"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "1a61f412-d512-448d-b2eb-91cf3d42c2d6",
+      "name": "LinkedIn Image Post",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -448,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.leadconnectorhq.com/social-media-posting/{{ $json.body.userId }}/posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $json.body[\"Access Token\"] }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"userId\": \"{{ $json.body.userId }}\",\n  \"type\": \"post\",\n  \"status\": \"scheduled\",\n  \"scheduleDate\": \"{{ $json.body.scheduleDate }}\",\n  \"accountIds\": [\"{{ $json.body.accountIds[0] }}\"],\n  \"media\": [\n    {\n      \"url\": \"{{ $json.body.Url_of_the_Media }}\",\n      \"caption\": {{ JSON.stringify($json.body.Caption) }},\n      \"type\": \"{{ $json.body.media_type }}\"\n    }\n  ],\n  \"{{ $json.body.Detailname }}\": \n    {{ $json.body.Details }}\n  ,\n  \"summary\": {{ JSON.stringify($json.body.summary) }}\n} ",
+        "options": {}
+      },
+      "id": "77e3c94e-36e9-490a-b7ff-22066f44b647",
+      "name": "Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        352,
+        1456
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.leadconnectorhq.com/social-media-posting/{{ $json.body.userId }}/posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $json.body[\"Access Token\"] }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"userId\": \"{{ $json.body.userId }}\",\n  \"type\": \"story\",\n  \"status\": \"scheduled\",\n  \"scheduleDate\": \"{{ $json.body.scheduleDate }}\",\n  \"accountIds\": [\"{{ $json.body.accountIds[0] }}\"],\n  \"media\": [\n    {\n      \"url\": \"{{ $json.body.Url_of_the_Media }}\",\n      \"caption\": {{ JSON.stringify($json.body.Caption) }},\n      \"type\": \"{{ $json.body.media_type }}\"\n    }\n  ],\n  \"{{ $json.body.Detailname }}\": \n     {{ $json.body.Details }}\n  ,\n  \"summary\": {{ JSON.stringify($json.body.summary) }}\n} ",
+        "options": {}
+      },
+      "id": "ceaf28b1-514e-4795-bc88-bb261c91b729",
+      "name": "Story Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        352,
+        1616
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publish an video post to Linkedin via GoHighLevel (GHL).\n\nRequired parameters:\n- accountId: The Instagram account ID (get this from get_ghl_accounts tool first)\n- imageUrl: Public URL of the image to post\n- caption: Text content for the post\n\nAlways call get_ghl_accounts first to verify the account exists and get the correct accountId.",
+        "method": "POST",
+        "url": "https://n8n.theaiteam.uk/webhook/social_media_agent_spliter",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "type",
+              "value": "post"
+            },
+            {
+              "name": "summary",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `Write the caption`, 'string') }}"
+            },
+            {
+              "name": "status",
+              "value": "scheduled"
+            },
+            {
+              "name": "scheduleDate",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', `ISO datetime like 2026-01-03T16:00:00Z`, 'string') }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ [$fromAI('parameters6_Value', `userID from calling get_ghl_accounts like:\n\n\"696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page\"\n`, 'string')] }}"
+            },
+            {
+              "name": "Details",
+              "value": "{ \"postAsPdf\": false }"
+            },
+            {
+              "name": "Url_of_the_Media",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters7_Value', `The url of the media \n(Just the string of the url please`, 'string') }}"
+            },
+            {
+              "name": "Caption",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters8_Value', `the caption for the video (string)`, 'string') }}"
+            },
+            {
+              "name": "media_type",
+              "value": "video/mp4"
+            },
+            {
+              "name": "Access Token",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Detailname",
+              "value": "linkedinPostDetails"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "8505e0bb-3130-4e98-b453-1b78415fe0d5",
+      "name": "Linkedin Video Post",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -352,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## POST & STORY SPLITER \n",
+        "height": 320,
+        "width": 1072,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -272,
+        1440
+      ],
+      "typeVersion": 1,
+      "id": "e6cd918b-8ade-4d4b-8c86-7a794614766d",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Makes an HTTP request and returns the response data\n\nreturns the name file type and URL that can be used for the posts\n\nThis will return the urls of media that are in the locations media storage",
+        "url": "https://services.leadconnectorhq.com/medias/files",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "file"
+            },
+            {
+              "name": "altType",
+              "value": "location"
+            },
+            {
+              "name": "altId",
+              "value": "={{ $json.ghl_location_id }}"
+            },
+            {
+              "name": "query",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters3_Value', `what it can search for`, 'string') }}"
+            },
+            {
+              "name": "limit",
+              "value": "50"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        384,
+        672
+      ],
+      "id": "7beb6b78-75b5-44d8-be47-0de5d2b12c6b",
+      "name": "Get list of files on GHL Storage"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Makes an HTTP request and gets the social media post information needed for the next steps. ",
+        "method": "POST",
+        "url": "=https://services.leadconnectorhq.com/social-media-posting/{{ $json.ghl_location_id }}/posts/list",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        672,
+        672
+      ],
+      "id": "65a43311-2bca-4b7e-8c71-84251b8a1194",
+      "name": "Get Posts from GHL"
+    },
+    {
+      "parameters": {
+        "content": "## GHL Tools\n",
+        "height": 304,
+        "width": 768,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        336,
+        560
+      ],
+      "typeVersion": 1,
+      "id": "2102bdba-d99c-4d48-a284-82f64b2812b1",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "toolDescription": "required if theres is you don't have url for image instead you only have binary file of it then using this tool to upload image to GHL Media Storage then get the url to use in posts\n\nreturns the name file type and URL that can be used for the posts\n\nThis will return the urls of media that are in the locations media storage",
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/medias/upload-file",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', `binary of what we want to upload`, 'string') }}"
+            },
+            {
+              "name": "name",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', `the name of what you what to upload`, 'string') }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        976,
+        672
+      ],
+      "id": "29a6e744-6490-4c44-8d0d-12b3c1e4fb2d",
+      "name": "Upload to File Storage on GHL"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Retrieve all connected social media accounts from GoHighLevel (GHL). Returns account IDs, platform types (Facebook, Instagram, etc.), and account names. You only need accounts ID, accounts name and accounts platform using this tool.\n\nIMPORTANT: This tool MUST be called before using any social media posting tools. The accountId returned by this tool is required for scheduling or publishing posts. Never use placeholder or user-provided values as accountId - always use the ID from this tool's response.",
+        "url": "=https://services.leadconnectorhq.com/social-media-posting/{{ $json.ghl_location_id }}/accounts ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {},
+        "optimizeResponse": true,
+        "dataField": "=results",
+        "fieldsToInclude": "selected",
+        "fields": "accounts"
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        528,
+        672
+      ],
+      "id": "ba59dd01-457b-4411-9461-1ac8c5df3fa6",
+      "name": "get_ghl_accounts"
+    },
+    {
+      "parameters": {
+        "toolDescription": "once the post id of the post we want to delete has been gathered it can be used here to delete said post.",
+        "method": "DELETE",
+        "url": "=https://services.leadconnectorhq.com/social-media-posting/{{ $json.ghl_location_id }}/posts/{{ $fromAI('parameters0_Value', `pass the post id that needed to be deleted here`, 'string') }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.pit_token }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        832,
+        672
+      ],
+      "id": "690e2992-6bfd-4f1c-811b-4a8bb716791b",
+      "name": "Delete Post using GHL"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "dataPropertyName": "image",
+        "text": "Hello World",
+        "options": {
+          "font": "/usr/share/fonts/truetype/msttcorefonts/Verdana.ttf"
+        }
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        2656,
+        1568
+      ],
+      "id": "b903fe48-6f66-46b9-aaf5-a3fe46615514",
+      "name": "Edit Image"
+    },
+    {
+      "parameters": {
+        "operation": "draw",
+        "dataPropertyName": "image",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        2656,
+        1728
+      ],
+      "id": "67178860-cfa1-49b7-82e0-080c5f2319d8",
+      "name": "Edit Image2"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "dataPropertyName": "image",
+        "width": 1080,
+        "height": 1080,
+        "options": {
+          "fileName": "generated_image",
+          "format": "png"
+        }
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        2656,
+        1376
+      ],
+      "id": "76e004b9-1b1c-45bf-bce4-26dc63e87dd9",
+      "name": "Create simple background"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "social_media_agent_designer",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        1952,
+        1600
+      ],
+      "id": "a8d5f93f-1fef-46fe-b27a-e8a0c7a934ba",
+      "name": "Facebook1",
+      "webhookId": "00611035-a7fc-43cc-a66a-3f0a6f530c15",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        3056,
+        1552
+      ],
+      "id": "bb416226-7732-44c8-82f9-1851e24b17f0",
+      "name": "Respond to Webhook3"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "task",
+                    "rightValue": "create",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ed81fec7-fa0c-45ef-b793-83c8acc17bd9"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "create"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "57a83e38-fda4-4bcf-822f-08145e0433b5",
+                    "leftValue": "task",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a61f6e29-d806-4597-bf0b-59583adaf854",
+                    "leftValue": "task",
+                    "rightValue": "blur",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "blur"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "38548b0d-2eda-4014-9477-3616dec53274",
+                    "leftValue": "task",
+                    "rightValue": "composite",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "composite"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        2400,
+        1552
+      ],
+      "id": "724cb49a-7a9e-4dc4-9dbb-f3fe8ccfeadc",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "composite",
+        "dataPropertyName": "image",
+        "dataPropertyNameComposite": "image2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        2656,
+        1904
+      ],
+      "id": "86e69a41-f729-40a0-ada5-31825fd2f260",
+      "name": "Edit Image3"
+    },
+    {
+      "parameters": {
+        "toolDescription": "use this tool to create simple plain images, adding blur, add text on top of image or composite images on top of each other",
+        "method": "POST",
+        "url": "=https://n8n.theaiteam.uk/webhook/social_media_agent_designer",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "task",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', `one of these options: create, text, blur, composite`, 'string') }}"
+            },
+            {
+              "name": "text_on_image",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', `what ever you want to put on image`, 'string') }}"
+            },
+            {
+              "name": "image_url",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', `pass url of original image here`, 'string') }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        },
+        "optimizeResponse": true
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        2304,
+        976
+      ],
+      "id": "753c9b3e-e44d-43af-a272-d1540d90002a",
+      "name": "Image editor",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.image_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "image"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2128,
+        1600
+      ],
+      "id": "ba26c58c-ec34-4ccb-beca-43b58c279bde",
+      "name": "HTTP Request",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Sends an HTTP GET request and returns the response data. Can be used to verify whether URLs are accessible.",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', `any url that you want to try `, 'string') }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -368,
+        592
+      ],
+      "id": "2d6461d6-b276-49d8-92d2-28bb6d3a9572",
+      "name": "URL verification"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Get business logo using this tool consider company_logo_url field as user logo and use it in template generation",
+        "operation": "get",
+        "tableId": "business_settings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $json.firm_user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        736
+      ],
+      "id": "702c5fe9-c30a-45a7-bc53-ec00a581e65a",
+      "name": "Get business LOGO",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Use this tool if you want to underestant an image for example to underestant template structure and colors you used to debug ",
+        "workflowId": {
+          "__rl": true,
+          "value": "jJh9KXHdaZiHf3Sz",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/jJh9KXHdaZiHf3Sz",
+          "cachedResultName": "VIsion Tool"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Image_url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Image_url', `pass the url of image`, 'string') }}",
+            "prompt": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('prompt', `what do you what to find out about this image?`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Image_url",
+              "displayName": "Image_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "prompt",
+              "displayName": "prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -544,
+        624
+      ],
+      "id": "3a52e2d4-c815-492a-864f-22c444b769f1",
+      "name": "Call 'VIsion Tool'"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Retrieve all available layers from a Templated.io template. This tool MUST be called BEFORE using the render_template tool to discover the layer names and their types (text, image, shape). Returns the layer structure needed for rendering.\n\nReturns layer information including:\n- Layer name (e.g., \"text-p1-1\", \"shape-1\", \"image-2\")\n- Layer type: \"text\", \"image\", or \"shape\"\n- Current content/value if any\n\nUse this to understand what layers exist and what data each requires before rendering.",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', `Retrieve all available layers from a Templated.io template. This tool MUST be called BEFORE using render_template to discover layer names and types.\n\nURL format: https://api.templated.io/v1/template/{template_id}?includeLayers=true\n\nReplace {template_id} with the actual template ID.\n\nExample: If template_id is \"740d408b-ebb6-405b-ae4d-a0f003d11de3\", the URL would be:\nhttps://api.templated.io/v1/template/740d408b-ebb6-405b-ae4d-a0f003d11de3?includeLayers=true`, 'string') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        2320,
+        704
+      ],
+      "id": "c11639f8-f644-4950-87bd-5a3618e9807d",
+      "name": "Get Template layers",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SzvEfywJir5nb46m",
+          "name": "Templated API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Generate a branded social media image using a Templated.io template. Creates professional graphics with customizable text, colors, and images.\n\n⚠️ WORKFLOW:\n1. FIRST: Call \"get_template_layers\" to discover available layers\n2. THEN: Call this tool with the correct layer names and values\n3. FINALLY: Call \"vision\" tool to verify the rendered image looks correct\n\nCRITICAL: The \"layers\" parameter must be a valid JSON object, NOT a string or [object Object].\n\nRequired input format:\n- template_id: string (the template UUID)\n- layers: JSON object with layer modifications\n\nExample layers format (copy this structure exactly):\n{\n  \"text-p1-1\": {\"text\": \"Your headline here\"},\n  \"shape-1\": {\"fill\": \"#FF5500\"},\n  \"image-2\": {\"image_url\": \"https://example.com/image.jpg\"}\n}\n\nLayer field types:\n- Text layers require: \"text\" field with string value\n- Shape layers require: \"fill\" field with hex color (e.g., \"#FF5500\")\n- Image layers require: \"image_url\" field with valid URL\n\nDo NOT:\n- Pass layers as a string\n- Guess layer names - use get_template_layers first\n- Include undefined or null values\n\nAfter rendering, use the vision tool to verify the output image.",
+        "method": "POST",
+        "url": "https://api.templated.io/v1/render",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"template\": \"{{ $fromAI('template_id', 'Template ID to render', 'string') }}\",\n  \"layers\": {{ $fromAI('layers', 'The layers object to modify - get layer names from get_template_layers tool first', 'json') }},\n  \"format\": \"png\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        2496,
+        688
+      ],
+      "id": "f81074de-227f-4137-8b80-d82486308f33",
+      "name": "Render template",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SzvEfywJir5nb46m",
+          "name": "Templated API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "ab67c04e-9649-45c4-825b-b92eb6f4b325",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -480,
+        -192
+      ],
+      "id": "58d36165-4b19-4f5f-b745-f2e7e67313fd",
+      "name": "Webhook",
+      "webhookId": "ab67c04e-9649-45c4-825b-b92eb6f4b325"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Generate a branded social media image using a Templated.io template. Creates professional graphics with customizable text, colors, and images.\n\n⚠️ WORKFLOW:\n1. FIRST: Call \"get_template_layers\" to discover available layers\n2. THEN: Call this tool with the correct layer names and values\n3. FINALLY: Call \"vision\" tool to verify the rendered image looks correct\n\nCRITICAL: The \"layers\" parameter must be a valid JSON object, NOT a string or [object Object].\n\nRequired input format:\n- template_id: string (the template UUID)\n- layers: JSON object with layer modifications\n\nExample layers format (copy this structure exactly):\n{\n  \"text-p1-1\": {\"text\": \"Your headline here\"},\n  \"shape-1\": {\"fill\": \"#FF5500\"},\n  \"image-2\": {\"image_url\": \"https://example.com/image.jpg\"}\n}\n\nLayer field types:\n- Text layers require: \"text\" field with string value\n- Shape layers require: \"fill\" field with hex color (e.g., \"#FF5500\")\n- Image layers require: \"image_url\" field with valid URL\n\nDo NOT:\n- Pass layers as a string\n- Guess layer names - use get_template_layers first\n- Include undefined or null values\n\nAfter rendering, use the vision tool to verify the output image.",
+        "url": "https://n8n.theaiteam.uk/webhook/ab67c04e-9649-45c4-825b-b92eb6f4b325",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "template",
+              "value": "={{ $fromAI('TemplateID', `Template ID to render`, 'string') }}"
+            },
+            {
+              "name": "layers",
+              "value": "={{ $fromAI('Layers_config', `The layers object to modify - get layer names from get_template_layers tool first`, 'string') }}"
+            },
+            {
+              "name": "Render",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -864,
+        528
+      ],
+      "id": "f6ebf829-0ae6-4fbc-b166-c733854feb60",
+      "name": "Render Template"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        880,
+        -192
+      ],
+      "id": "0570baa0-5677-45f0-83ee-3988a62908fd",
+      "name": "Respond to Webhook4"
+    },
+    {
+      "parameters": {
+        "content": "## Template\n",
+        "height": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -944,
+        288
+      ],
+      "typeVersion": 1,
+      "id": "65acddf1-e26d-47a4-bbe0-12a75a225c6b",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.templated.io/v1/render",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "=application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Clear agent input').item.json.requestBody }}",
+        "options": {}
+      },
+      "id": "2ff80ae6-e0ee-4ab1-b220-923ef1012fc3",
+      "name": "Make Template",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        688,
+        -304
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SzvEfywJir5nb46m",
+          "name": "Templated API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nlet templateId = data.body?.template || data.template_id || data.template;\nlet layers = data.body?.layers || data.layers;\n\n// Clean the layers string\nif (typeof layers === 'string') {\n  layers = layers.replace(/\\\\n/g, '');\n  layers = layers.replace(/\\n/g, '');\n  layers = layers.trim();\n  \n  try {\n    layers = JSON.parse(layers);\n  } catch (e) {\n    return { json: { error: 'Parse failed: ' + e.message } };\n  }\n}\n\n// Return complete JSON body as string\nreturn {\n  json: {\n    requestBody: JSON.stringify({\n      template: templateId,\n      layers: layers,\n      format: \"png\"\n    })\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        -288
+      ],
+      "id": "8678b4ee-95e5-4a5b-b6ba-13855ff078c3",
+      "name": "Clear agent input"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.templated.io/v1/template/{{ $('Webhook').item.json.body.template }}?includeLayers=true",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        128,
+        -288
+      ],
+      "id": "21db8f92-9494-4f1e-96b6-af1b51e5f9a6",
+      "name": "Get Template layers double check",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SzvEfywJir5nb46m",
+          "name": "Templated API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code Node: Extract template layers and validate agent input\n\n// ===== PART 1: Extract template layers with defaults =====\n// Change 'Get Template layers' to your actual HTTP node name that calls the API\nconst templateData = $input.first().json;\nconst template = Array.isArray(templateData) ? templateData[0] : templateData;\nconst layers = template.layers || [];\n\n// Build required layers object with defaults\nconst requiredLayers = {};\nlayers.forEach(layer => {\n  if (layer.type === 'text') {\n    requiredLayers[layer.layer] = { text: layer.text || \"\" };\n  } else if (layer.type === 'image') {\n    requiredLayers[layer.layer] = { image_url: layer.image_url || \"\" };\n  } else if (layer.type === 'shape') {\n    requiredLayers[layer.layer] = { fill: layer.fill || layer.color || \"\" };\n  }\n});\n\n// ===== PART 2: Get and clean agent's layers =====\n// Change 'Clear agent input' to your actual code node name\nconst agentData = $('Clear agent input').first().json;\nlet agentLayers = agentData.layers || {};\n\n// If requestBody is a string, parse it\nif (agentData.requestBody) {\n  try {\n    const parsed = JSON.parse(agentData.requestBody);\n    agentLayers = parsed.layers || {};\n  } catch (e) {}\n}\n\n// Clean agent layers if it's a string\nif (typeof agentLayers === 'string') {\n  agentLayers = agentLayers.replace(/\\\\n/g, '').replace(/\\n/g, '');\n  try {\n    agentLayers = JSON.parse(agentLayers);\n  } catch (e) {\n    agentLayers = {};\n  }\n}\n\n// ===== PART 3: Validate layers =====\nconst requiredLayerNames = Object.keys(requiredLayers);\nconst passedLayerNames = Object.keys(agentLayers);\n\nconst missingLayers = [];\nconst missingLayersWithDefaults = {};\nconst emptyLayers = [];\nconst emptyLayersWithDefaults = {};\n\nrequiredLayerNames.forEach(layerName => {\n  if (!agentLayers[layerName]) {\n    missingLayers.push(layerName);\n    missingLayersWithDefaults[layerName] = requiredLayers[layerName];\n  } else {\n    const layerValue = agentLayers[layerName];\n    const field = Object.keys(layerValue)[0];\n    if (!layerValue[field] || layerValue[field] === '') {\n      emptyLayers.push(layerName);\n      emptyLayersWithDefaults[layerName] = requiredLayers[layerName];\n    }\n  }\n});\n\nconst allPassed = missingLayers.length === 0 && emptyLayers.length === 0;\n\nreturn {\n  json: {\n    template_id: template.id,\n    valid: allPassed,\n    layers_with_defaults: requiredLayers,\n    missing_layers: missingLayers,\n    missing_layers_with_defaults: missingLayersWithDefaults,\n    empty_layers: emptyLayers,\n    empty_layers_with_defaults: emptyLayersWithDefaults,\n    passed_count: passedLayerNames.length,\n    required_count: requiredLayerNames.length,\n    message: allPassed \n      ? \"All layers passed successfully\" \n      : `Missing: ${missingLayers.join(', ') || 'none'}. Empty: ${emptyLayers.join(', ') || 'none'}`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        -288
+      ],
+      "id": "305a1fd1-d6b1-4167-8fe9-1e59944db200",
+      "name": "clearning outputs"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d1a17161-4bce-42c2-965f-cd2de0849ab9",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        496,
+        -288
+      ],
+      "id": "76aee097-3740-48ca-9dd0-4b92a63203cc",
+      "name": "Valid?"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.templated.io/v1/templates",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "tags",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "limit",
+              "value": "25"
+            },
+            {
+              "name": "includeLayers",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        256,
+        -80
+      ],
+      "id": "51c2a2ec-b3f3-4ea8-9d8f-3e78ee40356d",
+      "name": "Get Template layers double check1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SzvEfywJir5nb46m",
+          "name": "Templated API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Retrieve all available templates from Templated.io. This tool MUST be called BEFORE using the render_template tool to discover available templates and their layer structure.\n\nReturns template information including:\n- **Template ID**: Unique identifier needed for rendering (e.g., \"740d408b-ebb6-405b-ae4d-a0f003d11de3\")\n- **Template name**: Human-readable name to help select the right template\n- **Description**: Template description for context\n- **Preview**: Thumbnail URL to preview the template design\n- **Size**: Template dimensions (width x height in pixels)\n- **Layers**: Array of editable layers with type-specific properties:\n  - **Text layers**: name, type, text (default value), fontFamily, color\n  - **Image layers**: name, type, imageUrl\n  - **Shape layers**: name, type, color\n\nUse the template **name** and **description** to decide which template best fits the content requirements, then use the **Template ID** when calling render_template.\n\n**IMPORTANT**: When calling render_template, you MUST use the EXACT layer names returned by this tool. Layer names are case-sensitive and must match exactly (e.g., \"bg-image\", \"Boost\", \"top-left-circle\").",
+        "url": "https://n8n.theaiteam.uk/webhook/ab67c04e-9649-45c4-825b-b92eb6f4b325",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "Render",
+              "value": "false"
+            },
+            {
+              "name": "userid",
+              "value": "={{ $('Code in JavaScript').item.json.body.user_id }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -864,
+        368
+      ],
+      "id": "27bb4e0a-6c44-4582-aa6a-38fd693e7546",
+      "name": "Get Templates"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "16b14bd1-5b0e-4ff2-826d-d470e356050c",
+              "leftValue": "={{ $json.body.Render }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -304,
+        -192
+      ],
+      "id": "3fff4f67-021c-450a-8e30-c33a3640c623",
+      "name": "Render Required?"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "business_settings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $json.body.userid }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        32,
+        -80
+      ],
+      "id": "65232f59-5eaa-4799-8f15-c8a8ed55ba58",
+      "name": "Get a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract useful template information with preview - handle multiple items\n// Group templates by prefix and return layers only once per group\nconst items = $input.all();\n\nconst allTemplates = items.flatMap(item => {\n  const input = item.json;\n  \n  // Handle both array and nested response formats\n  let templateList;\n  if (Array.isArray(input)) {\n    templateList = input;\n  } else {\n    templateList = input.response || input.data || input.templates || [input];\n  }\n\n  return templateList;\n});\n\n// Group templates by prefix (text before '-' in name)\nconst groups = {};\nfor (const template of allTemplates) {\n  const name = template.name || '';\n  let prefix, suffix;\n  \n  if (name.includes('-')) {\n    const parts = name.split('-');\n    prefix = parts[0].trim();\n    suffix = parts.slice(1).join('-').trim();\n  } else {\n    prefix = name;\n    suffix = '';\n  }\n  \n  if (!groups[prefix]) {\n    groups[prefix] = {\n      templates: [],\n      layers: null // Will be set from first template (all same in group)\n    };\n  }\n  \n  groups[prefix].templates.push({\n    id: template.id,\n    description: suffix, // Suffix goes in description\n    preview: template.thumbnail || '',\n    size: {\n      width: template.width,\n      height: template.height\n    }\n  });\n  \n  // Set layers from first template (all templates in group have same layers)\n  if (!groups[prefix].layers && template.layers) {\n    groups[prefix].layers = template.layers.map(layer => {\n      const base = {\n        name: layer.layer,\n        type: layer.type,\n        description: layer.description || ''\n      };\n      \n      if (layer.type === 'text') {\n        base.text = layer.text || '';\n        base.fontFamily = layer.font_family || null;\n        base.color = layer.color || null;\n      } else if (layer.type === 'image') {\n        base.imageUrl = layer.image_url || null;\n      } else if (layer.type === 'shape') {\n        base.color = layer.color || null;\n      }\n      \n      return base;\n    });\n  }\n}\n\n// Convert groups to output format\nconst result = Object.entries(groups).map(([prefix, group]) => ({\n  template_name: prefix,\n  templates: group.templates,\n  template_count: group.templates.length,\n  layers: group.layers || []\n}));\n\nreturn result.map(t => ({ json: t }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        -80
+      ],
+      "id": "90b14c59-e312-4034-8fe5-dc7706f485ff",
+      "name": "Grouping templates and cleaning"
+    }
+  ],
+  "pinData": {
+    "Facebook1": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.theaiteam.uk",
+            "user-agent": "axios/1.12.0",
+            "content-length": "593",
+            "accept": "application/json,text/html,application/xhtml+xml,application/xml,text/*;q=0.9, image/*;q=0.8, */*;q=0.7",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-host": "n8n.theaiteam.uk",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "userId": "JTfKphNI9YMzjIuIh7QY",
+            "type": "post",
+            "summary": "Hello World with African Raven image!",
+            "status": "scheduled",
+            "scheduleDate": "2026-01-22T17:30:00Z",
+            "media": [],
+            "accountIds": [
+              "122158165688943512"
+            ],
+            "Details": "{ \"type\": \"post\" }",
+            "Access Token": "Bearer pit-10eea36d-ebcf-4a52-8dc8-1144084fb43a",
+            "Url_of_the_Media": "https://aoteeitreschwzkbpqyd.supabase.co/storage/v1/object/public/newsletter/9379b285-715a-422c-9b5b-3a6442490d3f_1769101351683_20251027_OHR.AfricanRaven_EN-GB3785387714_UHD_bing.jpg",
+            "media_type": "image/png",
+            "Caption": "African Raven",
+            "Detailname": "facebookPostDetails"
+          },
+          "webhookUrl": "https://n8n.theaiteam.uk/webhook/00611035-a7fc-43cc-a66a-3f0a6f530c15",
+          "executionMode": "production"
+        }
+      }
+    ],
+    "Facebook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.theaiteam.uk",
+            "user-agent": "axios/1.12.0",
+            "content-length": "1653",
+            "accept": "application/json,text/html,application/xhtml+xml,application/xml,text/*;q=0.9, image/*;q=0.8, */*;q=0.7",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-host": "n8n.theaiteam.uk",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "userId": "HF9Ve8006OZ9o64NV3sx",
+            "type": "post",
+            "summary": "AI agents now have their own social network.\n\nMeet Moltbook — a platform where AI agents share content, discuss topics, and upvote posts independently. Think of it as Reddit, but for AI agents. And yes, humans are welcome to observe.\n\nThis is a glimpse into the agent-driven internet, where AI operates autonomously and collaboratively. The future isn't just about AI tools — it's about AI participants.\n\nThe agent economy is unfolding before our eyes. Will you be part of this shift?\n\nLearn more about Moltbook and get early access to the future of AI interaction.",
+            "status": "scheduled",
+            "scheduleDate": "2025-01-16T14:00:00Z",
+            "media": [],
+            "accountIds": [
+              "696f8de3b4389a8a85e84ad2_JTfKphNI9YMzjIuIh7QY_749662774887145_page"
+            ],
+            "Details": "{ \"type\": \"post\" } ",
+            "Access Token": "Bearer pit-c81e1467-545e-4d8c-be7a-4b4f0c378e49",
+            "Url_of_the_Media": "https://templated-assets.s3.amazonaws.com/render/75f8c6ca-7473-49c3-9efe-0d550aa155f5.png",
+            "media_type": "image/png",
+            "Caption": "AI agents now have their own social network.\n\nMeet Moltbook — a platform where AI agents share content, discuss topics, and upvote posts independently. Think of it as Reddit, but for AI agents. And yes, humans are welcome to observe.\n\nThis is a glimpse into the agent-driven internet, where AI operates autonomously and collaboratively. The future isn't just about AI tools — it's about AI participants.\n\nThe agent economy is unfolding before our eyes. Will you be part of this shift?\n\nLearn more about Moltbook and get early access to the future of AI interaction.",
+            "Detailname": "facebookPostDetails"
+          },
+          "webhookUrl": "https://n8n.theaiteam.uk/webhook/social_media_agent_spliter",
+          "executionMode": "production"
+        }
+      }
+    ],
+    "GA Main Workflow": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.theaiteam.uk",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+            "content-length": "304",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://app.squidgy.ai",
+            "priority": "u=1, i",
+            "referer": "https://app.squidgy.ai/",
+            "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "77.97.17.69",
+            "x-forwarded-host": "n8n.theaiteam.uk",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "user_id": "68cd707e-0f47-4835-b235-90e94680231d",
+            "user_mssg": "Introducing The AI Team",
+            "session_id": "68cd707e-0f47-4835-b235-90e94680231d_social_media_agent_1770302819871_x8bbz74mkh",
+            "agent_name": "social_media_agent",
+            "timestamp_of_call_made": "2026-02-05T14:47:20.704Z",
+            "request_id": "1770302840644-5211"
+          },
+          "webhookUrl": "https://n8n.theaiteam.uk/webhook/social_media_agent",
+          "executionMode": "production"
+        }
+      }
+    ],
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.theaiteam.uk",
+            "user-agent": "axios/1.12.0",
+            "content-length": "56",
+            "accept": "application/json,text/html,application/xhtml+xml,application/xml,text/*;q=0.9, image/*;q=0.8, */*;q=0.7",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/x-www-form-urlencoded",
+            "via": "1.1 Caddy",
+            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-host": "n8n.theaiteam.uk",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "Render": "false",
+            "userid": "68cd707e-0f47-4835-b235-90e94680231d"
+          },
+          "webhookUrl": "https://n8n.theaiteam.uk/webhook/ab67c04e-9649-45c4-825b-b92eb6f4b325",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GA Main Workflow": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GA AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Get GHL configs for user from supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector RAG",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres PGVector RAG": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Web Analysis Full": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'FK - RAG'": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrive save files from supabase": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Read Files as a Tool'": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get GHL configs for user from supabase": {
+      "main": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_current_time": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Story Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story Post": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get list of files on GHL Storage": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_ghl_accounts": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Posts from GHL": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Post using GHL": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to File Storage on GHL": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Facebook Text Post": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Image Post": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Image Story Post": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Video Post": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Video Story Post": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram Video Story Post": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram Video Post": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram Image Story Post": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram Image Post": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkedin Video Post": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkedin Text Post": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Image Post": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SW - Template.io Image Render": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Unsplash Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Image": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Image2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create simple background": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Create simple background",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Image2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Image3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Image3": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image editor": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "URL verification": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get business LOGO": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'VIsion Tool'": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Template layers": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Render template": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Render Required?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Template": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make Template": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear agent input": {
+      "main": [
+        [
+          {
+            "node": "Get Template layers double check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Template layers double check": {
+      "main": [
+        [
+          {
+            "node": "clearning outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "clearning outputs": {
+      "main": [
+        [
+          {
+            "node": "Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid?": {
+      "main": [
+        [
+          {
+            "node": "Make Template",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Template layers double check1": {
+      "main": [
+        [
+          {
+            "node": "Grouping templates and cleaning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Templates": {
+      "ai_tool": [
+        [
+          {
+            "node": "GA AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Required?": {
+      "main": [
+        [
+          {
+            "node": "Clear agent input",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "Get Template layers double check1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grouping templates and cleaning": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8a329cc7-c29a-4c02-85b6-1dbb545656cf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "ZfrvwBKL7FzyFDDS",
+  "tags": [
+    {
+      "updatedAt": "2025-06-23T14:33:52.218Z",
+      "createdAt": "2025-06-23T14:33:52.218Z",
+      "id": "tbBgpBQ9QoHKIZP6",
+      "name": "Squidgy"
+    }
+  ]
+}

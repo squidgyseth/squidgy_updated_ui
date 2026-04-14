@@ -1,3 +1,5 @@
+import { getBackendUrl } from '@/lib/envConfig';
+
 // File upload service for managing uploaded files
 export interface UploadedFile {
   file_id: string;
@@ -5,11 +7,16 @@ export interface UploadedFile {
   file_url: string;
   agent_id: string;
   agent_name: string;
-  processing_status: 'pending' | 'processing' | 'completed' | 'failed';
+  processing_status: 'pending' | 'processing' | 'completed' | 'failed' | 'extracting' | 'extracted' | 'embedding' | 'saving';
   extracted_text?: string;
   error_message?: string;
   created_at: string;
   updated_at?: string;
+  // SSE status fields for real-time progress
+  status?: string;
+  message?: string;
+  processing_message?: string;
+  progress?: number;
 }
 
 export interface FileListResponse {
@@ -38,7 +45,7 @@ export class FileUploadService {
    */
   async getUserFiles(firmUserId: string, agentId?: string): Promise<UploadedFile[]> {
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = getBackendUrl();
       const url = agentId 
         ? `${backendUrl}/api/files/user/${firmUserId}?agent_id=${agentId}`
         : `${backendUrl}/api/files/user/${firmUserId}`;
@@ -62,7 +69,7 @@ export class FileUploadService {
    */
   async getFileStatus(fileId: string): Promise<UploadedFile | null> {
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/file/status/${fileId}`);
       
       if (!response.ok) {

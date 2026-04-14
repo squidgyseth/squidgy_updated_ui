@@ -3,7 +3,9 @@
  * Fetches scheduled/pending posts from GHL social media posting API
  */
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { getBackendUrl } from '@/lib/envConfig';
+
+const BACKEND_URL = getBackendUrl();
 
 export interface ScheduledPost {
   id: string;
@@ -21,6 +23,9 @@ export interface ScheduledPost {
   created_at?: string;
   accountId?: string;
   accountName?: string;
+  failureReason?: string;
+  error?: string;
+  errorMessage?: string;
 }
 
 export interface ScheduledPostsResponse {
@@ -85,6 +90,29 @@ class ScheduledPostsService {
   }
 
   /**
+   * Check if a post is drafted by checking post_confirmation_checker table
+   */
+  async isPostDrafted(postId: string, firmUserId: string): Promise<boolean> {
+    const url = `${BACKEND_URL}/api/social/scheduled/posts/check-draft/${postId}?firm_user_id=${firmUserId}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+      return data.is_drafted || false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
    * Format date for display - handles GHL date fields
    */
   formatPostDate(post: ScheduledPost): string {
@@ -142,6 +170,11 @@ class ScheduledPostsService {
    * Get post status display
    */
   getStatusDisplay(post: ScheduledPost): { label: string; color: string } {
+    // Only check draft status if the flag exists (post exists in checker table)
+    if ((post as any).isDrafted === true) {
+      return { label: 'Drafted', color: 'text-gray-500' };
+    }
+    
     const status = post.status?.toLowerCase() || '';
     switch (status) {
       case 'published':
@@ -247,6 +280,42 @@ class ScheduledPostsService {
       return {
         success: false,
         error: error.message || 'Failed to edit post'
+      };
+    }
+  }
+
+  /**
+   * Postpone a scheduled post to a far future date (2099)
+   */
+  async postponePost(
+    postId: string,
+    firmUserId: string,
+    agentId: string = 'SOL'
+  ): Promise<{ success: boolean; error?: string; new_schedule_date?: string }> {
+    const url = `${BACKEND_URL}/api/social/scheduled/posts/${postId}/postpone?firm_user_id=${firmUserId}&agent_id=${agentId}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error: errorData.detail || `HTTP ${response.status}: ${response.statusText}`
+        };
+      }
+
+      const data = await response.json();
+      return { success: true, new_schedule_date: data.new_schedule_date };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to postpone post'
       };
     }
   }

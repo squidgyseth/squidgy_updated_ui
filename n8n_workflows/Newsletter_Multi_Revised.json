@@ -1,0 +1,309 @@
+{
+  "name": "Newsletter Multi - Revised",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Newsletter Multi-Topic Agent\n\n### Flow:\n1. Webhook receives request\n2. Load documentation from knowledge_base folder\n3. Fetch user data from Supabase\n4. Build comprehensive system prompt from .md files\n5. AI Agent guides conversation\n6. Save state to database\n7. Return response",
+        "height": 400,
+        "width": 450
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-600, 200],
+      "typeVersion": 1,
+      "id": "workflow-overview",
+      "name": "Workflow Overview"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/newsletter_multi_revised",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-144, 352],
+      "id": "webhook-node",
+      "name": "Webhook",
+      "webhookId": "newsletter-multi-revised"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Load Newsletter Multi documentation files from knowledge_base\nconst fs = require('fs');\nconst path = require('path');\n\nconst kbBasePath = '/Users/somasekharaddakula/CascadeProjects/UI_SquidgyFrontend_Updated/knowledge_base/agents/newsletter_multi';\n\n// Documentation files to load (simplified - only essentials)\nconst docFiles = [\n  'system_prompt.md',       // Core instructions\n  'topic_guidelines.md'     // Topic details\n];\n\n// Load each file\nconst documentation = {};\nfor (const filename of docFiles) {\n  try {\n    const filePath = path.join(kbBasePath, filename);\n    const content = fs.readFileSync(filePath, 'utf8');\n    const key = filename.replace('.md', '').replace(/-/g, '_');\n    documentation[key] = content;\n    console.log(`✅ Loaded: ${filename} (${content.length} chars)`);\n  } catch (error) {\n    console.error(`❌ Failed to load ${filename}:`, error.message);\n    documentation[filename.replace('.md', '')] = '';\n  }\n}\n\nconst webhookBody = $input.first().json.body;\n\nreturn [{\n  json: {\n    user_id: webhookBody.user_id,\n    user_mssg: webhookBody.user_mssg,\n    session_id: webhookBody.session_id,\n    agent_name: webhookBody.agent_name || 'newsletter_multi',\n    timestamp_of_call_made: webhookBody.timestamp_of_call_made,\n    request_id: webhookBody.request_id,\n    state_from_frontend: webhookBody.state || null,\n    \n    // Documentation loaded from knowledge_base (simplified)\n    doc_system_prompt: documentation.system_prompt || '',\n    doc_topic_guidelines: documentation.topic_guidelines || ''\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [96, 352],
+      "id": "load-docs-node",
+      "name": "Code - Load Documentation"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "vw_newsletter_multi_topic_llm",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $json.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [336, 352],
+      "id": "supabase-get-data",
+      "name": "Supabase - Get User Data",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uk8y8Aw346FSXNbw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookData = $('Code - Load Documentation').first().json;\nconst supabaseData = $('Supabase - Get User Data').first().json || {};\n\n// Default conversation state\nconst defaultState = {\n  phase: 'topic_selection',\n  selected_topics: [],\n  current_topic_index: 0,\n  current_question_index: 0,\n  answers: {}\n};\n\nlet conversationState = defaultState;\n\n// PRIORITY 1: State from webhook (frontend)\nif (webhookData.state_from_frontend && typeof webhookData.state_from_frontend === 'object') {\n  conversationState = webhookData.state_from_frontend;\n  console.log('Using state from webhook');\n}\n// PRIORITY 2: Fetch from database\nelse {\n  try {\n    const session_id = webhookData.session_id;\n    const agent_id = webhookData.agent_name;\n    \n    const supabaseUrl = 'https://aoteeitreschwzkbpqyd.supabase.co';\n    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvdGVlaXRyZXNjaHd6a2JwcXlkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDEyMDAzNCwiZXhwIjoyMDU5Njk2MDM0fQ.EfXz8Rv_6yvI4MTDk5WoKSQ0E0jxoO3oWEMO-xAEtWU';\n\n    const response = await fetch(\n      `${supabaseUrl}/rest/v1/agent_conversation_state?session_id=eq.${encodeURIComponent(session_id)}&agent_id=eq.${encodeURIComponent(agent_id)}&status=eq.active&select=state`,\n      {\n        headers: {\n          'apikey': supabaseKey,\n          'Authorization': `Bearer ${supabaseKey}`\n        }\n      }\n    );\n\n    const stateData = await response.json();\n    if (stateData && stateData.length > 0 && stateData[0].state) {\n      conversationState = stateData[0].state;\n      console.log('Loaded state from database');\n    }\n  } catch (err) {\n    console.log('State fetch error:', err.message);\n  }\n}\n\nreturn [{\n  json: {\n    // Webhook identifiers\n    user_id: webhookData.user_id,\n    user_mssg: webhookData.user_mssg,\n    session_id: webhookData.session_id,\n    agent_name: webhookData.agent_name,\n    timestamp_of_call_made: webhookData.timestamp_of_call_made,\n    request_id: webhookData.request_id,\n\n    // User KB data\n    knowledge_base: supabaseData.knowledge_base || '',\n    knowledge_base_summary: (supabaseData.knowledge_base || '').substring(0, 2000),\n    website_url: supabaseData.website_url || '',\n    website_icon: supabaseData.favicon_url || '',\n    communication_tone: supabaseData.communication_tone || 'professional',\n    newsletter_instructions: supabaseData.newsletter_questions || '',\n\n    // Topics data\n    available_topics_display: supabaseData.available_topics_display || '',\n    available_topics_text: supabaseData.available_topics_text || '',\n    topics_questions_formatted: supabaseData.topics_questions_formatted || '',\n    topic_code_map: supabaseData.topic_code_map || {},\n    total_topics: supabaseData.total_topics || 7,\n\n    // Conversation state\n    conversation_state: JSON.stringify(conversationState, null, 2),\n    \n    // Documentation from knowledge_base (simplified)\n    doc_system_prompt: webhookData.doc_system_prompt,\n    doc_topic_guidelines: webhookData.doc_topic_guidelines\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [576, 352],
+      "id": "prepare-data-node",
+      "name": "Code - Prepare Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.doc_system_prompt }}\n\n---\n\n## CURRENT CONVERSATION CONTEXT\n\n### User Information\n- Website: {{ $json.website_url }}\n- Communication Tone: {{ $json.communication_tone }}\n- Knowledge Base Summary: {{ $json.knowledge_base_summary }}\n\n### Available Topics\n{{ $json.available_topics_display }}\n\n### Current Conversation State\n{{ $json.conversation_state }}\n\n### User's Message\n{{ $json.user_mssg }}\n\n---\n\n## TOPIC GUIDELINES REFERENCE\n\n{{ $json.doc_topic_guidelines }}\n\n---\n\n## TOPIC QUESTIONS (from database)\n\n{{ $json.topics_questions_formatted }}\n\n---\n\n## OUTPUT REQUIREMENT\n\nRespond with ONLY valid JSON (no markdown, no code blocks):\n\n```json\n{\n  \"response\": \"Your message to the user\",\n  \"Status\": \"Waiting|Ready\",\n  \"state\": {\n    \"phase\": \"topic_selection|gathering|ready\",\n    \"selected_topics\": [],\n    \"current_topic_index\": 0,\n    \"current_question_index\": 0,\n    \"answers\": {}\n  }\n}\n```",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are Squidgy's Newsletter Multi-Topic Specialist. Follow the system_prompt instructions exactly. Use the topic_guidelines for reference on each topic."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [816, 352],
+      "id": "ai-agent-conversation",
+      "name": "AI Agent - Conversation"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3.7-sonnet",
+        "options": {
+          "responseFormat": "text",
+          "maxTokens": 4000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [800, 576],
+      "id": "openrouter-model",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "zc9d5HHhbyNyysy0",
+          "name": "OpenRouter Soma Test"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code - Prepare Data').item.json.session_id }}",
+        "contextWindowLength": 100
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [1024, 576],
+      "id": "memory-buffer",
+      "name": "Conversation Memory"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"response\": \"the response\",\n\"Status\": \"Waiting\",\n\"state\": {\n  \"phase\": \"topic_selection\",\n  \"selected_topics\": [],\n  \"current_topic_index\": 0,\n  \"current_question_index\": 0,\n  \"answers\": {}\n}\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [1024, 768],
+      "id": "output-parser",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-ready",
+              "leftValue": "={{ $json.output.Status }}",
+              "rightValue": "Ready",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1088, 352],
+      "id": "if-ready-node",
+      "name": "If Ready"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Save conversation state to database\nconst preparedData = $('Code - Prepare Data').first().json;\nconst aiOutput = $('AI Agent - Conversation').first().json.output;\n\nconst session_id = preparedData.session_id;\nconst agent_id = preparedData.agent_name;\nconst user_id = preparedData.user_id;\n\nconst newState = aiOutput.state || {\n  phase: 'topic_selection',\n  selected_topics: [],\n  current_topic_index: 0,\n  current_question_index: 0,\n  answers: {}\n};\n\nconst status = aiOutput.Status === 'Ready' ? 'completed' : 'active';\n\ntry {\n  const supabaseUrl = 'https://aoteeitreschwzkbpqyd.supabase.co';\n  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvdGVlaXRyZXNjaHd6a2JwcXlkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDEyMDAzNCwiZXhwIjoyMDU5Njk2MDM0fQ.EfXz8Rv_6yvI4MTDk5WoKSQ0E0jxoO3oWEMO-xAEtWU';\n\n  const response = await fetch(`${supabaseUrl}/rest/v1/agent_conversation_state`, {\n    method: 'POST',\n    headers: {\n      'apikey': supabaseKey,\n      'Authorization': `Bearer ${supabaseKey}`,\n      'Content-Type': 'application/json',\n      'Prefer': 'resolution=merge-duplicates'\n    },\n    body: JSON.stringify({\n      session_id: session_id,\n      agent_id: agent_id,\n      firm_user_id: user_id,\n      state: newState,\n      status: status,\n      updated_at: new Date().toISOString()\n    })\n  });\n\n  if (response.ok) {\n    console.log('State saved successfully:', { session_id, agent_id, phase: newState.phase });\n  }\n} catch (err) {\n  console.log('State save error:', err.message);\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1280, 544],
+      "id": "save-state-node",
+      "name": "Code - Save State"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"user_id\": \"{{ $('Code - Prepare Data').item.json.user_id }}\",\n  \"session_id\": \"{{ $('Code - Prepare Data').item.json.session_id }}\",\n  \"agent_name\": \"{{ $('Code - Prepare Data').item.json.agent_name }}\",\n  \"timestamp_of_call_made\": \"{{ new Date().toISOString() }}\",\n  \"request_id\": \"{{ $('Code - Prepare Data').item.json.request_id }}\",\n  \"agent_response\": {{ JSON.stringify($('AI Agent - Conversation').item.json.output.response) }},\n  \"agent_status\": \"Waiting\",\n  \"state\": {{ JSON.stringify($('AI Agent - Conversation').item.json.output.state) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1504, 560],
+      "id": "respond-waiting",
+      "name": "Respond - Waiting"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare data for newsletter HTML generation\nconst preparedData = $('Code - Prepare Data').first().json;\nconst aiOutput = $('AI Agent - Conversation').first().json.output;\nconst state = aiOutput.state;\n\n// Extract all answers by topic\nconst topicDetails = state.selected_topics.map(topicCode => {\n  const answers = state.answers[topicCode] || {};\n  return {\n    topic_code: topicCode,\n    answers: answers\n  };\n});\n\nreturn [{\n  json: {\n    user_id: preparedData.user_id,\n    session_id: preparedData.session_id,\n    request_id: preparedData.request_id,\n    \n    // Topics and answers\n    selected_topics: state.selected_topics,\n    topic_details: JSON.stringify(topicDetails, null, 2),\n    all_answers: JSON.stringify(state.answers, null, 2),\n    \n    // Company context\n    website_url: preparedData.website_url,\n    website_icon: preparedData.website_icon,\n    communication_tone: preparedData.communication_tone,\n    knowledge_base: preparedData.knowledge_base,\n    newsletter_instructions: preparedData.newsletter_instructions\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1328, 192],
+      "id": "prepare-generation",
+      "name": "Code - Prepare Generation"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Generate a complete newsletter using the information gathered.\n\n## NEWSLETTER STRUCTURE\n\n### 1. HERO ARTICLE (300-400 words)\n- Use the FIRST selected topic as primary\n- Deep dive into the user's answers\n\n### 2. QUICK INSIGHTS (100-150 words each)\n- One for each ADDITIONAL selected topic\n- Summarize key points\n\n### 3. CTA SECTION (100-150 words)\n- Combine relevant calls-to-action\n\n### 4. FOOTER\n- Soft conclusion and brand signature\n\n---\n\n## SELECTED TOPICS\n{{ $json.selected_topics }}\n\n## TOPIC DETAILS WITH ANSWERS\n{{ $json.topic_details }}\n\n## ALL ANSWERS\n{{ $json.all_answers }}\n\n---\n\n## COMPANY CONTEXT\nWebsite: {{ $json.website_url }}\nLogo: {{ $json.website_icon }}\nTone: {{ $json.communication_tone }}\n\nKnowledge Base:\n{{ $json.knowledge_base }}\n\n---\n\n## INSTRUCTIONS\n{{ $json.newsletter_instructions }}\n\n---\n\n## CRITICAL RULES\n1. NO PLACEHOLDERS - Use actual content\n2. NO IMAGE PLACEHOLDERS - Only include logo if provided\n3. RESPONSIVE HTML - Works in email clients\n4. INLINE STYLES - Email clients strip external CSS\n\n## OUTPUT\nGenerate complete HTML newsletter.\nJust the HTML - nothing else.",
+        "options": {
+          "systemMessage": "You are an elite newsletter writer. Generate complete, professional HTML newsletters. OUTPUT ONLY THE HTML - no markdown code blocks, no explanations."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [1568, 192],
+      "id": "ai-agent-generator",
+      "name": "AI Agent - Generator"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3.7-sonnet",
+        "options": {
+          "responseFormat": "text",
+          "maxTokens": 8000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [1568, 416],
+      "id": "openrouter-generator",
+      "name": "OpenRouter Chat Model - Generator",
+      "credentials": {
+        "openRouterApi": {
+          "id": "zc9d5HHhbyNyysy0",
+          "name": "OpenRouter Soma Test"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Clean HTML output\nconst items = $input.all();\n\nreturn items.map(item => {\n  let raw = item.json.output;\n\n  if (!raw) {\n    return { json: { error: 'No output field found' } };\n  }\n\n  // Remove markdown code blocks\n  const cleaned = raw\n    .replace(/^```html\\s*/, '')\n    .replace(/^```\\s*/, '')\n    .replace(/```$/, '')\n    .trim();\n\n  return {\n    json: {\n      Newsletter_HTML: cleaned\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1856, 192],
+      "id": "clean-html",
+      "name": "Code - Clean HTML"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"user_id\": \"{{ $('Code - Prepare Data').item.json.user_id }}\",\n  \"session_id\": \"{{ $('Code - Prepare Data').item.json.session_id }}\",\n  \"agent_name\": \"newsletter_multi\",\n  \"timestamp_of_call_made\": \"{{ new Date().toISOString() }}\",\n  \"request_id\": \"{{ $('Code - Prepare Data').item.json.request_id }}\",\n  \"agent_response\": {{ JSON.stringify($json.Newsletter_HTML) }},\n  \"agent_status\": \"Ready\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2048, 192],
+      "id": "respond-ready",
+      "name": "Respond - Ready"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "Code - Load Documentation", "type": "main", "index": 0}]]
+    },
+    "Code - Load Documentation": {
+      "main": [[{"node": "Supabase - Get User Data", "type": "main", "index": 0}]]
+    },
+    "Supabase - Get User Data": {
+      "main": [[{"node": "Code - Prepare Data", "type": "main", "index": 0}]]
+    },
+    "Code - Prepare Data": {
+      "main": [[{"node": "AI Agent - Conversation", "type": "main", "index": 0}]]
+    },
+    "AI Agent - Conversation": {
+      "main": [[{"node": "If Ready", "type": "main", "index": 0}]]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [[{"node": "AI Agent - Conversation", "type": "ai_languageModel", "index": 0}]]
+    },
+    "Conversation Memory": {
+      "ai_memory": [[{"node": "AI Agent - Conversation", "type": "ai_memory", "index": 0}]]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [[{"node": "AI Agent - Conversation", "type": "ai_outputParser", "index": 0}]]
+    },
+    "If Ready": {
+      "main": [
+        [{"node": "Code - Prepare Generation", "type": "main", "index": 0}],
+        [{"node": "Code - Save State", "type": "main", "index": 0}]
+      ]
+    },
+    "Code - Prepare Generation": {
+      "main": [[{"node": "AI Agent - Generator", "type": "main", "index": 0}]]
+    },
+    "AI Agent - Generator": {
+      "main": [[{"node": "Code - Clean HTML", "type": "main", "index": 0}]]
+    },
+    "OpenRouter Chat Model - Generator": {
+      "ai_languageModel": [[{"node": "AI Agent - Generator", "type": "ai_languageModel", "index": 0}]]
+    },
+    "Code - Clean HTML": {
+      "main": [[{"node": "Respond - Ready", "type": "main", "index": 0}]]
+    },
+    "Code - Save State": {
+      "main": [[{"node": "Respond - Waiting", "type": "main", "index": 0}]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "newsletter-multi-revised-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "Newsletter_Multi_Revised",
+  "tags": []
+}

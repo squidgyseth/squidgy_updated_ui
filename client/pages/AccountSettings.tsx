@@ -17,12 +17,18 @@ export default function AccountSettings() {
   const [locationId, setLocationId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Local state for email to ensure re-render when profile changes
+  const [displayEmail, setDisplayEmail] = useState('');
+
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || '');
       setAvatarUrl(profile.profile_avatar_url || '');
+      setDisplayEmail(profile.email || user?.email || '');
+    } else if (user?.email) {
+      setDisplayEmail(user.email);
     }
-  }, [profile]);
+  }, [profile, user]);
 
   // Fetch location_id from ghl_subaccounts
   useEffect(() => {
@@ -171,7 +177,7 @@ export default function AccountSettings() {
       // Prepare profile data for upsert
       const profileData = {
         user_id: profile.user_id,
-        email: user.email,
+        email: profile?.email || user.email,
         full_name: fullName.trim(),
         profile_avatar_url: newAvatarUrl,
         updated_at: new Date().toISOString(),
@@ -245,7 +251,7 @@ export default function AccountSettings() {
               />
             ) : (
               <span className="text-white text-2xl font-bold">
-                {fullName ? fullName.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase() || 'U'}
+                {fullName ? fullName.charAt(0).toUpperCase() : displayEmail?.charAt(0).toUpperCase() || 'U'}
               </span>
             )}
             <input
@@ -308,7 +314,7 @@ export default function AccountSettings() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
             <input
               type="email"
-              value={user?.email || ''}
+              value={displayEmail}
               disabled
               className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
             />

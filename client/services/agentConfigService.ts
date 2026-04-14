@@ -1,6 +1,6 @@
 import type { AgentCarouselConfig, AgentPage } from '../types/carouselTypes';
-import OptimizedAgentService from './optimizedAgentService';
-import { type AgentConfig as OptimizedAgentConfig } from '../data/agents';
+import DatabaseAgentService from './databaseAgentService';
+import { type AgentConfig as OptimizedAgentConfig } from './databaseAgentService';
 
 export interface AgentConfig {
   agent: {
@@ -48,8 +48,8 @@ export class AgentConfigService {
    */
   async loadAgentConfig(agentId: string): Promise<AgentConfig | null> {
     try {
-      const agentService = OptimizedAgentService.getInstance();
-      const config = agentService.getAgentById(agentId);
+      const agentService = DatabaseAgentService.getInstance();
+      const config = await agentService.getAgentById(agentId);
       
       if (config) {
         this.agentConfigs.set(agentId, config as AgentConfig);
@@ -125,8 +125,8 @@ export class AgentConfigService {
    */
   async getAllAgents(): Promise<AgentConfig[]> {
     try {
-      const agentService = OptimizedAgentService.getInstance();
-      const agents = agentService.getAllAgents();
+      const agentService = DatabaseAgentService.getInstance();
+      const agents = await agentService.getAllAgents();
       return agents as AgentConfig[];
     } catch (error) {
       console.error('Could not load agents:', error);

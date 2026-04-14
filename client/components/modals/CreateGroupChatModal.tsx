@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import GroupChatService from "../../services/groupChatService";
-import OptimizedAgentService from "../../services/optimizedAgentService";
+import DatabaseAgentService from "../../services/databaseAgentService";
+import OnboardingService from "../../services/onboardingService";
 
 interface CreateGroupChatModalProps {
   isOpen: boolean;
@@ -24,22 +25,92 @@ export default function CreateGroupChatModal({ isOpen, onClose, onCreateGroup }:
   const [groupName, setGroupName] = useState("");
   const [activeTab, setActiveTab] = useState<"ai" | "team">("ai");
   const [isCreating, setIsCreating] = useState(false);
+  const [assistants, setAssistants] = useState<Assistant[]>([]);
   
   const groupChatService = GroupChatService.getInstance();
-  const agentService = OptimizedAgentService.getInstance();
+  const agentService = DatabaseAgentService.getInstance();
 
-  // Load assistants from the agent service
-  const loadedAgents = agentService.getAllAgents();
-  const assistants: Assistant[] = loadedAgents.map(config => ({
-    id: config.agent.id,
-    name: config.agent.name,
-    category: config.agent.category || "General",
-    description: config.agent.description || config.agent.specialization || "AI Assistant",
-    avatar: config.agent.avatar || "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
-    isActive: true
-  }));
+  // Load enabled assistants with proper filtering
+  useEffect(() => {
+    const loadEnabledAssistants = async () => {
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setAssistants([]);
+          return;
+        }
 
-  const [selectedAssistants, setSelectedAssistants] = useState<string[]>([assistants[0]?.id || ""]);
+        // Get the correct user_id from profiles table
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error('Error fetching profile:', profileError);
+          setAssistants([]);
+          return;
+        }
+
+        const actualUserId = profile.user_id;
+        const allAgentConfigs = await agentService.getAllAgents();
+        const onboardingService = OnboardingService.getInstance();
+
+        // Check if we should show all agents (local development override)
+        const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';
+        
+        // Get platform-enabled agents from agents table (skip if show_all_agents is true)
+        let platformEnabledIds: Set<string>;
+        
+        if (showAllAgents) {
+          // In local development with show_all_agents, all agents are considered platform-enabled
+          platformEnabledIds = new Set(allAgentConfigs.map(c => c.agent.id));
+        } else {
+          const { data: platformAgents } = await supabase
+            .from('agents')
+            .select('agent_id, is_enabled')
+            .eq('is_enabled', true);
+          
+          platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+        }
+
+        // Get user-enabled agents from assistant_personalizations
+        const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
+        const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
+
+        // Always include Personal Assistant
+        enabledAgentIds.add('personal_assistant');
+        platformEnabledIds.add('personal_assistant');
+
+        // Filter configs to only show agents that are BOTH platform-enabled AND user-enabled
+        const enabledConfigs = allAgentConfigs.filter(config =>
+          enabledAgentIds.has(config.agent.id) && platformEnabledIds.has(config.agent.id)
+        );
+
+        const assistantList: Assistant[] = enabledConfigs.map(config => ({
+          id: config.agent.id,
+          name: config.agent.name,
+          category: config.agent.category || "General",
+          description: config.agent.description || config.agent.specialization || "AI Assistant",
+          avatar: config.agent.avatar || "https://api.builder.io/api/v1/image/assets/TEMP/67bd34c904bea0de4f9e4c9c66814ba3425c5a06?width=64",
+          isActive: true
+        }));
+
+        setAssistants(assistantList);
+      } catch (error) {
+        console.error('Failed to load enabled assistants:', error);
+        setAssistants([]);
+      }
+    };
+
+    if (isOpen) {
+      loadEnabledAssistants();
+    }
+  }, [isOpen]);
+
+  const [selectedAssistants, setSelectedAssistants] = useState<string[]>(assistants.length > 0 ? [assistants[0].id] : []);
 
   const handleAssistantToggle = (assistantId: string) => {
     setSelectedAssistants(prev => 

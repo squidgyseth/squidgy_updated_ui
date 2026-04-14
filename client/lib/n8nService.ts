@@ -4,9 +4,10 @@
  */
 
 import type { N8nRequest, N8nResponse } from '../types/n8n.types';
+import { getN8nWebhookUrl } from './envConfig';
 
 // Base URL for n8n webhook
-const N8N_WEBHOOK_BASE = import.meta.env.VITE_N8N_WEBHOOK_URL;
+const N8N_WEBHOOK_BASE = getN8nWebhookUrl();
 
 /**
  * Send message to Seth agent specifically
@@ -131,6 +132,7 @@ export const sendToN8nWorkflow = async (
     agent_name: agentName,
     timestamp_of_call_made: new Date().toISOString(),
     request_id: finalRequestId,
+    sending_from: "User",
     ...(newsletterId && { newsletter_id: newsletterId }), // Include newsletter_id only if provided
     ...(conversationState && { state: conversationState }) // Include state for multi-turn conversations
   };
@@ -425,6 +427,7 @@ export const sendToN8nWorkflowStreaming = async (
     agent_name: agentName,
     timestamp_of_call_made: new Date().toISOString(),
     request_id: finalRequestId,
+    sending_from: "User",
     ...(newsletterId && { newsletter_id: newsletterId }),
     ...(conversationState && { state: conversationState })
   };
@@ -458,28 +461,29 @@ export const sendToN8nWorkflowStreaming = async (
       const chunk = decoder.decode(value, { stream: true });
       fullText += chunk;
       
-      // Parse each line for streaming content
+      // Parse each line for streaming content (JSONL format)
       const lines = chunk.split('\n');
       for (const line of lines) {
         if (!line.trim()) continue;
         try {
           const parsed = JSON.parse(line.trim());
           
-          // Collect streaming text from "item" type entries
-          if (parsed.type === 'item' && parsed.content !== undefined) {
+          // Handle n8n streaming chunk types: message, item, begin, end
+          if ((parsed.type === 'message' || parsed.type === 'item') && parsed.content !== undefined) {
+            // Accumulate streaming text token by token
             streamingText += parsed.content;
-            // Send update to UI (but filter out JSON-looking content)
+            // Send accumulated text to UI (filter out JSON-looking content)
             if (!parsed.content.trim().startsWith('{') && !parsed.content.trim().startsWith('```')) {
               onStreamUpdate(streamingText);
             }
           }
           
-          // Check for complete response
+          // Check for complete response (final JSON with agent_response)
           if (parsed.agent_response !== undefined) {
             jsonMatches.push(parsed);
           }
         } catch {
-          // Not valid JSON, skip
+          // Not valid JSON, skip (could be partial chunk)
         }
       }
     }

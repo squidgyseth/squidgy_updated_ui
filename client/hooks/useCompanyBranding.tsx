@@ -73,8 +73,19 @@ export function useCompanyBranding(): CompanyBranding {
         if (businessDetails?.business_name && !isErrorText(businessDetails.business_name)) {
           // First priority: business_name from business_details table
           companyName = businessDetails.business_name;
-        } else if (websiteAnalysis?.business_domain && !isErrorText(websiteAnalysis.business_domain)) {
-          // Second priority: business_domain from website_analysis
+        } else if (websiteAnalysis?.business_domain && 
+                   !isErrorText(websiteAnalysis.business_domain) &&
+                   !websiteAnalysis.business_domain.includes('supabase.co') &&
+                   !websiteAnalysis.business_domain.includes('localhost') &&
+                   !websiteAnalysis.business_domain.includes('127.0.0.1') &&
+                   !websiteAnalysis.business_domain.startsWith('www.') &&
+                   !websiteAnalysis.business_domain.includes('.com') &&
+                   !websiteAnalysis.business_domain.includes('.ch') &&
+                   !websiteAnalysis.business_domain.includes('.co') &&
+                   !websiteAnalysis.business_domain.includes('.org') &&
+                   !websiteAnalysis.business_domain.includes('.net') &&
+                   !websiteAnalysis.business_domain.includes('.io')) {
+          // Second priority: business_domain from website_analysis (but skip URLs/domains)
           companyName = websiteAnalysis.business_domain;
         } else if (websiteAnalysis?.company_description && !isErrorText(websiteAnalysis.company_description)) {
           // Third priority: extract from company_description
@@ -90,12 +101,19 @@ export function useCompanyBranding(): CompanyBranding {
           }
         } else if (websiteAnalysis?.website_url) {
           // Last resort: extract from website URL
+          // But skip if it's a Supabase storage URL or other internal URLs
           try {
             const url = new URL(websiteAnalysis.website_url);
             const domain = url.hostname.replace('www.', '');
-            companyName = domain.split('.')[0];
-            // Capitalize first letter
-            companyName = companyName.charAt(0).toUpperCase() + companyName.slice(1);
+            
+            // Skip Supabase URLs and other internal/storage URLs
+            if (!domain.includes('supabase.co') && 
+                !domain.includes('localhost') && 
+                !domain.includes('127.0.0.1')) {
+              companyName = domain.split('.')[0];
+              // Capitalize first letter
+              companyName = companyName.charAt(0).toUpperCase() + companyName.slice(1);
+            }
           } catch (e) {
           }
         }

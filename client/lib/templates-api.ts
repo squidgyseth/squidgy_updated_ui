@@ -1,7 +1,9 @@
 // templates-api.ts - Service for Templated.io API calls via our backend
 // Follows the same pattern as supabase-api.ts for consistency
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { getBackendUrl } from './envConfig';
+
+const BACKEND_URL = getBackendUrl();
 
 interface TemplateLayer {
   name: string;
@@ -167,6 +169,13 @@ class TemplatesApiService {
       return { data, error: null };
     } catch (error: any) {
       console.error('❌ Error fetching templates:', error);
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        return {
+          data: null,
+          error: { message: 'Network error: Please check your internet connection and try again.' }
+        };
+      }
       return {
         data: null,
         error: { message: error.message || 'Failed to load templates' }
@@ -221,6 +230,13 @@ class TemplatesApiService {
       return { data, error: null };
     } catch (error: any) {
       console.error('❌ Error toggling template:', error);
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        return {
+          data: null,
+          error: { message: 'Network error: Please check your internet connection and try again.' }
+        };
+      }
       return {
         data: null,
         error: { message: error.message || 'Failed to update template' }
@@ -278,6 +294,13 @@ class TemplatesApiService {
       return { data, error: null };
     } catch (error: any) {
       console.error('❌ Error bulk toggling templates:', error);
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        return {
+          data: null,
+          error: { message: 'Network error: Please check your internet connection and try again.' }
+        };
+      }
       return {
         data: null,
         error: { message: error.message || 'Failed to update templates' }

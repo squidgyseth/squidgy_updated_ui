@@ -7,9 +7,11 @@ import { TouchButton } from '../layout/TouchButton';
 import { MobileCard } from '../layout/MobileCard';
 import { Badge } from '../../ui/badge';
 import { cn } from '../../../lib/utils';
-import OptimizedAgentService from '../../../services/optimizedAgentService';
+import DatabaseAgentService from '../../../services/databaseAgentService';
 import OnboardingService from '../../../services/onboardingService';
 import { supabase } from '../../../lib/supabase';
+import { useUser } from '../../../hooks/useUser';
+import { useAdmin } from '../../../hooks/useAdmin';
 
 interface Agent {
   id: string;
@@ -33,13 +35,15 @@ export function MobileChatList({
   onAgentSelect,
   onCreateAgent,
 }: MobileChatListProps) {
+  const { userId } = useUser();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [agents, setAgents] = useState<Agent[]>([]);
 
   useEffect(() => {
     loadEnabledAgents();
-  }, []);
+  }, [isAdmin]); // Reload when admin status changes
 
   const loadEnabledAgents = async () => {
     try {
@@ -65,21 +69,52 @@ export function MobileChatList({
 
       const actualUserId = profile.user_id;
 
-      const agentService = OptimizedAgentService.getInstance();
+      const agentService = DatabaseAgentService.getInstance();
       const onboardingService = OnboardingService.getInstance();
-      const allAgentConfigs = agentService.getAllAgents();
+      // Force refresh to get latest agents from database
+      const allAgentConfigs = await agentService.getAllAgents(true);
 
-      // Get enabled agents for this user
+      // Check if we should show all agents (local development override)
+      const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';
+      
+      // Get platform-enabled agents from agents table (skip if show_all_agents is true)
+      let platformEnabledIds: Set<string>;
+      
+      if (showAllAgents) {
+        // In local development with show_all_agents, all agents are considered platform-enabled
+        platformEnabledIds = new Set(allAgentConfigs.map(c => c.agent.id));
+      } else {
+        const { data: platformAgents } = await supabase
+          .from('agents')
+          .select('agent_id, is_enabled')
+          .eq('is_enabled', true);
+        
+        platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+      }
+
+      // Get user-enabled agents from assistant_personalizations
       const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
       const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
 
       // Always include Personal Assistant (pinned)
       enabledAgentIds.add('personal_assistant');
+      platformEnabledIds.add('personal_assistant');
 
-      // Filter configs to only show enabled agents
-      const enabledConfigs = allAgentConfigs.filter(config =>
-        enabledAgentIds.has(config.agent.id)
-      );
+      // Filter configs to only show agents that are BOTH platform-enabled AND user-enabled
+      // Exception: Admin-only agents bypass user enablement check for admin users
+      const enabledConfigs = allAgentConfigs.filter(config => {
+        const isAdminOnly = config.agent.admin_only === true;
+        const isPlatformEnabled = platformEnabledIds.has(config.agent.id);
+        const isUserEnabled = enabledAgentIds.has(config.agent.id);
+        
+        // Admin-only agents: show if user is admin AND platform-enabled
+        if (isAdminOnly) {
+          return isAdmin && isPlatformEnabled;
+        }
+        
+        // Regular agents: must be both platform-enabled AND user-enabled
+        return isPlatformEnabled && isUserEnabled;
+      });
 
       // Transform configs to match mobile format
       const loadedAgents: Agent[] = enabledConfigs.map((config) => {

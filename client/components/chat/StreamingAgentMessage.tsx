@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useStreamingText } from '../../lib/streaming';
+import { Loader } from 'lucide-react';
 import type { N8nResponse } from '../../types/n8n.types';
 import HTMLPreview from './HTMLPreview';
 import SocialMediaPreview from './SocialMediaPreview';
@@ -12,27 +12,23 @@ import { maskStorageUrlsInText } from '../../utils/urlMasking';
 interface StreamingAgentMessageProps {
   response: N8nResponse;
   className?: string;
-  enableStreaming?: boolean; // Allow disabling streaming for specific cases
-  streamingSpeed?: number; // Configurable streaming speed (ms per character)
   onButtonClick?: (text: string) => void; // Handler for button clicks
+  isExternalStreaming?: boolean; // True when content is being streamed from external source (n8n)
 }
 
 /**
- * Component that handles agent responses with optional streaming animation.
- * For plain text/markdown responses, streams character-by-character.
- * For HTML/structured content, shows immediately (no streaming).
+ * Component that handles agent responses.
+ * All streaming comes from n8n - no internal character-by-character animation.
  */
 export default function StreamingAgentMessage({
   response,
   className = '',
-  enableStreaming = true,
-  streamingSpeed = 15,
-  onButtonClick
+  onButtonClick,
+  isExternalStreaming = false
 }: StreamingAgentMessageProps) {
   // Ensure agent_response is always a string to prevent undefined errors
   const safeAgentResponse = response.agent_response ?? response.response ?? '';
   
-  const [shouldStream, setShouldStream] = useState(false);
   const [displayContent, setDisplayContent] = useState(safeAgentResponse);
 
   // Helper to detect if content contains interactive buttons
@@ -169,74 +165,13 @@ export default function StreamingAgentMessage({
     }
   };
 
-  // Determine if this content should be streamed
+  // Update display content - all streaming comes from n8n
   useEffect(() => {
-    if (!enableStreaming) {
-      setShouldStream(false);
-      return;
-    }
-
-    // Don't stream full HTML documents or social media content
-    // Simple inline HTML like <br>, <strong> should still stream as text
-    const isFullHtmlDocument = (
-      /<!DOCTYPE/i.test(safeAgentResponse) ||
-      /<html[\s>]/i.test(safeAgentResponse) ||
-      /<body[\s>]/i.test(safeAgentResponse) ||
-      /<table[\s>]/i.test(safeAgentResponse) ||
-      /<style[\s>]/i.test(safeAgentResponse)
-    );
-    const isSocial = isSocialMediaContent();
-    const isContentRepurposer = response.agent_name === 'content_repurposer';
-    const isNewsletter = response.agent_name === 'newsletter';
-
-    // Only stream plain text/markdown for Ready, Waiting states, or when status is undefined
-    // Don't stream for 'Nothing' status (agent is idle)
-    // When content has buttons, we still stream the text part (InteractiveMessageButtons handles separation)
-    const shouldStreamContent =
-      !isFullHtmlDocument &&
-      !isSocial &&
-      !isContentRepurposer &&
-      !isNewsletter &&
-      (response.agent_status === 'Ready' ||
-       response.agent_status === 'Waiting' ||
-       !response.agent_status); // Also stream when status is undefined
-
-    setShouldStream(shouldStreamContent);
-  }, [safeAgentResponse, response.agent_status, response.agent_name, enableStreaming]);
-
-  // Determine content to stream: if buttons present, stream only text part
-  const contentToStream = React.useMemo(() => {
-    if (!shouldStream) return '';
-
-    const hasButtons = hasInteractiveButtons(safeAgentResponse);
-    if (hasButtons) {
-      // Stream only the text content (buttons will render separately)
-      return extractTextContent(safeAgentResponse);
-    }
-
-    // Stream full content
-    return safeAgentResponse;
-  }, [shouldStream, safeAgentResponse]);
-
-  // Use streaming hook for text content
-  const { streamedText, isStreaming } = useStreamingText(
-    contentToStream,
-    {
-      speed: streamingSpeed,
-      autoStart: shouldStream,
-      onComplete: () => {
-      }
-    }
-  );
-
-  // Update display content based on streaming state
-  useEffect(() => {
-    if (shouldStream) {
-      setDisplayContent(streamedText);
-    } else {
-      setDisplayContent(safeAgentResponse);
-    }
-  }, [shouldStream, streamedText, safeAgentResponse]);
+    setDisplayContent(safeAgentResponse);
+  }, [safeAgentResponse]);
+  
+  // Track if currently streaming from n8n
+  const isStreaming = isExternalStreaming;
 
   // Render different content types based on agent_status and content type
   const renderContent = () => {
@@ -288,7 +223,7 @@ export default function StreamingAgentMessage({
         // Pass full content for button parsing + streaming text for display
         if (hasButtons && onButtonClick) {
           return (
-            <div className="bg-gray-100 rounded-lg px-4 py-2">
+            <div className="bg-gray-100 rounded-lg px-4 py-2 min-h-[2.5rem] min-w-[120px]">
               <InteractiveMessageButtons
                 content={safeAgentResponse}
                 streamingText={displayContent}
@@ -297,9 +232,7 @@ export default function StreamingAgentMessage({
               />
               {/* Show streaming cursor while text is streaming */}
               {isStreaming && (
-                <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
-                  ▍
-                </span>
+                <span className="inline-block w-0.5 h-4 ml-0.5 bg-purple-500 animate-pulse align-text-bottom" />
               )}
             </div>
           );
@@ -310,7 +243,7 @@ export default function StreamingAgentMessage({
           const introText = getContentWithoutNumberedOptions(safeAgentResponse);
           const options = extractNumberedOptionsWithDescription(safeAgentResponse);
           return (
-            <div className="bg-gray-100 rounded-lg px-4 py-3">
+            <div className="bg-gray-100 rounded-lg px-4 py-3 min-h-[2.5rem] min-w-[120px]">
               {introText && (
                 <LinkDetectingTextArea
                   content={introText}
@@ -318,9 +251,7 @@ export default function StreamingAgentMessage({
                 />
               )}
               {isStreaming && (
-                <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
-                  ▍
-                </span>
+                <span className="inline-block w-0.5 h-4 ml-0.5 bg-purple-500 animate-pulse align-text-bottom" />
               )}
               {!isStreaming && (
                 <div className="space-y-2">
@@ -343,34 +274,124 @@ export default function StreamingAgentMessage({
         }
 
         // For plain text/markdown content (with streaming)
+        // Show collapsible dropdown while streaming, then show final content
+        const hasContent = displayContent && displayContent.trim().length > 0;
+        
+        // If still streaming (internal or external), show collapsible dropdown with bullet point
+        if (isStreaming || isExternalStreaming) {
+          // Extract only TRUE prefinal steps - simple text without formatting
+          // Prefinal steps: plain text ending with '...' (no bold, no markdown)
+          const fullText = displayContent.trim();
+          const prefinalSteps: string[] = [];
+          
+          // Split by '...' to find prefinal segments
+          const parts = fullText.split('...');
+          for (let i = 0; i < parts.length - 1; i++) {
+            const step = parts[i].trim();
+            // Only include if it's simple text (no markdown formatting like ** or ##)
+            if (step && !step.includes('**') && !step.includes('##') && !step.includes('$**')) {
+              prefinalSteps.push(step + '...');
+            }
+          }
+          // Also check if current text ends with '...' and is simple
+          if (fullText.endsWith('...') && !fullText.includes('**')) {
+            // If the whole text is a simple prefinal step, show it
+            if (prefinalSteps.length === 0) {
+              prefinalSteps.push(fullText);
+            }
+          }
+          
+          return (
+            <div className="bg-gray-100 rounded-lg px-4 py-2 min-w-[200px]">
+              <details className="group" open>
+                <summary className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 list-none select-none">
+                  <Loader className="w-3.5 h-3.5 animate-spin text-purple-600 flex-shrink-0" />
+                  <span>Thinking...</span>
+                  <svg className="w-3 h-3 transition-transform group-open:rotate-180 flex-shrink-0 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                {prefinalSteps.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-gray-200 text-sm text-gray-600 max-h-32 overflow-y-auto">
+                    <ul className="list-disc list-inside space-y-1">
+                      {prefinalSteps.map((step, index) => (
+                        <li key={index}>{step}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </details>
+            </div>
+          );
+        }
+        
+        // Final content display (not streaming)
         return (
-          <div className="bg-gray-100 rounded-lg px-4 py-2">
+          <div className="bg-gray-100 rounded-lg px-4 py-2 min-h-[2.5rem] min-w-[120px]">
             <LinkDetectingTextArea
               content={displayContent}
               className="text-text-primary whitespace-pre-wrap"
             />
-            {/* Show streaming cursor */}
-            {isStreaming && (
-              <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
-                ▍
-              </span>
-            )}
           </div>
         );
 
       case 'Waiting':
         // For Waiting status, display with streaming
+        const hasWaitingContent = displayContent && displayContent.trim().length > 0;
+        
+        // If still streaming (internal or external), show collapsible dropdown with bullet point
+        if (isStreaming || isExternalStreaming) {
+          // Extract only TRUE prefinal steps - simple text without formatting
+          const fullText = displayContent.trim();
+          const waitingPrefinalSteps: string[] = [];
+          
+          // Split by '...' to find prefinal segments
+          const parts = fullText.split('...');
+          for (let i = 0; i < parts.length - 1; i++) {
+            const step = parts[i].trim();
+            // Only include if it's simple text (no markdown formatting)
+            if (step && !step.includes('**') && !step.includes('##') && !step.includes('$**')) {
+              waitingPrefinalSteps.push(step + '...');
+            }
+          }
+          // Also check if current text ends with '...' and is simple
+          if (fullText.endsWith('...') && !fullText.includes('**')) {
+            if (waitingPrefinalSteps.length === 0) {
+              waitingPrefinalSteps.push(fullText);
+            }
+          }
+          
+          return (
+            <div className="bg-gray-100 rounded-lg px-4 py-2 min-w-[200px]">
+              <details className="group" open>
+                <summary className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 list-none select-none">
+                  <Loader className="w-3.5 h-3.5 animate-spin text-purple-600 flex-shrink-0" />
+                  <span>Thinking...</span>
+                  <svg className="w-3 h-3 transition-transform group-open:rotate-180 flex-shrink-0 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                {waitingPrefinalSteps.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-gray-200 text-sm text-gray-600 max-h-32 overflow-y-auto">
+                    <ul className="list-disc list-inside space-y-1">
+                      {waitingPrefinalSteps.map((step, index) => (
+                        <li key={index}>{step}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </details>
+            </div>
+          );
+        }
+        
+        // Final content display
         return (
-          <div className="bg-gray-100 rounded-lg px-4 py-2">
+          <div className="bg-gray-100 rounded-lg px-4 py-2 min-h-[2.5rem] min-w-[120px]">
             <LinkDetectingTextArea
               content={displayContent}
               className="text-text-primary whitespace-pre-wrap"
             />
-            {isStreaming && (
-              <span className="inline-block w-1.5 h-4 ml-1 bg-purple-500 animate-pulse align-middle">
-                ▍
-              </span>
-            )}
           </div>
         );
 

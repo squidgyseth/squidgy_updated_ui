@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/hooks/useUser';
+import { supabase } from '@/lib/supabase';
 import ReferralFlowLoader from '@/services/referralFlowLoader';
 import { ReferralStats, WaitlistPosition, ShareStats, ReferredUser, Achievement, LeaderboardEntry } from '@/types/referral.types';
 import { toast } from 'sonner';
@@ -310,15 +311,35 @@ export default function ReferralHub() {
                     >
                       🏆 View Leaderboard
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full"
                       onClick={async () => {
                         try {
-                          await navigator.clipboard.writeText(referralCode);
-                          toast.success('Referral code copied to clipboard!');
+                          // Validate code before copying
+                          const { data: codeCheck, error: checkError } = await supabase
+                            .from('referral_codes')
+                            .select('is_active, used_at')
+                            .eq('code', referralCode)
+                            .maybeSingle();
+
+                          // If code is inactive, used, or doesn't exist, get a new one
+                          if (checkError || !codeCheck || !codeCheck.is_active || codeCheck.used_at) {
+                            toast.info('⚠️ Refreshing your referral code...');
+
+                            const newCodeData = await referralService.getUserReferralCode(userId!);
+                            setReferralCode(newCodeData.code);
+                            setReferralLink(newCodeData.link);
+
+                            await navigator.clipboard.writeText(newCodeData.code);
+                            toast.success('✅ Code copied to clipboard!');
+                          } else {
+                            await navigator.clipboard.writeText(referralCode);
+                            toast.success('Referral code copied to clipboard!');
+                          }
                         } catch (error) {
-                          toast.error('Failed to copy referral code');
+                          console.error('Error copying referral code:', error);
+                          toast.error('Failed to copy referral code. Please try again.');
                         }
                       }}
                     >
@@ -341,11 +362,15 @@ export default function ReferralHub() {
 
             <TabsContent value="share" className="space-y-6">
               {shareStats && (
-                <ShareAndEarn 
+                <ShareAndEarn
                   referralCode={referralCode}
                   referralLink={referralLink}
                   onShare={handleShare}
                   shareStats={shareStats}
+                  onCodeUpdate={(newCode, newLink) => {
+                    setReferralCode(newCode);
+                    setReferralLink(newLink);
+                  }}
                 />
               )}
             </TabsContent>

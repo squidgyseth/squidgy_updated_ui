@@ -1,0 +1,342 @@
+{
+  "name": "SA_Knowledge_Base_Save",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## SA_Knowledge_Base_Save Workflow\n\nWebhook-triggered workflow for saving user knowledge to Neon Postgres.\nCalled from Agent Settings page (frontend).\n\n### Accepts:\n- type: 'text' → Custom instructions (direct text)\n- type: 'file' → File URL (Supabase Storage) → calls backend to extract text\n\n### Flow:\n1. Receive webhook: { user_id, agent_id, type, content/file_url, file_name, category }\n2. Delete existing entries for the same file/source (UPSERT behavior)\n3. Route by type (text vs file)\n4. For text: chunk if needed, output items\n5. For files: call backend /api/file/extract-text → get pre-chunked text\n6. Output one item per chunk (with file_name and file_url metadata)\n7. Generate embedding per chunk (OpenRouter text-embedding-3-small)\n8. INSERT each chunk into user_vector_knowledge_base (Neon)\n9. Return success response\n\n### Chunking:\n- Backend returns pre-chunked text (~1500 chars, 200 overlap)\n- Text input chunked in n8n if > 1500 chars\n- Each chunk = separate row in DB with its own embedding\n\n### Backend extracts: PDF, DOCX, JSON, TXT, MD, Images (OCR)\n### Table: user_vector_knowledge_base\nColumns: user_id, agent_id, document, category, embedding, source, file_name, file_url",
+        "height": 780,
+        "width": 420,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1488,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "b364f302-0f03-43d8-90a9-2d1f2b7e8540",
+      "name": "Overview"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "save-knowledge",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1008,
+        320
+      ],
+      "id": "97bc31d4-96d5-43d7-90fd-e2e9fa7ad9f0",
+      "name": "Webhook",
+      "webhookId": "save-knowledge"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Delete existing entries to enable upsert behavior\n-- For files: delete by file_url (if present) or file_name\n-- For text: delete by user_id + agent_id + category + source\n\n{{ $json.body.file_url ? \n  `DELETE FROM public.user_vector_knowledge_base \n   WHERE user_id = '${$json.body.user_id}' \n     AND file_url = '${$json.body.file_url}';` \n  : $json.body.file_name ? \n    `DELETE FROM public.user_vector_knowledge_base \n     WHERE user_id = '${$json.body.user_id}' \n       AND agent_id = '${$json.body.agent_id}' \n       AND file_name = '${$json.body.file_name}';` \n    : `DELETE FROM public.user_vector_knowledge_base \n       WHERE user_id = '${$json.body.user_id}' \n         AND agent_id = '${$json.body.agent_id}' \n         AND category = '${$json.body.category}' \n         AND source = 'agent_settings';`\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -784,
+        208
+      ],
+      "id": "delete-old-entries-node",
+      "name": "Delete Old Entries",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Webhook').item.json.body.type }}",
+              "value2": "file"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        320
+      ],
+      "id": "89fa24f3-8ab5-410b-a758-0f9378945aed",
+      "name": "Route by Type"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://squidgy-backend-00f664bf1f3d.herokuapp.com/api/file/extract-text",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file_url",
+              "value": "={{ $('Webhook').item.json.body.file_url }}"
+            },
+            {
+              "name": "file_name",
+              "value": "={{ $('Webhook').item.json.body.file_name }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -336,
+        208
+      ],
+      "id": "efc04ee2-554b-4f31-9c67-77307dc798fe",
+      "name": "Extract Text (Backend)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process extracted file content from backend — outputs one item per chunk\nconst webhook = $('Webhook').first().json.body;\nconst backendResponse = $input.first().json;\n\n// Backend returns: { success, file_name, extracted_text, chunks, chunk_count, char_count }\nconst chunks = backendResponse.chunks || [];\nconst fileName = webhook.file_name || backendResponse.file_name || 'uploaded_file';\nconst fileUrl = webhook.file_url || null;\n\nif (!chunks.length) {\n  // Fallback: use extracted_text as single chunk\n  const extractedText = backendResponse.extracted_text || '';\n  if (!extractedText.trim()) {\n    throw new Error(`No text could be extracted from file: ${fileName}`);\n  }\n  return {\n    json: {\n      user_id: webhook.user_id,\n      agent_id: webhook.agent_id,\n      category: webhook.category || 'documents',\n      document: `File: ${fileName}\\n\\n${extractedText}`,\n      source: 'file_upload',\n      file_name: fileName,\n      file_url: fileUrl,\n      chunk_index: 0,\n      total_chunks: 1\n    }\n  };\n}\n\n// Return one item per chunk — n8n will process each through subsequent nodes\nreturn chunks.map((chunk, index) => ({\n  json: {\n    user_id: webhook.user_id,\n    agent_id: webhook.agent_id,\n    category: webhook.category || 'documents',\n    document: `File: ${fileName} [Part ${index + 1}/${chunks.length}]\\n\\n${chunk}`,\n    source: 'file_upload',\n    file_name: fileName,\n    file_url: fileUrl,\n    chunk_index: index,\n    total_chunks: chunks.length\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        208
+      ],
+      "id": "f2cb2e22-c3c0-4846-9cc3-ee48bb1724c7",
+      "name": "Process File Chunks"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process text content — chunk if too large for embedding\nconst webhook = $('Webhook').first().json.body;\nconst fullText = webhook.content || '';\n\nif (!fullText.trim()) {\n  throw new Error('No text content provided');\n}\n\nconst CHUNK_SIZE = 1500;\nconst CHUNK_OVERLAP = 200;\n\n// If text fits in one chunk, return directly\nif (fullText.length <= CHUNK_SIZE) {\n  return {\n    json: {\n      user_id: webhook.user_id,\n      agent_id: webhook.agent_id,\n      category: webhook.category || 'custom_instructions',\n      document: fullText,\n      source: 'agent_settings',\n      chunk_index: 0,\n      total_chunks: 1\n    }\n  };\n}\n\n// Chunk the text\nconst chunks = [];\nlet start = 0;\n\nwhile (start < fullText.length) {\n  let end = start + CHUNK_SIZE;\n\n  if (end >= fullText.length) {\n    const chunk = fullText.slice(start).trim();\n    if (chunk) chunks.push(chunk);\n    break;\n  }\n\n  const segment = fullText.slice(start, end);\n  let breakPos = segment.lastIndexOf('\\n\\n');\n  if (breakPos === -1 || breakPos < CHUNK_SIZE * 0.3) breakPos = segment.lastIndexOf('\\n');\n  if (breakPos === -1 || breakPos < CHUNK_SIZE * 0.3) {\n    // Find last sentence end\n    const sentenceMatch = segment.match(/.*[.!?]\\s/s);\n    if (sentenceMatch) breakPos = sentenceMatch[0].length;\n  }\n  if (breakPos === -1 || breakPos < CHUNK_SIZE * 0.3) breakPos = segment.lastIndexOf(' ');\n  if (breakPos === -1 || breakPos < CHUNK_SIZE * 0.3) breakPos = CHUNK_SIZE;\n\n  const chunk = fullText.slice(start, start + breakPos).trim();\n  if (chunk) chunks.push(chunk);\n  start = start + breakPos - CHUNK_OVERLAP;\n  if (start < 0) start = 0;\n}\n\nreturn chunks.map((chunk, index) => ({\n  json: {\n    user_id: webhook.user_id,\n    agent_id: webhook.agent_id,\n    category: webhook.category || 'custom_instructions',\n    document: chunk,\n    source: 'agent_settings',\n    chunk_index: index,\n    total_chunks: chunks.length\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        448
+      ],
+      "id": "6e0c48ad-704b-427b-8ce6-5812a575096e",
+      "name": "Process Text Chunks"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        112,
+        320
+      ],
+      "id": "60768cb3-6758-4867-a4e0-080745a060f4",
+      "name": "Merge Paths"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "openai/text-embedding-3-small"
+            },
+            {
+              "name": "input",
+              "value": "={{ $json.document }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        352,
+        320
+      ],
+      "id": "8919bede-920c-4e9d-9472-43964667c558",
+      "name": "Get Embedding"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.user_vector_knowledge_base (user_id, agent_id, document, category, embedding, source, file_name, file_url)\nVALUES (\n  '{{ $('Merge Paths').item.json.user_id }}',\n  '{{ $('Merge Paths').item.json.agent_id }}',\n  '{{ $('Merge Paths').item.json.document.replace(/'/g, \"''\").replace(/\\n/g, ' ') }}',\n  '{{ $('Merge Paths').item.json.category }}',\n  '{{ JSON.stringify($json.data[0].embedding) }}',\n  '{{ $('Merge Paths').item.json.source }}',\n  '{{ $('Merge Paths').item.json.file_name || null }}',\n  '{{ $('Merge Paths').item.json.file_url || null }}'\n)\nRETURNING id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        576,
+        320
+      ],
+      "id": "9aa1904b-c673-4668-a3bb-a94b2a625f06",
+      "name": "Insert to Neon",
+      "credentials": {
+        "postgres": {
+          "id": "9VZuQcfK90oMX16w",
+          "name": "Neon Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all inserted chunk IDs and return final response\nconst allItems = $input.all();\nconst insertedIds = allItems.map(item => item.json?.id || null).filter(Boolean);\n\n// Get metadata from Merge Paths (first item)\nconst trigger = $('Merge Paths').first().json;\n\nreturn {\n  json: {\n    success: true,\n    action: 'knowledge_saved',\n    user_id: trigger.user_id,\n    agent_id: trigger.agent_id,\n    category: trigger.category,\n    source: trigger.source,\n    chunks_inserted: insertedIds.length,\n    inserted_ids: insertedIds,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        320
+      ],
+      "id": "54a92308-f209-4d11-9160-ece1cb517ecf",
+      "name": "Response"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Delete Old Entries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Old Entries": {
+      "main": [
+        [
+          {
+            "node": "Route by Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Type": {
+      "main": [
+        [
+          {
+            "node": "Extract Text (Backend)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Process Text Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text (Backend)": {
+      "main": [
+        [
+          {
+            "node": "Process File Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process File Chunks": {
+      "main": [
+        [
+          {
+            "node": "Merge Paths",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Text Chunks": {
+      "main": [
+        [
+          {
+            "node": "Merge Paths",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Paths": {
+      "main": [
+        [
+          {
+            "node": "Get Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Embedding": {
+      "main": [
+        [
+          {
+            "node": "Insert to Neon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert to Neon": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2e01bab3-dd80-4be8-bfe2-85a90866282e",
+  "meta": {
+    "instanceId": "009acbaf56d9d6ab6c0c4e58e15e5428df45ae91e46a81964523fc4b2264aced"
+  },
+  "id": "44ANuNS1PnXTlyIf",
+  "tags": []
+}

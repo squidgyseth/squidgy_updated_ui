@@ -5,10 +5,12 @@ import { toast } from 'sonner';
 import { signIn } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import { useUser } from "@/hooks/useUser";
+import { profilesApi } from '../lib/supabase-api';
 import { onboardingRouter } from "@/services/onboardingRouter";
 import { linkScoresToUser, getGameHistory } from '@/services/anonymousPlayer';
 import AuthFooterLinks from '../components/AuthFooterLinks';
 import AuthCarousel from '../components/AuthCarousel';
+import { getFrontendUrl } from '@/lib/envConfig';
 
 // SVG Icons from the design
 const GoogleIcon = () => (
@@ -55,7 +57,21 @@ export default function Login() {
             sessionStorage.removeItem('email_verified');
             toast.success('Email verified and logged in successfully!');
             
-            const loggedInUserId = data.session.user.id;
+            // Get profile.user_id instead of auth.id
+            let loggedInUserId = data.session.user.id;
+            try {
+              const profileResult = await profilesApi.getById(data.session.user.id);
+              if (profileResult.data?.user_id) {
+                loggedInUserId = profileResult.data.user_id;
+              } else if (data.session.user.email) {
+                const emailResult = await profilesApi.getByEmail(data.session.user.email);
+                if (emailResult.data?.user_id) {
+                  loggedInUserId = emailResult.data.user_id;
+                }
+              }
+            } catch (err) {
+              console.error('Failed to fetch profile user_id, using auth id as fallback:', err);
+            }
             setUserId(loggedInUserId);
             
             // Route to appropriate page
@@ -71,7 +87,21 @@ export default function Login() {
       // Check if user is already logged in (e.g., from a previous session or magic link)
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const loggedInUserId = session.user.id;
+        // Get profile.user_id instead of auth.id
+        let loggedInUserId = session.user.id;
+        try {
+          const profileResult = await profilesApi.getById(session.user.id);
+          if (profileResult.data?.user_id) {
+            loggedInUserId = profileResult.data.user_id;
+          } else if (session.user.email) {
+            const emailResult = await profilesApi.getByEmail(session.user.email);
+            if (emailResult.data?.user_id) {
+              loggedInUserId = emailResult.data.user_id;
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch profile user_id, using auth id as fallback:', err);
+        }
         setUserId(loggedInUserId);
         
         const routeDecision = await onboardingRouter.determineLoginRoute(loggedInUserId);
@@ -98,7 +128,7 @@ export default function Login() {
         email: email.toLowerCase(),
         options: {
           shouldCreateUser: false,
-          emailRedirectTo: `${import.meta.env.VITE_FRONTEND_URL}/login`
+          emailRedirectTo: `${getFrontendUrl()}/login`
         }
       });
       
@@ -365,7 +395,7 @@ export default function Login() {
       </div>
 
       {/* Right Side - Carousel */}
-      <AuthCarousel />
+      <AuthCarousel hideGameSlide={true} />
 
     </div>
   );

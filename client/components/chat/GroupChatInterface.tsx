@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader, Users, Bot } from 'lucide-react';
 import GroupChatService, { type GroupChat, type GroupChatMessage } from '../../services/groupChatService';
-import OptimizedAgentService from '../../services/optimizedAgentService';
+import DatabaseAgentService from '../../services/databaseAgentService';
+import OnboardingService from '../../services/onboardingService';
+import { useUser } from '../../hooks/useUser';
+import { useAdmin } from '../../hooks/useAdmin';
 import { supabase } from '../../lib/supabase';
 import { sendToN8nWorkflow, generateRequestId } from '../../lib/n8nService';
 import StreamingChatMessage from './StreamingChatMessage';
@@ -35,19 +38,20 @@ export default function GroupChatInterface({
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [userId, setUserId] = useState<string>('');
+  const { userId } = useUser();
+  const { isAdmin } = useAdmin();
   const [agents, setAgents] = useState<Map<string, AgentConfig>>(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const groupChatService = GroupChatService.getInstance();
-  const agentService = OptimizedAgentService.getInstance();
+  const agentService = DatabaseAgentService.getInstance();
   const thinkingMessage = useThinkingMessage(); // Get rotating thinking message
 
   useEffect(() => {
     getCurrentUser();
     loadAgents();
-  }, []);
+  }, [isAdmin]); // Reload when admin status changes
 
   useEffect(() => {
     if (groupId && userId) {
@@ -86,27 +90,96 @@ export default function GroupChatInterface({
 
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      setUserId(user.id);
-    }
+    // userId is already available from useUser hook
   };
 
-  const loadAgents = () => {
-    const agentConfigs = agentService.getAllAgents();
-    const agentMap = new Map<string, AgentConfig>();
+  const loadAgents = async () => {
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setAgents(new Map());
+        return;
+      }
 
-    agentConfigs.forEach(config => {
-      // Cast to any to access potentially missing properties in the type definition but present at runtime
-      const agentData = config.agent as any;
-      agentMap.set(agentData.id, {
-        id: agentData.id,
-        name: agentData.name,
-        avatar: agentData.avatar,
-        webhookUrl: agentData.webhookUrl
+      // Get the correct user_id from profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('Error fetching profile:', profileError);
+        setAgents(new Map());
+        return;
+      }
+
+      const actualUserId = profile.user_id;
+      const agentService = DatabaseAgentService.getInstance();
+      const onboardingService = OnboardingService.getInstance();
+      const allAgentConfigs = await agentService.getAllAgents();
+
+      // Check if we should show all agents (local development override)
+      const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';
+      
+      // Get platform-enabled agents from agents table (skip if show_all_agents is true)
+      let platformEnabledIds: Set<string>;
+      
+      if (showAllAgents) {
+        // In local development with show_all_agents, all agents are considered platform-enabled
+        platformEnabledIds = new Set(allAgentConfigs.map(c => c.agent.id));
+      } else {
+        const { data: platformAgents } = await supabase
+          .from('agents')
+          .select('agent_id, is_enabled')
+          .eq('is_enabled', true);
+        
+        platformEnabledIds = new Set(platformAgents?.map(a => a.agent_id) || []);
+      }
+
+      // Get user-enabled agents from assistant_personalizations
+      const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
+      const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
+
+      // Always include Personal Assistant
+      enabledAgentIds.add('personal_assistant');
+      platformEnabledIds.add('personal_assistant');
+
+      // Filter configs to only show agents that are BOTH platform-enabled AND user-enabled
+      // Exception: Admin-only agents bypass user enablement check for admin users
+      const enabledConfigs = allAgentConfigs.filter(config => {
+        const isAdminOnly = config.agent.admin_only === true;
+        const isPlatformEnabled = platformEnabledIds.has(config.agent.id);
+        const isUserEnabled = enabledAgentIds.has(config.agent.id);
+        
+        // Admin-only agents: show if user is admin AND platform-enabled
+        if (isAdminOnly) {
+          return isAdmin && isPlatformEnabled;
+        }
+        
+        // Regular agents: must be both platform-enabled AND user-enabled
+        return isPlatformEnabled && isUserEnabled;
       });
-    });
 
-    setAgents(agentMap);
+      const agentMap = new Map<string, AgentConfig>();
+
+      enabledConfigs.forEach(config => {
+        // Cast to any to access potentially missing properties in the type definition but present at runtime
+        const agentData = config.agent as any;
+        agentMap.set(agentData.id, {
+          id: agentData.id,
+          name: agentData.name,
+          avatar: agentData.avatar,
+          webhookUrl: agentData.webhookUrl
+        });
+      });
+
+      setAgents(agentMap);
+    } catch (error) {
+      console.error('Failed to load enabled agents:', error);
+      setAgents(new Map());
+    }
   };
 
   const loadMessages = async () => {

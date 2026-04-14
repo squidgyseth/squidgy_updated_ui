@@ -172,6 +172,19 @@ const convertMarkdownHorizontalRule = (text: string): string => {
 };
 
 /**
+ * Converts [Image URL: url] pattern to actual image display
+ * This handles when agents output image references in this specific format
+ */
+const convertImageUrlPattern = (text: string): string => {
+  if (!text) return text;
+  
+  // Match [Image URL: <url>] or [Image URL: <url>] with trailing punctuation
+  return text.replace(/\[Image URL:\s*(https?:\/\/[^\s\]]+)\]/gi, (_, url) => {
+    return createImageHtml(url.trim(), 'Image preview');
+  });
+};
+
+/**
  * Converts raw URLs to clickable links or image previews
  */
 const convertRawUrls = (text: string): string => {
@@ -179,13 +192,13 @@ const convertRawUrls = (text: string): string => {
   
   // Image URLs - show as images (no caption for raw URLs)
   let result = text.replace(
-    /(?<!href=")(?<!src=")(?<!\]\()https?:\/\/[^\s<>"'\)]+\.(jpg|jpeg|png|gif|webp)(?:\?[^\s<>"'\)]*)?/gi,
+    /(?<!href=")(?<!src=")(?<!\]\()https?:\/\/[^\s<>"'\)\]]+\.(jpg|jpeg|png|gif|webp)(?:\?[^\s<>"'\)\]]*)?/gi,
     (url) => createImageHtml(url, 'Image', undefined)
   );
   
   // Other URLs - show as links
   result = result.replace(
-    /(?<!href=")(?<!src=")(?<!\]\()(?<!<a[^>]*>)(https?:\/\/[^\s<>"'\)]+)(?![^<]*<\/a>)/gi,
+    /(?<!href=")(?<!src=")(?<!\]\()(?<!<a[^>]*>)(https?:\/\/[^\s<>"'\)\]]+)(?![^<]*<\/a>)/gi,
     (url) => createLinkHtml(url, 'View Link')
   );
   
@@ -194,27 +207,22 @@ const convertRawUrls = (text: string): string => {
 
 /**
  * Main function: processes text with markdown and URLs
- * Handles: $$IMG:url$$, **bold**, ![images](url), [links](url), ## headers, ---, and raw URLs
+ * Handles: $$IMG:url$$, **bold**, ![images](url), [links](url), [Image URL: url], ## headers, ---, and raw URLs
  */
 export const maskStorageUrlsInText = (text: string): string => {
   if (!text) return text;
   
   let result = text;
   
-  // Process in order: $$IMG:url$$ first, then markdown images, links, headers, hr, bold, raw URLs
+  // Process in order: $$IMG:url$$ first, then [Image URL: url], markdown images, links, headers, hr, bold, raw URLs
   result = convertDollarImages(result);
+  result = convertImageUrlPattern(result);
   result = convertMarkdownImages(result);
   result = convertMarkdownLinks(result);
   result = convertMarkdownHeaders(result);
   result = convertMarkdownHorizontalRule(result);
   result = convertMarkdownBold(result);
   result = convertRawUrls(result);
-  
-  // Debug logging
-  if (text.includes('**') || text.includes('---') || text.includes('$$')) {
-    console.log('[maskStorageUrlsInText] Input:', text.substring(0, 100));
-    console.log('[maskStorageUrlsInText] Output:', result.substring(0, 100));
-  }
   
   // Clean up excessive whitespace (2+ newlines become 1)
   result = result.replace(/\n{2,}/g, '\n');

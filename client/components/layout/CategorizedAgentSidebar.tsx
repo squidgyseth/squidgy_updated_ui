@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useUser } from '../../hooks/useUser';
+import { useAdmin } from '../../hooks/useAdmin';
 import CreateGroupChatModal from '../modals/CreateGroupChatModal';
-import OptimizedAgentService from '../../services/optimizedAgentService';
+import DatabaseAgentService from '../../services/databaseAgentService';
 import OnboardingService from '../../services/onboardingService';
 import { supabase } from '../../lib/supabase';
 
@@ -25,17 +27,20 @@ interface AssistantCategory {
 export default function CategorizedAgentSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { userId, profile, isImpersonating } = useUser();
+  const { isAdmin } = useAdmin();
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [categories, setCategories] = useState<AssistantCategory[]>([]);
   const [selectedAssistant, setSelectedAssistant] = useState<string | null>(null);
 
   useEffect(() => {
-    loadAgentsFromYAML();
-  }, []);
+    // Force refresh on mount to always get latest data
+    loadAgentsFromYAML(true);
+  }, [userId, profile, isImpersonating, isAdmin]); // Refresh when user data or admin status changes
 
   // Refresh agents when needed (can be called from outside)
   const refreshAgents = () => {
-    loadAgentsFromYAML();
+    loadAgentsFromYAML(true);
   };
 
   // Expose refresh function to window for N8N webhook calls
@@ -50,6 +55,7 @@ export default function CategorizedAgentSidebar() {
   // Subscribe to Supabase Realtime for agent refresh broadcasts from backend
   useEffect(() => {
     let channel: any = null;
+    let redirectChannel: any = null;
 
     const setupRealtimeSubscription = async () => {
       try {
@@ -95,6 +101,30 @@ export default function CategorizedAgentSidebar() {
             console.log('📡 Realtime subscription status:', status);
           });
 
+        // Subscribe to redirect channel for this user (n8n triggers redirects here)
+        redirectChannel = supabase
+          .channel(`agent-redirect-${profile.user_id}`)
+          .on(
+            'broadcast',
+            { event: 'redirect_to_agent' },
+            (payload) => {
+              console.log('🔀 Redirect signal received from backend:', payload);
+              const { redirect_url, agent_id, message } = payload.payload || {};
+              
+              if (redirect_url) {
+                // Show optional message before redirect
+                if (message) {
+                  console.log(`📢 Redirect message: ${message}`);
+                }
+                // Navigate to the target agent
+                window.location.href = redirect_url;
+              }
+            }
+          )
+          .subscribe((status: string) => {
+            console.log('📡 Redirect subscription status:', status);
+          });
+
       } catch (error) {
         console.error('❌ Error setting up realtime subscription:', error);
       }
@@ -102,10 +132,13 @@ export default function CategorizedAgentSidebar() {
 
     setupRealtimeSubscription();
 
-    // Cleanup subscription on unmount
+    // Cleanup subscriptions on unmount
     return () => {
       if (channel) {
         supabase.removeChannel(channel);
+      }
+      if (redirectChannel) {
+        supabase.removeChannel(redirectChannel);
       }
     };
   }, []);
@@ -118,45 +151,28 @@ export default function CategorizedAgentSidebar() {
     }
   }, [location]);
 
-  const loadAgentsFromYAML = async () => {
+  const loadAgentsFromYAML = async (forceRefresh: boolean = false) => {
     try {
-      // Get current user from auth
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setCategories([]);
-        return;
-      }
-
-      // Get the correct user_id from profiles table
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError || !profile) {
-        console.error('Error fetching profile:', profileError);
+      // Use the useUser hook which properly handles impersonation
+      if (!userId || !profile) {
         setCategories([]);
         return;
       }
 
       const actualUserId = profile.user_id;
 
-      const agentService = OptimizedAgentService.getInstance();
+      const agentService = DatabaseAgentService.getInstance();
       const onboardingService = OnboardingService.getInstance();
-      const allAgentConfigs = agentService.getAllAgents();
+      const allAgentConfigs = await agentService.getAllAgents(forceRefresh);
       
-      // Check if we're in development/local environment
-      const isDevelopment = import.meta.env.VITE_APP_ENV === 'development' || 
-                           import.meta.env.DEV === true ||
-                           window.location.hostname === 'localhost' ||
-                           window.location.hostname === '127.0.0.1';
+      // Check if we should show all agents (local development override)
+      const showAllAgents = import.meta.env.VITE_SHOW_ALL_AGENTS === 'true';
       
-      // Get platform-enabled agents from agents table (skip in dev mode)
+      // Get platform-enabled agents from agents table (skip if show_all_agents is true)
       let platformEnabledIds: Set<string>;
       
-      if (isDevelopment) {
-        // In dev/local, all agents are considered platform-enabled
+      if (showAllAgents) {
+        // In local development with show_all_agents, all agents are considered platform-enabled
         platformEnabledIds = new Set(allAgentConfigs.map(c => c.agent.id));
       } else {
         const { data: platformAgents } = await supabase
@@ -171,15 +187,28 @@ export default function CategorizedAgentSidebar() {
       const enabledAgents = await onboardingService.getEnabledAgents(actualUserId);
       const enabledAgentIds = new Set(enabledAgents.map(agent => agent.assistant_id));
       
-      // Always include Personal Assistant (pinned)
-      enabledAgentIds.add('personal_assistant');
-      platformEnabledIds.add('personal_assistant');
+      // Always include all pinned agents
+      const pinnedAgents = allAgentConfigs.filter(config => config.agent.pinned === true);
+      pinnedAgents.forEach(config => {
+        enabledAgentIds.add(config.agent.id);
+        platformEnabledIds.add(config.agent.id);
+      });
       
       // Filter configs to only show agents that are BOTH platform-enabled AND user-enabled
-      // In dev mode, platform-enabled check is bypassed (all agents are platform-enabled)
-      const enabledConfigs = allAgentConfigs.filter(config => 
-        enabledAgentIds.has(config.agent.id) && platformEnabledIds.has(config.agent.id)
-      );
+      // Exception: Admin-only agents bypass user enablement check for admin users
+      const enabledConfigs = allAgentConfigs.filter(config => {
+        const isAdminOnly = config.agent.admin_only === true;
+        const isPlatformEnabled = platformEnabledIds.has(config.agent.id);
+        const isUserEnabled = enabledAgentIds.has(config.agent.id);
+        
+        // Admin-only agents: show if user is admin AND platform-enabled
+        if (isAdminOnly) {
+          return isAdmin && isPlatformEnabled;
+        }
+        
+        // Regular agents: must be both platform-enabled AND user-enabled
+        return isPlatformEnabled && isUserEnabled;
+      });
       
       
       // Transform configs to match sidebar format

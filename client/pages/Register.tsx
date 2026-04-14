@@ -76,17 +76,34 @@ export default function Register() {
       const isValidCode = await referralService.validateReferralCode(referralCode);
 
       if (!isValidCode) {
-        toast.error('Invalid referral code. Please check and try again.');
+        // Check if it's a limited activation code to show specific error
+        const limitedCodeInfo = await referralService.getLimitedActivationCodeInfo(referralCode);
+        if (limitedCodeInfo?.exists) {
+          if (!limitedCodeInfo.isActive) {
+            toast.error('This activation code is no longer active.');
+          } else if (limitedCodeInfo.expiresAt && new Date(limitedCodeInfo.expiresAt) < new Date()) {
+            toast.error('This activation code has expired.');
+          } else if (limitedCodeInfo.remainingUses !== undefined && limitedCodeInfo.remainingUses <= 0) {
+            toast.error('This activation code has reached its usage limit.');
+          } else {
+            toast.error('This activation code is currently unavailable.');
+          }
+        } else {
+          toast.error('Invalid referral code. Please check and try again.');
+        }
         return;
+      } else {
+        // Show success message for limited activation codes
+        const limitedCodeInfo = await referralService.getLimitedActivationCodeInfo(referralCode);
+        if (limitedCodeInfo?.exists && limitedCodeInfo.remainingUses !== undefined) {
+          // Show remaining uses AFTER current user registers (subtract 1)
+          const remainingAfterRegistration = limitedCodeInfo.remainingUses - 1;
+          toast.success(`Valid activation code! ${remainingAfterRegistration} uses remaining.`);
+        }
       }
     }
 
     // Validate required consents
-    if (!termsScrolledToBottom || !privacyScrolledToBottom) {
-      toast.error('You must read through the entire Beta User Agreement and Privacy Policy before accepting');
-      return;
-    }
-
     if (!termsAccepted) {
       toast.error('You must accept the Terms and Privacy Policy to continue');
       return;
@@ -107,11 +124,7 @@ export default function Register() {
         referralCode: referralCode.trim() || undefined,
         termsAccepted,
         aiProcessingConsent: aiConsentAccepted,
-        marketingConsent,
-        termsViewed: termsScrolledToBottom,
-        termsScrolledToBottom,
-        privacyViewed: privacyScrolledToBottom,
-        privacyScrolledToBottom
+        marketingConsent
       });
 
       if (response.needsEmailConfirmation) {
@@ -294,7 +307,7 @@ export default function Register() {
             {/* Referral Code Field */}
             <div>
               <label htmlFor="referralCode" className="block text-[14px] text-[#364153] mb-1 font-['Open_Sans']">
-                Referral Code
+                Referral / Activation Code
               </label>
               <input
                 id="referralCode"
@@ -302,37 +315,30 @@ export default function Register() {
                 value={referralCode}
                 onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                 className="w-full px-[13px] py-4 border border-[#D1D5DC] rounded-[10px] text-[15px] placeholder:text-[rgba(10,10,10,0.5)] font-['Open_Sans'] focus:outline-none focus:ring-2 focus:ring-[#5E17EB] focus:border-transparent uppercase"
-                placeholder="Enter referral code"
+                placeholder="Enter referral or activation code"
                 required
               />
               <p className="mt-2 text-xs text-[#6A7282] font-['Open_Sans']">
-                💡 <span className="font-semibold">SQUIDWINS</span> is a master code that anyone can use for unlimited signups.
-                You can also use a personal referral code from a friend!
+                💡 Enter a valid referral code or activation code
               </p>
             </div>
 
             {/* Consent Checkboxes */}
             <div className="space-y-3 pt-2">
               {/* Instructional message */}
-              {(!termsScrolledToBottom || !privacyScrolledToBottom) && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                  <p className="text-xs text-blue-800 font-medium">
-                    📖 Please click and read through the complete{' '}
-                    {!termsScrolledToBottom && !privacyScrolledToBottom ? 'Beta User Agreement and Privacy Policy' :
-                     !termsScrolledToBottom ? 'Beta User Agreement' : 'Privacy Policy'}{' '}
-                    before you can accept. Scroll to the bottom of each document to enable the checkboxes.
-                  </p>
-                </div>
-              )}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                <p className="text-xs text-blue-800 font-medium">
+                  📖 Please click and read through the complete Beta User Agreement and Privacy Policy before you can accept.
+                </p>
+              </div>
 
               {/* Terms and Privacy Policy - Required */}
-              <label className={`flex items-start gap-2 ${termsScrolledToBottom && privacyScrolledToBottom ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} group`}>
+              <label className="flex items-start gap-2 cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
-                  disabled={!termsScrolledToBottom || !privacyScrolledToBottom}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer"
                   required
                 />
                 <span className="text-[13px] text-[#4A5565] leading-snug font-['Open_Sans']">
@@ -340,17 +346,17 @@ export default function Register() {
                   <button
                     type="button"
                     onClick={openBetaAgreementModal}
-                    className={`text-[#5E17EB] hover:underline font-semibold ${termsScrolledToBottom ? 'text-green-600' : ''}`}
+                    className="text-[#5E17EB] hover:underline font-semibold"
                   >
-                    Beta User Agreement {termsScrolledToBottom && '✓'}
+                    Beta User Agreement
                   </button>
                   {' '}and{' '}
                   <button
                     type="button"
                     onClick={openPrivacyModal}
-                    className={`text-[#5E17EB] hover:underline font-semibold ${privacyScrolledToBottom ? 'text-green-600' : ''}`}
+                    className="text-[#5E17EB] hover:underline font-semibold"
                   >
-                    Privacy Policy {privacyScrolledToBottom && '✓'}
+                    Privacy Policy
                   </button>
                   <span className="text-red-500 ml-1">*</span>
                 </span>
@@ -372,14 +378,14 @@ export default function Register() {
               </label>
 
               {/* Marketing Communications - Optional */}
-              <label className="flex items-start gap-2 cursor-pointer group">
+              <label className="flex items-start gap-2 cursor-pointer group bg-gray-50 p-3 rounded-lg border border-gray-200">
                 <input
                   type="checkbox"
                   checked={marketingConsent}
                   onChange={(e) => setMarketingConsent(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5E17EB] focus:ring-[#5E17EB] cursor-pointer"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-400 text-gray-500 focus:ring-gray-400 cursor-pointer"
                 />
-                <span className="text-[13px] text-[#4A5565] leading-snug font-['Open_Sans']">
+                <span className="text-[13px] text-gray-600 leading-snug font-['Open_Sans']">
                   I'd like to receive marketing communications and product updates (optional)
                 </span>
               </label>
@@ -412,7 +418,7 @@ export default function Register() {
       </div>
 
       {/* Right Side - Carousel */}
-      <AuthCarousel />
+      <AuthCarousel hideGameSlide={true} />
 
       {/* Beta User Agreement Modal */}
       <BetaUserAgreementModal
@@ -431,3 +437,4 @@ export default function Register() {
     </div>
   );
 }
+

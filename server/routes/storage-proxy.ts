@@ -26,7 +26,7 @@ router.get('/:type/:filePath', async (req, res) => {
       actualUrl = Buffer.from(decodedFilePath, 'base64').toString('utf-8');
     } catch {
       // If not base64, treat as direct file path
-      const supabaseUrl = process.env.VITE_SUPABASE_URL;
+      const supabaseUrl = process.env.SUPABASE_URL;
       if (!supabaseUrl) {
         return res.status(500).json({ error: 'Supabase URL not configured' });
       }

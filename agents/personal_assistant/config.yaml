@@ -1,29 +1,40 @@
+updated_at: '2026-03-24T11:07:26.528819'
 agent:
   id: personal_assistant
-  emoji: "🤖"
-  name: "Pia | Personal Assistant"
+  emoji: 🤖
+  name: Peter | Personal Assistant
   category: GENERAL
   description: Help manage your day-to-day tasks and keep you organised.
-  specialization: "Personal Assistant"
-  tagline: "Friendly & Helpful"
-  avatar: "/Squidgy AI Assistants Avatars/1.png"
+  specialization: Personal Assistant
+  tagline: Friendly & Helpful
+  avatar: /Squidgy AI Assistants Avatars/1.png
   pinned: true
   enabled: true
-  initial_message: "Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you."
-  sidebar_greeting: "Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?"
+  admin_only: false
+  initial_message: Hey! I'm your Personal Assistant. Share your website URL and I'll analyze your company to recommend the best AI agents for you.
+  sidebar_greeting: Hi! I'm your Personal Assistant - your dedicated onboarding expert. I'm here to help you set up and configure AI agents tailored to your business needs. How can I assist you today?
   capabilities:
-    - "Website analysis and company insights"
-    - "AI agent recommendation and setup"
-    - "Brand voice and communication style configuration"
-    - "Target audience and business goal analysis"
-    - "Calendar and notification setup"
-    - "Complete onboarding flow management"
+    - Website analysis and company insights
+    - AI agent recommendation and setup
+    - Brand voice and communication style configuration
+    - Target audience and business goal analysis
+    - Calendar and notification setup
+    - Complete onboarding flow management
   recent_actions:
-    - "Analyzed company website and recommended 3 AI agents"
-    - "Configured SMM Assistant for e-commerce business"
-    - "Set up professional brand voice for marketing team"
-    - "Enabled notifications and calendar integration"
-
+    - Analyzed company website and recommended 3 AI agents
+    - Configured SMM Assistant for e-commerce business
+    - Set up professional brand voice for marketing team
+    - Enabled notifications and calendar integration
+skills:
+  - name: Onboarding Flow
+    description: |
+      Running first-time or returning user onboarding, website analysis, agent selection, brand voice/target audience setup, or enabling agents.
+  - name: Knowledge Base & Saving
+    description: |
+      Saving any user-provided info, correcting existing data, searching before saving, or deciding categories/sources.
+  - name: Agent Routing
+    description: |
+      User wants to use or access a specialised agent, matching intent to enabled agents, redirecting, or handling requests that belong to another agent.
 ui_use:
   page_type: single_page
   pages:
@@ -31,7 +42,6 @@ ui_use:
       path: personal-dashboard
       order: 1
       validated: true
-
 interface:
   type: chat
   features:
@@ -39,20 +49,15 @@ interface:
     - file_upload
     - voice_input
     - suggestion_buttons
-  
 suggestions:
-  - "Complete Setup"
-  - "Analyze my company website"
-  - "Recommend AI agents for my business"
-  - "Configure my brand voice and style"
-  - "Set up notifications and calendar"
-  - "➕ Add Another Assistant"
-
+  - Complete Setup
+  - Analyze my company website
+  - Recommend AI agents for my business
+  - Configure my brand voice and style
+  - Set up notifications and calendar
+  - ➕ Add Another Assistant
 n8n:
   webhook_url: https://n8n.theaiteam.uk/webhook/personal_assistant_revised
-  #https://n8n.theaiteam.uk/webhook/c2fcbad6-abc0-43af-8aa8-d1661ff4461d
-  #https://n8n.theaiteam.uk/webhook/Squidgy/PersonalAssistant
-
 personality:
   tone: professional
   style: helpful

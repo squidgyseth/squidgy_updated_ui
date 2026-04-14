@@ -25,6 +25,7 @@ dist-ssr
 
 .config/
 .env
+.env.loil
 
 .env_production
 .env_backup_farzin
@@ -56,3 +57,6 @@ debug_*.py
 
 # Supabase local temp
 supabase/.temp/
+
+.vercel
+// Trigger deployment

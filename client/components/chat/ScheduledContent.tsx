@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Clock, Calendar, RefreshCw, Facebook, Instagram, Linkedin, Twitter, X, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
+import { Clock, Calendar, RefreshCw, Facebook, Instagram, Linkedin, Twitter, X, ChevronDown, ChevronUp, Pencil, Trash2, Archive, Play } from 'lucide-react';
 import scheduledPostsService, { ScheduledPost } from '../../services/scheduledPostsService';
 import { useUser } from '../../hooks/useUser';
 import { supabase } from '../../lib/supabase';
@@ -25,11 +25,24 @@ const EditPostModal: React.FC<{
   post: any; 
   onClose: () => void; 
   onSave: (postId: string, summary: string, scheduleDate: string, accountIds: string[]) => Promise<void>; 
+  onPostpone: (postId: string) => Promise<void>;
   isSaving: boolean;
+  isPostponing: boolean;
   userId: string;
-}> = ({ post, onClose, onSave, isSaving, userId }) => {
+}> = ({ post, onClose, onSave, onPostpone, isSaving, isPostponing, userId }) => {
   const [summary, setSummary] = useState(post.summary || '');
   const [scheduleDate, setScheduleDate] = useState(() => {
+    // Check if post is drafted (either has isDrafted flag or has 2099 schedule date)
+    const isDrafted = post.isDrafted || (post.scheduleDate && post.scheduleDate.startsWith('2099'));
+    
+    if (isDrafted) {
+      // For drafted posts, default to current date/time
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      return now.toISOString().slice(0, 16);
+    }
+    
+    // For regular posts, use existing schedule date
     const date = post.scheduleDate || post.displayDate || '';
     if (date) {
       const d = new Date(date);
@@ -82,13 +95,15 @@ const EditPostModal: React.FC<{
         <div className="p-4 space-y-4">
           {/* Content */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Post Content</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Post Content {!summary && post.media && post.media.length > 0 && <span className="text-xs text-gray-500">(Media-only post)</span>}
+            </label>
             <textarea
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
               rows={6}
-              placeholder="Enter your post content..."
+              placeholder={post.media && post.media.length > 0 ? "Add caption (optional for media posts)..." : "Enter your post content..."}
             />
           </div>
           
@@ -135,43 +150,77 @@ const EditPostModal: React.FC<{
           </div>
           
           {/* Media preview (read-only) */}
-          {post.media && post.media.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Media (cannot be changed)</label>
-              <div className="w-20 h-20 rounded overflow-hidden bg-gray-100">
-                <img 
-                  src={post.media[0]?.url} 
-                  alt="Post media" 
-                  className="w-full h-full object-cover"
-                />
+          {post.media && post.media.length > 0 && (() => {
+            const mediaUrl = post.media[0]?.url || '';
+            const isVideo = mediaUrl.match(/\.(mp4|mov|avi|webm|mkv)$/i) || post.media[0]?.type?.includes('video');
+            
+            return (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Media (cannot be changed) {isVideo && <span className="text-xs text-purple-600">• Video</span>}
+                </label>
+                <div className="w-32 h-32 rounded overflow-hidden bg-gray-100">
+                  {isVideo ? (
+                    <video 
+                      src={mediaUrl}
+                      className="w-full h-full object-cover"
+                      controls
+                    />
+                  ) : (
+                    <img 
+                      src={mediaUrl}
+                      alt="Post media" 
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
         
         {/* Footer */}
-        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2">
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between gap-2">
           <button
-            onClick={onClose}
-            disabled={isSaving}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={() => onPostpone(post._id || post.id)}
+            disabled={isPostponing || isSaving}
+            className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving || !summary.trim() || selectedAccountIds.length === 0}
-            className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {isSaving ? (
+            {isPostponing ? (
               <>
                 <RefreshCw size={14} className="animate-spin" />
-                Saving...
+                Drafting...
               </>
             ) : (
-              'Save Changes'
+              <>
+                <Archive size={14} />
+                Draft
+              </>
             )}
           </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              disabled={isSaving || isPostponing}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving || isPostponing || (!summary.trim() && (!post.media || post.media.length === 0)) || selectedAccountIds.length === 0}
+              className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <RefreshCw size={14} className="animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -180,19 +229,28 @@ const EditPostModal: React.FC<{
 
 // Platform-specific post preview modal
 const PostPreviewModal: React.FC<{ post: any; onClose: () => void; onDelete: (postId: string) => Promise<void>; onEdit: () => void; isDeleting: boolean }> = ({ post, onClose, onDelete, onEdit, isDeleting }) => {
-  const platform = post.platform?.toLowerCase() || 'facebook';
+  // Debug: Log the full post object to see what platform value we're getting
+  console.log('📱 PostPreviewModal - Full post data:', post);
+  console.log('📱 PostPreviewModal - Platform value:', post.platform);
+  console.log('📱 PostPreviewModal - AccountIds:', post.accountIds);
+  
+  const platform = post.platform?.toLowerCase().trim() || 'facebook';
   const content = post.summary || '';
   const media = post.media || [];
   const hasMedia = media.length > 0;
   const dateStr = scheduledPostsService.formatPostDate(post as ScheduledPost);
   
   const getPlatformColors = () => {
-    switch (platform) {
-      case 'instagram': return { bg: 'bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400', header: 'Instagram' };
-      case 'linkedin': return { bg: 'bg-blue-700', header: 'LinkedIn' };
-      case 'twitter': return { bg: 'bg-sky-500', header: 'Twitter / X' };
-      default: return { bg: 'bg-blue-600', header: 'Facebook' };
-    }
+    const normalizedPlatform = platform.toLowerCase().trim();
+    console.log('🎨 Getting colors for platform:', normalizedPlatform);
+    
+    if (normalizedPlatform.includes('facebook')) return { bg: 'bg-blue-600', header: 'Facebook' };
+    if (normalizedPlatform.includes('instagram')) return { bg: 'bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400', header: 'Instagram' };
+    if (normalizedPlatform.includes('linkedin')) return { bg: 'bg-blue-700', header: 'LinkedIn' };
+    if (normalizedPlatform.includes('twitter') || normalizedPlatform.includes('x')) return { bg: 'bg-sky-500', header: 'Twitter / X' };
+    
+    console.warn('⚠️ Unknown platform, using default:', normalizedPlatform);
+    return { bg: 'bg-gray-600', header: platform.charAt(0).toUpperCase() + platform.slice(1) };
   };
   
   const { bg, header } = getPlatformColors();
@@ -212,39 +270,65 @@ const PostPreviewModal: React.FC<{ post: any; onClose: () => void; onDelete: (po
         </div>
         
         {/* Media with overlaid user info */}
-        {hasMedia ? (
-          <div className="relative">
-            {/* User info overlay on top of image */}
-            <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
-                  <span className="text-gray-600 text-xs font-bold">U</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-xs text-white">Your Business</p>
-                  <p className="text-[10px] text-white/80">{dateStr}</p>
+        {hasMedia ? (() => {
+          const mediaUrl = media[0]?.url || '';
+          const isVideo = mediaUrl.match(/\.(mp4|mov|avi|webm|mkv)$/i) || media[0]?.type?.includes('video');
+          
+          return (
+            <div className="relative">
+              {/* User info overlay on top of media */}
+              <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
+                    <span className="text-gray-600 text-xs font-bold">U</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-xs text-white">Your Business</p>
+                    <p className="text-[10px] text-white/80">{dateStr}</p>
+                  </div>
                 </div>
               </div>
+              
+              {/* Media (Image or Video) */}
+              {isVideo ? (
+                <video 
+                  src={mediaUrl}
+                  className="w-full object-contain max-h-[350px] bg-black"
+                  controls
+                  playsInline
+                />
+              ) : (
+                <img 
+                  src={mediaUrl}
+                  alt="Post media" 
+                  className="w-full object-contain max-h-[350px] bg-black"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              )}
+              
+              {/* Actions overlay - different for video vs image */}
+              {isVideo ? (
+                /* Black frame below video for actions */
+                <div className="bg-black px-3 py-3">
+                  <div className="flex items-center gap-4 text-white text-xs">
+                    <span className="hover:text-white/80 cursor-pointer">❤️ Like</span>
+                    <span className="hover:text-white/80 cursor-pointer">💬 Comment</span>
+                    <span className="hover:text-white/80 cursor-pointer">↗️ Share</span>
+                  </div>
+                </div>
+              ) : (
+                /* Overlay on image */
+                <div className="absolute bottom-0 left-0 right-0 px-3 py-3 bg-gradient-to-t from-black/60 to-transparent">
+                  <div className="flex items-center gap-4 text-white text-xs">
+                    <span className="hover:text-white/80 cursor-pointer">❤️ Like</span>
+                    <span className="hover:text-white/80 cursor-pointer">💬 Comment</span>
+                    <span className="hover:text-white/80 cursor-pointer">↗️ Share</span>
+                  </div>
+                </div>
+              )}
             </div>
-            
-            {/* Image */}
-            <img 
-              src={media[0]?.url} 
-              alt="Post media" 
-              className="w-full object-contain max-h-[350px] bg-black"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            />
-            
-            {/* Actions overlay on bottom of image */}
-            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
-              <div className="flex items-center gap-4 text-white text-xs">
-                <span className="hover:text-white/80 cursor-pointer">❤️ Like</span>
-                <span className="hover:text-white/80 cursor-pointer">💬 Comment</span>
-                <span className="hover:text-white/80 cursor-pointer">↗️ Share</span>
-              </div>
-            </div>
-          </div>
-        ) : (
+          );
+        })() : (
           /* No media - show user info normally */
           <div className="p-3 border-b border-gray-100">
             <div className="flex items-center gap-2">
@@ -285,6 +369,16 @@ const PostPreviewModal: React.FC<{ post: any; onClose: () => void; onDelete: (po
             </span>
             <span className="text-xs text-gray-500">{dateStr}</span>
           </div>
+          
+          {/* Error reason for failed posts */}
+          {post.status?.toLowerCase() === 'failed' && (post.failureReason || post.error || post.errorMessage) && (
+            <div className="mb-2 px-2 py-1.5 bg-red-50 border border-red-200 rounded">
+              <p className="text-[10px] text-red-700">
+                <span className="font-semibold">Error: </span>
+                {post.failureReason || post.error || post.errorMessage}
+              </p>
+            </div>
+          )}
           
           {/* Action buttons - only show for non-published posts */}
           {post.status?.toLowerCase() !== 'published' && (
@@ -329,9 +423,10 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingPost, setEditingPost] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPostponing, setIsPostponing] = useState(false);
 
-  // Only show for social_media_agent
-  const shouldShow = agentId === 'social_media_agent';
+  // Only show for social_media
+  const shouldShow = agentId === 'social_media';
   
   // Filter posts based on selected filter
   const filteredPosts = scheduledPosts.filter(post => {
@@ -411,8 +506,8 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
       const result = await scheduledPostsService.deletePost(postId, userId, 'SOL');
       
       if (result.success) {
-        // Remove the post from local state
-        setScheduledPosts(prev => prev.filter(p => (p as any)._id !== postId && p.id !== postId));
+        // Refresh the posts list to get updated data from GHL
+        await loadScheduledPosts();
         setSelectedPost(null);
       } else {
         alert(result.error || 'Failed to delete post');
@@ -432,13 +527,8 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
       const result = await scheduledPostsService.editPost(postId, userId, { summary, schedule_date: scheduleDate, account_ids: accountIds }, 'SOL');
       
       if (result.success) {
-        // Update the post in local state
-        setScheduledPosts(prev => prev.map(p => {
-          if ((p as any)._id === postId || p.id === postId) {
-            return { ...p, summary, scheduleDate, displayDate: scheduleDate, accountIds };
-          }
-          return p;
-        }));
+        // Refresh the posts list to get updated data (post may have new ID after edit)
+        await loadScheduledPosts();
         setEditingPost(null);
         setSelectedPost(null);
       } else {
@@ -448,6 +538,28 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
       alert(err.message || 'Failed to edit post');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePostponePost = async (postId: string) => {
+    if (!userId || !postId) return;
+    
+    setIsPostponing(true);
+    try {
+      const result = await scheduledPostsService.postponePost(postId, userId, 'SOL');
+      
+      if (result.success) {
+        // Refresh the posts list to get updated data
+        await loadScheduledPosts();
+        setEditingPost(null);
+        setSelectedPost(null);
+      } else {
+        alert(result.error || 'Failed to postpone post');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to postpone post');
+    } finally {
+      setIsPostponing(false);
     }
   };
 
@@ -552,18 +664,34 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
             >
               <div className="flex gap-2">
                 {/* Media thumbnail */}
-                {hasMedia && mediaUrl && (
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded overflow-hidden bg-gray-100">
-                      <img 
-                        src={mediaUrl} 
-                        alt="Post media" 
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
+                {hasMedia && mediaUrl && (() => {
+                  const isVideo = mediaUrl.match(/\.(mp4|mov|avi|webm|mkv)$/i) || postData.media?.[0]?.type?.includes('video');
+                  
+                  return (
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 rounded overflow-hidden bg-gray-100 relative">
+                        {isVideo ? (
+                          <>
+                            <video 
+                              src={mediaUrl}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                              <Play size={20} className="text-white fill-white" />
+                            </div>
+                          </>
+                        ) : (
+                          <img 
+                            src={mediaUrl} 
+                            alt="Post media" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
                 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
@@ -576,11 +704,22 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
                   </div>
                   
                   {/* Post content preview */}
-                  {content && (
+                  {content ? (
                     <p className="text-[11px] text-gray-700 line-clamp-2 leading-snug mb-1.5">
                       {content}
                     </p>
-                  )}
+                  ) : !hasMedia ? (
+                    <p className="text-[10px] text-gray-400 italic mb-1.5">
+                      No content
+                    </p>
+                  ) : (() => {
+                    const isVideo = mediaUrl?.match(/\.(mp4|mov|avi|webm|mkv)$/i) || postData.media?.[0]?.type?.includes('video');
+                    return (
+                      <p className="text-[10px] text-gray-500 italic mb-1.5">
+                        {isVideo ? '🎥 Video post' : '📷 Media post'}
+                      </p>
+                    );
+                  })()}
                   
                   {/* Date and time */}
                   <div className="flex items-center gap-1 text-gray-400">
@@ -642,7 +781,9 @@ export default function ScheduledContent({ className = '', agentId }: ScheduledC
           post={editingPost}
           onClose={() => setEditingPost(null)}
           onSave={handleEditPost}
+          onPostpone={handlePostponePost}
           isSaving={isSaving}
+          isPostponing={isPostponing}
           userId={userId}
         />
       )}

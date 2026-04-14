@@ -4,7 +4,7 @@ import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { analyzeWebsite, captureScreenshot, getFavicon } from "./routes/website";
 import { createSubaccountAndUser } from "./routes/ghl";
-import agentsRouter from "./routes/agents";
+import agentConfigurationsRouter from "./routes/agent-configurations";
 import storageProxyRouter from "./routes/storage-proxy";
 import googleCalendarRouter from "./routes/googleCalendar";
 
@@ -32,8 +32,8 @@ export function createServer() {
   // GHL integration routes
   app.post("/ghl/create-subaccount-and-user", createSubaccountAndUser);
 
-  // Agent management routes
-  app.use("/agents", agentsRouter);
+  // Agent management routes (database-driven)
+  app.use("/api/agent-configurations", agentConfigurationsRouter);
 
   // Storage proxy routes (for masking Supabase URLs)
   app.use("/storage", storageProxyRouter);

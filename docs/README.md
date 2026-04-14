@@ -8,20 +8,47 @@ Developer documentation for building and maintaining the Squidgy platform.
 
 These are step-by-step guides for common development tasks:
 
-- **[N8N Agent Workflow Setup](./n8n-agent-setup.md)** ⭐ NEW
-  - Complete guide for configuring N8N workflows for agents
-  - Node configuration and common mistakes
-  - Testing and troubleshooting
+- **[N8N Template-Based Agent Creation](./n8n-template-based-agent-creation.md)** ⭐ ESSENTIAL
+  - Complete guide for creating and editing agents with Python script
+  - Interactive wizard for agent configuration
+  - N8N workflow generation (optional)
+  - Agent editing and lifecycle management
+
+- **[N8N Agent Workflow Overview](./n8n-agent-setup.md)**
+  - High-level overview of automated N8N workflow generation
+  - Post-generation requirements and limitations
+  - What not to do with generated workflows
+
+- **[N8N Conversation State Overview](./n8n-conversation-state-integration.md)**
+  - How conversation state works in multi-turn agents
+  - Automatic configuration by Python script
+  - Database storage and persistence
 
 ---
 
 ## Architecture Documentation
+
+- **[AI Agents Guide](../agents/README.md)** ⭐ ESSENTIAL
+  - Complete guide for creating and managing AI agents
+  - Python agent creation script with N8N workflow generation
+  - Agent folder structure and configuration
+  - System prompt compilation and best practices
+  - Platform and user-level enablement logic
+
+- **[Agent Creation Scripts](../scripts/README.md)** ⭐ ESSENTIAL
+  - Python script for agent lifecycle management
+  - Interactive wizard for creating and editing agents
+  - N8N workflow generation with automatic credential mapping
+  - Environment setup and API key configuration
 
 - **[Agent Architecture Plan](./AGENT_ARCHITECTURE_PLAN.md)**
   - Overview of how agents work in Squidgy
 
 - **[N8N Conversation State Integration](./n8n-conversation-state-integration.md)**
   - How conversation state is managed in N8N workflows
+
+- **[Agent Folder Structure](./agent-folder-structure.md)**
+  - Detailed file organization and structure
 
 ---
 
@@ -30,9 +57,17 @@ These are step-by-step guides for common development tasks:
 ```
 docs/
 ├── README.md                           # This file - documentation index
-├── n8n-agent-setup.md                  # N8N workflow setup guide
+├── n8n-template-based-agent-creation.md # Agent creation with Python script
+├── n8n-agent-setup.md                  # N8N workflow overview
 ├── AGENT_ARCHITECTURE_PLAN.md          # Agent architecture overview
-└── n8n-conversation-state-integration.md  # Conversation state guide
+├── n8n-conversation-state-integration.md  # Conversation state overview
+└── agent-folder-structure.md           # File organization details
+
+agents/
+└── README.md                           # AI Agents creation and management guide
+
+scripts/
+└── README.md                           # Agent creation and management scripts
 ```
 
 ---
@@ -71,4 +106,4 @@ Check the N8N agent setup guide for the correct webhook configuration
 
 ---
 
-**Last Updated**: 2026-02-21
+**Last Updated**: 2026-03-06

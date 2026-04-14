@@ -4,6 +4,7 @@ import { Facebook, ExternalLink, CheckCircle, Clock, Loader2 } from 'lucide-reac
 import { supabase } from '../lib/supabase';
 import { profilesApi } from '../lib/supabase-api';
 import { toast } from 'sonner';
+import { getBackendUrl } from '@/lib/envConfig';
 
 interface FacebookSetupProps {
   onComplete: () => void;
@@ -78,7 +79,7 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
     if (!firmUserId) return;
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/facebook/check-integration-status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,8 +122,8 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
 
       const locationId = integrationStatus.ghl_location_id;
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      
+      const backendUrl = getBackendUrl();
+
       // Use existing endpoint for OAuth generation with proper locationId
       const response = await fetch(`${backendUrl}/api/facebook/extract-oauth-params`, {
         method: 'POST',
@@ -218,7 +219,7 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
 
     setIsLoading(true);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/facebook/get-pages-from-integration`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -265,7 +266,7 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
 
     setIsLoading(true);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/facebook/save-selected-pages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -357,8 +358,8 @@ const FacebookSetup: React.FC<FacebookSetupProps> = ({
                     // Simple direct OAuth URL generation
                     setIsLoading(true);
                     try {
-                      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-                      
+                      const backendUrl = getBackendUrl();
+
                       // First check if we have a GHL location ID
                       const checkResponse = await fetch(`${backendUrl}/api/facebook/check-integration-status`, {
                         method: 'POST',

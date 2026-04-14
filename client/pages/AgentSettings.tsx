@@ -4,13 +4,16 @@ import { useUser } from '../hooks/useUser';
 import { AgentConfigService } from '../services/agentConfigService';
 import { Mic, Upload, Send, File, X, ArrowLeft, Trash2, FileText, Loader2, CheckCircle, Loader, AlertCircle, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { getSupabaseConfig, getBackendUrl, getFrontendUrl } from '@/lib/envConfig';
 
 interface PreviousFile {
-  file_id: string;
+  id: string;
   file_name: string;
   file_url: string;
   created_at: string;
   processing_status?: string;
+  file_type?: 'document' | 'image';
+  has_neon_records?: boolean;
 }
 
 export default function AgentSettings() {
@@ -45,6 +48,7 @@ export default function AgentSettings() {
   const [previousFiles, setPreviousFiles] = useState<PreviousFile[]>([]);
   const [loadingPreviousFiles, setLoadingPreviousFiles] = useState(true);
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+  const [activeFileTab, setActiveFileTab] = useState<'documents' | 'images'>('documents');
 
   // Toast message state (from dev branch)
   const [toastMessage, setToastMessage] = useState({ title: '', subtitle: '', isError: false });
@@ -98,7 +102,7 @@ export default function AgentSettings() {
 
     try {
       setLoadingCustomInstructions(true);
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       const response = await fetch(`${backendUrl}/api/knowledge-base/instructions/${userId}/${agentId}`);
 
@@ -117,7 +121,7 @@ export default function AgentSettings() {
     }
   };
 
-  // Function to fetch previously uploaded files (ONLY actual files, not text entries) from Neon via backend API
+  // Function to fetch previously uploaded files from BOTH Supabase and Neon (unified view)
   const fetchPreviousFiles = async (showLoading = true) => {
     if (!userId || !agentId) {
       setLoadingPreviousFiles(false);
@@ -126,9 +130,10 @@ export default function AgentSettings() {
 
     try {
       if (showLoading) setLoadingPreviousFiles(true);
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
-      const response = await fetch(`${backendUrl}/api/knowledge-base/files/${userId}/${agentId}`);
+      // Use unified endpoint that fetches from both Supabase (chat uploads) and Neon (agent settings uploads)
+      const response = await fetch(`${backendUrl}/api/files/unified/${userId}/${agentId}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -227,7 +232,53 @@ export default function AgentSettings() {
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    setUploadedFiles(prev => [...prev, ...files]);
+    if (files.length === 0) return;
+    
+    // Check for duplicates against previously uploaded files
+    const duplicates: File[] = [];
+    const newFiles: File[] = [];
+    
+    files.forEach(file => {
+      const isDuplicate = previousFiles.some(
+        prevFile => prevFile.file_name.toLowerCase() === file.name.toLowerCase()
+      );
+      if (isDuplicate) {
+        duplicates.push(file);
+      } else {
+        newFiles.push(file);
+      }
+    });
+    
+    // Handle duplicates with confirmation
+    if (duplicates.length > 0) {
+      const duplicateNames = duplicates.map(f => f.name).join(', ');
+      const confirmReplace = window.confirm(
+        `The following file(s) already exist:\n${duplicateNames}\n\nDo you want to replace them? The old version will be deleted.`
+      );
+      
+      if (confirmReplace) {
+        // Delete old files first, then add all files
+        duplicates.forEach(async (file) => {
+          const existingFile = previousFiles.find(
+            pf => pf.file_name.toLowerCase() === file.name.toLowerCase()
+          );
+          if (existingFile) {
+            await handleDeletePreviousFile(existingFile.id, existingFile.file_url);
+          }
+        });
+        setUploadedFiles(prev => [...prev, ...newFiles, ...duplicates]);
+      } else {
+        // Only add non-duplicate files
+        setUploadedFiles(prev => [...prev, ...newFiles]);
+      }
+    } else {
+      setUploadedFiles(prev => [...prev, ...files]);
+    }
+    
+    // Reset file input so the same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleRemoveFile = (index: number) => {
@@ -248,7 +299,7 @@ export default function AgentSettings() {
 
   // Subscribe to SSE for file processing status updates
   const subscribeToFileStatus = (fileId: string, fileIndex: number) => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    const backendUrl = getBackendUrl();
     const eventSource = new EventSource(`${backendUrl}/api/file/status-stream/${fileId}`);
     
     eventSourcesRef.current.set(fileId, eventSource);
@@ -296,7 +347,7 @@ export default function AgentSettings() {
 
     setDeletingFileId(fileId);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       // Delete from Neon database and Supabase storage via backend API
       const response = await fetch(`${backendUrl}/api/knowledge-base/file/${fileId}`, {
@@ -314,11 +365,11 @@ export default function AgentSettings() {
       }
 
       // Update local state - remove from list regardless
-      setPreviousFiles(prev => prev.filter(file => file.file_id !== fileId));
+      setPreviousFiles(prev => prev.filter(file => file.id !== fileId));
     } catch (error) {
       console.error('Error deleting file:', error);
       // Still remove from local state and refresh list
-      setPreviousFiles(prev => prev.filter(file => file.file_id !== fileId));
+      setPreviousFiles(prev => prev.filter(file => file.id !== fileId));
       fetchPreviousFiles(false);
     } finally {
       setDeletingFileId(null);
@@ -335,7 +386,7 @@ export default function AgentSettings() {
     let totalOperations = 0;
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = getBackendUrl();
 
       // Handle text input - UPDATE if exists, INSERT if new
       if (currentText.trim()) {
@@ -373,7 +424,7 @@ export default function AgentSettings() {
 
             if (response.ok) {
               const result = await response.json();
-              setCustomInstructionsFileId(result.file_id);
+              setCustomInstructionsFileId(result.id || result.file_id);
               successCount++;
             } else {
               console.error('Failed to create custom instructions');
@@ -420,17 +471,18 @@ export default function AgentSettings() {
             if (response.ok) {
               const result = await response.json();
               
-              // Update state with file ID
+              // Update state with file ID (backend returns 'id' now)
+              const fileId = result.id || result.file_id;
               setFileProcessingStates(prev => {
                 const newStates = [...prev];
                 if (newStates[i]) {
-                  newStates[i] = { ...newStates[i], fileId: result.file_id, status: 'extracting', message: 'Processing started...', progress: 10 };
+                  newStates[i] = { ...newStates[i], fileId: fileId, status: 'extracting', message: 'Processing started...', progress: 10 };
                 }
                 return newStates;
               });
               
               // Subscribe to SSE for real-time status updates
-              subscribeToFileStatus(result.file_id, i);
+              subscribeToFileStatus(fileId, i);
               return true;
             } else {
               const errorText = await response.text();
@@ -700,11 +752,27 @@ export default function AgentSettings() {
               <div className="text-center">
                 {fileProcessingStates.length > 0 && fileProcessingStates.every(s => ['completed', 'failed'].includes(s.status)) ? (
                   <button
-                    onClick={() => setFileProcessingStates([])}
+                    onClick={() => {
+                      setFileProcessingStates([]);
+                      // Reset file input so new files can be selected
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                      }
+                      // Refresh the previous files list
+                      fetchPreviousFiles(false);
+                    }}
                     className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
                   >
                     <CheckCircle size={20} />
                     Continue
+                  </button>
+                ) : fileProcessingStates.length > 0 && fileProcessingStates.some(s => !['completed', 'failed'].includes(s.status)) ? (
+                  <button
+                    disabled={true}
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Processing...
                   </button>
                 ) : (
                   <button
@@ -739,10 +807,34 @@ export default function AgentSettings() {
             </div>
           </div>
 
-          {/* Uploaded Files Section - Merged view with preview and delete */}
+          {/* Uploaded Files Section - Tabs for Documents and Images */}
           <div className="mt-8 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-500">
               <h2 className="text-xl font-bold text-white">Uploaded Files</h2>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200">
+              <button
+                onClick={() => setActiveFileTab('documents')}
+                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                  activeFileTab === 'documents'
+                    ? 'text-amber-600 border-b-2 border-amber-500 bg-amber-50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Documents ({previousFiles.filter(f => f.file_type !== 'image').length})
+              </button>
+              <button
+                onClick={() => setActiveFileTab('images')}
+                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                  activeFileTab === 'images'
+                    ? 'text-amber-600 border-b-2 border-amber-500 bg-amber-50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Images ({previousFiles.filter(f => f.file_type === 'image').length})
+              </button>
             </div>
 
             <div className="p-6">
@@ -751,81 +843,123 @@ export default function AgentSettings() {
                   <Loader2 className="animate-spin text-gray-400" size={24} />
                   <span className="ml-2 text-gray-500">Loading files...</span>
                 </div>
-              ) : previousFiles.length === 0 ? (
+              ) : previousFiles.filter(f => activeFileTab === 'documents' ? f.file_type !== 'image' : f.file_type === 'image').length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="mx-auto text-gray-300 mb-3" size={48} />
-                  <p className="text-gray-500">No files uploaded yet</p>
+                  <p className="text-gray-500">No {activeFileTab} uploaded yet</p>
                   <p className="text-gray-400 text-sm">Upload files above to get started</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {previousFiles.map((file) => (
-                    <div
-                      key={file.file_id}
-                      className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded-lg border border-amber-200">
-                          <FileText size={20} className="text-amber-600" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-800">{file.file_name}</p>
-                            {file.processing_status && file.processing_status !== 'completed' && (
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                file.processing_status === 'processing'
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : file.processing_status === 'failed'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}>
-                                {file.processing_status}
-                              </span>
+                <div className={activeFileTab === 'images' ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4' : 'space-y-3'}>
+                  {previousFiles
+                    .filter(f => activeFileTab === 'documents' ? f.file_type !== 'image' : f.file_type === 'image')
+                    .map((file) => (
+                    activeFileTab === 'images' ? (
+                      /* Image Grid View */
+                      <div
+                        key={file.id}
+                        className="relative group rounded-lg overflow-hidden border border-gray-200 hover:border-amber-300 transition-colors"
+                      >
+                        <img
+                          src={file.file_url}
+                          alt={file.file_name}
+                          className="w-full h-32 object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                          <a
+                            href={file.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 bg-white rounded-full text-blue-500 hover:bg-blue-50"
+                            title="Preview"
+                          >
+                            <ExternalLink size={16} />
+                          </a>
+                          <button
+                            onClick={() => handleDeletePreviousFile(file.id, file.file_url)}
+                            disabled={deletingFileId === file.id}
+                            className="p-2 bg-white rounded-full text-red-500 hover:bg-red-50 disabled:opacity-50"
+                            title="Delete"
+                          >
+                            {deletingFileId === file.id ? (
+                              <Loader2 className="animate-spin" size={16} />
+                            ) : (
+                              <Trash2 size={16} />
                             )}
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            Uploaded {new Date(file.created_at).toLocaleDateString('en-GB', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
+                          </button>
+                        </div>
+                        <div className="p-2 bg-white">
+                          <p className="text-xs text-gray-600 truncate" title={file.file_name}>{file.file_name}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {/* Preview button */}
-                        <a
-                          href={file.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Preview file"
-                        >
-                          <ExternalLink size={18} />
-                        </a>
-                        {/* Delete button */}
-                        <button
-                          onClick={() => handleDeletePreviousFile(file.file_id, file.file_url)}
-                          disabled={deletingFileId === file.file_id}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          title="Delete file"
-                        >
-                          {deletingFileId === file.file_id ? (
-                            <Loader2 className="animate-spin" size={18} />
-                          ) : (
-                            <Trash2 size={18} />
-                          )}
-                        </button>
+                    ) : (
+                      /* Document List View */
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-white rounded-lg border border-amber-200">
+                            <FileText size={20} className="text-amber-600" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-gray-800">{file.file_name}</p>
+                              {file.processing_status && file.processing_status !== 'completed' && (
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  file.processing_status === 'processing'
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : file.processing_status === 'failed'
+                                    ? 'bg-red-100 text-red-700'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {file.processing_status}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              Uploaded {new Date(file.created_at).toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {/* Preview button */}
+                          <a
+                            href={file.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Preview file"
+                          >
+                            <ExternalLink size={18} />
+                          </a>
+                          {/* Delete button */}
+                          <button
+                            onClick={() => handleDeletePreviousFile(file.id, file.file_url)}
+                            disabled={deletingFileId === file.id}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Delete file"
+                          >
+                            {deletingFileId === file.id ? (
+                              <Loader2 className="animate-spin" size={18} />
+                            ) : (
+                              <Trash2 size={18} />
+                            )}
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )
                   ))}
                 </div>
               )}
             </div>
           </div>
-
         </div>
       </div>
     </div>

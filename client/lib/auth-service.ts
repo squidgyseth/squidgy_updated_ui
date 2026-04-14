@@ -3,6 +3,8 @@ import { supabase } from './supabase';
 import { Profile } from './supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { profilesApi } from './supabase-api';
+import ReferralService from '../services/referralService';
+import { getSupabaseConfig, getBackendUrl, getFrontendUrl } from './envConfig';
 
 interface SignUpData {
   email: string;
@@ -54,7 +56,7 @@ export class AuthService {
   async signUp(userData: SignUpData): Promise<{ user: any; profile?: Profile; needsEmailConfirmation?: boolean; message?: string }> {
     try {
       // Check if Supabase is configured
-      if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co') {
+      if (!getSupabaseConfig().url || getSupabaseConfig().url === 'https://your-project.supabase.co') {
         throw new Error('Supabase is not configured. Please add your Supabase credentials to the .env file.');
       }
 
@@ -74,8 +76,8 @@ export class AuthService {
       // Check if email already exists in profiles table using direct API call
       // Note: Using direct fetch because Supabase JS client hangs in this environment
       try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const supabaseUrl = getSupabaseConfig().url;
+        const supabaseKey = getSupabaseConfig().anonKey;
         const emailLower = userData.email.toLowerCase();
         const encodedEmail = encodeURIComponent(emailLower);
         const url = `${supabaseUrl}/rest/v1/profiles?email=eq.${encodedEmail}&select=id,email`;
@@ -111,7 +113,7 @@ export class AuthService {
 
       // Create auth user with email confirmation
       // Always use production URL for email confirmations to avoid localhost issues
-      const redirectUrl = `${import.meta.env.VITE_FRONTEND_URL}/login`;
+      const redirectUrl = `${getFrontendUrl()}/login`;
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email.toLowerCase(),
@@ -170,8 +172,8 @@ export class AuthService {
         let checkError = null;
 
         try {
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+          const supabaseUrl = getSupabaseConfig().url;
+          const supabaseKey = getSupabaseConfig().anonKey;
           
           // Check by id first (trigger might create with auth user id)
           let url = `${supabaseUrl}/rest/v1/profiles?id=eq.${authData.user.id}&select=*`;
@@ -239,8 +241,8 @@ export class AuthService {
         // Only create if profile doesn't exist
         if (!existingProfile) {
           try {
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-            const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            const supabaseUrl = getSupabaseConfig().url;
+            const supabaseKey = getSupabaseConfig().anonKey;
             const url = `${supabaseUrl}/rest/v1/profiles`;
 
             const userId = uuidv4();
@@ -266,11 +268,6 @@ export class AuthService {
               updated_at: new Date().toISOString()
             };
 
-            // TODO: Track referral if referralCode was provided
-            // If userData.referralCode exists and is not "SQUIDWINS":
-            //   1. Look up the referrer's user_id from referral_codes table
-            //   2. Create entry in referrals table linking referrer to referee (userId)
-
             const response = await fetch(url, {
               method: 'POST',
               headers: {
@@ -285,6 +282,18 @@ export class AuthService {
             if (response.ok) {
               const createdProfiles = await response.json();
               profile = createdProfiles && createdProfiles.length > 0 ? createdProfiles[0] : profileData;
+
+              // Mark referral code as used (one-time use)
+              if (userData.referralCode && userId) {
+                try {
+                  const referralService = ReferralService.getInstance();
+                  await referralService.markCodeAsUsed(userData.referralCode, userId);
+                  console.log('✅ AUTH_SERVICE: Referral code marked as used:', userData.referralCode, 'by user:', userId);
+                } catch (error) {
+                  console.error('⚠️ AUTH_SERVICE: Failed to mark referral code as used:', error);
+                  // Don't fail signup if code marking fails
+                }
+              }
             } else {
               const errorText = await response.text();
               console.error('❌ AUTH_SERVICE: Profile creation API call failed:', response.status, errorText);
@@ -298,8 +307,8 @@ export class AuthService {
           // Auto-create business_settings for new users
           if (profile && profile.user_id) {
             try {
-              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-              const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+              const supabaseUrl = getSupabaseConfig().url;
+              const supabaseKey = getSupabaseConfig().anonKey;
               const businessSettingsUrl = `${supabaseUrl}/rest/v1/business_settings`;
 
               const businessSettingsData = {
@@ -338,8 +347,8 @@ export class AuthService {
           // Update the existing profile with any missing data
           if (!existingProfile.user_id || !existingProfile.company_id) {
             try {
-              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-              const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+              const supabaseUrl = getSupabaseConfig().url;
+              const supabaseKey = getSupabaseConfig().anonKey;
               const url = `${supabaseUrl}/rest/v1/profiles?id=eq.${authData.user.id}`;
 
               const updateData = {
@@ -380,8 +389,8 @@ export class AuthService {
           // Auto-create business_settings for existing users if missing
           if (existingProfile && existingProfile.user_id) {
             try {
-              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-              const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+              const supabaseUrl = getSupabaseConfig().url;
+              const supabaseKey = getSupabaseConfig().anonKey;
 
               // Check if business_settings already exists
               const checkUrl = `${supabaseUrl}/rest/v1/business_settings?user_id=eq.${existingProfile.user_id}&select=id`;
@@ -433,7 +442,7 @@ export class AuthService {
         // Profile created successfully - now trigger GHL registration
         if (profile) {
           try {
-            const backendUrl = import.meta.env.VITE_BACKEND_URL;
+            const backendUrl = getBackendUrl();
             const ghlPayload = {
               full_name: userData.fullName.trim(),
               email: userData.email.toLowerCase()
@@ -485,7 +494,7 @@ export class AuthService {
   async signIn(credentials: SignInData): Promise<{ user: any; profile?: Profile; needsEmailConfirmation?: boolean }> {
     try {
       // Check if Supabase is configured
-      if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL === 'https://your-project.supabase.co') {
+      if (!getSupabaseConfig().url || getSupabaseConfig().url === 'https://your-project.supabase.co') {
         throw new Error('Supabase is not configured. Please add your Supabase credentials to the .env file.');
       }
 
@@ -555,6 +564,120 @@ export class AuthService {
         }
       }
 
+      // If no profile found, create one automatically (handles manually registered users)
+      if (!profile && authData.user) {
+        console.log('⚠️ AUTH_SERVICE: No profile found for user, creating automatically...');
+        try {
+          const supabaseUrl = getSupabaseConfig().url;
+          const supabaseKey = getSupabaseConfig().anonKey;
+          const url = `${supabaseUrl}/rest/v1/profiles`;
+
+          const userId = uuidv4();
+          const fullName = authData.user.user_metadata?.full_name || 
+                          authData.user.email?.split('@')[0] || 
+                          'User';
+
+          const profileData = {
+            id: authData.user.id,
+            user_id: userId,
+            company_id: uuidv4(),
+            email: authData.user.email,
+            full_name: fullName,
+            role: 'member',
+            terms_accepted: false,
+            ai_processing_consent: false,
+            marketing_consent: false,
+            consent_timestamp: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(profileData)
+          });
+
+          if (response.ok) {
+            const createdProfiles = await response.json();
+            profile = createdProfiles && createdProfiles.length > 0 ? createdProfiles[0] : profileData;
+            console.log('✅ AUTH_SERVICE: Profile created automatically for user:', authData.user.id);
+
+            // Auto-create business_settings for the new profile
+            if (profile && profile.user_id) {
+              try {
+                const businessSettingsUrl = `${supabaseUrl}/rest/v1/business_settings`;
+                const businessSettingsData = {
+                  user_id: profile.user_id,
+                  company_name: null,
+                  industry: null,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                };
+
+                const businessResponse = await fetch(businessSettingsUrl, {
+                  method: 'POST',
+                  headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${supabaseKey}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                  },
+                  body: JSON.stringify(businessSettingsData)
+                });
+
+                if (businessResponse.ok) {
+                  console.log('✅ AUTH_SERVICE: Auto-created business_settings for new profile');
+                } else {
+                  console.warn('⚠️ AUTH_SERVICE: business_settings creation failed (non-critical)');
+                }
+              } catch (error: any) {
+                console.warn('⚠️ AUTH_SERVICE: business_settings creation error (non-critical):', error);
+              }
+            }
+
+            // Trigger GHL registration for manually registered users
+            try {
+              const backendUrl = getBackendUrl();
+              const ghlPayload = {
+                full_name: fullName,
+                email: authData.user.email?.toLowerCase()
+              };
+
+              console.log('🔄 AUTH_SERVICE: Triggering GHL registration for manually registered user...');
+              const ghlResponse = await fetch(`${backendUrl}/api/ghl/create-subaccount-and-user-registration`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(ghlPayload)
+              });
+
+              const ghlResult = await ghlResponse.json();
+
+              if (ghlResponse.ok && ghlResult.status === 'accepted') {
+                console.log('✅ AUTH_SERVICE: GHL registration triggered successfully');
+              } else {
+                console.warn('⚠️ AUTH_SERVICE: GHL registration failed (non-critical):', ghlResult);
+              }
+            } catch (ghlError) {
+              console.error('❌ AUTH_SERVICE: GHL registration error (non-critical):', ghlError);
+              // Don't throw - this is non-critical, user can still use the app
+            }
+          } else {
+            const errorText = await response.text();
+            console.error('❌ AUTH_SERVICE: Auto profile creation failed:', response.status, errorText);
+          }
+        } catch (error: any) {
+          console.error('❌ AUTH_SERVICE: Error auto-creating profile:', error);
+        }
+      }
+
       return {
         user: authData.user,
         profile: profile || undefined
@@ -576,7 +699,7 @@ export class AuthService {
 
       // Use Supabase Auth's built-in password reset
       // Always use production URL for password reset emails to avoid localhost issues
-      const redirectUrl = `${import.meta.env.VITE_FRONTEND_URL}/reset-password`;
+      const redirectUrl = `${getFrontendUrl()}/reset-password`;
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         data.email.toLowerCase(),

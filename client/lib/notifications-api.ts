@@ -4,8 +4,9 @@
  */
 
 import { supabase } from './supabase';
+import { getBackendUrl } from './envConfig';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = getBackendUrl();
 
 // Notification types - Updated to match new database schema and webhook payload
 export interface Notification {
@@ -65,39 +66,55 @@ class NotificationsService {
     if (options.offset) params.append('offset', options.offset.toString());
     if (options.unread_only) params.append('unread_only', 'true');
 
-    const response = await fetch(
-      `${BACKEND_URL}/api/notifications/${userId}?${params.toString()}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/notifications/${userId}?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch notifications: ${response.statusText}`);
       }
-    );
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch notifications: ${response.statusText}`);
+      return response.json();
+    } catch (error: any) {
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        throw new Error('Network error: Please check your internet connection and try again.');
+      }
+      throw error;
     }
-
-    return response.json();
   }
 
   /**
    * Mark a notification as read
    */
   async markAsRead(notificationId: string): Promise<void> {
-    const response = await fetch(
-      `${BACKEND_URL}/api/notifications/${notificationId}/read`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/notifications/${notificationId}/read`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-    if (!response.ok) {
-      throw new Error(`Failed to mark notification as read: ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Failed to mark notification as read: ${response.statusText}`);
+      }
+    } catch (error: any) {
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        throw new Error('Network error: Please check your internet connection and try again.');
+      }
+      throw error;
     }
   }
 
@@ -105,18 +122,26 @@ class NotificationsService {
    * Mark all notifications as read for a user
    */
   async markAllAsRead(userId: string): Promise<void> {
-    const response = await fetch(
-      `${BACKEND_URL}/api/notifications/user/${userId}/read-all`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/notifications/user/${userId}/read-all`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-    if (!response.ok) {
-      throw new Error(`Failed to mark all notifications as read: ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Failed to mark all notifications as read: ${response.statusText}`);
+      }
+    } catch (error: any) {
+      // Check for network errors
+      if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+        throw new Error('Network error: Please check your internet connection and try again.');
+      }
+      throw error;
     }
   }
 

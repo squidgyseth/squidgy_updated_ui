@@ -1,0 +1,57 @@
+name: Branch Protection Enforcement
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - dev
+
+jobs:
+  check-authorized-pusher:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check commit author authorization
+        env:
+          AUTHORIZED_EMAILS: "development@squidgy.ai,sa@squidgy.ai,farzin.mag@gmail.com"
+        run: |
+          echo "🔍 Checking commit author authorization..."
+
+          # Get the author email of the latest commit
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:'%ae')
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+
+          echo "📧 Commit author: $COMMIT_AUTHOR"
+          echo "🌿 Branch: $BRANCH_NAME"
+
+          # Check if author is in authorized list
+          if echo "$AUTHORIZED_EMAILS" | grep -q "$COMMIT_AUTHOR"; then
+            echo "✅ Authorized push by: $COMMIT_AUTHOR"
+            echo "✅ Push to $BRANCH_NAME is ALLOWED"
+            exit 0
+          else
+            echo "❌ UNAUTHORIZED PUSH DETECTED!"
+            echo "❌ Author: $COMMIT_AUTHOR"
+            echo "❌ Branch: $BRANCH_NAME"
+            echo "❌ Only these emails are authorized:"
+            echo "   - development@squidgy.ai"
+            echo "   - sa@squidgy.ai"
+            echo "   - farzin.mag@gmail.com"
+            echo ""
+            echo "⚠️  This push violates branch protection policy!"
+            echo "⚠️  Please use the deployment script: ./deploy-mac.sh or ./deploy-windows.ps1"
+            exit 1
+          fi
+
+      - name: Send notification on unauthorized push
+        if: failure()
+        run: |
+          echo "🚨 Unauthorized push detected!"
+          echo "🚨 This will be visible in the Actions tab"
+          echo "🚨 Consider reverting the commit or using the authorized deployment script"

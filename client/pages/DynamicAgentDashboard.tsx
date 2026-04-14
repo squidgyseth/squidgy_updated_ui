@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import UniversalChatLayout from '../components/layout/UniversalChatLayout';
@@ -8,6 +8,8 @@ import { navigationService } from '../services/navigationService';
 import { useNavigationService } from '../hooks/useNavigationService';
 import { chatSessionService } from '../services/chatSessionService';
 import { queryByUserId } from '../services/supabaseQueryService';
+import { checkPitTokenStatus, checkAndTriggerGhlOnboarding } from '../lib/api';
+import { AlertTriangle, Clock, MessageCircle, RefreshCw } from 'lucide-react';
 
 /**
  * Dynamic Agent Dashboard - A single component that handles ALL agents
@@ -26,6 +28,79 @@ export default function DynamicAgentDashboard() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [recentActionTrigger, setRecentActionTrigger] = useState(0);
   const [hasWebsiteInfo, setHasWebsiteInfo] = useState<boolean>(false);
+  const [pitTokenStatus, setPitTokenStatus] = useState<{ hasPitToken: boolean; checked: boolean; loading: boolean }>({
+    hasPitToken: false,
+    checked: false,
+    loading: false
+  });
+
+  // Ref to prevent duplicate automation triggers (React Strict Mode runs effects twice in dev)
+  const automationTriggeredRef = useRef(false);
+
+  // Function to start polling for PIT token updates
+  const startPitTokenPolling = () => {
+    console.log('[SOCIAL MEDIA] Starting PIT token polling...');
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        const result = await checkPitTokenStatus(userId);
+        
+        if (result.hasPitToken) {
+          console.log('[SOCIAL MEDIA] PIT token detected!');
+          clearInterval(pollInterval);
+          setPitTokenStatus({
+            hasPitToken: true,
+            checked: true,
+            loading: false
+          });
+        }
+      } catch (error) {
+        console.error('[SOCIAL MEDIA] Error polling for PIT token:', error);
+      }
+    }, 3000); // Poll every 3 seconds for faster detection
+
+    // Stop polling after 2 minutes
+    setTimeout(() => {
+      clearInterval(pollInterval);
+      console.log('[SOCIAL MEDIA] Polling timeout reached');
+    }, 120000); // 2 minutes
+  };
+
+  // Check PIT token status for social media agent (read-only check, automation is triggered by useUser.tsx globally)
+  useEffect(() => {
+    if (agentId !== 'social_media' || !userId || pitTokenStatus.checked) {
+      return;
+    }
+
+    const checkPitToken = async () => {
+      setPitTokenStatus(prev => ({ ...prev, loading: true }));
+      
+      try {
+        // Only CHECK status - don't trigger automation (useUser.tsx handles that globally)
+        const result = await checkPitTokenStatus(userId);
+        setPitTokenStatus({
+          hasPitToken: result.hasPitToken,
+          checked: true,
+          loading: false
+        });
+        
+        // If PIT token is missing, start polling to detect when it appears
+        if (!result.hasPitToken) {
+          console.log('[SOCIAL MEDIA] PIT token missing, starting polling...');
+          startPitTokenPolling();
+        }
+      } catch (error) {
+        console.error('Error checking PIT token:', error);
+        setPitTokenStatus({
+          hasPitToken: false,
+          checked: true,
+          loading: false
+        });
+      }
+    };
+
+    checkPitToken();
+  }, [agentId, userId, pitTokenStatus.checked]);
 
   // Callback to trigger recent actions refresh when a message is sent
   const handleMessageSent = () => {
@@ -117,7 +192,7 @@ export default function DynamicAgentDashboard() {
           const sessionId = await chatSessionService.getOrCreateActiveSession(userId, agentId);
           setCurrentSessionId(sessionId);
         } catch (error) {
-          console.error(`❌ Error initializing session for ${agentId}:`, error);
+          console.error(`Error initializing session for ${agentId}:`, error);
           // Fallback to creating new session
           const newSessionId = chatSessionService.generateSessionId(userId, agentId);
           setCurrentSessionId(newSessionId);
@@ -157,6 +232,11 @@ export default function DynamicAgentDashboard() {
         </div>
       </div>
     );
+  }
+
+  // PIT token validation for social media agent
+  if (agentId === 'social_media' && pitTokenStatus.checked && !pitTokenStatus.hasPitToken) {
+    return <SocialMediaPitTokenWarning onRetry={() => setPitTokenStatus(prev => ({ ...prev, checked: false }))} />;
   }
 
   // Build agent info for chat interface
@@ -212,4 +292,97 @@ function generateIntroMessage(agent: any, fromSidebar?: boolean, hasWebsiteInfo?
 
   // Return the initial_message from YAML config
   return initial_message || '';
+}
+
+/**
+ * Social Media PIT Token Warning Component
+ * Shows when user tries to access social media agent without PIT token
+ */
+function SocialMediaPitTokenWarning({ onRetry }: { onRetry: () => void }) {
+  const navigate = useNavigate();
+  const [retryCountdown, setRetryCountdown] = useState<number>(120); // Start with 2 minutes (faster automation)
+  const [isRetrying, setIsRetrying] = useState<boolean>(true); // Start retrying immediately
+
+  const handleContactSupport = () => {
+    // Navigate to support page or open email client
+    window.location.href = 'mailto:support@squidgy.ai?subject=Social Media Agent - PIT Token Issue';
+  };
+
+  // Auto-start retry when component mounts
+  useEffect(() => {
+    // Set a timeout to retry after 2 minutes (automation is much faster now)
+    const retryTimer = setTimeout(() => {
+      // Trigger retry and refresh the page
+      onRetry();
+      window.location.reload(); // Refresh the page to show updated status
+    }, 2 * 60 * 1000); // 2 minutes in milliseconds
+
+    return () => clearTimeout(retryTimer);
+  }, [onRetry]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (retryCountdown > 0) {
+      const timer = setTimeout(() => {
+        setRetryCountdown(retryCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (retryCountdown === 0 && isRetrying) {
+      setIsRetrying(false);
+    }
+  }, [retryCountdown, isRetrying]);
+
+  const formatCountdown = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50">
+      <div className="text-center max-w-lg mx-auto p-8">
+        <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <AlertTriangle className="w-10 h-10 text-orange-600" />
+        </div>
+        
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Setup In Progress</h2>
+        
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-orange-200 mb-6">
+          <p className="text-gray-700 mb-4">
+            Your Ai Mate is getting their social media hat on 🎩 Give them a couple of minutes to get settled in!
+          </p>
+          
+          <div className="flex items-center justify-center text-sm text-gray-600 mb-4">
+            <Clock className="w-4 h-4 mr-2" />
+            <span>This usually takes a few minutes to complete</span>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="w-full px-6 py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+            <RefreshCw className="w-5 h-5 animate-spin" />
+            Auto-retrying in {formatCountdown(retryCountdown)}
+          </div>
+          
+          <button
+            onClick={handleContactSupport}
+            className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            Contact Support Team
+          </button>
+          
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="w-full px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+        
+        <p className="text-xs text-gray-500 mt-6">
+          If this issue persists, please contact our support team for assistance.
+        </p>
+      </div>
+    </div>
+  );
 }

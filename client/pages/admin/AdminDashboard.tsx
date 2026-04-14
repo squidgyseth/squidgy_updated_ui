@@ -5,8 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
 import { useAdmin } from '../../hooks/useAdmin';
 import { supabase } from '../../lib/supabase';
-import { Users, MessageSquare, Bot, TrendingUp, Settings, Activity, Shield, BarChart3 } from 'lucide-react';
+import { Users, MessageSquare, Bot, TrendingUp, Settings, Activity, Shield, BarChart3, Ticket, Gift, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
+import ReferralService from '../../services/referralService';
 
 interface PlatformStats {
   total_users: number;
@@ -23,6 +24,9 @@ export default function AdminDashboard() {
   const { isAdmin, isLoading: adminLoading } = useAdmin();
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showReferralModal, setShowReferralModal] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState<{ code: string; link: string } | null>(null);
+  const [creatingCode, setCreatingCode] = useState(false);
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -34,6 +38,30 @@ export default function AdminDashboard() {
       loadStats();
     }
   }, [userId, isAdmin, adminLoading, navigate]);
+
+  const handleCreateReferralCode = async () => {
+    if (!userId) return;
+
+    try {
+      setCreatingCode(true);
+      const referralService = ReferralService.getInstance();
+      // Use createNewReferralCode to allow multiple codes per admin
+      const result = await referralService.createNewReferralCode(userId);
+      setGeneratedCode(result);
+      setShowReferralModal(true);
+      toast.success('Referral code generated successfully!');
+    } catch (error: any) {
+      console.error('Error creating referral code:', error);
+      toast.error('Failed to create referral code');
+    } finally {
+      setCreatingCode(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, type: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${type} copied to clipboard!`);
+  };
 
   const loadStats = async () => {
     try {
@@ -133,6 +161,20 @@ export default function AdminDashboard() {
       color: 'bg-blue-100 text-blue-600',
     },
     {
+      title: 'Instant Referral Code',
+      description: 'Generate a referral code to share',
+      icon: Ticket,
+      action: handleCreateReferralCode,
+      color: 'bg-pink-100 text-pink-600',
+    },
+    {
+      title: 'Game Leaderboard',
+      description: 'View game scores and player tracking',
+      icon: Trophy,
+      link: '/admin/leaderboard',
+      color: 'bg-yellow-100 text-yellow-600',
+    },
+    {
       title: 'User Analytics',
       description: 'View PostHog analytics dashboard',
       icon: BarChart3,
@@ -152,6 +194,13 @@ export default function AdminDashboard() {
       icon: Activity,
       link: '/admin/activity',
       color: 'bg-green-100 text-green-600',
+    },
+    {
+      title: 'Referral Hub',
+      description: 'View referral program and stats',
+      icon: Gift,
+      link: '/referrals',
+      color: 'bg-orange-100 text-orange-600',
     },
   ];
 
@@ -212,7 +261,7 @@ export default function AdminDashboard() {
           {quickActions.map((action, index) => (
             <div
               key={index}
-              onClick={() => navigate(action.link)}
+              onClick={() => action.link ? navigate(action.link) : action.action?.()}
               className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
             >
               <div className={`inline-flex p-3 rounded-lg ${action.color} mb-4`}>
@@ -224,6 +273,76 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
+
+      {/* Referral Code Modal */}
+      {showReferralModal && generatedCode && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <div className="text-center mb-6">
+              <div className="inline-flex p-4 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-4">
+                <Ticket className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Referral Code Created!</h2>
+              <p className="text-gray-500">Share this code with new users</p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Referral Code */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Your Referral Code</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={generatedCode.code}
+                    readOnly
+                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-center text-lg font-mono font-bold text-purple-600"
+                  />
+                  <button
+                    onClick={() => copyToClipboard(generatedCode.code, 'Code')}
+                    className="px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              {/* Referral Link */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Referral Link</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={generatedCode.link}
+                    readOnly
+                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-600 truncate"
+                  />
+                  <button
+                    onClick={() => copyToClipboard(generatedCode.link, 'Link')}
+                    className="px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  💡 This code can only be used once. After a user registers with this code, it will be deactivated.
+                </p>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={() => setShowReferralModal(false)}
+                className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

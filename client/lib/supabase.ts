@@ -1,8 +1,11 @@
 // src/lib/supabase.ts
 import { createClient } from '@supabase/supabase-js';
+import { getSupabaseConfig } from './envConfig';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Get environment-specific Supabase configuration
+const _supabaseConfig = getSupabaseConfig();
+const supabaseUrl = _supabaseConfig.url;
+const supabaseAnonKey = _supabaseConfig.anonKey;
 
 // Temporarily allow the app to load without Supabase for development
 if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://your-project.supabase.co' || supabaseAnonKey === 'your-anon-key-here') {

@@ -1,0 +1,69 @@
+name: Workflow Integrity Check
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - dev
+    paths:
+      - '.github/workflows/branch-protection.yml'
+      - '.github/CODEOWNERS'
+      - 'deploy-mac.sh'
+      - 'deploy-windows.ps1'
+
+jobs:
+  check-workflow-tampering:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check who modified protected files
+        env:
+          AUTHORIZED_EMAILS: "development@squidgy.ai,sa@squidgy.ai,farzin.mag@gmail.com"
+        run: |
+          echo "🔍 Checking for unauthorized modifications to protected files..."
+
+          # Get the author email of the latest commit
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:'%ae')
+          COMMIT_MESSAGE=$(git log -1 --pretty=format:'%s')
+          MODIFIED_FILES=$(git diff --name-only HEAD~1 HEAD)
+
+          echo "📧 Commit author: $COMMIT_AUTHOR"
+          echo "📝 Commit message: $COMMIT_MESSAGE"
+          echo "📁 Modified files:"
+          echo "$MODIFIED_FILES"
+
+          # Check if author is authorized
+          if echo "$AUTHORIZED_EMAILS" | grep -q "$COMMIT_AUTHOR"; then
+            echo "✅ Authorized modification by: $COMMIT_AUTHOR"
+            exit 0
+          else
+            echo "❌ ❌ ❌ CRITICAL SECURITY VIOLATION! ❌ ❌ ❌"
+            echo "❌ UNAUTHORIZED MODIFICATION TO PROTECTED FILES!"
+            echo "❌ Author: $COMMIT_AUTHOR"
+            echo "❌ Modified protected files:"
+            echo "$MODIFIED_FILES" | grep -E "(branch-protection.yml|CODEOWNERS|deploy-mac.sh|deploy-windows.ps1)"
+            echo ""
+            echo "🚨 This is a CRITICAL security violation!"
+            echo "🚨 Only these emails can modify protected files:"
+            echo "   - development@squidgy.ai"
+            echo "   - sa@squidgy.ai"
+            echo "   - farzin.mag@gmail.com"
+            echo ""
+            echo "⚠️  This commit must be reverted immediately!"
+            echo "⚠️  Contact SA or Farzin to authorize changes to these files."
+            exit 1
+          fi
+
+      - name: Alert on tampering attempt
+        if: failure()
+        run: |
+          echo "🚨🚨🚨 SECURITY ALERT 🚨🚨🚨"
+          echo "Unauthorized attempt to modify security-critical files detected!"
+          echo "This workflow will FAIL and be visible in the Actions tab."
+          echo "Repository administrators should investigate immediately."
