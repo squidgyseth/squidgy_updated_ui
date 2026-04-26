@@ -1,0 +1,169 @@
+{
+  "name": "SW | Composio Probe",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Composio MCP Probe\n\nValidates N8N → Composio MCP → Slack chain end-to-end.\n\n**MCP server:** `9111c45f-fc25-4afb-9206-4ae7247e7beb` (name: `squidgy-probe`)\n**Allowed tools:** SLACK_SEND_MESSAGE, SLACK_FIND_CHANNELS, SLACK_OPEN_DM\n**Test user_id:** `seth-probe` (ACTIVE Slack connection)\n\n### Test curl\n```\ncurl -X POST https://n8n.theaiteam.uk/webhook/squidgy-composio-probe \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"user_mssg\":\"DM me on Slack saying hi from the probe\",\"user_id\":\"seth-probe\"}'\n```\n\n### Setup\n1. Create N8N credential of type **Header Auth** named `Composio API Key`:\n   - Name: `X-API-Key`\n   - Value: `<contents of .composio-api-key>`\n2. Attach credential to **Composio MCP Client** node.\n3. Activate workflow.",
+        "height": 340,
+        "width": 480
+      },
+      "id": "sticky-1",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [60, 60]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "squidgy-composio-probe",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 440],
+      "webhookId": "squidgy-composio-probe"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.user_mssg }}",
+        "options": {
+          "systemMessage": "You are a helpful test agent named Probe. You have access to Slack tools via the MCP Client (SLACK_SEND_MESSAGE, SLACK_FIND_CHANNELS, SLACK_OPEN_DM) and Composio helper actions.\n\nWhen asked to DM someone on Slack, use SLACK_OPEN_DM to get the DM channel ID (pass the user's Slack user_id as `users`), then SLACK_SEND_MESSAGE with that channel ID.\n\nThe test user's Slack user_id is `U078RNWSB61`. Default to DMing that user unless told otherwise.\n\nAlways reply concisely confirming what you did (e.g., 'Sent DM to U078RNWSB61: <message>')."
+        }
+      },
+      "id": "agent-1",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [560, 440]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "anthropic/claude-3.5-sonnet",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "model-1",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [440, 640]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.user_id || 'seth-probe' }}",
+        "contextWindowLength": 10
+      },
+      "id": "memory-1",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [600, 640]
+    },
+    {
+      "parameters": {
+        "endpointUrl": "=https://backend.composio.dev/v3/mcp/9111c45f-fc25-4afb-9206-4ae7247e7beb/mcp?include_composio_helper_actions=true&user_id={{ $('Webhook').item.json.body.user_id || 'seth-probe' }}",
+        "authentication": "headerAuth",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "mcp-1",
+      "name": "Composio MCP Client",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [760, 640],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Composio API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"response\": {{ JSON.stringify($('AI Agent').item.json.output) }},\n  \"user_id\": \"{{ $('Webhook').item.json.body.user_id || 'seth-probe' }}\"\n}",
+        "options": {}
+      },
+      "id": "respond-1",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [880, 440]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Composio MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "versionId": "1",
+  "triggerCount": 0,
+  "tags": []
+}
